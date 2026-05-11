@@ -1,0 +1,169 @@
+'use client'
+
+import { useState } from 'react'
+import { Tournament, Team, Fixture } from '@/types'
+import { saveFixtureResult } from '@/app/actions/tournaments'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Check, Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
+
+function teamName(teams: Team[], id: string | null) {
+  return teams.find(t => t.id === id)?.name ?? '—'
+}
+
+function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
+  const [homeScore, setHomeScore] = useState(fixture.home_score?.toString() ?? '')
+  const [awayScore, setAwayScore] = useState(fixture.away_score?.toString() ?? '')
+  const [scorers, setScorers] = useState<{ teamId: string; playerName: string }[]>(
+    fixture.scorers?.map(s => ({ teamId: s.team_id, playerName: s.player_name })) ?? []
+  )
+  const [saving, setSaving] = useState(false)
+
+  const homeTeamId = fixture.home_team_id!
+  const awayTeamId = fixture.away_team_id!
+
+  function addScorer(teamId: string) {
+    setScorers(prev => [...prev, { teamId, playerName: '' }])
+  }
+
+  function updateScorer(index: number, name: string) {
+    setScorers(prev => prev.map((s, i) => i === index ? { ...s, playerName: name } : s))
+  }
+
+  function removeScorer(index: number) {
+    setScorers(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleSave() {
+    const hs = parseInt(homeScore)
+    const as_ = parseInt(awayScore)
+    if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) {
+      toast.error('Введите корректный счёт')
+      return
+    }
+    setSaving(true)
+    await saveFixtureResult(fixture.id, tournamentId, hs, as_, scorers)
+    toast.success('Результат сохранён')
+    setSaving(false)
+  }
+
+  if (fixture.is_bye) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 opacity-60">
+        <Badge variant="secondary" className="mb-2 text-xs">ПРОПУСК</Badge>
+        <p className="text-sm text-gray-500">{teamName(teams, fixture.home_team_id ?? fixture.away_team_id)} — отдыхает</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`bg-white border rounded-xl p-4 shadow-sm transition-all ${fixture.played ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <Badge className={fixture.played ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
+          {fixture.played ? <><Check size={10} className="mr-1" />Сыгран</> : 'Не сыгран'}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mb-4">
+        <span className="font-bold text-sm text-gray-900">{teamName(teams, homeTeamId)}</span>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number" min={0} max={99}
+            value={homeScore}
+            onChange={e => setHomeScore(e.target.value)}
+            className="w-14 text-center font-mono text-xl font-bold p-1 h-10"
+          />
+          <span className="font-bold text-gray-400">–</span>
+          <Input
+            type="number" min={0} max={99}
+            value={awayScore}
+            onChange={e => setAwayScore(e.target.value)}
+            className="w-14 text-center font-mono text-xl font-bold p-1 h-10"
+          />
+        </div>
+        <span className="font-bold text-sm text-gray-900 text-right">{teamName(teams, awayTeamId)}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4 pt-3 border-t border-dashed border-gray-200">
+        {[homeTeamId, awayTeamId].map(tid => (
+          <div key={tid}>
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">
+              ⚽ {teamName(teams, tid)}
+            </p>
+            {scorers.filter(s => s.teamId === tid).map((s, idx) => {
+              const globalIdx = scorers.findIndex((sc, i) => sc.teamId === tid && scorers.filter((x, j) => x.teamId === tid && j < i).length === idx)
+              return (
+                <div key={idx} className="flex items-center gap-1 mb-1">
+                  <Input
+                    value={s.playerName}
+                    onChange={e => updateScorer(globalIdx, e.target.value)}
+                    placeholder="Имя игрока"
+                    className="h-7 text-xs"
+                  />
+                  <button onClick={() => removeScorer(globalIdx)} className="text-gray-300 hover:text-red-500">
+                    <X size={13} />
+                  </button>
+                </div>
+              )
+            })}
+            <button
+              onClick={() => addScorer(tid)}
+              className="text-xs text-gray-400 hover:text-emerald-600 flex items-center gap-1 mt-1"
+            >
+              <Plus size={11} /> Добавить
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <Button onClick={handleSave} disabled={saving} size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
+        {saving ? 'Сохраняем…' : 'Сохранить результат'}
+      </Button>
+    </div>
+  )
+}
+
+export default function FixturesTab({ tournament, teams, fixtures }: {
+  tournament: Tournament
+  teams: Team[]
+  fixtures: Fixture[]
+}) {
+  if (!tournament.generated || fixtures.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+        <p className="text-4xl mb-3">⚽</p>
+        <p className="font-bold text-gray-600 mb-1">Матчей пока нет</p>
+        <p className="text-sm text-gray-400">Добавьте команды и сгенерируйте расписание</p>
+      </div>
+    )
+  }
+
+  const byMatchday = fixtures.reduce<Record<number, Fixture[]>>((acc, f) => {
+    if (!acc[f.matchday]) acc[f.matchday] = []
+    acc[f.matchday].push(f)
+    return acc
+  }, {})
+
+  const played = fixtures.filter(f => !f.is_bye && f.played).length
+  const total = fixtures.filter(f => !f.is_bye).length
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-gray-500">Сыграно {played} из {total} матчей</p>
+      {Object.entries(byMatchday).sort(([a], [b]) => +a - +b).map(([md, mxs]) => (
+        <div key={md}>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="font-black text-emerald-600 text-lg">Тур {md}</span>
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400 uppercase tracking-wide">Круг {mxs[0].round} из {tournament.num_rounds}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} />)}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}

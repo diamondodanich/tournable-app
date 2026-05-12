@@ -1,9 +1,10 @@
 import { Tournament, Team, Fixture } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Check } from 'lucide-react'
+import TeamAvatar from './TeamAvatar'
 
-function teamName(teams: Team[], id: string | null) {
-  return teams.find(t => t.id === id)?.name ?? '—'
+function teamById(teams: Team[], id: string | null) {
+  return teams.find(t => t.id === id) ?? null
 }
 
 export default function PublicFixturesTab({ tournament, teams, fixtures }: {
@@ -35,27 +36,38 @@ export default function PublicFixturesTab({ tournament, teams, fixtures }: {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.filter(f => !f.is_bye).map(f => (
-              <div key={f.id} className={`bg-white border rounded-xl p-4 ${f.played ? 'border-emerald-200' : 'border-gray-200'}`}>
-                <div className="mb-2">
-                  <Badge className={f.played ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-gray-100 text-gray-500 text-xs'}>
-                    {f.played ? <><Check size={10} className="mr-1" />Сыгран</> : 'Не сыгран'}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                  <span className="font-bold text-sm">{teamName(teams, f.home_team_id)}</span>
-                  <span className="font-black font-mono text-lg text-gray-700">
-                    {f.played ? `${f.home_score} – ${f.away_score}` : '— : —'}
-                  </span>
-                  <span className="font-bold text-sm text-right">{teamName(teams, f.away_team_id)}</span>
-                </div>
-                {f.played && f.scorers && f.scorers.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-dashed border-gray-100 text-xs text-gray-400">
-                    ⚽ {f.scorers.map(s => s.player_name).join(', ')}
+            {mxs.filter(f => !f.is_bye).map(f => {
+              const home = teamById(teams, f.home_team_id)
+              const away = teamById(teams, f.away_team_id)
+              const goals = f.match_events?.filter(e => e.type === 'goal') ?? []
+              return (
+                <div key={f.id} className={`bg-white border rounded-xl p-4 ${f.played ? 'border-emerald-200' : 'border-gray-200'}`}>
+                  <div className="mb-2">
+                    <Badge className={f.played ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-gray-100 text-gray-500 text-xs'}>
+                      {f.played ? <><Check size={10} className="mr-1" />Сыгран</> : 'Не сыгран'}
+                    </Badge>
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <TeamAvatar name={home?.name ?? '—'} logoUrl={home?.logo_url} size={24} />
+                      <span className="font-bold text-sm">{home?.name ?? '—'}</span>
+                    </div>
+                    <span className="font-black font-mono text-lg text-gray-700">
+                      {f.played ? `${f.home_score} – ${f.away_score}` : '— : —'}
+                    </span>
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="font-bold text-sm text-right">{away?.name ?? '—'}</span>
+                      <TeamAvatar name={away?.name ?? '—'} logoUrl={away?.logo_url} size={24} />
+                    </div>
+                  </div>
+                  {f.played && goals.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-dashed border-gray-100 text-xs text-gray-400">
+                      ⚽ {goals.map(e => e.player_name).join(', ')}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       ))}

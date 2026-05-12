@@ -8,6 +8,17 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Check, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
+import TeamAvatar from './TeamAvatar'
+
+type EventType = 'goal' | 'assist' | 'yellow_card' | 'red_card'
+type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
+
+const EVENT_TYPES: { value: EventType; label: string }[] = [
+  { value: 'goal',        label: '⚽ Гол' },
+  { value: 'assist',      label: '🎯 Ассист' },
+  { value: 'yellow_card', label: '🟨 ЖК' },
+  { value: 'red_card',    label: '🟥 КК' },
+]
 
 function teamName(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id)?.name ?? '—'
@@ -16,24 +27,31 @@ function teamName(teams: Team[], id: string | null) {
 function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
   const [homeScore, setHomeScore] = useState(fixture.home_score?.toString() ?? '')
   const [awayScore, setAwayScore] = useState(fixture.away_score?.toString() ?? '')
-  const [scorers, setScorers] = useState<{ teamId: string; playerName: string }[]>(
-    fixture.scorers?.map(s => ({ teamId: s.team_id, playerName: s.player_name })) ?? []
+  const [events, setEvents] = useState<EventEntry[]>(
+    fixture.match_events?.map(e => ({
+      teamId: e.team_id,
+      playerName: e.player_name,
+      type: e.type as EventType,
+      minute: e.minute?.toString() ?? '',
+    })) ?? []
   )
   const [saving, setSaving] = useState(false)
 
   const homeTeamId = fixture.home_team_id!
   const awayTeamId = fixture.away_team_id!
+  const homeTeam = teams.find(t => t.id === homeTeamId)
+  const awayTeam = teams.find(t => t.id === awayTeamId)
 
-  function addScorer(teamId: string) {
-    setScorers(prev => [...prev, { teamId, playerName: '' }])
+  function addEvent(teamId: string) {
+    setEvents(prev => [...prev, { teamId, playerName: '', type: 'goal', minute: '' }])
   }
 
-  function updateScorer(index: number, name: string) {
-    setScorers(prev => prev.map((s, i) => i === index ? { ...s, playerName: name } : s))
+  function updateEvent(index: number, field: keyof EventEntry, value: string) {
+    setEvents(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e))
   }
 
-  function removeScorer(index: number) {
-    setScorers(prev => prev.filter((_, i) => i !== index))
+  function removeEvent(index: number) {
+    setEvents(prev => prev.filter((_, i) => i !== index))
   }
 
   async function handleSave() {
@@ -44,7 +62,15 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       return
     }
     setSaving(true)
-    await saveFixtureResult(fixture.id, tournamentId, hs, as_, scorers)
+    await saveFixtureResult(
+      fixture.id, tournamentId, hs, as_,
+      events.map(e => ({
+        teamId: e.teamId,
+        playerName: e.playerName,
+        type: e.type,
+        minute: e.minute ? parseInt(e.minute) : undefined,
+      }))
+    )
     toast.success('Результат сохранён')
     setSaving(false)
   }
@@ -67,49 +93,62 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mb-4">
-        <span className="font-bold text-sm text-gray-900">{teamName(teams, homeTeamId)}</span>
         <div className="flex items-center gap-2">
-          <Input
-            type="number" min={0} max={99}
-            value={homeScore}
-            onChange={e => setHomeScore(e.target.value)}
-            className="w-14 text-center font-mono text-xl font-bold p-1 h-10"
-          />
-          <span className="font-bold text-gray-400">–</span>
-          <Input
-            type="number" min={0} max={99}
-            value={awayScore}
-            onChange={e => setAwayScore(e.target.value)}
-            className="w-14 text-center font-mono text-xl font-bold p-1 h-10"
-          />
+          <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={24} />
+          <span className="font-bold text-sm text-gray-900 truncate">{teamName(teams, homeTeamId)}</span>
         </div>
-        <span className="font-bold text-sm text-gray-900 text-right">{teamName(teams, awayTeamId)}</span>
+        <div className="flex items-center gap-2">
+          <Input type="number" min={0} max={99} value={homeScore} onChange={e => setHomeScore(e.target.value)}
+            className="w-14 text-center font-mono text-xl font-bold p-1 h-10" />
+          <span className="font-bold text-gray-400">–</span>
+          <Input type="number" min={0} max={99} value={awayScore} onChange={e => setAwayScore(e.target.value)}
+            className="w-14 text-center font-mono text-xl font-bold p-1 h-10" />
+        </div>
+        <div className="flex items-center gap-2 justify-end">
+          <span className="font-bold text-sm text-gray-900 truncate text-right">{teamName(teams, awayTeamId)}</span>
+          <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={24} />
+        </div>
       </div>
 
+      {/* Events */}
       <div className="grid grid-cols-2 gap-4 mb-4 pt-3 border-t border-dashed border-gray-200">
         {[homeTeamId, awayTeamId].map(tid => (
           <div key={tid}>
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">
-              ⚽ {teamName(teams, tid)}
+              {teamName(teams, tid)}
             </p>
-            {scorers.filter(s => s.teamId === tid).map((s, idx) => {
-              const globalIdx = scorers.findIndex((sc, i) => sc.teamId === tid && scorers.filter((x, j) => x.teamId === tid && j < i).length === idx)
-              return (
-                <div key={idx} className="flex items-center gap-1 mb-1">
+            {events
+              .map((e, idx) => ({ e, idx }))
+              .filter(({ e }) => e.teamId === tid)
+              .map(({ e, idx }) => (
+                <div key={idx} className="flex items-center gap-1 mb-1.5">
+                  <select
+                    value={e.type}
+                    onChange={ev => updateEvent(idx, 'type', ev.target.value)}
+                    className="h-7 text-xs border border-gray-200 rounded px-1 bg-white"
+                  >
+                    {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
                   <Input
-                    value={s.playerName}
-                    onChange={e => updateScorer(globalIdx, e.target.value)}
-                    placeholder="Имя игрока"
-                    className="h-7 text-xs"
+                    value={e.playerName}
+                    onChange={ev => updateEvent(idx, 'playerName', ev.target.value)}
+                    placeholder="Имя"
+                    className="h-7 text-xs flex-1 min-w-0"
                   />
-                  <button onClick={() => removeScorer(globalIdx)} className="text-gray-300 hover:text-red-500">
+                  <Input
+                    value={e.minute}
+                    onChange={ev => updateEvent(idx, 'minute', ev.target.value)}
+                    placeholder="мин"
+                    type="number" min={1} max={120}
+                    className="h-7 text-xs w-12"
+                  />
+                  <button onClick={() => removeEvent(idx)} className="text-gray-300 hover:text-red-500 flex-shrink-0">
                     <X size={13} />
                   </button>
                 </div>
-              )
-            })}
+              ))}
             <button
-              onClick={() => addScorer(tid)}
+              onClick={() => addEvent(tid)}
               className="text-xs text-gray-400 hover:text-emerald-600 flex items-center gap-1 mt-1"
             >
               <Plus size={11} /> Добавить

@@ -10,10 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
+const FORMATS = [
+  { value: 'round_robin', label: 'Круговой', desc: 'Каждая команда играет с каждой' },
+  { value: 'playoff',     label: 'Плей-офф', desc: 'Сетка на выбывание' },
+]
+
 export default function NewTournamentPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [rounds, setRounds] = useState<string>('2')
+  const [rounds, setRounds] = useState('2')
+  const [format, setFormat] = useState('round_robin')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -21,13 +27,11 @@ export default function NewTournamentPage() {
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    formData.set('num_rounds', rounds)
+    formData.set('num_rounds', format === 'round_robin' ? rounds : '1')
+    formData.set('format', format)
 
     const result = await createTournament(formData)
-    if (result?.error) {
-      setError(result.error)
-      setLoading(false)
-    }
+    if (result?.error) { setError(result.error); setLoading(false) }
   }
 
   return (
@@ -44,41 +48,50 @@ export default function NewTournamentPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name">Название турнира</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="например: Кубок Компании 2026"
-                maxLength={40}
-                required
-              />
+              <Input id="name" name="name" placeholder="например: Кубок Компании 2026" maxLength={40} required />
             </div>
 
             <div className="space-y-2">
-              <Label>Количество кругов</Label>
-              <Select value={rounds} onValueChange={(v) => setRounds(v ?? '2')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 круг (однокруговой)</SelectItem>
-                  <SelectItem value="2">2 круга (дома и в гостях)</SelectItem>
-                  <SelectItem value="3">3 круга</SelectItem>
-                  <SelectItem value="4">4 круга</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Формат</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {FORMATS.map(f => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => setFormat(f.value)}
+                    className={`p-3 rounded-xl border-2 text-left transition-colors ${
+                      format === f.value
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <p className={`text-sm font-bold ${format === f.value ? 'text-emerald-700' : 'text-gray-800'}`}>{f.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                {error}
+            {format === 'round_robin' && (
+              <div className="space-y-2">
+                <Label>Количество кругов</Label>
+                <Select value={rounds} onValueChange={v => setRounds(v ?? '2')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 круг (однокруговой)</SelectItem>
+                    <SelectItem value="2">2 круга (дома и в гостях)</SelectItem>
+                    <SelectItem value="3">3 круга</SelectItem>
+                    <SelectItem value="4">4 круга</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-              disabled={loading}
-            >
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</div>
+            )}
+
+            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
               {loading ? 'Создаём…' : 'Создать турнир'}
             </Button>
           </form>

@@ -1,6 +1,7 @@
 import { Team, Fixture, StandingRow } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { BarChart2 } from 'lucide-react'
+import ExportButtons from './ExportButtons'
 
 function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
   const rows: StandingRow[] = teams.map(t => ({
@@ -38,7 +39,7 @@ function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
 const FORM_COLORS = { W: 'bg-emerald-500', D: 'bg-amber-500', L: 'bg-red-500' }
 const FORM_LABELS = { W: 'В', D: 'Н', L: 'П' }
 
-export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtures: Fixture[] }) {
+export default function StandingsTab({ teams, fixtures, tournamentName = 'Турнир' }: { teams: Team[]; fixtures: Fixture[]; tournamentName?: string }) {
   if (teams.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
@@ -49,9 +50,16 @@ export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtu
   }
 
   const rows = computeStandings(teams, fixtures)
+  const slug = tournamentName.toLowerCase().replace(/\s+/g, '-')
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-500 font-medium">Турнирная таблица</span>
+        <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} />
+      </div>
+      <div className="overflow-x-auto">
+      <div id="standings-export" className="bg-white rounded-2xl border border-gray-200 shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-emerald-50">
@@ -104,6 +112,8 @@ export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtu
           })}
         </TableBody>
       </Table>
+      </div>
+      </div>
     </div>
   )
 }

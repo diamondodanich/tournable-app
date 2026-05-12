@@ -55,10 +55,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <FixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
         </TabsContent>
         <TabsContent value="standings">
-          <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} />
+          <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} />
         </TabsContent>
         <TabsContent value="scorers">
-          <ScorersTab teams={teams ?? []} fixtures={fixtures ?? []} />
+          <ScorersTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} />
         </TabsContent>
       </Tabs>
     </div>

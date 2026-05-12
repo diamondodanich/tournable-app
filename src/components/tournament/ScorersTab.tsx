@@ -1,8 +1,9 @@
 import { Team, Fixture } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Target } from 'lucide-react'
+import ExportButtons from './ExportButtons'
 
-export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixtures: Fixture[] }) {
+export default function ScorersTab({ teams, fixtures, tournamentName = 'Турнир' }: { teams: Team[]; fixtures: Fixture[]; tournamentName?: string }) {
   const map = new Map<string, { player: string; teamName: string; goals: number }>()
 
   fixtures.forEach(f => {
@@ -29,8 +30,16 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
     )
   }
 
+  const slug = tournamentName.toLowerCase().replace(/\s+/g, '-')
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-500 font-medium">Бомбардиры</span>
+        <ExportButtons elementId="scorers-export" fileName={`${slug}-scorers`} />
+      </div>
+      <div className="overflow-x-auto">
+      <div id="scorers-export" className="bg-white rounded-2xl border border-gray-200 shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-amber-50">
@@ -51,6 +60,8 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
           ))}
         </TableBody>
       </Table>
+      </div>
+      </div>
     </div>
   )
 }

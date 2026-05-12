@@ -1,5 +1,6 @@
 import { Team, Fixture } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Target } from 'lucide-react'
 
 export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixtures: Fixture[] }) {
   const map = new Map<string, { player: string; teamName: string; goals: number }>()
@@ -17,12 +18,11 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
   })
 
   const list = [...map.values()].sort((a, b) => b.goals - a.goals || a.player.localeCompare(b.player, 'ru'))
-  const MEDALS = ['🥇', '🥈', '🥉']
 
   if (list.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="text-4xl mb-3">⚽</p>
+        <Target className="mx-auto mb-3 text-gray-300" size={40} />
         <p className="font-bold text-gray-600 mb-1">Голов пока нет</p>
         <p className="text-sm text-gray-400">Указывайте авторов голов при вводе результатов</p>
       </div>
@@ -30,11 +30,11 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-amber-50">
-            <TableHead className="w-16 text-center text-amber-700">Место</TableHead>
+            <TableHead className="w-16 text-center text-amber-700">#</TableHead>
             <TableHead className="text-amber-700">Игрок</TableHead>
             <TableHead className="text-amber-700">Команда</TableHead>
             <TableHead className="text-center text-amber-700 w-16">Голы</TableHead>
@@ -43,7 +43,7 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
         <TableBody>
           {list.map((p, i) => (
             <TableRow key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-              <TableCell className="text-center text-lg">{MEDALS[i] ?? i + 1}</TableCell>
+              <TableCell className="text-center font-bold text-gray-500">{i + 1}</TableCell>
               <TableCell className="font-bold text-gray-900">{p.player}</TableCell>
               <TableCell className="text-gray-500">{p.teamName}</TableCell>
               <TableCell className="text-center font-black text-emerald-600 text-lg">{p.goals}</TableCell>

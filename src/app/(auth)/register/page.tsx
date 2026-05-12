@@ -52,15 +52,15 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+            <Input id="email" name="email" type="email" placeholder="Введите Email" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Пароль</Label>
-            <Input id="password" name="password" type="password" placeholder="Минимум 6 символов" required />
+            <Input id="password" name="password" type="password" placeholder="Введите пароль" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm">Подтвердите пароль</Label>
-            <Input id="confirm" name="confirm" type="password" placeholder="••••••••" required />
+            <Input id="confirm" name="confirm" type="password" placeholder="Повторите пароль" required />
           </div>
 
           {error && (

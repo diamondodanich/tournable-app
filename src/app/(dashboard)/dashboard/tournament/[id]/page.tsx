@@ -29,17 +29,23 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       <TournamentHeader tournament={tournament} />
 
       <Tabs defaultValue={tournament.generated ? 'fixtures' : 'setup'} className="mt-6">
-        <TabsList className="mb-6 bg-white border border-emerald-100">
-          <TabsTrigger value="setup">Настройка</TabsTrigger>
-          <TabsTrigger value="fixtures">
+        <TabsList className="mb-6 w-full grid grid-cols-4 h-12 bg-white border border-emerald-100 p-1 rounded-xl shadow-sm">
+          <TabsTrigger value="setup" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+            Настройка
+          </TabsTrigger>
+          <TabsTrigger value="fixtures" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
             Матчи {fixtures && fixtures.filter(f => !f.is_bye).length > 0 && (
-              <span className="ml-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-emerald-100 text-emerald-700 data-[state=active]:bg-white/20 data-[state=active]:text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                 {fixtures.filter(f => !f.is_bye).length}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="standings">Таблица</TabsTrigger>
-          <TabsTrigger value="scorers">Бомбардиры</TabsTrigger>
+          <TabsTrigger value="standings" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+            Таблица
+          </TabsTrigger>
+          <TabsTrigger value="scorers" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+            Бомбардиры
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="setup">

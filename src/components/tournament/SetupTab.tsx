@@ -6,7 +6,7 @@ import { addTeam, removeTeam, generateSchedule } from '@/app/actions/tournaments
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users } from 'lucide-react'
+import { X, Zap, Users, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function SetupTab({ tournament, teams }: { tournament: Tournament; teams: Team[] }) {
@@ -57,8 +57,8 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
               placeholder="Название команды…"
               maxLength={30}
             />
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>
-              + Добавить
+            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0 gap-1.5" disabled={loading}>
+              <Plus size={15} /> Добавить
             </Button>
           </form>
 

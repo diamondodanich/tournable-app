@@ -1,5 +1,6 @@
 import { Team, Fixture, StandingRow } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { BarChart2 } from 'lucide-react'
 
 function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
   const rows: StandingRow[] = teams.map(t => ({
@@ -34,7 +35,6 @@ function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
   return rows
 }
 
-const MEDALS = ['🥇', '🥈', '🥉']
 const FORM_COLORS = { W: 'bg-emerald-500', D: 'bg-amber-500', L: 'bg-red-500' }
 const FORM_LABELS = { W: 'В', D: 'Н', L: 'П' }
 
@@ -42,7 +42,7 @@ export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtu
   if (teams.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="text-4xl mb-3">📊</p>
+        <BarChart2 className="mx-auto mb-3 text-gray-300" size={40} />
         <p className="font-bold text-gray-600">Таблица пока пуста</p>
       </div>
     )
@@ -51,7 +51,7 @@ export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtu
   const rows = computeStandings(teams, fixtures)
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-emerald-50">
@@ -74,7 +74,7 @@ export default function StandingsTab({ teams, fixtures }: { teams: Team[]; fixtu
             return (
               <TableRow key={r.teamId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                 <TableCell className="text-center font-bold text-gray-500">
-                  {MEDALS[i] ?? rank}
+                  {rank}
                 </TableCell>
                 <TableCell className="font-bold text-gray-900">{r.name}</TableCell>
                 <TableCell className="text-center font-mono text-sm">{r.GP}</TableCell>

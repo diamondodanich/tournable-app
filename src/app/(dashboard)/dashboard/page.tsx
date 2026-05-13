@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Trophy, Calendar, Users } from 'lucide-react'
 
+function pluralRounds(n: number) {
+  const mod10 = n % 10, mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 14) return 'кругов'
+  if (mod10 === 1) return 'круг'
+  if (mod10 >= 2 && mod10 <= 4) return 'круга'
+  return 'кругов'
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: tournaments } = await supabase
@@ -57,7 +65,7 @@ export default async function DashboardPage() {
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <Calendar size={13} />
-                      {t.num_rounds} {t.num_rounds === 1 ? 'круг' : 'круга'}
+                      {t.num_rounds} {pluralRounds(t.num_rounds)}
                     </span>
                     <span className="text-xs text-gray-400">
                       {new Date(t.created_at).toLocaleDateString('ru-RU')}

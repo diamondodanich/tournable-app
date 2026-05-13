@@ -83,11 +83,12 @@ export type LiveGame = {
   away_team_id: string | null
   home_score: number
   away_score: number
-  period: string
-  timer_running: boolean
+  period: 'first' | 'second' | 'extra' | 'penalties'
+  is_running: boolean
   accumulated_secs: number
   started_at: string | null
   created_at: string
+  updated_at?: string
 }
 
 export type TournamentMember = {

@@ -43,6 +43,17 @@ export async function addTeam(tournamentId: string, name: string) {
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }
 
+export async function renameTournament(tournamentId: string, name: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+  const trimmed = name.trim()
+  if (!trimmed) return { error: 'Введите название' }
+  const { error } = await supabase.from('tournaments').update({ name: trimmed }).eq('id', tournamentId)
+  if (error) return { error: error.message }
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+}
+
 export async function removeTeam(teamId: string, tournamentId: string) {
   const supabase = await createClient()
   await supabase.from('teams').delete().eq('id', teamId)

@@ -2,18 +2,30 @@
 
 import { useState } from 'react'
 import { Tournament, Team } from '@/types'
-import { addTeam, removeTeam, generateSchedule } from '@/app/actions/tournaments'
+import { addTeam, removeTeam, generateSchedule, renameTournament } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users } from 'lucide-react'
+import { X, Zap, Users, Settings2, Check, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
+import TournamentLogoUpload from './TournamentLogoUpload'
+
+const FORMAT_LABEL: Record<string, string> = {
+  round_robin: 'Круговой',
+  playoff: 'Плей-офф',
+  group_playoff: 'Группы + плей-офф',
+}
 
 export default function SetupTab({ tournament, teams }: { tournament: Tournament; teams: Team[] }) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
+
+  // Tournament name edit state
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(tournament.name)
+  const [savingName, setSavingName] = useState(false)
 
   async function handleAddTeam(e: React.FormEvent) {
     e.preventDefault()
@@ -42,8 +54,81 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
     setGenerating(false)
   }
 
+  async function handleSaveName() {
+    if (!nameValue.trim() || nameValue.trim() === tournament.name) { setEditingName(false); return }
+    setSavingName(true)
+    const result = await renameTournament(tournament.id, nameValue)
+    if (result?.error) toast.error(result.error)
+    else { toast.success('Название обновлено'); setEditingName(false) }
+    setSavingName(false)
+  }
+
   return (
     <div className="space-y-4 max-w-2xl">
+
+      {/* Tournament settings card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings2 size={16} /> Настройки турнира
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-4">
+            {/* Logo */}
+            <TournamentLogoUpload
+              tournamentId={tournament.id}
+              tournamentName={tournament.name}
+              logoUrl={tournament.logo_url}
+              size={64}
+            />
+
+            {/* Name + format */}
+            <div className="flex-1 min-w-0 space-y-3">
+              {/* Editable name */}
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Название</p>
+                {editingName ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={nameValue}
+                      onChange={e => setNameValue(e.target.value)}
+                      maxLength={40}
+                      className="h-8 text-sm"
+                      autoFocus
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
+                    />
+                    <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 px-2" onClick={handleSaveName} disabled={savingName}>
+                      <Check size={14} />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => { setEditingName(false); setNameValue(tournament.name) }}>
+                      <X size={14} />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingName(true)}
+                    className="flex items-center gap-2 group text-left"
+                  >
+                    <span className="font-bold text-gray-900 text-base">{tournament.name}</span>
+                    <Pencil size={13} className="text-gray-300 group-hover:text-emerald-600 transition-colors" />
+                  </button>
+                )}
+              </div>
+
+              {/* Format + rounds */}
+              <div className="flex gap-4 text-sm text-gray-500">
+                <span><span className="font-medium text-gray-700">Формат:</span> {FORMAT_LABEL[tournament.format] ?? tournament.format}</span>
+                {tournament.format === 'round_robin' && (
+                  <span><span className="font-medium text-gray-700">Кругов:</span> {tournament.num_rounds}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Teams card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -96,7 +181,7 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
           size="lg"
         >
           <Zap size={16} />
-          {generating ? 'Генерируем…' : 'Сгенерировать расписание'}
+          {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
         </Button>
       )}
     </div>

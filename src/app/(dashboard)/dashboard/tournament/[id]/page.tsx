@@ -87,33 +87,33 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       )}
 
       <Tabs defaultValue={tournament.generated ? (isRoundRobin ? 'fixtures' : 'playoff') : 'setup'} className="mt-2">
-        <TabsList className="mb-6 w-full grid h-12 bg-white border border-emerald-100 p-1 rounded-xl shadow-sm"
+        <TabsList className="mb-6 w-full grid h-14 bg-white border border-emerald-100 p-1 rounded-xl shadow-sm"
           style={{ gridTemplateColumns: `repeat(${isRoundRobin ? 4 : 3}, 1fr)` }}>
-          <TabsTrigger value="setup" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="setup" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
             Настройка
           </TabsTrigger>
           {isRoundRobin ? (
             <>
-              <TabsTrigger value="fixtures" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="fixtures" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 Матчи {f.filter(x => !x.is_bye).length > 0 && (
-                  <span className="ml-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full data-[state=active]:bg-white/20 data-[state=active]:text-white">
                     {f.filter(x => !x.is_bye).length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="standings" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="standings" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 Таблица
               </TabsTrigger>
-              <TabsTrigger value="stats" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="stats" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 Статистика
               </TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="playoff" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="playoff" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 Сетка
               </TabsTrigger>
-              <TabsTrigger value="stats" className="text-sm font-semibold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="stats" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 Статистика
               </TabsTrigger>
             </>

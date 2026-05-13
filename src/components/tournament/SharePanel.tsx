@@ -59,7 +59,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl }: 
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 w-72 space-y-3">
+          <div className="fixed inset-x-4 bottom-4 sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-auto sm:top-10 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:w-72 space-y-3">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Поделиться</p>
 
             <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">

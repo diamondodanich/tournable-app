@@ -6,8 +6,9 @@ import { addTeam, removeTeam, generateSchedule } from '@/app/actions/tournaments
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users, Plus } from 'lucide-react'
+import { X, Zap, Users } from 'lucide-react'
 import { toast } from 'sonner'
+import TeamLogoUpload from './TeamLogoUpload'
 
 export default function SetupTab({ tournament, teams }: { tournament: Tournament; teams: Team[] }) {
   const [teamName, setTeamName] = useState('')
@@ -57,8 +58,8 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
               placeholder="Название команды…"
               maxLength={30}
             />
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0 gap-1.5" disabled={loading}>
-              <Plus size={15} /> Добавить
+            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>
+              + Добавить
             </Button>
           </form>
 
@@ -67,29 +68,37 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
               Добавьте минимум 2 команды для генерации расписания
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {teams.map(team => (
-                <span key={team.id} className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium px-3 py-1.5 rounded-full">
-                  {team.name}
-                  <button onClick={() => handleRemoveTeam(team.id)} className="text-emerald-400 hover:text-red-500 transition-colors">
-                    <X size={13} />
+                <div key={team.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
+                  <TeamLogoUpload
+                    teamId={team.id}
+                    teamName={team.name}
+                    tournamentId={tournament.id}
+                    logoUrl={team.logo_url}
+                  />
+                  <span className="flex-1 font-medium text-sm text-gray-800">{team.name}</span>
+                  <button onClick={() => handleRemoveTeam(team.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                    <X size={14} />
                   </button>
-                </span>
+                </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Button
-        onClick={handleGenerate}
-        disabled={teams.length < 2 || generating}
-        className="bg-emerald-600 hover:bg-emerald-700 gap-2"
-        size="lg"
-      >
-        <Zap size={16} />
-        {generating ? 'Генерируем…' : 'Сгенерировать расписание'}
-      </Button>
+      {tournament.format === 'round_robin' && (
+        <Button
+          onClick={handleGenerate}
+          disabled={teams.length < 2 || generating}
+          className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+          size="lg"
+        >
+          <Zap size={16} />
+          {generating ? 'Генерируем…' : 'Сгенерировать расписание'}
+        </Button>
+      )}
     </div>
   )
 }

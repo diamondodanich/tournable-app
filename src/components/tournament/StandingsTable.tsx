@@ -1,9 +1,10 @@
 import { Team, Fixture, StandingRow } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import TeamAvatar from './TeamAvatar'
 
 export function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
   const rows: StandingRow[] = teams.map(t => ({
-    teamId: t.id, name: t.name,
+    teamId: t.id, name: t.name, logoUrl: t.logo_url ?? null,
     GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, form: [],
   }))
   const idx = (id: string) => rows.findIndex(r => r.teamId === id)
@@ -61,7 +62,12 @@ export default function StandingsTable({ teams, fixtures }: { teams: Team[]; fix
         {rows.map((r, i) => (
           <TableRow key={r.teamId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
             <TableCell className="text-center font-bold text-gray-500">{i + 1}</TableCell>
-            <TableCell className="font-bold text-gray-900">{r.name}</TableCell>
+            <TableCell className="font-bold text-gray-900">
+              <div className="flex items-center gap-2">
+                <TeamAvatar name={r.name} logoUrl={r.logoUrl} size={22} />
+                {r.name}
+              </div>
+            </TableCell>
             <TableCell className="text-center font-mono text-sm">{r.GP}</TableCell>
             <TableCell className="text-center font-mono text-sm">{r.W}</TableCell>
             <TableCell className="text-center font-mono text-sm">{r.D}</TableCell>

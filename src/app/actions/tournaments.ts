@@ -10,13 +10,14 @@ export async function createTournament(formData: FormData) {
   if (!user) redirect('/login')
 
   const name = (formData.get('name') as string).trim()
-  const num_rounds = parseInt(formData.get('num_rounds') as string)
+  const format = (formData.get('format') as string) || 'round_robin'
+  const num_rounds = format === 'round_robin' ? (parseInt(formData.get('num_rounds') as string) || 2) : 1
 
   if (!name) return { error: 'Введите название турнира' }
 
   const { data, error } = await supabase
     .from('tournaments')
-    .insert({ user_id: user.id, name, num_rounds })
+    .insert({ user_id: user.id, name, num_rounds, format })
     .select()
     .single()
 
@@ -64,7 +65,6 @@ export async function generateSchedule(tournamentId: string) {
 
   if (!teams || teams.length < 2) return { error: 'Нужно минимум 2 команды' }
 
-  // Удаляем старые матчи
   await supabase.from('fixtures').delete().eq('tournament_id', tournamentId)
 
   const teamIds = teams.map(t => t.id)
@@ -107,7 +107,7 @@ export async function saveFixtureResult(
   tournamentId: string,
   homeScore: number,
   awayScore: number,
-  scorers: { teamId: string; playerName: string }[]
+  events: { teamId: string; playerName: string; type?: string; minute?: number }[]
 ) {
   const supabase = await createClient()
 
@@ -117,15 +117,17 @@ export async function saveFixtureResult(
     played: true,
   }).eq('id', fixtureId)
 
-  await supabase.from('scorers').delete().eq('fixture_id', fixtureId)
+  await supabase.from('match_events').delete().eq('fixture_id', fixtureId)
 
-  const validScorers = scorers.filter(s => s.playerName.trim())
-  if (validScorers.length > 0) {
-    await supabase.from('scorers').insert(
-      validScorers.map(s => ({
+  const valid = events.filter(e => e.playerName.trim())
+  if (valid.length > 0) {
+    await supabase.from('match_events').insert(
+      valid.map(e => ({
         fixture_id: fixtureId,
-        team_id: s.teamId,
-        player_name: s.playerName.trim(),
+        team_id: e.teamId,
+        player_name: e.playerName.trim(),
+        type: e.type ?? 'goal',
+        minute: e.minute ?? null,
       }))
     )
   }

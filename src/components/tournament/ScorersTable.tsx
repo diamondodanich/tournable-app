@@ -1,17 +1,18 @@
 import { Team, Fixture } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import TeamAvatar from './TeamAvatar'
 
 export function computeScorers(teams: Team[], fixtures: Fixture[]) {
-  const map = new Map<string, { player: string; teamName: string; goals: number }>()
+  const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; goals: number }>()
 
   fixtures.forEach(f => {
     if (!f.played || f.is_bye) return
-    f.scorers?.forEach(s => {
-      const name = s.player_name.trim()
+    f.match_events?.filter(e => e.type === 'goal').forEach(e => {
+      const name = e.player_name.trim()
       if (!name) return
-      const key = `${s.team_id}|${name.toLowerCase()}`
-      const teamName = teams.find(t => t.id === s.team_id)?.name ?? '—'
-      if (!map.has(key)) map.set(key, { player: name, teamName, goals: 0 })
+      const key = `${e.team_id}|${name.toLowerCase()}`
+      const team = teams.find(t => t.id === e.team_id)
+      if (!map.has(key)) map.set(key, { player: name, teamName: team?.name ?? '—', logoUrl: team?.logo_url ?? null, goals: 0 })
       map.get(key)!.goals++
     })
   })
@@ -37,7 +38,12 @@ export default function ScorersTable({ teams, fixtures }: { teams: Team[]; fixtu
           <TableRow key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
             <TableCell className="text-center font-bold text-gray-500">{i + 1}</TableCell>
             <TableCell className="font-bold text-gray-900">{p.player}</TableCell>
-            <TableCell className="text-gray-500">{p.teamName}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <TeamAvatar name={p.teamName} logoUrl={p.logoUrl} size={20} />
+                <span className="text-gray-500 text-sm">{p.teamName}</span>
+              </div>
+            </TableCell>
             <TableCell className="text-center font-black text-emerald-600 text-lg">{p.goals}</TableCell>
           </TableRow>
         ))}

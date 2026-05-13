@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"console.log\\(require\\('html-to-image/package.json'\\).version\\)\")",
+      "Bash(node -e \"const t = require\\('html-to-image'\\); console.log\\(Object.keys\\(t\\)\\)\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/tournable-next/src/app/t/[id]/live\")",
+      "Bash(git rebase *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\optimistic-feistel-5e3e60\\\\src\\\\app\\\\t\\\\[id]\\\\live\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\optimistic-feistel-5e3e60\\\\src\\\\app\\\\invite\\\\[token]\")",
+      "Bash(git add *)"
+    ]
+  }
+}

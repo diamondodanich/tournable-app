@@ -382,6 +382,12 @@ export default function LiveBoard({
   const hasEvents  = events.length > 0
   const hasFixture = !!(game?.fixture_id ?? defaultFixtureId)
 
+  // Only show period tabs that are enabled for this tournament
+  const activePeriods = PERIODS.filter(p => {
+    if (p.value === 'ot') return tournament.extra_time ?? false
+    return parseInt(p.value) <= (tournament.match_periods ?? 2)
+  })
+
   // ── Finished screen ───────────────────────────────────────────────────────
 
   if (isFinished) {
@@ -487,7 +493,7 @@ export default function LiveBoard({
       {/* ── Top bar: period tabs + fullscreen ───────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 shrink-0">
         <div className="flex gap-1">
-          {PERIODS.map(p => (
+          {activePeriods.map(p => (
             <button
               key={p.value}
               onClick={() => isOwner && handlePeriod(p.value)}

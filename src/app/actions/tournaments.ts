@@ -113,6 +113,31 @@ export async function generateSchedule(tournamentId: string) {
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }
 
+export async function updateTournamentSettings(
+  tournamentId: string,
+  settings: {
+    match_periods: number
+    extra_time: boolean
+    match_duration_mins: number
+    points_win: number
+    points_draw: number
+    points_loss: number
+  }
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update(settings)
+    .eq('id', tournamentId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return {}
+}
+
 export async function startFixture(
   fixtureId: string,
   tournamentId: string,

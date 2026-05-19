@@ -6,6 +6,14 @@ export type Tournament = {
   generated: boolean
   format: 'round_robin' | 'playoff' | 'group_playoff'
   logo_url: string | null
+  // Match rules
+  match_periods: number       // 1 or 2 halves
+  extra_time: boolean         // show OT tab on live board
+  match_duration_mins: number // per period
+  // Points system
+  points_win: number
+  points_draw: number
+  points_loss: number
   created_at: string
   updated_at: string
 }

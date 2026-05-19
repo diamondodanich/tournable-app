@@ -14,7 +14,16 @@
       "mcp__mcp-registry__search_mcp_registry",
       "Bash(gh repo *)",
       "PowerShell(gh repo view --json name,owner,url 2>&1)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-list PVT_kwHOBiYxQs4BXoNt --owner diamondodanich --format json)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-list 1 --owner diamondodanich --format json)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-OU --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 98236657)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-Ps --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 98236657)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-I8 --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 98236657)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-RY --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 47fc9ee4)",
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-list 1 --owner diamondodanich --format json -q \".items[] | [.status, .title] | @tsv\")"
     ]
   }
 }

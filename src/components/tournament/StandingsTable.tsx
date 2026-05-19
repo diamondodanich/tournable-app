@@ -2,7 +2,13 @@ import { Team, Fixture, StandingRow } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import TeamAvatar from './TeamAvatar'
 
-export function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRow[] {
+type PointsConfig = { win?: number; draw?: number; loss?: number }
+
+export function computeStandings(teams: Team[], fixtures: Fixture[], pts: PointsConfig = {}): StandingRow[] {
+  const PW = pts.win  ?? 3
+  const PD = pts.draw ?? 1
+  const PL = pts.loss ?? 0
+
   const rows: StandingRow[] = teams.map(t => ({
     teamId: t.id, name: t.name, logoUrl: t.logo_url ?? null,
     GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, form: [],
@@ -19,13 +25,13 @@ export function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRo
       rows[h].GF += f.home_score!; rows[h].GA += f.away_score!
       rows[a].GF += f.away_score!; rows[a].GA += f.home_score!
       if (f.home_score! > f.away_score!) {
-        rows[h].W++; rows[a].L++; rows[h].Pts += 3
+        rows[h].W++; rows[a].L++; rows[h].Pts += PW; rows[a].Pts += PL
         rows[h].form.push('W'); rows[a].form.push('L')
       } else if (f.home_score! < f.away_score!) {
-        rows[a].W++; rows[h].L++; rows[a].Pts += 3
+        rows[a].W++; rows[h].L++; rows[a].Pts += PW; rows[h].Pts += PL
         rows[a].form.push('W'); rows[h].form.push('L')
       } else {
-        rows[h].D++; rows[a].D++; rows[h].Pts++; rows[a].Pts++
+        rows[h].D++; rows[a].D++; rows[h].Pts += PD; rows[a].Pts += PD
         rows[h].form.push('D'); rows[a].form.push('D')
       }
     })
@@ -38,8 +44,16 @@ export function computeStandings(teams: Team[], fixtures: Fixture[]): StandingRo
 const FORM_COLORS = { W: 'bg-emerald-500', D: 'bg-amber-500', L: 'bg-red-500' }
 const FORM_LABELS = { W: 'В', D: 'Н', L: 'П' }
 
-export default function StandingsTable({ teams, fixtures }: { teams: Team[]; fixtures: Fixture[] }) {
-  const rows = computeStandings(teams, fixtures)
+export default function StandingsTable({
+  teams, fixtures, pointsWin, pointsDraw, pointsLoss,
+}: {
+  teams: Team[]
+  fixtures: Fixture[]
+  pointsWin?: number
+  pointsDraw?: number
+  pointsLoss?: number
+}) {
+  const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss })
 
   return (
     <Table>

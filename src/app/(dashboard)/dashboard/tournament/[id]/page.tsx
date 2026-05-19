@@ -130,7 +130,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         )}
         {isRoundRobin && (
           <TabsContent value="standings">
-            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} />
+            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} />
           </TabsContent>
         )}
         {!isRoundRobin && (

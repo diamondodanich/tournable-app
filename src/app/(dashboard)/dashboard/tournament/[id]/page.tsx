@@ -11,6 +11,7 @@ import StandingsTable from '@/components/tournament/StandingsTable'
 import ScorersTable from '@/components/tournament/ScorersTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import ExportReportButton from '@/components/tournament/ExportReportButton'
+import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -40,8 +41,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const pm = playoffMatches ?? []
   const slug = tournament.name.toLowerCase().replace(/\s+/g, '-')
 
+  const defaultTab = tournament.generated
+    ? (isRoundRobin ? 'fixtures' : 'playoff')
+    : 'setup'
+
   return (
-    <div>
+    <div className="space-y-6">
       <TournamentHeader tournament={tournament} isOwner={isOwner} />
 
       {/* Hidden off-screen container for full PDF export */}
@@ -80,65 +85,101 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      {tournament.generated && isRoundRobin && (
-        <div className="flex justify-end mt-4 mb-2">
-          <ExportReportButton fileName={`${slug}-report`} />
+      <Tabs defaultValue={defaultTab}>
+        {/* ── Tab bar block ──────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-3 overflow-x-auto">
+            <TabsList className="flex h-auto gap-1 bg-transparent p-0 flex-1 min-w-0">
+              <TabsTrigger
+                value="setup"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap
+                  text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                  data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <Settings2 size={14} />
+                Настройка
+              </TabsTrigger>
+
+              {isRoundRobin && (
+                <TabsTrigger
+                  value="fixtures"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap
+                    text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                    data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  <CalendarDays size={14} />
+                  Матчи
+                  {f.filter(x => !x.is_bye).length > 0 && (
+                    <span className="ml-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+                      {f.filter(x => !x.is_bye).length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+
+              {isRoundRobin && (
+                <TabsTrigger
+                  value="standings"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap
+                    text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                    data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  <BarChart2 size={14} />
+                  Таблица
+                </TabsTrigger>
+              )}
+
+              {!isRoundRobin && (
+                <TabsTrigger
+                  value="playoff"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap
+                    text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                    data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  <Trophy size={14} />
+                  Сетка
+                </TabsTrigger>
+              )}
+
+              <TabsTrigger
+                value="stats"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap
+                  text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                  data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <Users size={14} />
+                Бомбардиры
+              </TabsTrigger>
+            </TabsList>
+
+            {tournament.generated && isRoundRobin && (
+              <div className="shrink-0">
+                <ExportReportButton fileName={`${slug}-report`} />
+              </div>
+            )}
+          </div>
         </div>
-      )}
 
-      <Tabs defaultValue={tournament.generated ? (isRoundRobin ? 'fixtures' : 'playoff') : 'setup'} className="mt-2">
-        <TabsList className="mb-6 w-full grid h-14 bg-white border border-emerald-100 p-1 rounded-xl shadow-sm"
-          style={{ gridTemplateColumns: `repeat(${isRoundRobin ? 4 : 3}, 1fr)` }}>
-          <TabsTrigger value="setup" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-            Настройка
-          </TabsTrigger>
-          {isRoundRobin ? (
-            <>
-              <TabsTrigger value="fixtures" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                Матчи {f.filter(x => !x.is_bye).length > 0 && (
-                  <span className="ml-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full data-[state=active]:bg-white/20 data-[state=active]:text-white">
-                    {f.filter(x => !x.is_bye).length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="standings" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                Таблица
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                Статистика
-              </TabsTrigger>
-            </>
-          ) : (
-            <>
-              <TabsTrigger value="playoff" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                Сетка
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="text-sm font-bold rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                Статистика
-              </TabsTrigger>
-            </>
-          )}
-        </TabsList>
-
-        <TabsContent value="setup">
+        {/* ── Tab content ────────────────────────────────── */}
+        <TabsContent value="setup" className="mt-0 pt-6">
           <SetupTab tournament={tournament} teams={t} />
         </TabsContent>
         {isRoundRobin && (
-          <TabsContent value="fixtures">
+          <TabsContent value="fixtures" className="mt-0 pt-6">
             <FixturesTab tournament={tournament} teams={t} fixtures={f} />
           </TabsContent>
         )}
         {isRoundRobin && (
-          <TabsContent value="standings">
+          <TabsContent value="standings" className="mt-0 pt-6">
             <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} />
           </TabsContent>
         )}
         {!isRoundRobin && (
-          <TabsContent value="playoff">
+          <TabsContent value="playoff" className="mt-0 pt-6">
             <PlayoffTab tournament={tournament} teams={t} matches={pm} />
           </TabsContent>
         )}
-        <TabsContent value="stats">
+        <TabsContent value="stats" className="mt-0 pt-6">
           <StatsTab teams={t} fixtures={f} />
         </TabsContent>
       </Tabs>

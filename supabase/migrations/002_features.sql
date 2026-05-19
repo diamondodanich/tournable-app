@@ -82,15 +82,19 @@ values ('logos', 'logos', true)
 on conflict (id) do nothing;
 
 -- Storage policies
+drop policy if exists "logos_public_read" on storage.objects;
 create policy "logos_public_read" on storage.objects
   for select using (bucket_id = 'logos');
 
+drop policy if exists "logos_auth_insert" on storage.objects;
 create policy "logos_auth_insert" on storage.objects
   for insert with check (bucket_id = 'logos' and auth.role() = 'authenticated');
 
+drop policy if exists "logos_auth_update" on storage.objects;
 create policy "logos_auth_update" on storage.objects
   for update using (bucket_id = 'logos' and auth.role() = 'authenticated');
 
+drop policy if exists "logos_auth_delete" on storage.objects;
 create policy "logos_auth_delete" on storage.objects
   for delete using (bucket_id = 'logos' and auth.role() = 'authenticated');
 
@@ -103,50 +107,63 @@ alter table live_games enable row level security;
 alter table tournament_members enable row level security;
 
 -- Playoff matches: owner + members
+drop policy if exists "playoff_select" on playoff_matches;
 create policy "playoff_select" on playoff_matches for select using (
   exists (select 1 from tournaments where id = playoff_matches.tournament_id)
 );
+drop policy if exists "playoff_insert" on playoff_matches;
 create policy "playoff_insert" on playoff_matches for insert with check (
   exists (select 1 from tournaments where id = playoff_matches.tournament_id and user_id = auth.uid())
 );
+drop policy if exists "playoff_update" on playoff_matches;
 create policy "playoff_update" on playoff_matches for update using (
   exists (select 1 from tournaments where id = playoff_matches.tournament_id and user_id = auth.uid())
   or exists (select 1 from tournament_members where tournament_id = playoff_matches.tournament_id and user_id = auth.uid() and role = 'editor' and status = 'accepted')
 );
+drop policy if exists "playoff_delete" on playoff_matches;
 create policy "playoff_delete" on playoff_matches for delete using (
   exists (select 1 from tournaments where id = playoff_matches.tournament_id and user_id = auth.uid())
 );
 
 -- Live games: public read, owner + editors write
+drop policy if exists "live_select" on live_games;
 create policy "live_select" on live_games for select using (true);
+drop policy if exists "live_insert" on live_games;
 create policy "live_insert" on live_games for insert with check (
   exists (select 1 from tournaments where id = live_games.tournament_id and user_id = auth.uid())
 );
+drop policy if exists "live_update" on live_games;
 create policy "live_update" on live_games for update using (
   exists (select 1 from tournaments where id = live_games.tournament_id and user_id = auth.uid())
   or exists (select 1 from tournament_members where tournament_id = live_games.tournament_id and user_id = auth.uid() and role = 'editor' and status = 'accepted')
 );
+drop policy if exists "live_delete" on live_games;
 create policy "live_delete" on live_games for delete using (
   exists (select 1 from tournaments where id = live_games.tournament_id and user_id = auth.uid())
 );
 
 -- Tournament members: owner full control, members see own row
+drop policy if exists "members_select" on tournament_members;
 create policy "members_select" on tournament_members for select using (
   user_id = auth.uid()
   or exists (select 1 from tournaments where id = tournament_members.tournament_id and user_id = auth.uid())
 );
+drop policy if exists "members_insert" on tournament_members;
 create policy "members_insert" on tournament_members for insert with check (
   exists (select 1 from tournaments where id = tournament_members.tournament_id and user_id = auth.uid())
 );
+drop policy if exists "members_update" on tournament_members;
 create policy "members_update" on tournament_members for update using (
   user_id = auth.uid()
   or exists (select 1 from tournaments where id = tournament_members.tournament_id and user_id = auth.uid())
 );
+drop policy if exists "members_delete" on tournament_members;
 create policy "members_delete" on tournament_members for delete using (
   exists (select 1 from tournaments where id = tournament_members.tournament_id and user_id = auth.uid())
 );
 
 -- Allow anyone to read invite by token (needed for accept flow)
+drop policy if exists "members_invite_read" on tournament_members;
 create policy "members_invite_read" on tournament_members for select using (invite_token is not null);
 
 -- Update RLS policies to allow editors to update fixtures and match_events
@@ -161,12 +178,14 @@ drop policy if exists "scorers_insert" on match_events;
 drop policy if exists "scorers_delete" on match_events;
 drop policy if exists "scorers_select" on match_events;
 
+drop policy if exists "match_events_select" on match_events;
 create policy "match_events_select" on match_events for select using (
   exists (
     select 1 from fixtures join tournaments on tournaments.id = fixtures.tournament_id
     where fixtures.id = match_events.fixture_id
   )
 );
+drop policy if exists "match_events_insert" on match_events;
 create policy "match_events_insert" on match_events for insert with check (
   exists (
     select 1 from fixtures join tournaments on tournaments.id = fixtures.tournament_id
@@ -175,6 +194,7 @@ create policy "match_events_insert" on match_events for insert with check (
       or exists (select 1 from tournament_members where tournament_id = tournaments.id and user_id = auth.uid() and role = 'editor' and status = 'accepted'))
   )
 );
+drop policy if exists "match_events_update" on match_events;
 create policy "match_events_update" on match_events for update using (
   exists (
     select 1 from fixtures join tournaments on tournaments.id = fixtures.tournament_id
@@ -183,6 +203,7 @@ create policy "match_events_update" on match_events for update using (
       or exists (select 1 from tournament_members where tournament_id = tournaments.id and user_id = auth.uid() and role = 'editor' and status = 'accepted'))
   )
 );
+drop policy if exists "match_events_delete" on match_events;
 create policy "match_events_delete" on match_events for delete using (
   exists (
     select 1 from fixtures join tournaments on tournaments.id = fixtures.tournament_id

@@ -11,11 +11,6 @@ import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-type GoalType = 'goal' | 'own_goal'
-type CardType = 'yellow_card' | 'red_card'
-
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const PERIODS = [
@@ -77,23 +72,15 @@ export default function LiveBoard({
   const [awayId, setAwayId]   = useState(defaultAwayId ?? (teams[1]?.id ?? ''))
   const [initing, setIniting] = useState(false)
 
-  // ── Form mode ──
-  const [formMode, setFormMode] = useState<'goal' | 'card'>('goal')
-
-  // ── Goal form ──
-  const [goalSide, setGoalSide]         = useState<'home' | 'away'>('home')
-  const [goalType, setGoalType]         = useState<GoalType>('goal')
-  const [goalPlayer, setGoalPlayer]     = useState('')
-  const [assistPlayer, setAssistPlayer] = useState('')
-  const [goalMinute, setGoalMinute]     = useState('')
-  const [addingGoal, setAddingGoal]     = useState(false)
-
-  // ── Card form ──
-  const [cardSide, setCardSide]     = useState<'home' | 'away'>('home')
-  const [cardPlayer, setCardPlayer] = useState('')
-  const [cardType, setCardType]     = useState<CardType>('yellow_card')
-  const [cardMinute, setCardMinute] = useState('')
-  const [addingCard, setAddingCard] = useState(false)
+  // ── Unified event form ──
+  type ActionType = 'goal' | 'yellow_card' | 'red_card'
+  const [side, setSide]           = useState<'home' | 'away'>('home')
+  const [actionType, setActionType] = useState<ActionType>('goal')
+  const [player, setPlayer]       = useState('')
+  const [assister, setAssister]   = useState('')
+  const [minute, setMinute]       = useState('')
+  const [isOwnGoal, setIsOwnGoal] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
@@ -136,7 +123,6 @@ export default function LiveBoard({
         filter: `fixture_id=eq.${fixtureId}`,
       }, payload => {
         const e = payload.new as MatchEvent
-        // dedup in case of optimistic entry
         setEvents(prev => [...prev.filter(x => x.id !== e.id), e])
       })
       .on('postgres_changes', {
@@ -165,7 +151,7 @@ export default function LiveBoard({
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [game?.timer_running, game?.accumulated_secs, game?.started_at])
 
-  // ── beforeunload protection ───────────────────────────────────────────────
+  // ── beforeunload ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!game || !isOwner) return
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
@@ -188,8 +174,7 @@ export default function LiveBoard({
       .from('live_games')
       .upsert({
         tournament_id: tournament.id,
-        home_team_id:  homeId,
-        away_team_id:  awayId,
+        home_team_id: homeId, away_team_id: awayId,
         home_score: 0, away_score: 0,
         period: '1', timer_running: false,
         accumulated_secs: 0, started_at: null,
@@ -203,7 +188,7 @@ export default function LiveBoard({
     setIniting(false)
   }
 
-  // ── Timer toggle ──────────────────────────────────────────────────────────
+  // ── Timer ─────────────────────────────────────────────────────────────────
   function handleTimerToggle() {
     if (!game) return
     if (game.timer_running) {
@@ -232,182 +217,145 @@ export default function LiveBoard({
     patchGame({ period: p })
   }
 
-  // ── Add goal (+ optional assist) ──────────────────────────────────────────
-  async function handleAddGoal() {
+  // ── Submit event (unified) ────────────────────────────────────────────────
+  async function handleSubmit() {
     if (!game) return
     const fixtureId = game.fixture_id ?? defaultFixtureId
     if (!fixtureId) { toast.error('Матч не привязан к фикстуре'); return }
-    if (!goalPlayer.trim()) { toast.error('Введите имя голеадора'); return }
+    if (!player.trim()) { toast.error('Введите имя игрока'); return }
 
-    const scorerTeamId = goalSide === 'home' ? game.home_team_id : game.away_team_id
-    if (!scorerTeamId) return
+    const teamId = side === 'home' ? game.home_team_id : game.away_team_id
+    if (!teamId) return
 
-    setAddingGoal(true)
-    const minute = goalMinute ? parseInt(goalMinute) : null
+    setSubmitting(true)
+    const min = minute ? parseInt(minute) : null
 
-    // own_goal: scorer's OPPONENT gets the point
-    const scorePatch: Partial<LiveGame> = goalType === 'own_goal'
-      ? (goalSide === 'home'
-          ? { away_score: game.away_score + 1 }
-          : { home_score: game.home_score + 1 })
-      : (goalSide === 'home'
-          ? { home_score: game.home_score + 1 }
-          : { away_score: game.away_score + 1 })
+    if (actionType === 'goal') {
+      const type = isOwnGoal ? 'own_goal' as const : 'goal' as const
 
-    setGame(prev => prev ? { ...prev, ...scorePatch } : prev)
-    patchGame(scorePatch)
+      // Score patch
+      const scorePatch: Partial<LiveGame> = isOwnGoal
+        ? (side === 'home' ? { away_score: game.away_score + 1 } : { home_score: game.home_score + 1 })
+        : (side === 'home' ? { home_score: game.home_score + 1 } : { away_score: game.away_score + 1 })
 
-    // Build optimistic events
-    const tempGoalId   = `temp_goal_${Date.now()}`
-    const tempAssistId = `temp_assist_${Date.now() + 1}`
-    const hasAssist    = assistPlayer.trim().length > 0
+      setGame(prev => prev ? { ...prev, ...scorePatch } : prev)
+      patchGame(scorePatch)
 
-    const optimistic: MatchEvent[] = [
-      {
-        id: tempGoalId, fixture_id: fixtureId,
-        team_id: scorerTeamId, player_name: goalPlayer.trim(),
-        type: goalType, minute, created_at: new Date().toISOString(),
-      },
-      ...(hasAssist ? [{
-        id: tempAssistId, fixture_id: fixtureId,
-        team_id: scorerTeamId, player_name: assistPlayer.trim(),
-        type: 'assist' as const, minute, created_at: new Date().toISOString(),
-      }] : []),
-    ]
-    setEvents(prev => [...prev, ...optimistic])
+      const tempGoalId   = `temp_g_${Date.now()}`
+      const tempAssistId = `temp_a_${Date.now() + 1}`
+      const hasAssist    = assister.trim().length > 0
 
-    // Persist goal
-    const { data: goalData, error: goalErr } = await supabase
-      .from('match_events')
-      .insert({ fixture_id: fixtureId, team_id: scorerTeamId, player_name: goalPlayer.trim(), type: goalType, minute })
-      .select().single()
+      setEvents(prev => [
+        ...prev,
+        { id: tempGoalId, fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type, minute: min, created_at: new Date().toISOString() },
+        ...(hasAssist ? [{ id: tempAssistId, fixture_id: fixtureId, team_id: teamId, player_name: assister.trim(), type: 'assist' as const, minute: min, created_at: new Date().toISOString() }] : []),
+      ])
 
-    if (goalErr) {
-      setEvents(prev => prev.filter(e => e.id !== tempGoalId && e.id !== tempAssistId))
-      // rollback score
-      setGame(prev => {
-        if (!prev) return prev
-        return goalType === 'own_goal'
-          ? goalSide === 'home'
-            ? { ...prev, away_score: prev.away_score - 1 }
-            : { ...prev, home_score: prev.home_score - 1 }
-          : goalSide === 'home'
-            ? { ...prev, home_score: prev.home_score - 1 }
-            : { ...prev, away_score: prev.away_score - 1 }
-      })
-      toast.error(goalErr.message)
-      setAddingGoal(false)
-      return
-    }
-    setEvents(prev => prev.map(e => e.id === tempGoalId ? (goalData as MatchEvent) : e))
-
-    // Persist assist
-    if (hasAssist) {
-      const { data: aData, error: aErr } = await supabase
+      const { data: goalData, error: goalErr } = await supabase
         .from('match_events')
-        .insert({ fixture_id: fixtureId, team_id: scorerTeamId, player_name: assistPlayer.trim(), type: 'assist', minute })
+        .insert({ fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type, minute: min })
         .select().single()
-      if (!aErr && aData) {
-        setEvents(prev => prev.map(e => e.id === tempAssistId ? (aData as MatchEvent) : e))
-      } else {
-        setEvents(prev => prev.filter(e => e.id !== tempAssistId))
+
+      if (goalErr) {
+        setEvents(prev => prev.filter(e => e.id !== tempGoalId && e.id !== tempAssistId))
+        setGame(prev => {
+          if (!prev) return prev
+          return isOwnGoal
+            ? side === 'home' ? { ...prev, away_score: prev.away_score - 1 } : { ...prev, home_score: prev.home_score - 1 }
+            : side === 'home' ? { ...prev, home_score: prev.home_score - 1 } : { ...prev, away_score: prev.away_score - 1 }
+        })
+        toast.error(goalErr.message)
+        setSubmitting(false)
+        return
+      }
+      setEvents(prev => prev.map(e => e.id === tempGoalId ? (goalData as MatchEvent) : e))
+
+      if (hasAssist) {
+        const { data: aData, error: aErr } = await supabase
+          .from('match_events')
+          .insert({ fixture_id: fixtureId, team_id: teamId, player_name: assister.trim(), type: 'assist', minute: min })
+          .select().single()
+        if (!aErr && aData) {
+          setEvents(prev => prev.map(e => e.id === tempAssistId ? (aData as MatchEvent) : e))
+        } else {
+          setEvents(prev => prev.filter(e => e.id !== tempAssistId))
+        }
+      }
+
+    } else {
+      // Card — check 2YC
+      const normalizedName  = player.trim().toLowerCase()
+      const existingYellows = events.filter(e =>
+        e.type === 'yellow_card' &&
+        e.team_id === teamId &&
+        e.player_name.trim().toLowerCase() === normalizedName
+      )
+      const isSecondYellow = actionType === 'yellow_card' && existingYellows.length >= 1
+
+      const rows = isSecondYellow
+        ? [
+            { fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: 'yellow_card' as const, minute: min },
+            { fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: 'red_card'    as const, minute: min },
+          ]
+        : [{ fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: actionType, minute: min }]
+
+      if (isSecondYellow) toast.info(`2-я жёлтая → автоматическая красная для ${player.trim()}`)
+
+      const tempIds = rows.map((_, i) => `temp_c_${Date.now() + i}`)
+      setEvents(prev => [
+        ...prev,
+        ...rows.map((r, i) => ({ id: tempIds[i], ...r, created_at: new Date().toISOString() } as MatchEvent)),
+      ])
+
+      const { data, error } = await supabase.from('match_events').insert(rows).select()
+      if (error) {
+        setEvents(prev => prev.filter(e => !tempIds.includes(e.id)))
+        toast.error(error.message)
+      } else if (data) {
+        setEvents(prev => {
+          const result = [...prev]
+          tempIds.forEach((tid, i) => {
+            const idx = result.findIndex(e => e.id === tid)
+            if (idx !== -1 && data[i]) result[idx] = data[i] as MatchEvent
+          })
+          return result
+        })
       }
     }
 
-    setGoalPlayer('')
-    setAssistPlayer('')
-    setGoalMinute('')
-    setAddingGoal(false)
-  }
-
-  // ── Add card (2 YC = auto RC) ─────────────────────────────────────────────
-  async function handleAddCard() {
-    if (!game) return
-    const fixtureId = game.fixture_id ?? defaultFixtureId
-    if (!fixtureId) { toast.error('Матч не привязан к фикстуре'); return }
-    if (!cardPlayer.trim()) { toast.error('Введите имя игрока'); return }
-
-    const teamId = cardSide === 'home' ? game.home_team_id : game.away_team_id
-    if (!teamId) return
-
-    const minute           = cardMinute ? parseInt(cardMinute) : null
-    const normalizedName   = cardPlayer.trim().toLowerCase()
-    const existingYellows  = events.filter(e =>
-      e.type === 'yellow_card' &&
-      e.team_id === teamId &&
-      e.player_name.trim().toLowerCase() === normalizedName
-    )
-    const isSecondYellow = cardType === 'yellow_card' && existingYellows.length >= 1
-
-    setAddingCard(true)
-
-    const rows = isSecondYellow
-      ? [
-          { fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: 'yellow_card' as const, minute },
-          { fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: 'red_card'    as const, minute },
-        ]
-      : [{ fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: cardType, minute }]
-
-    if (isSecondYellow) toast.info(`2-я жёлтая → автоматическая красная для ${cardPlayer.trim()}`)
-
-    const tempIds = rows.map((_, i) => `temp_card_${Date.now() + i}`)
-    setEvents(prev => [
-      ...prev,
-      ...rows.map((r, i) => ({ id: tempIds[i], ...r, created_at: new Date().toISOString() } as MatchEvent)),
-    ])
-
-    const { data, error } = await supabase.from('match_events').insert(rows).select()
-
-    if (error) {
-      setEvents(prev => prev.filter(e => !tempIds.includes(e.id)))
-      toast.error(error.message)
-    } else if (data) {
-      setEvents(prev => {
-        const result = [...prev]
-        tempIds.forEach((tid, i) => {
-          const idx = result.findIndex(e => e.id === tid)
-          if (idx !== -1 && data[i]) result[idx] = data[i] as MatchEvent
-        })
-        return result
-      })
-    }
-
-    setCardPlayer('')
-    setCardMinute('')
-    setAddingCard(false)
+    setPlayer('')
+    setAssister('')
+    setMinute('')
+    setSubmitting(false)
   }
 
   // ── Remove event ──────────────────────────────────────────────────────────
   async function handleRemoveEvent(event: MatchEvent) {
     if (!game) return
-
-    // Adjust score when removing a goal
     if (event.type === 'goal' || event.type === 'own_goal') {
       const patch: Partial<LiveGame> = event.type === 'goal'
         ? (event.team_id === game.home_team_id
             ? { home_score: Math.max(0, game.home_score - 1) }
             : { away_score: Math.max(0, game.away_score - 1) })
-        // own_goal: undo the opponent's point
         : (event.team_id === game.home_team_id
             ? { away_score: Math.max(0, game.away_score - 1) }
             : { home_score: Math.max(0, game.home_score - 1) })
       setGame(prev => prev ? { ...prev, ...patch } : prev)
       patchGame(patch)
     }
-
     setEvents(prev => prev.filter(e => e.id !== event.id))
     const { error } = await supabase.from('match_events').delete().eq('id', event.id)
     if (error) {
       toast.error(error.message)
-      const fixtureId = game.fixture_id ?? defaultFixtureId
-      if (fixtureId) {
-        const { data } = await supabase.from('match_events').select('*').eq('fixture_id', fixtureId)
+      const fid = game.fixture_id ?? defaultFixtureId
+      if (fid) {
+        const { data } = await supabase.from('match_events').select('*').eq('fixture_id', fid)
         if (data) setEvents(data as MatchEvent[])
       }
     }
   }
 
-  // ── Finish match ──────────────────────────────────────────────────────────
+  // ── Finish ────────────────────────────────────────────────────────────────
   async function handleFinish() {
     if (!game) return
     setFinishing(true)
@@ -424,17 +372,14 @@ export default function LiveBoard({
   const awayTeam = teams.find(t => t.id === (game?.away_team_id ?? awayId))
   const currentPeriodLabel = PERIODS.find(p => p.value === game?.period)?.label ?? ''
 
-  // Events belonging to each side (by team_id, regardless of type)
-  const homeEvents = events.filter(e => e.team_id === game?.home_team_id)
-  const awayEvents = events.filter(e => e.team_id === game?.away_team_id)
-
-  // Non-assist events for the TV strip (goals & cards), sorted by minute asc
-  const homeStrip = homeEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
-  const awayStrip = awayEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+  const homeEvents  = events.filter(e => e.team_id === game?.home_team_id)
+  const awayEvents  = events.filter(e => e.team_id === game?.away_team_id)
+  const homeStrip   = homeEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+  const awayStrip   = awayEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
   const homeAssists = homeEvents.filter(e => e.type === 'assist')
   const awayAssists = awayEvents.filter(e => e.type === 'assist')
 
-  const hasEvents = events.length > 0
+  const hasEvents  = events.length > 0
   const hasFixture = !!(game?.fixture_id ?? defaultFixtureId)
 
   // ── Finished screen ───────────────────────────────────────────────────────
@@ -487,14 +432,14 @@ export default function LiveBoard({
         <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full space-y-6">
           <p className="text-white font-bold text-xl text-center">Выберите команды</p>
           <div className="space-y-3">
-            {(['home', 'away'] as const).map(side => (
-              <div key={side}>
+            {(['home', 'away'] as const).map(s => (
+              <div key={s}>
                 <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1.5">
-                  {side === 'home' ? 'Хозяева' : 'Гости'}
+                  {s === 'home' ? 'Хозяева' : 'Гости'}
                 </p>
                 <select
-                  value={side === 'home' ? homeId : awayId}
-                  onChange={e => side === 'home' ? setHomeId(e.target.value) : setAwayId(e.target.value)}
+                  value={s === 'home' ? homeId : awayId}
+                  onChange={e => s === 'home' ? setHomeId(e.target.value) : setAwayId(e.target.value)}
                   className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 border border-gray-700 text-sm"
                 >
                   <option value="">Выберите команду</option>
@@ -521,12 +466,26 @@ export default function LiveBoard({
     ? 'fixed inset-0 z-50 bg-gray-950 flex flex-col overflow-hidden'
     : 'flex-1 flex flex-col overflow-hidden'
 
+  // Label / button appearance for the submit
+  const submitLabel = submitting
+    ? 'Сохраняем…'
+    : actionType === 'goal'
+      ? (isOwnGoal ? '↩ Авто-гол' : '⚽ Гол')
+      : actionType === 'yellow_card' ? '🟨 Жёлтая' : '🟥 Красная'
+
+  const submitClass = actionType === 'goal' && isOwnGoal
+    ? 'bg-red-900/70 hover:bg-red-900 text-red-200'
+    : actionType === 'goal'
+      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+      : actionType === 'yellow_card'
+        ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
+        : 'bg-red-600 hover:bg-red-500 text-white'
+
   return (
     <div className={boardWrap}>
 
-      {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/80 border-b border-gray-800 shrink-0">
-        {/* Period tabs */}
+      {/* ── Top bar: period tabs + fullscreen ───────────────────────────── */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 shrink-0">
         <div className="flex gap-1">
           {PERIODS.map(p => (
             <button
@@ -543,28 +502,9 @@ export default function LiveBoard({
             </button>
           ))}
         </div>
-
-        {/* Timer controls — owner only */}
-        {isOwner && (
-          <div className="flex items-center gap-1.5 ml-2">
-            <button
-              onClick={handleTimerToggle}
-              className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors"
-            >
-              {game.timer_running ? <Pause size={13} /> : <Play size={13} />}
-            </button>
-            <button
-              onClick={handleResetTimer}
-              className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              <RotateCcw size={12} />
-            </button>
-          </div>
-        )}
-
         <button
           onClick={() => setFullscreen(f => !f)}
-          className="ml-auto text-gray-600 hover:text-gray-300 transition-colors p-1"
+          className="text-gray-600 hover:text-gray-300 transition-colors p-1"
         >
           {fullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>
@@ -593,8 +533,8 @@ export default function LiveBoard({
             </span>
           </div>
 
-          {/* Center */}
-          <div className="flex flex-col items-center justify-center gap-3 px-2 shrink-0">
+          {/* Center: colon + timer + controls */}
+          <div className="flex flex-col items-center justify-center gap-2 px-2 shrink-0">
             <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-6xl' : 'text-5xl'}`}>
               :
             </span>
@@ -606,6 +546,27 @@ export default function LiveBoard({
             <span className="text-gray-600 text-xs font-bold uppercase tracking-wider text-center">
               {currentPeriodLabel}
             </span>
+            {/* Timer controls — center, larger */}
+            {isOwner && (
+              <div className="flex gap-2 mt-1">
+                <button
+                  onClick={handleTimerToggle}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                    game.timer_running
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                      : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                  }`}
+                >
+                  {game.timer_running ? <Pause size={18} /> : <Play size={18} />}
+                </button>
+                <button
+                  onClick={handleResetTimer}
+                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  <RotateCcw size={15} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Away */}
@@ -630,8 +591,7 @@ export default function LiveBoard({
         {hasEvents && (
           <div className="mx-4 mb-4 bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
-
-              {/* Home events */}
+              {/* Home */}
               <div className="p-4 space-y-2">
                 {homeStrip.map(e => (
                   <div key={e.id} className="flex items-center gap-2 group">
@@ -644,10 +604,8 @@ export default function LiveBoard({
                       {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
                     </span>
                     {isOwner && (
-                      <button
-                        onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
-                      >
+                      <button onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
                         <X size={11} />
                       </button>
                     )}
@@ -658,26 +616,21 @@ export default function LiveBoard({
                     <EventIcon type="assist" size={12} />
                     <span className="text-xs text-gray-500 flex-1 truncate">{e.player_name}</span>
                     {isOwner && (
-                      <button
-                        onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
-                      >
+                      <button onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
                         <X size={10} />
                       </button>
                     )}
                   </div>
                 ))}
               </div>
-
-              {/* Away events — mirrored */}
+              {/* Away — mirrored */}
               <div className="p-4 space-y-2">
                 {awayStrip.map(e => (
                   <div key={e.id} className="flex items-center gap-2 justify-end group">
                     {isOwner && (
-                      <button
-                        onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
-                      >
+                      <button onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
                         <X size={11} />
                       </button>
                     )}
@@ -694,10 +647,8 @@ export default function LiveBoard({
                 {awayAssists.map(e => (
                   <div key={e.id} className="flex items-center gap-2 justify-end group pr-10">
                     {isOwner && (
-                      <button
-                        onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
-                      >
+                      <button onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
                         <X size={10} />
                       </button>
                     )}
@@ -710,180 +661,108 @@ export default function LiveBoard({
           </div>
         )}
 
-        {/* ── Owner: Add event panel ────────────────────────────────── */}
+        {/* ── Owner: Add event form ─────────────────────────────────── */}
         {isOwner && hasFixture && (
-          <div className="mx-4 mb-4 bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-4">
+          <div className="mx-4 mb-4">
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 max-w-sm mx-auto space-y-3">
 
-            {/* Mode tabs */}
-            <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
-              <button
-                onClick={() => setFormMode('goal')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  formMode === 'goal' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                ⚽ Гол / Авто-гол
-              </button>
-              <button
-                onClick={() => setFormMode('card')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  formMode === 'card' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                🟨 Карточки
-              </button>
+              {/* Row 1: Team selector */}
+              <div className="grid grid-cols-2 gap-2">
+                {(['home', 'away'] as const).map(s => {
+                  const t = s === 'home' ? homeTeam : awayTeam
+                  const active = side === s
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSide(s)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${
+                        active
+                          ? 'border-emerald-600 bg-emerald-900/30 text-white'
+                          : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <TeamAvatar name={t?.name ?? ''} logoUrl={t?.logo_url} size={20} />
+                      <span className="text-xs font-bold truncate">{t?.name ?? (s === 'home' ? 'Хозяева' : 'Гости')}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Row 2: Action type pills */}
+              <div className="flex gap-2 justify-center">
+                {([
+                  { value: 'goal',        label: '⚽ Гол' },
+                  { value: 'yellow_card', label: '🟨 ЖК' },
+                  { value: 'red_card',    label: '🟥 КК' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      actionType === opt.value
+                        ? opt.value === 'goal'    ? 'bg-emerald-700 text-white'
+                        : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
+                        : 'bg-red-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Player name */}
+              <Input
+                value={player}
+                onChange={e => setPlayer(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                placeholder={actionType === 'goal' ? 'Автор гола' : 'Игрок'}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+              />
+
+              {/* Assister — only for goal */}
+              {actionType === 'goal' && (
+                <Input
+                  value={assister}
+                  onChange={e => setAssister(e.target.value)}
+                  placeholder="Ассистент (необязательно)"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                />
+              )}
+
+              {/* Minute */}
+              <Input
+                value={minute}
+                onChange={e => setMinute(e.target.value)}
+                placeholder="Минута (необязательно)"
+                type="number" min={1} max={120}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+              />
+
+              {/* Own goal — small secondary, goal only */}
+              {actionType === 'goal' && (
+                <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                  <input
+                    type="checkbox"
+                    checked={isOwnGoal}
+                    onChange={e => setIsOwnGoal(e.target.checked)}
+                    className="accent-red-500 w-3.5 h-3.5"
+                  />
+                  <span className="text-xs text-gray-500">↩ авто-гол</span>
+                </label>
+              )}
+
+              {/* Submit */}
+              <div className="flex justify-center pt-1">
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || !player.trim()}
+                  className={`px-10 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 ${submitClass}`}
+                >
+                  {submitLabel}
+                </button>
+              </div>
             </div>
-
-            {/* ── Goal form ──────────────────────────────────────── */}
-            {formMode === 'goal' && (
-              <div className="space-y-3">
-
-                {/* Goal type: Гол / Авто-гол */}
-                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
-                  <button
-                    onClick={() => setGoalType('goal')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                      goalType === 'goal' ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    ⚽ Гол
-                  </button>
-                  <button
-                    onClick={() => setGoalType('own_goal')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                      goalType === 'own_goal' ? 'bg-red-900 text-red-200' : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    ↩ Авто-гол
-                  </button>
-                </div>
-
-                {/* Side — whose player scored/conceded */}
-                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
-                  {(['home', 'away'] as const).map(side => (
-                    <button
-                      key={side}
-                      onClick={() => setGoalSide(side)}
-                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all truncate px-2 ${
-                        goalSide === side ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
-                      }`}
-                    >
-                      {side === 'home' ? (homeTeam?.name ?? 'Хозяева') : (awayTeam?.name ?? 'Гости')}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-gray-500 text-xs block">
-                    {goalType === 'own_goal' ? 'Игрок (авто-гол)' : 'Голеадор'}
-                  </label>
-                  <Input
-                    value={goalPlayer}
-                    onChange={e => setGoalPlayer(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddGoal()}
-                    placeholder="Имя игрока"
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-gray-500 text-xs block">Ассистент (необязательно)</label>
-                  <Input
-                    value={assistPlayer}
-                    onChange={e => setAssistPlayer(e.target.value)}
-                    placeholder="Имя ассистента"
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                  />
-                </div>
-
-                <Input
-                  value={goalMinute}
-                  onChange={e => setGoalMinute(e.target.value)}
-                  placeholder="Минута (необязательно)"
-                  type="number" min={1} max={120}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                />
-
-                <Button
-                  onClick={handleAddGoal}
-                  disabled={addingGoal || !goalPlayer.trim()}
-                  className={`w-full h-10 font-bold ${
-                    goalType === 'own_goal'
-                      ? 'bg-red-900 hover:bg-red-800 text-red-100'
-                      : 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                  }`}
-                >
-                  {addingGoal ? 'Сохраняем…' : goalType === 'own_goal' ? '↩ Авто-гол' : '⚽ Гол'}
-                </Button>
-              </div>
-            )}
-
-            {/* ── Card form ──────────────────────────────────────── */}
-            {formMode === 'card' && (
-              <div className="space-y-3">
-
-                {/* Side */}
-                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
-                  {(['home', 'away'] as const).map(side => (
-                    <button
-                      key={side}
-                      onClick={() => setCardSide(side)}
-                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all truncate px-2 ${
-                        cardSide === side ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
-                      }`}
-                    >
-                      {side === 'home' ? (homeTeam?.name ?? 'Хозяева') : (awayTeam?.name ?? 'Гости')}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Card type */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCardType('yellow_card')}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                      cardType === 'yellow_card' ? 'bg-yellow-500 text-black' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
-                    }`}
-                  >
-                    <span className="inline-block w-3 h-4 bg-yellow-400 rounded-[2px]" />
-                    Жёлтая
-                  </button>
-                  <button
-                    onClick={() => setCardType('red_card')}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                      cardType === 'red_card' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
-                    }`}
-                  >
-                    <span className="inline-block w-3 h-4 bg-red-500 rounded-[2px]" />
-                    Красная
-                  </button>
-                </div>
-
-                <Input
-                  value={cardPlayer}
-                  onChange={e => setCardPlayer(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddCard()}
-                  placeholder="Имя игрока"
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                />
-
-                <Input
-                  value={cardMinute}
-                  onChange={e => setCardMinute(e.target.value)}
-                  placeholder="Минута (необязательно)"
-                  type="number" min={1} max={120}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                />
-
-                <Button
-                  onClick={handleAddCard}
-                  disabled={addingCard || !cardPlayer.trim()}
-                  className="w-full h-10 font-bold bg-gray-700 hover:bg-gray-600 text-white"
-                >
-                  {addingCard ? 'Сохраняем…' : 'Выдать карточку'}
-                </Button>
-              </div>
-            )}
           </div>
         )}
 

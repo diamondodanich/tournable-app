@@ -44,7 +44,7 @@ export type MatchEvent = {
   fixture_id: string
   team_id: string
   player_name: string
-  type: 'goal' | 'assist' | 'yellow_card' | 'red_card'
+  type: 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
   minute: number | null
   created_at: string
 }

@@ -6,24 +6,17 @@ import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Maximize2, Minimize2, Play, Pause, RotateCcw,
-  Plus, Minus, CircleDot, Zap, X, CheckCircle2,
-} from 'lucide-react'
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type EventType = 'goal' | 'assist' | 'yellow_card' | 'red_card'
+type GoalType = 'goal' | 'own_goal'
+type CardType = 'yellow_card' | 'red_card'
 
-const EVENT_TYPES: { value: EventType; label: string; color: string; activeColor: string }[] = [
-  { value: 'goal',        label: 'Гол',    color: 'text-gray-400',   activeColor: 'bg-emerald-600 text-white' },
-  { value: 'assist',      label: 'Ассист', color: 'text-gray-400',   activeColor: 'bg-blue-600 text-white'    },
-  { value: 'yellow_card', label: 'ЖК',     color: 'text-gray-400',   activeColor: 'bg-yellow-500 text-black'  },
-  { value: 'red_card',    label: 'КК',     color: 'text-gray-400',   activeColor: 'bg-red-600 text-white'     },
-]
+// ── Constants ──────────────────────────────────────────────────────────────
 
 const PERIODS = [
   { value: '1',  label: '1-й тайм' },
@@ -40,16 +33,13 @@ function formatTime(secs: number) {
 }
 
 function EventIcon({ type, size = 14 }: { type: string; size?: number }) {
-  if (type === 'goal')
-    return <CircleDot size={size} className="text-emerald-400 shrink-0" />
-  if (type === 'assist')
-    return <Zap size={size} className="text-blue-400 shrink-0" />
-  if (type === 'yellow_card')
-    return <div className="shrink-0 rounded-[2px] bg-yellow-400"
-      style={{ width: Math.round(size * 0.65), height: size }} />
-  if (type === 'red_card')
-    return <div className="shrink-0 rounded-[2px] bg-red-500"
-      style={{ width: Math.round(size * 0.65), height: size }} />
+  if (type === 'goal')        return <span style={{ fontSize: size }}>⚽</span>
+  if (type === 'own_goal')    return <span style={{ fontSize: size }} className="text-red-400">↩</span>
+  if (type === 'assist')      return <span style={{ fontSize: size }}>🎯</span>
+  if (type === 'yellow_card') return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0"
+    style={{ width: Math.round(size * 0.65), height: size }} />
+  if (type === 'red_card')    return <span className="inline-block rounded-[2px] bg-red-500 shrink-0"
+    style={{ width: Math.round(size * 0.65), height: size }} />
   return null
 }
 
@@ -76,33 +66,44 @@ export default function LiveBoard({
   const supabase = createClient()
 
   // ── Core state ──
-  const [game, setGame] = useState<LiveGame | null>(initialGame)
+  const [game, setGame]               = useState<LiveGame | null>(initialGame)
   const [displaySecs, setDisplaySecs] = useState(initialGame?.accumulated_secs ?? 0)
-  const [events, setEvents] = useState<MatchEvent[]>(initialEvents)
-  const [fullscreen, setFullscreen] = useState(false)
-  const [isFinished, setIsFinished] = useState(false)
+  const [events, setEvents]           = useState<MatchEvent[]>(initialEvents)
+  const [fullscreen, setFullscreen]   = useState(false)
+  const [isFinished, setIsFinished]   = useState(false)
 
-  // ── Team selector state (no game yet) ──
-  const [homeId, setHomeId] = useState(defaultHomeId ?? teams[0]?.id ?? '')
-  const [awayId, setAwayId] = useState(defaultAwayId ?? (teams[1]?.id ?? ''))
+  // ── Setup state (no game) ──
+  const [homeId, setHomeId]   = useState(defaultHomeId ?? teams[0]?.id ?? '')
+  const [awayId, setAwayId]   = useState(defaultAwayId ?? (teams[1]?.id ?? ''))
   const [initing, setIniting] = useState(false)
 
-  // ── Add event form ──
-  const [newSide, setNewSide] = useState<'home' | 'away'>('home')
-  const [newPlayer, setNewPlayer] = useState('')
-  const [newType, setNewType] = useState<EventType>('goal')
-  const [newMinute, setNewMinute] = useState('')
-  const [addingEvent, setAddingEvent] = useState(false)
+  // ── Form mode ──
+  const [formMode, setFormMode] = useState<'goal' | 'card'>('goal')
 
-  // ── Finish match ──
+  // ── Goal form ──
+  const [goalSide, setGoalSide]         = useState<'home' | 'away'>('home')
+  const [goalType, setGoalType]         = useState<GoalType>('goal')
+  const [goalPlayer, setGoalPlayer]     = useState('')
+  const [assistPlayer, setAssistPlayer] = useState('')
+  const [goalMinute, setGoalMinute]     = useState('')
+  const [addingGoal, setAddingGoal]     = useState(false)
+
+  // ── Card form ──
+  const [cardSide, setCardSide]     = useState<'home' | 'away'>('home')
+  const [cardPlayer, setCardPlayer] = useState('')
+  const [cardType, setCardType]     = useState<CardType>('yellow_card')
+  const [cardMinute, setCardMinute] = useState('')
+  const [addingCard, setAddingCard] = useState(false)
+
+  // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
-  const [finishing, setFinishing] = useState(false)
+  const [finishing, setFinishing]                 = useState(false)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const gameRef = useRef<LiveGame | null>(initialGame)
+  const gameRef  = useRef<LiveGame | null>(initialGame)
   gameRef.current = game
 
-  // ── Realtime: live_games ───────────────────────────────────────────────
+  // ── Realtime: live_games ──────────────────────────────────────────────────
   useEffect(() => {
     const channel = supabase
       .channel(`live_${tournament.id}`)
@@ -124,11 +125,10 @@ export default function LiveBoard({
     return () => { supabase.removeChannel(channel) }
   }, [tournament.id, isOwner])
 
-  // ── Realtime: match_events ─────────────────────────────────────────────
+  // ── Realtime: match_events ────────────────────────────────────────────────
   useEffect(() => {
     const fixtureId = game?.fixture_id ?? defaultFixtureId
     if (!fixtureId) return
-
     const channel = supabase
       .channel(`events_${fixtureId}`)
       .on('postgres_changes', {
@@ -136,7 +136,8 @@ export default function LiveBoard({
         filter: `fixture_id=eq.${fixtureId}`,
       }, payload => {
         const e = payload.new as MatchEvent
-        setEvents(prev => [...prev, e])
+        // dedup in case of optimistic entry
+        setEvents(prev => [...prev.filter(x => x.id !== e.id), e])
       })
       .on('postgres_changes', {
         event: 'DELETE', schema: 'public', table: 'match_events',
@@ -148,7 +149,7 @@ export default function LiveBoard({
     return () => { supabase.removeChannel(channel) }
   }, [game?.fixture_id, defaultFixtureId])
 
-  // ── Timer tick ────────────────────────────────────────────────────────
+  // ── Timer tick ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     if (game?.timer_running && game.started_at) {
@@ -164,52 +165,37 @@ export default function LiveBoard({
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [game?.timer_running, game?.accumulated_secs, game?.started_at])
 
-  // ── beforeunload protection ───────────────────────────────────────────
+  // ── beforeunload protection ───────────────────────────────────────────────
   useEffect(() => {
     if (!game || !isOwner) return
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [game, isOwner])
 
-  // ── DB helpers ────────────────────────────────────────────────────────
+  // ── DB helper ─────────────────────────────────────────────────────────────
   const patchGame = useCallback(async (patch: Partial<LiveGame>) => {
     const { error } = await supabase
-      .from('live_games')
-      .update(patch)
-      .eq('tournament_id', tournament.id)
+      .from('live_games').update(patch).eq('tournament_id', tournament.id)
     if (error) toast.error(error.message)
   }, [tournament.id])
 
-  // ── Actions ───────────────────────────────────────────────────────────
-
+  // ── Init match ────────────────────────────────────────────────────────────
   async function handleInit() {
-    if (!homeId || !awayId || homeId === awayId) {
-      toast.error('Выберите разные команды')
-      return
-    }
+    if (!homeId || !awayId || homeId === awayId) { toast.error('Выберите разные команды'); return }
     setIniting(true)
-    const fixtureId = defaultFixtureId ?? undefined
-    const newGame = {
-      tournament_id: tournament.id,
-      home_team_id: homeId,
-      away_team_id: awayId,
-      home_score: 0,
-      away_score: 0,
-      period: '1',
-      timer_running: false,
-      accumulated_secs: 0,
-      started_at: null as string | null,
-      fixture_id: fixtureId ?? null,
-    }
     const { data, error } = await supabase
       .from('live_games')
-      .upsert(newGame, { onConflict: 'tournament_id' })
-      .select()
-      .single()
+      .upsert({
+        tournament_id: tournament.id,
+        home_team_id:  homeId,
+        away_team_id:  awayId,
+        home_score: 0, away_score: 0,
+        period: '1', timer_running: false,
+        accumulated_secs: 0, started_at: null,
+        fixture_id: defaultFixtureId ?? null,
+      }, { onConflict: 'tournament_id' })
+      .select().single()
     if (error) { toast.error(error.message); setIniting(false); return }
     setGame(data as LiveGame)
     setDisplaySecs(0)
@@ -217,6 +203,7 @@ export default function LiveBoard({
     setIniting(false)
   }
 
+  // ── Timer toggle ──────────────────────────────────────────────────────────
   function handleTimerToggle() {
     if (!game) return
     if (game.timer_running) {
@@ -239,72 +226,180 @@ export default function LiveBoard({
     patchGame(patch)
   }
 
-  function handleScore(side: 'home' | 'away', delta: number) {
-    if (!game) return
-    const patch = side === 'home'
-      ? { home_score: Math.max(0, game.home_score + delta) }
-      : { away_score: Math.max(0, game.away_score + delta) }
-    setGame(prev => prev ? { ...prev, ...patch } : prev)
-    patchGame(patch)
-  }
-
   function handlePeriod(p: string) {
     if (!game) return
     setGame(prev => prev ? { ...prev, period: p } : prev)
     patchGame({ period: p })
   }
 
-  async function handleAddEvent() {
+  // ── Add goal (+ optional assist) ──────────────────────────────────────────
+  async function handleAddGoal() {
     if (!game) return
     const fixtureId = game.fixture_id ?? defaultFixtureId
     if (!fixtureId) { toast.error('Матч не привязан к фикстуре'); return }
-    if (!newPlayer.trim()) { toast.error('Введите имя игрока'); return }
+    if (!goalPlayer.trim()) { toast.error('Введите имя голеадора'); return }
 
-    const teamId = newSide === 'home' ? game.home_team_id : game.away_team_id
-    if (!teamId) return
+    const scorerTeamId = goalSide === 'home' ? game.home_team_id : game.away_team_id
+    if (!scorerTeamId) return
 
-    setAddingEvent(true)
-    const minute = newMinute ? parseInt(newMinute) : null
+    setAddingGoal(true)
+    const minute = goalMinute ? parseInt(goalMinute) : null
 
-    // Optimistic add
-    const optimisticEvent: MatchEvent = {
-      id: `temp_${Date.now()}`,
-      fixture_id: fixtureId,
-      team_id: teamId,
-      player_name: newPlayer.trim(),
-      type: newType,
-      minute,
-      created_at: new Date().toISOString(),
+    // own_goal: scorer's OPPONENT gets the point
+    const scorePatch: Partial<LiveGame> = goalType === 'own_goal'
+      ? (goalSide === 'home'
+          ? { away_score: game.away_score + 1 }
+          : { home_score: game.home_score + 1 })
+      : (goalSide === 'home'
+          ? { home_score: game.home_score + 1 }
+          : { away_score: game.away_score + 1 })
+
+    setGame(prev => prev ? { ...prev, ...scorePatch } : prev)
+    patchGame(scorePatch)
+
+    // Build optimistic events
+    const tempGoalId   = `temp_goal_${Date.now()}`
+    const tempAssistId = `temp_assist_${Date.now() + 1}`
+    const hasAssist    = assistPlayer.trim().length > 0
+
+    const optimistic: MatchEvent[] = [
+      {
+        id: tempGoalId, fixture_id: fixtureId,
+        team_id: scorerTeamId, player_name: goalPlayer.trim(),
+        type: goalType, minute, created_at: new Date().toISOString(),
+      },
+      ...(hasAssist ? [{
+        id: tempAssistId, fixture_id: fixtureId,
+        team_id: scorerTeamId, player_name: assistPlayer.trim(),
+        type: 'assist' as const, minute, created_at: new Date().toISOString(),
+      }] : []),
+    ]
+    setEvents(prev => [...prev, ...optimistic])
+
+    // Persist goal
+    const { data: goalData, error: goalErr } = await supabase
+      .from('match_events')
+      .insert({ fixture_id: fixtureId, team_id: scorerTeamId, player_name: goalPlayer.trim(), type: goalType, minute })
+      .select().single()
+
+    if (goalErr) {
+      setEvents(prev => prev.filter(e => e.id !== tempGoalId && e.id !== tempAssistId))
+      // rollback score
+      setGame(prev => {
+        if (!prev) return prev
+        return goalType === 'own_goal'
+          ? goalSide === 'home'
+            ? { ...prev, away_score: prev.away_score - 1 }
+            : { ...prev, home_score: prev.home_score - 1 }
+          : goalSide === 'home'
+            ? { ...prev, home_score: prev.home_score - 1 }
+            : { ...prev, away_score: prev.away_score - 1 }
+      })
+      toast.error(goalErr.message)
+      setAddingGoal(false)
+      return
     }
-    setEvents(prev => [...prev, optimisticEvent])
+    setEvents(prev => prev.map(e => e.id === tempGoalId ? (goalData as MatchEvent) : e))
 
-    const { data, error } = await supabase.from('match_events').insert({
-      fixture_id: fixtureId,
-      team_id: teamId,
-      player_name: newPlayer.trim(),
-      type: newType,
-      minute,
-    }).select().single()
-
-    if (error) {
-      setEvents(prev => prev.filter(e => e.id !== optimisticEvent.id))
-      toast.error(error.message)
-    } else {
-      // Replace optimistic entry with real one
-      setEvents(prev => prev.map(e => e.id === optimisticEvent.id ? data as MatchEvent : e))
-      setNewPlayer('')
-      setNewMinute('')
+    // Persist assist
+    if (hasAssist) {
+      const { data: aData, error: aErr } = await supabase
+        .from('match_events')
+        .insert({ fixture_id: fixtureId, team_id: scorerTeamId, player_name: assistPlayer.trim(), type: 'assist', minute })
+        .select().single()
+      if (!aErr && aData) {
+        setEvents(prev => prev.map(e => e.id === tempAssistId ? (aData as MatchEvent) : e))
+      } else {
+        setEvents(prev => prev.filter(e => e.id !== tempAssistId))
+      }
     }
-    setAddingEvent(false)
+
+    setGoalPlayer('')
+    setAssistPlayer('')
+    setGoalMinute('')
+    setAddingGoal(false)
   }
 
-  async function handleRemoveEvent(eventId: string) {
-    setEvents(prev => prev.filter(e => e.id !== eventId))
-    const { error } = await supabase.from('match_events').delete().eq('id', eventId)
+  // ── Add card (2 YC = auto RC) ─────────────────────────────────────────────
+  async function handleAddCard() {
+    if (!game) return
+    const fixtureId = game.fixture_id ?? defaultFixtureId
+    if (!fixtureId) { toast.error('Матч не привязан к фикстуре'); return }
+    if (!cardPlayer.trim()) { toast.error('Введите имя игрока'); return }
+
+    const teamId = cardSide === 'home' ? game.home_team_id : game.away_team_id
+    if (!teamId) return
+
+    const minute           = cardMinute ? parseInt(cardMinute) : null
+    const normalizedName   = cardPlayer.trim().toLowerCase()
+    const existingYellows  = events.filter(e =>
+      e.type === 'yellow_card' &&
+      e.team_id === teamId &&
+      e.player_name.trim().toLowerCase() === normalizedName
+    )
+    const isSecondYellow = cardType === 'yellow_card' && existingYellows.length >= 1
+
+    setAddingCard(true)
+
+    const rows = isSecondYellow
+      ? [
+          { fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: 'yellow_card' as const, minute },
+          { fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: 'red_card'    as const, minute },
+        ]
+      : [{ fixture_id: fixtureId, team_id: teamId, player_name: cardPlayer.trim(), type: cardType, minute }]
+
+    if (isSecondYellow) toast.info(`2-я жёлтая → автоматическая красная для ${cardPlayer.trim()}`)
+
+    const tempIds = rows.map((_, i) => `temp_card_${Date.now() + i}`)
+    setEvents(prev => [
+      ...prev,
+      ...rows.map((r, i) => ({ id: tempIds[i], ...r, created_at: new Date().toISOString() } as MatchEvent)),
+    ])
+
+    const { data, error } = await supabase.from('match_events').insert(rows).select()
+
+    if (error) {
+      setEvents(prev => prev.filter(e => !tempIds.includes(e.id)))
+      toast.error(error.message)
+    } else if (data) {
+      setEvents(prev => {
+        const result = [...prev]
+        tempIds.forEach((tid, i) => {
+          const idx = result.findIndex(e => e.id === tid)
+          if (idx !== -1 && data[i]) result[idx] = data[i] as MatchEvent
+        })
+        return result
+      })
+    }
+
+    setCardPlayer('')
+    setCardMinute('')
+    setAddingCard(false)
+  }
+
+  // ── Remove event ──────────────────────────────────────────────────────────
+  async function handleRemoveEvent(event: MatchEvent) {
+    if (!game) return
+
+    // Adjust score when removing a goal
+    if (event.type === 'goal' || event.type === 'own_goal') {
+      const patch: Partial<LiveGame> = event.type === 'goal'
+        ? (event.team_id === game.home_team_id
+            ? { home_score: Math.max(0, game.home_score - 1) }
+            : { away_score: Math.max(0, game.away_score - 1) })
+        // own_goal: undo the opponent's point
+        : (event.team_id === game.home_team_id
+            ? { away_score: Math.max(0, game.away_score - 1) }
+            : { home_score: Math.max(0, game.home_score - 1) })
+      setGame(prev => prev ? { ...prev, ...patch } : prev)
+      patchGame(patch)
+    }
+
+    setEvents(prev => prev.filter(e => e.id !== event.id))
+    const { error } = await supabase.from('match_events').delete().eq('id', event.id)
     if (error) {
       toast.error(error.message)
-      // Restore on failure — refetch
-      const fixtureId = game?.fixture_id ?? defaultFixtureId
+      const fixtureId = game.fixture_id ?? defaultFixtureId
       if (fixtureId) {
         const { data } = await supabase.from('match_events').select('*').eq('fixture_id', fixtureId)
         if (data) setEvents(data as MatchEvent[])
@@ -312,32 +407,37 @@ export default function LiveBoard({
     }
   }
 
+  // ── Finish match ──────────────────────────────────────────────────────────
   async function handleFinish() {
     if (!game) return
     setFinishing(true)
     const result = await finishLiveMatch(tournament.id)
     setFinishing(false)
-    if (result?.error) {
-      toast.error(result.error)
-      return
-    }
+    if (result?.error) { toast.error(result.error); return }
     setShowFinishConfirm(false)
     setIsFinished(true)
   }
 
-  // ── Derived ───────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
 
   const homeTeam = teams.find(t => t.id === (game?.home_team_id ?? homeId))
   const awayTeam = teams.find(t => t.id === (game?.away_team_id ?? awayId))
   const currentPeriodLabel = PERIODS.find(p => p.value === game?.period)?.label ?? ''
 
+  // Events belonging to each side (by team_id, regardless of type)
   const homeEvents = events.filter(e => e.team_id === game?.home_team_id)
   const awayEvents = events.filter(e => e.team_id === game?.away_team_id)
-  const sortedEvents = [...events].sort((a, b) => (b.minute ?? 999) - (a.minute ?? 999))
 
-  const newTeamId = newSide === 'home' ? game?.home_team_id : game?.away_team_id
+  // Non-assist events for the TV strip (goals & cards), sorted by minute asc
+  const homeStrip = homeEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+  const awayStrip = awayEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+  const homeAssists = homeEvents.filter(e => e.type === 'assist')
+  const awayAssists = awayEvents.filter(e => e.type === 'assist')
 
-  // ── Finished screen ───────────────────────────────────────────────────
+  const hasEvents = events.length > 0
+  const hasFixture = !!(game?.fixture_id ?? defaultFixtureId)
+
+  // ── Finished screen ───────────────────────────────────────────────────────
 
   if (isFinished) {
     return (
@@ -372,7 +472,7 @@ export default function LiveBoard({
     )
   }
 
-  // ── No game yet ───────────────────────────────────────────────────────
+  // ── No game yet ───────────────────────────────────────────────────────────
 
   if (!game) {
     if (!isOwner) {
@@ -415,7 +515,7 @@ export default function LiveBoard({
     )
   }
 
-  // ── Live board ────────────────────────────────────────────────────────
+  // ── Live board ────────────────────────────────────────────────────────────
 
   const boardWrap = fullscreen
     ? 'fixed inset-0 z-50 bg-gray-950 flex flex-col overflow-hidden'
@@ -424,9 +524,9 @@ export default function LiveBoard({
   return (
     <div className={boardWrap}>
 
-      {/* ── Top bar ───────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
-        {/* Period pills */}
+      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/80 border-b border-gray-800 shrink-0">
+        {/* Period tabs */}
         <div className="flex gap-1">
           {PERIODS.map(p => (
             <button
@@ -436,261 +536,378 @@ export default function LiveBoard({
               className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 game.period === p.value
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-800 text-gray-500 ' + (isOwner ? 'hover:bg-gray-700 cursor-pointer' : 'cursor-default')
+                  : 'bg-gray-800 text-gray-500 ' + (isOwner ? 'hover:bg-gray-700' : 'cursor-default')
               }`}
             >
               {p.label}
             </button>
           ))}
         </div>
+
+        {/* Timer controls — owner only */}
+        {isOwner && (
+          <div className="flex items-center gap-1.5 ml-2">
+            <button
+              onClick={handleTimerToggle}
+              className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors"
+            >
+              {game.timer_running ? <Pause size={13} /> : <Play size={13} />}
+            </button>
+            <button
+              onClick={handleResetTimer}
+              className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <RotateCcw size={12} />
+            </button>
+          </div>
+        )}
+
         <button
           onClick={() => setFullscreen(f => !f)}
-          className="text-gray-600 hover:text-gray-300 transition-colors p-1"
+          className="ml-auto text-gray-600 hover:text-gray-300 transition-colors p-1"
         >
           {fullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>
       </div>
 
-      {/* ── Main area: scoreboard + events ───────────────────────── */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+      {/* ── Scrollable body ──────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto">
 
-        {/* ── Scoreboard (left / top) ────────────────────────────── */}
-        <div className="flex flex-col items-center justify-center p-6 lg:p-8 lg:flex-1 shrink-0">
+        {/* ── Scoreboard ──────────────────────────────────────────────── */}
+        <div className="flex items-stretch">
 
-          {/* Teams + scores */}
-          <div className="flex items-center gap-4 sm:gap-8 w-full max-w-lg">
-
-            {/* Home */}
-            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-              <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={fullscreen ? 68 : 52} />
-              <p className="text-white font-black text-sm text-center leading-tight truncate w-full text-center">
-                {homeTeam?.name}
-              </p>
-              {/* Home score events summary */}
-              {homeEvents.length > 0 && (
-                <div className="flex flex-col items-center gap-0.5">
-                  {homeEvents.filter(e => e.type === 'goal').map((e, i) => (
-                    <span key={i} className="text-gray-500 text-xs">
-                      {e.minute ? `${e.minute}'` : ''} {e.player_name}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {isOwner && (
-                <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => handleScore('home', -1)} disabled={game.home_score <= 0}
-                    className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors disabled:opacity-30">
-                    <Minus size={14} />
-                  </button>
-                  <span className={`font-black text-white font-mono w-14 text-center tabular-nums ${fullscreen ? 'text-7xl' : 'text-5xl'}`}>
-                    {game.home_score}
-                  </span>
-                  <button onClick={() => handleScore('home', 1)}
-                    className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <Plus size={14} />
-                  </button>
-                </div>
-              )}
-              {!isOwner && (
-                <span className={`font-black text-white font-mono tabular-nums ${fullscreen ? 'text-7xl' : 'text-5xl'}`}>
-                  {game.home_score}
-                </span>
-              )}
-            </div>
-
-            {/* Center: timer */}
-            <div className="flex flex-col items-center gap-3 shrink-0">
-              <span className={`font-mono font-black tabular-nums ${
-                game.timer_running ? 'text-emerald-400' : 'text-gray-600'
-              } ${fullscreen ? 'text-3xl' : 'text-xl'}`}>
-                {formatTime(displaySecs)}
-              </span>
-              {isOwner && (
-                <div className="flex gap-1.5">
-                  <button onClick={handleTimerToggle}
-                    className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors">
-                    {game.timer_running ? <Pause size={15} /> : <Play size={15} />}
-                  </button>
-                  <button onClick={handleResetTimer}
-                    className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors">
-                    <RotateCcw size={13} />
-                  </button>
-                </div>
-              )}
-              <span className="text-gray-700 text-xs font-bold uppercase tracking-wider">
-                {currentPeriodLabel}
-              </span>
-            </div>
-
-            {/* Away */}
-            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-              <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={fullscreen ? 68 : 52} />
-              <p className="text-white font-black text-sm text-center leading-tight truncate w-full text-center">
-                {awayTeam?.name}
-              </p>
-              {awayEvents.length > 0 && (
-                <div className="flex flex-col items-center gap-0.5">
-                  {awayEvents.filter(e => e.type === 'goal').map((e, i) => (
-                    <span key={i} className="text-gray-500 text-xs">
-                      {e.minute ? `${e.minute}'` : ''} {e.player_name}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {isOwner && (
-                <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => handleScore('away', -1)} disabled={game.away_score <= 0}
-                    className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors disabled:opacity-30">
-                    <Minus size={14} />
-                  </button>
-                  <span className={`font-black text-white font-mono w-14 text-center tabular-nums ${fullscreen ? 'text-7xl' : 'text-5xl'}`}>
-                    {game.away_score}
-                  </span>
-                  <button onClick={() => handleScore('away', 1)}
-                    className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <Plus size={14} />
-                  </button>
-                </div>
-              )}
-              {!isOwner && (
-                <span className={`font-black text-white font-mono tabular-nums ${fullscreen ? 'text-7xl' : 'text-5xl'}`}>
-                  {game.away_score}
-                </span>
-              )}
-            </div>
+          {/* Home */}
+          <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 gap-4 min-w-0">
+            <TeamAvatar
+              name={homeTeam?.name ?? ''}
+              logoUrl={homeTeam?.logo_url}
+              size={fullscreen ? 96 : 72}
+            />
+            <p className="text-white font-black text-xl sm:text-2xl text-center leading-tight line-clamp-2 max-w-[160px]">
+              {homeTeam?.name}
+            </p>
+            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+              fullscreen ? 'text-[11rem]' : 'text-[8rem] sm:text-[10rem]'
+            }`}>
+              {game.home_score}
+            </span>
           </div>
 
-          {/* Finish button */}
-          {isOwner && (
-            <button
-              onClick={() => setShowFinishConfirm(true)}
-              className="mt-6 text-xs text-gray-600 hover:text-red-400 underline underline-offset-2 transition-colors"
-            >
-              Завершить матч
-            </button>
-          )}
+          {/* Center */}
+          <div className="flex flex-col items-center justify-center gap-3 px-2 shrink-0">
+            <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-6xl' : 'text-5xl'}`}>
+              :
+            </span>
+            <span className={`font-mono font-black tabular-nums ${
+              game.timer_running ? 'text-emerald-400' : 'text-gray-600'
+            } ${fullscreen ? 'text-3xl' : 'text-2xl'}`}>
+              {formatTime(displaySecs)}
+            </span>
+            <span className="text-gray-600 text-xs font-bold uppercase tracking-wider text-center">
+              {currentPeriodLabel}
+            </span>
+          </div>
+
+          {/* Away */}
+          <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 gap-4 min-w-0">
+            <TeamAvatar
+              name={awayTeam?.name ?? ''}
+              logoUrl={awayTeam?.logo_url}
+              size={fullscreen ? 96 : 72}
+            />
+            <p className="text-white font-black text-xl sm:text-2xl text-center leading-tight line-clamp-2 max-w-[160px]">
+              {awayTeam?.name}
+            </p>
+            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+              fullscreen ? 'text-[11rem]' : 'text-[8rem] sm:text-[10rem]'
+            }`}>
+              {game.away_score}
+            </span>
+          </div>
         </div>
 
-        {/* ── Event panel (right / bottom) ──────────────────────── */}
-        <div className="flex flex-col border-t lg:border-t-0 lg:border-l border-gray-800 lg:w-80 xl:w-96 shrink-0 min-h-0">
+        {/* ── TV Events strip ──────────────────────────────────────────── */}
+        {hasEvents && (
+          <div className="mx-4 mb-4 bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-2 divide-x divide-gray-800">
 
-          {/* Add event form — owner only */}
-          {isOwner && (game.fixture_id || defaultFixtureId) && (
-            <div className="p-4 border-b border-gray-800 space-y-3 shrink-0">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                Добавить событие
-              </p>
-
-              {/* Home / Away toggle */}
-              <div className="flex gap-1 bg-gray-800 p-0.5 rounded-lg">
-                {(['home', 'away'] as const).map(side => (
-                  <button
-                    key={side}
-                    onClick={() => setNewSide(side)}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
-                      newSide === side ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    {side === 'home' ? (homeTeam?.name ?? 'Хозяева') : (awayTeam?.name ?? 'Гости')}
-                  </button>
-                ))}
-              </div>
-
-              {/* Event type pills */}
-              <div className="flex gap-1.5 flex-wrap">
-                {EVENT_TYPES.map(t => (
-                  <button
-                    key={t.value}
-                    onClick={() => setNewType(t.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      newType === t.value ? t.activeColor : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
-                    }`}
-                  >
-                    <EventIcon type={t.value} size={11} />
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Player + minute */}
-              <div className="flex gap-2">
-                <Input
-                  value={newPlayer}
-                  onChange={e => setNewPlayer(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddEvent()}
-                  placeholder="Имя игрока"
-                  className="flex-1 h-8 text-xs bg-gray-800 border-gray-700 text-white placeholder:text-gray-600"
-                />
-                <Input
-                  value={newMinute}
-                  onChange={e => setNewMinute(e.target.value)}
-                  placeholder="мин."
-                  type="number" min={1} max={120}
-                  className="w-16 h-8 text-xs bg-gray-800 border-gray-700 text-white placeholder:text-gray-600"
-                />
-              </div>
-
-              <Button
-                onClick={handleAddEvent}
-                disabled={addingEvent || !newPlayer.trim()}
-                size="sm"
-                className="w-full h-8 bg-gray-700 hover:bg-gray-600 text-white text-xs"
-              >
-                <Plus size={13} className="mr-1" />
-                {addingEvent ? 'Добавляем…' : 'Добавить'}
-              </Button>
-            </div>
-          )}
-
-          {/* Event feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-1 min-h-0">
-            {sortedEvents.length === 0 ? (
-              <p className="text-gray-700 text-xs text-center pt-4">
-                Нет событий
-              </p>
-            ) : (
-              sortedEvents.map(e => {
-                const team = teams.find(t => t.id === e.team_id)
-                return (
-                  <div key={e.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-gray-900 group transition-colors">
-                    <EventIcon type={e.type} size={14} />
-                    {e.minute && (
-                      <span className="text-gray-600 text-xs font-mono w-8 shrink-0">
-                        {e.minute}&apos;
-                      </span>
-                    )}
-                    <span className="text-white text-xs font-semibold flex-1 min-w-0 truncate">
-                      {e.player_name}
+              {/* Home events */}
+              <div className="p-4 space-y-2">
+                {homeStrip.map(e => (
+                  <div key={e.id} className="flex items-center gap-2 group">
+                    <span className="text-gray-600 font-mono text-xs w-8 shrink-0">
+                      {e.minute != null ? `${e.minute}'` : ''}
                     </span>
-                    <span className="text-gray-600 text-xs shrink-0 truncate max-w-[60px]">
-                      {team?.name}
+                    <EventIcon type={e.type} size={13} />
+                    <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
+                      {e.player_name}
+                      {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
                     </span>
                     {isOwner && (
                       <button
-                        onClick={() => handleRemoveEvent(e.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-all shrink-0"
+                        onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
                       >
-                        <X size={12} />
+                        <X size={11} />
                       </button>
                     )}
                   </div>
-                )
-              })
+                ))}
+                {homeAssists.map(e => (
+                  <div key={e.id} className="flex items-center gap-2 group pl-10">
+                    <EventIcon type="assist" size={12} />
+                    <span className="text-xs text-gray-500 flex-1 truncate">{e.player_name}</span>
+                    {isOwner && (
+                      <button
+                        onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Away events — mirrored */}
+              <div className="p-4 space-y-2">
+                {awayStrip.map(e => (
+                  <div key={e.id} className="flex items-center gap-2 justify-end group">
+                    {isOwner && (
+                      <button
+                        onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
+                      >
+                        <X size={11} />
+                      </button>
+                    )}
+                    <span className={`text-sm font-semibold flex-1 min-w-0 truncate text-right ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
+                      {e.type === 'own_goal' && <span className="text-red-600 text-xs mr-1 font-normal">ОГ</span>}
+                      {e.player_name}
+                    </span>
+                    <EventIcon type={e.type} size={13} />
+                    <span className="text-gray-600 font-mono text-xs w-8 shrink-0 text-right">
+                      {e.minute != null ? `${e.minute}'` : ''}
+                    </span>
+                  </div>
+                ))}
+                {awayAssists.map(e => (
+                  <div key={e.id} className="flex items-center gap-2 justify-end group pr-10">
+                    {isOwner && (
+                      <button
+                        onClick={() => handleRemoveEvent(e)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-500 flex-1 truncate text-right">{e.player_name}</span>
+                    <EventIcon type="assist" size={12} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Owner: Add event panel ────────────────────────────────── */}
+        {isOwner && hasFixture && (
+          <div className="mx-4 mb-4 bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-4">
+
+            {/* Mode tabs */}
+            <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
+              <button
+                onClick={() => setFormMode('goal')}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  formMode === 'goal' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                ⚽ Гол / Авто-гол
+              </button>
+              <button
+                onClick={() => setFormMode('card')}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  formMode === 'card' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                🟨 Карточки
+              </button>
+            </div>
+
+            {/* ── Goal form ──────────────────────────────────────── */}
+            {formMode === 'goal' && (
+              <div className="space-y-3">
+
+                {/* Goal type: Гол / Авто-гол */}
+                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
+                  <button
+                    onClick={() => setGoalType('goal')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      goalType === 'goal' ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    ⚽ Гол
+                  </button>
+                  <button
+                    onClick={() => setGoalType('own_goal')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      goalType === 'own_goal' ? 'bg-red-900 text-red-200' : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    ↩ Авто-гол
+                  </button>
+                </div>
+
+                {/* Side — whose player scored/conceded */}
+                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
+                  {(['home', 'away'] as const).map(side => (
+                    <button
+                      key={side}
+                      onClick={() => setGoalSide(side)}
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all truncate px-2 ${
+                        goalSide === side ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {side === 'home' ? (homeTeam?.name ?? 'Хозяева') : (awayTeam?.name ?? 'Гости')}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-gray-500 text-xs block">
+                    {goalType === 'own_goal' ? 'Игрок (авто-гол)' : 'Голеадор'}
+                  </label>
+                  <Input
+                    value={goalPlayer}
+                    onChange={e => setGoalPlayer(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddGoal()}
+                    placeholder="Имя игрока"
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-gray-500 text-xs block">Ассистент (необязательно)</label>
+                  <Input
+                    value={assistPlayer}
+                    onChange={e => setAssistPlayer(e.target.value)}
+                    placeholder="Имя ассистента"
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                  />
+                </div>
+
+                <Input
+                  value={goalMinute}
+                  onChange={e => setGoalMinute(e.target.value)}
+                  placeholder="Минута (необязательно)"
+                  type="number" min={1} max={120}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                />
+
+                <Button
+                  onClick={handleAddGoal}
+                  disabled={addingGoal || !goalPlayer.trim()}
+                  className={`w-full h-10 font-bold ${
+                    goalType === 'own_goal'
+                      ? 'bg-red-900 hover:bg-red-800 text-red-100'
+                      : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                  }`}
+                >
+                  {addingGoal ? 'Сохраняем…' : goalType === 'own_goal' ? '↩ Авто-гол' : '⚽ Гол'}
+                </Button>
+              </div>
+            )}
+
+            {/* ── Card form ──────────────────────────────────────── */}
+            {formMode === 'card' && (
+              <div className="space-y-3">
+
+                {/* Side */}
+                <div className="flex gap-1 bg-gray-800 p-0.5 rounded-xl">
+                  {(['home', 'away'] as const).map(side => (
+                    <button
+                      key={side}
+                      onClick={() => setCardSide(side)}
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all truncate px-2 ${
+                        cardSide === side ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {side === 'home' ? (homeTeam?.name ?? 'Хозяева') : (awayTeam?.name ?? 'Гости')}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Card type */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCardType('yellow_card')}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      cardType === 'yellow_card' ? 'bg-yellow-500 text-black' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
+                    }`}
+                  >
+                    <span className="inline-block w-3 h-4 bg-yellow-400 rounded-[2px]" />
+                    Жёлтая
+                  </button>
+                  <button
+                    onClick={() => setCardType('red_card')}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      cardType === 'red_card' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
+                    }`}
+                  >
+                    <span className="inline-block w-3 h-4 bg-red-500 rounded-[2px]" />
+                    Красная
+                  </button>
+                </div>
+
+                <Input
+                  value={cardPlayer}
+                  onChange={e => setCardPlayer(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddCard()}
+                  placeholder="Имя игрока"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                />
+
+                <Input
+                  value={cardMinute}
+                  onChange={e => setCardMinute(e.target.value)}
+                  placeholder="Минута (необязательно)"
+                  type="number" min={1} max={120}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                />
+
+                <Button
+                  onClick={handleAddCard}
+                  disabled={addingCard || !cardPlayer.trim()}
+                  className="w-full h-10 font-bold bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  {addingCard ? 'Сохраняем…' : 'Выдать карточку'}
+                </Button>
+              </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* ── Finish button ─────────────────────────────────────── */}
+        {isOwner && (
+          <div className="px-4 pb-8">
+            <button
+              onClick={() => setShowFinishConfirm(true)}
+              className="w-full py-2.5 text-sm text-gray-600 hover:text-red-400 border border-gray-800 hover:border-red-900/60 rounded-xl transition-colors"
+            >
+              Завершить матч
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ── Finish confirm modal ──────────────────────────────────── */}
+      {/* ── Finish confirm modal ─────────────────────────────────────────── */}
       {showFinishConfirm && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
             <p className="text-white font-black text-xl mb-1">Завершить матч?</p>
             <p className="text-gray-400 text-sm mb-6">
               Результат{' '}
-              <span className="text-white font-bold">
-                {game.home_score} : {game.away_score}
-              </span>{' '}
+              <span className="text-white font-bold">{game.home_score} : {game.away_score}</span>{' '}
               и все события будут сохранены в турнире.
             </p>
             <div className="flex gap-3">

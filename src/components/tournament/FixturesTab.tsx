@@ -6,16 +6,17 @@ import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 
-type EventType = 'goal' | 'assist' | 'yellow_card' | 'red_card'
+type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
 type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
 
-const EVENT_TYPES: { value: EventType; emoji: string; label: string }[] = [
+const EDITABLE_TYPES: { value: EventType; emoji: string; label: string }[] = [
   { value: 'goal',        emoji: '⚽', label: 'Гол' },
+  { value: 'own_goal',    emoji: '↩',  label: 'АГ' },
   { value: 'assist',      emoji: '🎯', label: 'Ассист' },
   { value: 'yellow_card', emoji: '🟨', label: 'ЖК' },
   { value: 'red_card',    emoji: '🟥', label: 'КК' },
@@ -23,6 +24,16 @@ const EVENT_TYPES: { value: EventType; emoji: string; label: string }[] = [
 
 function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
+}
+
+// Inline icon for event type display in finished card
+function EventBadge({ type }: { type: string }) {
+  if (type === 'goal')        return <span className="text-sm">⚽</span>
+  if (type === 'own_goal')    return <span className="text-sm text-red-500">↩</span>
+  if (type === 'assist')      return <span className="text-sm">🎯</span>
+  if (type === 'yellow_card') return <span className="inline-block w-2.5 h-3.5 bg-yellow-400 rounded-[2px] align-middle" />
+  if (type === 'red_card')    return <span className="inline-block w-2.5 h-3.5 bg-red-500 rounded-[2px] align-middle" />
+  return null
 }
 
 function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
@@ -36,14 +47,13 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       minute: e.minute?.toString() ?? '',
     })) ?? []
   )
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving]   = useState(false)
   const [starting, setStarting] = useState(false)
-  // Optimistic status — updates immediately, server syncs in background
-  const [status, setStatus] = useState<'scheduled' | 'live' | 'finished'>(
+  const [status, setStatus]   = useState<'scheduled' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
-  // Keep isPlayed as derived for badge colour
-  const isPlayed = status === 'finished'
+  // When finished, default to summary view; can toggle to edit
+  const [isEditing, setIsEditing] = useState(status !== 'finished')
 
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
@@ -75,7 +85,6 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       return
     }
 
-    // Open live scoreboard in new tab
     window.open(
       `/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`,
       '_blank'
@@ -83,18 +92,21 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
   }
 
   async function handleSave() {
-    const hs = parseInt(homeScore)
+    const hs  = parseInt(homeScore)
     const as_ = parseInt(awayScore)
     if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
 
-    // Optimistic update — UI reacts instantly, no waiting
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
     toast.success('Результат сохранён')
 
-    const result = await saveFixtureResult(fixture.id, tournamentId, hs, as_,
-      events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined }))
+    const result = await saveFixtureResult(
+      fixture.id, tournamentId, hs, as_,
+      events.map(e => ({
+        teamId: e.teamId, playerName: e.playerName,
+        type: e.type, minute: e.minute ? parseInt(e.minute) : undefined,
+      }))
     )
 
     setSaving(false)
@@ -102,6 +114,8 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     if (result?.error) {
       setStatus(prevStatus)
       toast.error(`Ошибка: ${result.error}`)
+    } else {
+      setIsEditing(false)
     }
   }
 
@@ -114,13 +128,94 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     )
   }
 
-  // Separate events by team
+  // ── Finished summary view ─────────────────────────────────────────────────
+
+  if (status === 'finished' && !isEditing) {
+    const homeEvts = (fixture.match_events ?? events.map(e => ({
+      id: e.teamId + e.playerName,
+      team_id: e.teamId,
+      player_name: e.playerName,
+      type: e.type,
+      minute: e.minute ? parseInt(e.minute) : null,
+    }))).filter(e => e.team_id === fixture.home_team_id)
+    const awayEvts = (fixture.match_events ?? events.map(e => ({
+      id: e.teamId + e.playerName,
+      team_id: e.teamId,
+      player_name: e.playerName,
+      type: e.type,
+      minute: e.minute ? parseInt(e.minute) : null,
+    }))).filter(e => e.team_id === fixture.away_team_id)
+
+    const homeGoals = homeEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+    const awayGoals = awayEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+
+    return (
+      <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-4 shadow-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+            <Check size={10} className="mr-1" />Сыгран
+          </Badge>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full transition-colors"
+          >
+            <Pencil size={11} /> Изменить
+          </button>
+        </div>
+
+        {/* Score row */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={28} />
+            <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
+          </div>
+          <div className="font-black text-2xl text-gray-900 font-mono shrink-0 tabular-nums">
+            {fixture.home_score ?? homeScore} – {fixture.away_score ?? awayScore}
+          </div>
+          <div className="flex items-center gap-2 justify-end min-w-0">
+            <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name}</span>
+            <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={28} />
+          </div>
+        </div>
+
+        {/* Events strip — two columns */}
+        {(homeGoals.length > 0 || awayGoals.length > 0) && (
+          <div className="border-t border-dashed border-emerald-200 pt-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                {homeGoals.map((e, i) => (
+                  <div key={i} className={`flex items-center gap-1.5 text-xs ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                    <EventBadge type={e.type} />
+                    <span className="font-medium truncate">{e.player_name}</span>
+                    {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-1">
+                {awayGoals.map((e, i) => (
+                  <div key={i} className={`flex items-center gap-1.5 text-xs justify-end ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                    {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
+                    <span className="font-medium truncate text-right">{e.player_name}</span>
+                    <EventBadge type={e.type} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Edit / scheduled / live form ──────────────────────────────────────────
+
   const homeEvents = events.map((e, i) => ({ ...e, idx: i })).filter(e => e.teamId === fixture.home_team_id)
   const awayEvents = events.map((e, i) => ({ ...e, idx: i })).filter(e => e.teamId === fixture.away_team_id)
 
   return (
-    <div className={`bg-white border rounded-xl p-4 shadow-sm ${isPlayed ? 'border-emerald-200 bg-emerald-50/20' : 'border-gray-200'}`}>
-      {/* Header: status badge + action */}
+    <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200 bg-emerald-50/20' : 'border-gray-200'}`}>
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         {status === 'finished' && (
           <Badge className="bg-emerald-100 text-emerald-700 text-xs">
@@ -133,9 +228,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
           </Badge>
         )}
         {status === 'scheduled' && (
-          <Badge className="bg-gray-100 text-gray-500 text-xs">
-            Не начат
-          </Badge>
+          <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>
         )}
 
         {status === 'live' ? (
@@ -155,13 +248,12 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
             <Play size={11} /> {starting ? 'Запуск…' : 'Начать матч'}
           </button>
         ) : (
-          <Link
-            href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}`}
-            target="_blank"
+          <button
+            onClick={() => setIsEditing(false)}
             className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors"
           >
-            <Radio size={11} /> Live
-          </Link>
+            ← Просмотр
+          </button>
         )}
       </div>
 
@@ -184,7 +276,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
         </div>
       </div>
 
-      {/* Events: two columns side-by-side on md+, stacked on mobile */}
+      {/* Events: two columns */}
       <div className="border-t border-dashed border-gray-200 pt-3 mb-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {([
@@ -199,9 +291,8 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
               {evts.map(({ idx, type, playerName, minute }) => (
                 <div key={idx} className="mb-2 bg-gray-50 rounded-lg p-2">
-                  {/* Type selector row */}
                   <div className="flex gap-1 mb-1.5 flex-wrap">
-                    {EVENT_TYPES.map(t => (
+                    {EDITABLE_TYPES.map(t => (
                       <button
                         key={t.value}
                         type="button"
@@ -217,7 +308,6 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
                       <X size={13} />
                     </button>
                   </div>
-                  {/* Player + minute row */}
                   <div className="flex gap-1.5">
                     <Input
                       value={playerName}
@@ -276,7 +366,7 @@ export default function FixturesTab({ tournament, teams, fixtures }: {
   }, {})
 
   const played = fixtures.filter(f => !f.is_bye && f.played).length
-  const total = fixtures.filter(f => !f.is_bye).length
+  const total  = fixtures.filter(f => !f.is_bye).length
 
   return (
     <div className="space-y-6">

@@ -18,6 +18,8 @@ export type Team = {
   created_at: string
 }
 
+export type FixtureStatus = 'scheduled' | 'live' | 'finished'
+
 export type Fixture = {
   id: string
   tournament_id: string
@@ -30,6 +32,7 @@ export type Fixture = {
   away_score: number | null
   played: boolean
   is_bye: boolean
+  status: FixtureStatus
   created_at: string
   home_team?: Team
   away_team?: Team
@@ -83,12 +86,11 @@ export type LiveGame = {
   away_team_id: string | null
   home_score: number
   away_score: number
-  period: 'first' | 'second' | 'extra' | 'penalties'
-  is_running: boolean
+  period: string
+  timer_running: boolean
   accumulated_secs: number
   started_at: string | null
   created_at: string
-  updated_at?: string
 }
 
 export type TournamentMember = {

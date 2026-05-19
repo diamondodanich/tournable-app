@@ -9,7 +9,12 @@
       "Bash(git rebase *)",
       "Bash(mkdir -p \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\optimistic-feistel-5e3e60\\\\src\\\\app\\\\t\\\\[id]\\\\live\")",
       "Bash(mkdir -p \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\optimistic-feistel-5e3e60\\\\src\\\\app\\\\invite\\\\[token]\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "mcp__mcp-registry__list_connectors",
+      "mcp__mcp-registry__search_mcp_registry",
+      "Bash(gh repo *)",
+      "PowerShell(gh repo view --json name,owner,url 2>&1)",
+      "Bash(npx tsc *)"
     ]
   }
 }

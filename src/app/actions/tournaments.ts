@@ -113,6 +113,24 @@ export async function generateSchedule(tournamentId: string) {
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }
 
+export async function startFixture(
+  fixtureId: string,
+  tournamentId: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { error } = await supabase
+    .from('fixtures')
+    .update({ status: 'live' })
+    .eq('id', fixtureId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return {}
+}
+
 export async function saveFixtureResult(
   fixtureId: string,
   tournamentId: string,
@@ -126,6 +144,7 @@ export async function saveFixtureResult(
     home_score: homeScore,
     away_score: awayScore,
     played: true,
+    status: 'finished',
   }).eq('id', fixtureId)
 
   if (fixtureError) return { error: fixtureError.message }

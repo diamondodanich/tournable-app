@@ -119,20 +119,25 @@ export async function saveFixtureResult(
   homeScore: number,
   awayScore: number,
   events: { teamId: string; playerName: string; type?: string; minute?: number }[]
-) {
+): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  await supabase.from('fixtures').update({
+  const { error: fixtureError } = await supabase.from('fixtures').update({
     home_score: homeScore,
     away_score: awayScore,
     played: true,
   }).eq('id', fixtureId)
 
-  await supabase.from('match_events').delete().eq('fixture_id', fixtureId)
+  if (fixtureError) return { error: fixtureError.message }
+
+  const { error: deleteError } = await supabase
+    .from('match_events').delete().eq('fixture_id', fixtureId)
+
+  if (deleteError) return { error: deleteError.message }
 
   const valid = events.filter(e => e.playerName.trim())
   if (valid.length > 0) {
-    await supabase.from('match_events').insert(
+    const { error: insertError } = await supabase.from('match_events').insert(
       valid.map(e => ({
         fixture_id: fixtureId,
         team_id: e.teamId,
@@ -141,9 +146,11 @@ export async function saveFixtureResult(
         minute: e.minute ?? null,
       }))
     )
+    if (insertError) return { error: insertError.message }
   }
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return {}
 }
 
 function generateRoundRobin(teams: (string | null)[]): (string | null)[][] [] {

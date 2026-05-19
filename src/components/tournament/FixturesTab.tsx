@@ -37,6 +37,8 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     })) ?? []
   )
   const [saving, setSaving] = useState(false)
+  // Optimistic played state — updates immediately, server syncs in background
+  const [isPlayed, setIsPlayed] = useState(fixture.played)
 
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
@@ -57,12 +59,24 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     const hs = parseInt(homeScore)
     const as_ = parseInt(awayScore)
     if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
+
+    // Optimistic update — UI reacts instantly, no waiting
+    const prevPlayed = isPlayed
+    setIsPlayed(true)
     setSaving(true)
-    await saveFixtureResult(fixture.id, tournamentId, hs, as_,
+    toast.success('Результат сохранён')
+
+    const result = await saveFixtureResult(fixture.id, tournamentId, hs, as_,
       events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined }))
     )
-    toast.success('Результат сохранён')
+
     setSaving(false)
+
+    if (result?.error) {
+      // Rollback on failure
+      setIsPlayed(prevPlayed)
+      toast.error(`Ошибка: ${result.error}`)
+    }
   }
 
   if (fixture.is_bye) {
@@ -79,11 +93,11 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
   const awayEvents = events.map((e, i) => ({ ...e, idx: i })).filter(e => e.teamId === fixture.away_team_id)
 
   return (
-    <div className={`bg-white border rounded-xl p-4 shadow-sm ${fixture.played ? 'border-emerald-200 bg-emerald-50/20' : 'border-gray-200'}`}>
+    <div className={`bg-white border rounded-xl p-4 shadow-sm ${isPlayed ? 'border-emerald-200 bg-emerald-50/20' : 'border-gray-200'}`}>
       {/* Header: status + Live button */}
       <div className="flex items-center justify-between mb-3">
-        <Badge className={fixture.played ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
-          {fixture.played ? <><Check size={10} className="mr-1" />Сыгран</> : 'Не сыгран'}
+        <Badge className={isPlayed ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
+          {isPlayed ? <><Check size={10} className="mr-1" />Сыгран</> : 'Не сыгран'}
         </Badge>
         <Link
           href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}`}

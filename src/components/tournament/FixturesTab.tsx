@@ -77,7 +77,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
     // Open live scoreboard in new tab
     window.open(
-      `/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}`,
+      `/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`,
       '_blank'
     )
   }

@@ -3,17 +3,43 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-async function getOwnerCheck(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string) {
+async function getOwnerOrEditorCheck(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tournamentId: string
+) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  const { data: t } = await supabase.from('tournaments').select('user_id').eq('id', tournamentId).single()
-  if (!t || t.user_id !== user.id) return null
-  return user
+
+  const { data: t } = await supabase
+    .from('tournaments')
+    .select('user_id')
+    .eq('id', tournamentId)
+    .single()
+
+  if (!t) return null
+  if (t.user_id === user.id) return user
+
+  // Check editor access
+  const { data: member } = await supabase
+    .from('tournament_members')
+    .select('role')
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .eq('role', 'editor')
+    .maybeSingle()
+
+  return member ? user : null
 }
 
-export async function initLiveGame(tournamentId: string, homeTeamId: string, awayTeamId: string) {
+export async function initLiveGame(
+  tournamentId: string,
+  homeTeamId: string,
+  awayTeamId: string,
+  fixtureId?: string
+): Promise<{ error?: string }> {
   const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+  if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
   const { error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,
@@ -21,62 +47,48 @@ export async function initLiveGame(tournamentId: string, homeTeamId: string, awa
     away_team_id: awayTeamId,
     home_score: 0,
     away_score: 0,
-    period: '1st',
+    period: '1',
     timer_running: false,
     accumulated_secs: 0,
     started_at: null,
+    fixture_id: fixtureId ?? null,
   }, { onConflict: 'tournament_id' })
 
   if (error) return { error: error.message }
   revalidatePath(`/t/${tournamentId}/live`)
+  return {}
 }
 
-export async function startTimer(tournamentId: string, accumulated: number) {
+export async function finishLiveMatch(
+  tournamentId: string
+): Promise<{ error?: string }> {
   const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+  if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  await supabase.from('live_games').update({
-    timer_running: true,
-    accumulated_secs: accumulated,
-    started_at: new Date().toISOString(),
-  }).eq('tournament_id', tournamentId)
-}
+  const { data: liveGame, error: fetchError } = await supabase
+    .from('live_games')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .single()
 
-export async function stopTimer(tournamentId: string, accumulated: number) {
-  const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+  if (fetchError || !liveGame) return { error: 'Матч не найден' }
 
-  await supabase.from('live_games').update({
-    timer_running: false,
-    accumulated_secs: accumulated,
-    started_at: null,
-  }).eq('tournament_id', tournamentId)
-}
+  // Save results to fixture if linked
+  if (liveGame.fixture_id) {
+    const { error } = await supabase.from('fixtures').update({
+      home_score: liveGame.home_score,
+      away_score: liveGame.away_score,
+      played: true,
+      status: 'finished',
+    }).eq('id', liveGame.fixture_id)
 
-export async function resetTimer(tournamentId: string) {
-  const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+    if (error) return { error: error.message }
+  }
 
-  await supabase.from('live_games').update({
-    timer_running: false,
-    accumulated_secs: 0,
-    started_at: null,
-  }).eq('tournament_id', tournamentId)
-}
+  // Delete live game record
+  await supabase.from('live_games').delete().eq('tournament_id', tournamentId)
 
-export async function updateLiveScore(tournamentId: string, home: number, away: number) {
-  const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
-
-  await supabase.from('live_games').update({
-    home_score: home,
-    away_score: away,
-  }).eq('tournament_id', tournamentId)
-}
-
-export async function setLivePeriod(tournamentId: string, period: string) {
-  const supabase = await createClient()
-  if (!await getOwnerCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
-
-  await supabase.from('live_games').update({ period }).eq('tournament_id', tournamentId)
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  revalidatePath(`/t/${tournamentId}/live`)
+  return {}
 }

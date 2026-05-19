@@ -82,6 +82,7 @@ export type PlayoffMatch = {
 export type LiveGame = {
   id: string
   tournament_id: string
+  fixture_id: string | null
   home_team_id: string | null
   away_team_id: string | null
   home_score: number

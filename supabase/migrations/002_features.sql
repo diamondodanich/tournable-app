@@ -3,8 +3,25 @@
 -- Run this in Supabase SQL Editor
 -- =============================================
 
--- 3.4: Rename scorers → match_events, add type/minute
-alter table scorers rename to match_events;
+-- 3.4: Rename scorers → match_events (if scorers exists), add type/minute
+do $$
+begin
+  if exists (select from pg_tables where schemaname = 'public' and tablename = 'scorers') then
+    alter table scorers rename to match_events;
+  end if;
+end $$;
+
+-- Create match_events from scratch if neither table exists yet
+create table if not exists match_events (
+  id uuid default gen_random_uuid() primary key,
+  fixture_id uuid references fixtures(id) on delete cascade not null,
+  team_id uuid references teams(id) on delete cascade not null,
+  player_name text not null default '',
+  type text not null default 'goal',
+  minute integer,
+  created_at timestamptz default now() not null
+);
+
 alter table match_events add column if not exists type text not null default 'goal';
 alter table match_events add column if not exists minute integer;
 

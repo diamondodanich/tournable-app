@@ -30,9 +30,12 @@ type TournamentWithCount = Tournament & { teams: { count: number }[] }
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: tournaments } = await supabase
     .from('tournaments')
     .select('*, teams(count)')
+    .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
 
   const list = (tournaments ?? []) as TournamentWithCount[]

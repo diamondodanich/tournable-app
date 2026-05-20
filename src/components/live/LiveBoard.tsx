@@ -265,8 +265,11 @@ export default function LiveBoard({
     const teamId = side === 'home' ? game.home_team_id : game.away_team_id
     if (!teamId) return
 
-    // Helper: build event row for the right match type
-    const eventRow = (extra: Record<string, unknown>) => fixtureId
+    // Helper: build event row for the right match type.
+    // Cast to any because Supabase generated types predate migration 009
+    // (fixture_id was NOT NULL before; now nullable for playoff events).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const eventRow = (extra: Record<string, unknown>): any => fixtureId
       ? { fixture_id: fixtureId, team_id: teamId, minute: null, ...extra }
       : { fixture_id: null, playoff_match_id: playoffId, team_id: teamId, minute: null, ...extra }
 

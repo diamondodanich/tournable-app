@@ -37,8 +37,8 @@ function EventBadge({ type }: { type: string }) {
 }
 
 function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
-  const [homeScore, setHomeScore] = useState(fixture.home_score?.toString() ?? '')
-  const [awayScore, setAwayScore] = useState(fixture.away_score?.toString() ?? '')
+  const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
+  const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
   const [events, setEvents] = useState<EventEntry[]>(
     fixture.match_events?.map(e => ({
       teamId: e.team_id,
@@ -231,30 +231,35 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
           <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>
         )}
 
-        {status === 'live' ? (
-          <Link
-            href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}`}
-            target="_blank"
-            className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
-          >
-            <Radio size={11} /> Открыть табло
-          </Link>
-        ) : status === 'scheduled' ? (
-          <button
-            onClick={handleStart}
-            disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
-            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
-          >
-            <Play size={11} /> {starting ? 'Запуск…' : 'Начать матч'}
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsEditing(false)}
-            className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors"
-          >
-            ← Просмотр
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* For live matches: quick link to board + ability to save directly */}
+          {status === 'live' && (
+            <Link
+              href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`}
+              target="_blank"
+              className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
+            >
+              <Radio size={11} /> Табло
+            </Link>
+          )}
+          {status === 'scheduled' && (
+            <button
+              onClick={handleStart}
+              disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
+              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
+            >
+              <Play size={11} /> {starting ? 'Запуск…' : 'Начать матч'}
+            </button>
+          )}
+          {status === 'finished' && isEditing && (
+            <button
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors"
+            >
+              ← Просмотр
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Score row */}
@@ -337,9 +342,12 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
         </div>
       </div>
 
-      <Button onClick={handleSave} disabled={saving} size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
-        {saving ? 'Сохраняем…' : 'Сохранить результат'}
-      </Button>
+      <div className="flex justify-end pt-1">
+        <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">
+          <Check size={13} className="mr-1.5" />
+          {saving ? 'Сохраняем…' : 'Сохранить результат'}
+        </Button>
+      </div>
     </div>
   )
 }

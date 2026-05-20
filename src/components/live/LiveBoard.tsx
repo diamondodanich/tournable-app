@@ -555,108 +555,106 @@ export default function LiveBoard({
         </button>
       </div>
 
-      {/* ── Scrollable body ──────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
-
-        {/* ── Time-up banner ──────────────────────────────────────────── */}
-        {isTimeUp && isOwner && !showFinishConfirm && (
-          <div className="mx-4 mt-3">
-            <div className="bg-amber-900/40 border border-amber-600/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-                <p className="text-amber-300 text-sm font-bold">
-                  Основное время вышло ({tournament.match_periods ?? 2}×{tournament.match_duration_mins ?? 45} мин)
-                </p>
-              </div>
-              <button
-                onClick={() => setShowFinishConfirm(true)}
-                className="text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg transition-colors shrink-0"
-              >
-                Завершить
-              </button>
+      {/* ── Time-up banner ──────────────────────────────────────────────── */}
+      {isTimeUp && isOwner && !showFinishConfirm && (
+        <div className="shrink-0 mx-4 mt-2">
+          <div className="bg-amber-900/40 border border-amber-600/50 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+              <p className="text-amber-300 text-xs font-bold">
+                Время вышло ({tournament.match_periods ?? 2}×{tournament.match_duration_mins ?? 45} мин)
+              </p>
             </div>
-          </div>
-        )}
-
-        {/* ── Scoreboard ──────────────────────────────────────────────── */}
-        <div className="flex items-stretch">
-
-          {/* Home */}
-          <div className="flex-1 flex flex-col items-center justify-center py-8 px-3 gap-3 min-w-0">
-            <TeamAvatar
-              name={homeTeam?.name ?? ''}
-              logoUrl={homeTeam?.logo_url}
-              size={fullscreen ? 96 : 64}
-            />
-            <p className="text-white font-black text-base sm:text-xl text-center leading-tight line-clamp-2 max-w-[140px]">
-              {homeTeam?.name}
-            </p>
-            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-              fullscreen ? 'text-[11rem]' : 'text-[7rem] sm:text-[10rem]'
-            }`}>
-              {game.home_score}
-            </span>
-          </div>
-
-          {/* Center: colon + timer + controls */}
-          <div className="flex flex-col items-center justify-center gap-2 px-1 shrink-0">
-            <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-6xl' : 'text-4xl sm:text-5xl'}`}>
-              :
-            </span>
-            <span className={`font-mono font-black tabular-nums ${
-              game.timer_running ? 'text-emerald-400' : 'text-gray-600'
-            } ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>
-              {formatTime(displaySecs)}
-            </span>
-            <span className="text-gray-600 text-xs font-bold uppercase tracking-wider text-center">
-              {currentPeriodLabel}
-            </span>
-            {isOwner && (
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={handleTimerToggle}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                    game.timer_running
-                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                      : 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                  }`}
-                >
-                  {game.timer_running ? <Pause size={18} /> : <Play size={18} />}
-                </button>
-                <button
-                  onClick={handleResetTimer}
-                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
-                >
-                  <RotateCcw size={15} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Away */}
-          <div className="flex-1 flex flex-col items-center justify-center py-8 px-3 gap-3 min-w-0">
-            <TeamAvatar
-              name={awayTeam?.name ?? ''}
-              logoUrl={awayTeam?.logo_url}
-              size={fullscreen ? 96 : 64}
-            />
-            <p className="text-white font-black text-base sm:text-xl text-center leading-tight line-clamp-2 max-w-[140px]">
-              {awayTeam?.name}
-            </p>
-            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-              fullscreen ? 'text-[11rem]' : 'text-[7rem] sm:text-[10rem]'
-            }`}>
-              {game.away_score}
-            </span>
+            <button
+              onClick={() => setShowFinishConfirm(true)}
+              className="text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded-lg transition-colors shrink-0"
+            >
+              Завершить
+            </button>
           </div>
         </div>
+      )}
 
-        {/* ── TV Events strip ──────────────────────────────────────────── */}
+      {/* ── Scoreboard ──────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-stretch">
+
+        {/* Home */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4 px-3 gap-2 min-w-0">
+          <TeamAvatar
+            name={homeTeam?.name ?? ''}
+            logoUrl={homeTeam?.logo_url}
+            size={fullscreen ? 80 : 48}
+          />
+          <p className="text-white font-black text-sm sm:text-base text-center leading-tight line-clamp-2 max-w-[120px]">
+            {homeTeam?.name}
+          </p>
+          <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+            fullscreen ? 'text-[9rem]' : 'text-[3.5rem] sm:text-[5rem]'
+          }`}>
+            {game.home_score}
+          </span>
+        </div>
+
+        {/* Center: colon + timer + controls */}
+        <div className="flex flex-col items-center justify-center gap-1.5 px-1 shrink-0">
+          <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-5xl' : 'text-3xl sm:text-4xl'}`}>
+            :
+          </span>
+          <span className={`font-mono font-black tabular-nums ${
+            game.timer_running ? 'text-emerald-400' : 'text-gray-600'
+          } ${fullscreen ? 'text-2xl' : 'text-lg sm:text-xl'}`}>
+            {formatTime(displaySecs)}
+          </span>
+          <span className="text-gray-600 text-[10px] font-bold uppercase tracking-wider text-center">
+            {currentPeriodLabel}
+          </span>
+          {isOwner && (
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={handleTimerToggle}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  game.timer_running
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                }`}
+              >
+                {game.timer_running ? <Pause size={16} /> : <Play size={16} />}
+              </button>
+              <button
+                onClick={handleResetTimer}
+                className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <RotateCcw size={13} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Away */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4 px-3 gap-2 min-w-0">
+          <TeamAvatar
+            name={awayTeam?.name ?? ''}
+            logoUrl={awayTeam?.logo_url}
+            size={fullscreen ? 80 : 48}
+          />
+          <p className="text-white font-black text-sm sm:text-base text-center leading-tight line-clamp-2 max-w-[120px]">
+            {awayTeam?.name}
+          </p>
+          <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+            fullscreen ? 'text-[9rem]' : 'text-[3.5rem] sm:text-[5rem]'
+          }`}>
+            {game.away_score}
+          </span>
+        </div>
+      </div>
+
+      {/* ── TV Events strip — scrollable ────────────────────────────────── */}
+      <div className={`min-h-0 mx-4 mb-2 ${hasEvents ? 'flex-1 overflow-y-auto scrollbar-hide' : 'flex-none'}`}>
         {hasEvents && (
-          <div className="mx-4 mb-4 bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
               {/* Home */}
-              <div className="p-3 sm:p-4 space-y-1.5">
+              <div className="p-3 space-y-1.5">
                 {homePaired.map(({ evt: e, assist }) => (
                   <div key={e.id} className="flex items-center gap-2 group">
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
@@ -678,7 +676,6 @@ export default function LiveBoard({
                     )}
                   </div>
                 ))}
-                {/* Cards (no assist pairing needed) */}
                 {homeStrip.filter(e => e.type === 'yellow_card' || e.type === 'red_card').map(e => (
                   <div key={e.id} className="flex items-center gap-2 group">
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
@@ -697,7 +694,7 @@ export default function LiveBoard({
               </div>
 
               {/* Away — mirrored */}
-              <div className="p-3 sm:p-4 space-y-1.5">
+              <div className="p-3 space-y-1.5">
                 {awayPaired.map(({ evt: e, assist }) => (
                   <div key={e.id} className="flex items-center gap-2 justify-end group">
                     {isOwner && (
@@ -738,126 +735,128 @@ export default function LiveBoard({
             </div>
           </div>
         )}
+      </div>
 
-        {/* ── Owner: Add event form ─────────────────────────────────── */}
-        {isOwner && hasFixture && (
-          <div className="mx-4 mb-4">
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 max-w-sm mx-auto space-y-3">
+      {/* ── Owner: Add event form ────────────────────────────────────────── */}
+      {isOwner && hasFixture && (
+        <div className="shrink-0 mx-4 mb-2">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3 max-w-sm mx-auto space-y-2">
 
-              {/* Row 1: Team selector */}
-              <div className="grid grid-cols-2 gap-2">
-                {(['home', 'away'] as const).map(s => {
-                  const t = s === 'home' ? homeTeam : awayTeam
-                  const active = side === s
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => setSide(s)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${
-                        active
-                          ? 'border-emerald-600 bg-emerald-900/30 text-white'
-                          : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
-                      }`}
-                    >
-                      <TeamAvatar name={t?.name ?? ''} logoUrl={t?.logo_url} size={20} />
-                      <span className="text-xs font-bold truncate">{t?.name ?? (s === 'home' ? 'Хозяева' : 'Гости')}</span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Row 2: Action type pills */}
-              <div className="flex gap-2 justify-center">
-                {([
-                  { value: 'goal',        label: '⚽ Гол' },
-                  { value: 'yellow_card', label: '🟨 ЖК' },
-                  { value: 'red_card',    label: '🟥 КК' },
-                ] as const).map(opt => (
+            {/* Row 1: Team selector */}
+            <div className="grid grid-cols-2 gap-2">
+              {(['home', 'away'] as const).map(s => {
+                const t = s === 'home' ? homeTeam : awayTeam
+                const active = side === s
+                return (
                   <button
-                    key={opt.value}
-                    onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      actionType === opt.value
-                        ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
-                        : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
-                        : 'bg-red-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    key={s}
+                    onClick={() => setSide(s)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
+                      active
+                        ? 'border-emerald-600 bg-emerald-900/30 text-white'
+                        : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
                     }`}
                   >
-                    {opt.label}
+                    <TeamAvatar name={t?.name ?? ''} logoUrl={t?.logo_url} size={18} />
+                    <span className="text-xs font-bold truncate">{t?.name ?? (s === 'home' ? 'Хозяева' : 'Гости')}</span>
                   </button>
-                ))}
-              </div>
+                )
+              })}
+            </div>
 
-              {/* Player name */}
+            {/* Row 2: Action type pills */}
+            <div className="flex gap-2 justify-center">
+              {([
+                { value: 'goal',        label: '⚽ Гол' },
+                { value: 'yellow_card', label: '🟨 ЖК' },
+                { value: 'red_card',    label: '🟥 КК' },
+              ] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    actionType === opt.value
+                      ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
+                      : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
+                      : 'bg-red-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Inputs row: player + (assist) + minute inline on goal */}
+            {actionType === 'goal' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={player}
+                  onChange={e => setPlayer(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  placeholder="Автор гола"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
+                />
+                <Input
+                  value={assister}
+                  onChange={e => setAssister(e.target.value)}
+                  placeholder="Ассистент"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
+                />
+              </div>
+            ) : (
               <Input
                 value={player}
                 onChange={e => setPlayer(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                placeholder={actionType === 'goal' ? 'Автор гола' : 'Игрок'}
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
+                placeholder="Игрок"
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
               />
+            )}
 
-              {/* Assister — only for goal */}
+            {/* Bottom row: minute + own goal + submit */}
+            <div className="flex items-center gap-2">
+              <Input
+                value={minute}
+                onChange={e => setMinute(e.target.value)}
+                placeholder={currentMinute > 0 ? `${currentMinute}'` : 'Мин'}
+                type="number" min={1} max={120}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-8 text-xs w-20 shrink-0"
+              />
               {actionType === 'goal' && (
-                <Input
-                  value={assister}
-                  onChange={e => setAssister(e.target.value)}
-                  placeholder="Ассистент (необязательно)"
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-                />
-              )}
-
-              {/* Minute — auto-fills from timer, can be overridden */}
-              <div className="relative">
-                <Input
-                  value={minute}
-                  onChange={e => setMinute(e.target.value)}
-                  placeholder={currentMinute > 0 ? `${currentMinute}' (авто)` : 'Минута'}
-                  type="number" min={1} max={120}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-9"
-                />
-              </div>
-
-              {/* Own goal — small secondary, goal only */}
-              {actionType === 'goal' && (
-                <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
                   <input
                     type="checkbox"
                     checked={isOwnGoal}
                     onChange={e => setIsOwnGoal(e.target.checked)}
-                    className="accent-red-500 w-3.5 h-3.5"
+                    className="accent-red-500 w-3 h-3"
                   />
-                  <span className="text-xs text-gray-500">↩ авто-гол</span>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">↩ ОГ</span>
                 </label>
               )}
-
-              {/* Submit */}
-              <div className="flex justify-center pt-1">
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting || !player.trim()}
-                  className={`px-10 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 ${submitClass}`}
-                >
-                  {submitLabel}
-                </button>
-              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !player.trim()}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${submitClass}`}
+              >
+                {submitLabel}
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ── Finish button ─────────────────────────────────────── */}
-        {isOwner && (
-          <div className="px-4 pb-8">
-            <button
-              onClick={() => setShowFinishConfirm(true)}
-              className="w-full py-2.5 text-sm text-gray-600 hover:text-red-400 border border-gray-800 hover:border-red-900/60 rounded-xl transition-colors"
-            >
-              Завершить матч
-            </button>
-          </div>
-        )}
-      </div>
+      {/* ── Finish button ────────────────────────────────────────────────── */}
+      {isOwner && (
+        <div className="shrink-0 px-4 pb-3">
+          <button
+            onClick={() => setShowFinishConfirm(true)}
+            className="w-full py-2 text-xs text-gray-600 hover:text-red-400 border border-gray-800 hover:border-red-900/60 rounded-xl transition-colors"
+          >
+            Завершить матч
+          </button>
+        </div>
+      )}
 
       {/* ── Finish confirm modal ─────────────────────────────────────────── */}
       {showFinishConfirm && (

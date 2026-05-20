@@ -144,3 +144,12 @@
   background-color: #f9fafb !important;
   color: #111827;
 }
+
+/* ── Scrollbar hide utility ───────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

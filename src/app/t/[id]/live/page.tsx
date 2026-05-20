@@ -57,12 +57,12 @@ export default async function LivePage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="h-[100dvh] bg-gray-950 flex flex-col overflow-hidden">
       <header className="bg-gray-900 border-b border-gray-800 px-4 h-12 flex items-center justify-between shrink-0">
         <span className="text-sm font-black tracking-tight text-emerald-400">TOURNABLE LIVE</span>
         <span className="text-xs text-gray-500 truncate max-w-[60%] text-right">{tournament.name}</span>
       </header>
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-h-0">
         <LiveBoard
           tournament={tournament}
           teams={teams ?? []}

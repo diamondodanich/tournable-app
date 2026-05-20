@@ -131,23 +131,33 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
   // ── Finished summary view ─────────────────────────────────────────────────
 
   if (status === 'finished' && !isEditing) {
-    const homeEvts = (fixture.match_events ?? events.map(e => ({
+    const allEvts = (fixture.match_events ?? events.map(e => ({
       id: e.teamId + e.playerName,
       team_id: e.teamId,
       player_name: e.playerName,
       type: e.type,
       minute: e.minute ? parseInt(e.minute) : null,
-    }))).filter(e => e.team_id === fixture.home_team_id)
-    const awayEvts = (fixture.match_events ?? events.map(e => ({
-      id: e.teamId + e.playerName,
-      team_id: e.teamId,
-      player_name: e.playerName,
-      type: e.type,
-      minute: e.minute ? parseInt(e.minute) : null,
-    }))).filter(e => e.team_id === fixture.away_team_id)
+    })))
+    const homeEvts = allEvts.filter(e => e.team_id === fixture.home_team_id)
+    const awayEvts = allEvts.filter(e => e.team_id === fixture.away_team_id)
 
-    const homeGoals = homeEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
-    const awayGoals = awayEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+    const homeGoals   = homeEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+    const homeAssists = homeEvts.filter(e => e.type === 'assist')
+    const awayGoals   = awayEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
+    const awayAssists = awayEvts.filter(e => e.type === 'assist')
+
+    // Pair goals with assists by minute
+    function pairAssist<T extends { minute: number | null; team_id: string }>(
+      goal: T, assists: T[], usedIds: Set<string>
+    ): T | null {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const match = assists.find((a: any) => !usedIds.has(a.id) && a.minute === goal.minute) as T | undefined
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (match) usedIds.add((match as any).id)
+      return match ?? null
+    }
+    const homeUsed = new Set<string>()
+    const awayUsed = new Set<string>()
 
     return (
       <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-4 shadow-sm">
@@ -184,22 +194,34 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
           <div className="border-t border-dashed border-emerald-200 pt-3">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                {homeGoals.map((e, i) => (
-                  <div key={i} className={`flex items-center gap-1.5 text-xs ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    <EventBadge type={e.type} />
-                    <span className="font-medium truncate">{e.player_name}</span>
-                    {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
-                  </div>
-                ))}
+                {homeGoals.map((e, i) => {
+                  const assist = pairAssist(e, homeAssists, homeUsed)
+                  return (
+                    <div key={i} className={`flex items-center gap-1.5 text-xs ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                      <EventBadge type={e.type} />
+                      <span className="font-medium truncate">
+                        {e.player_name}
+                        {assist && <span className="text-gray-400 font-normal"> ({assist.player_name})</span>}
+                      </span>
+                      {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
+                    </div>
+                  )
+                })}
               </div>
               <div className="space-y-1">
-                {awayGoals.map((e, i) => (
-                  <div key={i} className={`flex items-center gap-1.5 text-xs justify-end ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
-                    <span className="font-medium truncate text-right">{e.player_name}</span>
-                    <EventBadge type={e.type} />
-                  </div>
-                ))}
+                {awayGoals.map((e, i) => {
+                  const assist = pairAssist(e, awayAssists, awayUsed)
+                  return (
+                    <div key={i} className={`flex items-center gap-1.5 text-xs justify-end ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                      {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
+                      <span className="font-medium truncate text-right">
+                        {assist && <span className="text-gray-400 font-normal">({assist.player_name}) </span>}
+                        {e.player_name}
+                      </span>
+                      <EventBadge type={e.type} />
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X } from 'lucide-react'
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -38,6 +38,24 @@ function EventIcon({ type, size = 14 }: { type: string; size?: number }) {
   return null
 }
 
+/** Pair each goal/card event with its assist (same team + minute, first available) */
+function pairWithAssists(
+  mainEvents: MatchEvent[],
+  assists: MatchEvent[]
+): { evt: MatchEvent; assist: MatchEvent | null }[] {
+  const usedIds = new Set<string>()
+  return mainEvents.map(evt => {
+    if (evt.type !== 'goal' && evt.type !== 'own_goal') return { evt, assist: null }
+    const match = assists.find(a =>
+      !usedIds.has(a.id) &&
+      a.team_id === evt.team_id &&
+      a.minute === evt.minute
+    )
+    if (match) usedIds.add(match.id)
+    return { evt, assist: match ?? null }
+  })
+}
+
 // ── Props ──────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -66,6 +84,7 @@ export default function LiveBoard({
   const [events, setEvents]           = useState<MatchEvent[]>(initialEvents)
   const [fullscreen, setFullscreen]   = useState(false)
   const [isFinished, setIsFinished]   = useState(false)
+  const [isTimeUp, setIsTimeUp]       = useState(false)
 
   // ── Setup state (no game) ──
   const [homeId, setHomeId]   = useState(defaultHomeId ?? teams[0]?.id ?? '')
@@ -74,21 +93,25 @@ export default function LiveBoard({
 
   // ── Unified event form ──
   type ActionType = 'goal' | 'yellow_card' | 'red_card'
-  const [side, setSide]           = useState<'home' | 'away'>('home')
+  const [side, setSide]             = useState<'home' | 'away'>('home')
   const [actionType, setActionType] = useState<ActionType>('goal')
-  const [player, setPlayer]       = useState('')
-  const [assister, setAssister]   = useState('')
-  const [minute, setMinute]       = useState('')
-  const [isOwnGoal, setIsOwnGoal] = useState(false)
+  const [player, setPlayer]         = useState('')
+  const [assister, setAssister]     = useState('')
+  const [minute, setMinute]         = useState('')   // empty = use timer value
+  const [isOwnGoal, setIsOwnGoal]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
   const [finishing, setFinishing]                 = useState(false)
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const gameRef  = useRef<LiveGame | null>(initialGame)
-  gameRef.current = game
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const gameRef    = useRef<LiveGame | null>(initialGame)
+  const timeUpRef  = useRef(false)
+  gameRef.current  = game
+
+  // Total match duration in seconds based on tournament settings
+  const totalDurationSecs = (tournament.match_periods ?? 2) * (tournament.match_duration_mins ?? 45) * 60
 
   // ── Realtime: live_games ──────────────────────────────────────────────────
   useEffect(() => {
@@ -143,13 +166,20 @@ export default function LiveBoard({
         const g = gameRef.current
         if (!g?.started_at) return
         const elapsed = Math.floor((Date.now() - new Date(g.started_at).getTime()) / 1000)
-        setDisplaySecs(g.accumulated_secs + elapsed)
+        const secs = g.accumulated_secs + elapsed
+        setDisplaySecs(secs)
+
+        // Auto-detect time up (only for owner, only fire once)
+        if (isOwner && secs >= totalDurationSecs && !timeUpRef.current) {
+          timeUpRef.current = true
+          setIsTimeUp(true)
+        }
       }, 200)
     } else {
       setDisplaySecs(game?.accumulated_secs ?? 0)
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [game?.timer_running, game?.accumulated_secs, game?.started_at])
+  }, [game?.timer_running, game?.accumulated_secs, game?.started_at, isOwner, totalDurationSecs])
 
   // ── beforeunload ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -208,6 +238,8 @@ export default function LiveBoard({
     const patch = { timer_running: false, accumulated_secs: 0, started_at: null as string | null }
     setGame(prev => prev ? { ...prev, ...patch } : prev)
     setDisplaySecs(0)
+    timeUpRef.current = false
+    setIsTimeUp(false)
     patchGame(patch)
   }
 
@@ -228,12 +260,13 @@ export default function LiveBoard({
     if (!teamId) return
 
     setSubmitting(true)
-    const min = minute ? parseInt(minute) : null
+    // Auto-minute: use current timer minute if field is empty
+    const autoMin = Math.floor(displaySecs / 60)
+    const min = minute.trim() ? parseInt(minute) : (autoMin > 0 ? autoMin : null)
 
     if (actionType === 'goal') {
       const type = isOwnGoal ? 'own_goal' as const : 'goal' as const
 
-      // Score patch
       const scorePatch: Partial<LiveGame> = isOwnGoal
         ? (side === 'home' ? { away_score: game.away_score + 1 } : { home_score: game.home_score + 1 })
         : (side === 'home' ? { home_score: game.home_score + 1 } : { away_score: game.away_score + 1 })
@@ -379,14 +412,21 @@ export default function LiveBoard({
   const homeAssists = homeEvents.filter(e => e.type === 'assist')
   const awayAssists = awayEvents.filter(e => e.type === 'assist')
 
+  // Pair goals with their assists for inline display
+  const homePaired = pairWithAssists(homeStrip, homeAssists)
+  const awayPaired = pairWithAssists(awayStrip, awayAssists)
+
   const hasEvents  = events.length > 0
   const hasFixture = !!(game?.fixture_id ?? defaultFixtureId)
 
-  // Only show period tabs that are enabled for this tournament
+  // Period tabs filtered by tournament settings
   const activePeriods = PERIODS.filter(p => {
     if (p.value === 'ot') return tournament.extra_time ?? false
     return parseInt(p.value) <= (tournament.match_periods ?? 2)
   })
+
+  // Current timer minute for auto-minute placeholder
+  const currentMinute = Math.floor(displaySecs / 60)
 
   // ── Finished screen ───────────────────────────────────────────────────────
 
@@ -414,7 +454,7 @@ export default function LiveBoard({
           </div>
           <Button
             onClick={() => router.push(`/dashboard/tournament/${tournament.id}`)}
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 px-8"
           >
             Вернуться к турниру
           </Button>
@@ -472,7 +512,6 @@ export default function LiveBoard({
     ? 'fixed inset-0 z-50 bg-gray-950 flex flex-col overflow-hidden'
     : 'flex-1 flex flex-col overflow-hidden'
 
-  // Label / button appearance for the submit
   const submitLabel = submitting
     ? 'Сохраняем…'
     : actionType === 'goal'
@@ -519,40 +558,59 @@ export default function LiveBoard({
       {/* ── Scrollable body ──────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto">
 
+        {/* ── Time-up banner ──────────────────────────────────────────── */}
+        {isTimeUp && isOwner && !showFinishConfirm && (
+          <div className="mx-4 mt-3">
+            <div className="bg-amber-900/40 border border-amber-600/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+                <p className="text-amber-300 text-sm font-bold">
+                  Основное время вышло ({tournament.match_periods ?? 2}×{tournament.match_duration_mins ?? 45} мин)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFinishConfirm(true)}
+                className="text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg transition-colors shrink-0"
+              >
+                Завершить
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Scoreboard ──────────────────────────────────────────────── */}
         <div className="flex items-stretch">
 
           {/* Home */}
-          <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 gap-4 min-w-0">
+          <div className="flex-1 flex flex-col items-center justify-center py-8 px-3 gap-3 min-w-0">
             <TeamAvatar
               name={homeTeam?.name ?? ''}
               logoUrl={homeTeam?.logo_url}
-              size={fullscreen ? 96 : 72}
+              size={fullscreen ? 96 : 64}
             />
-            <p className="text-white font-black text-xl sm:text-2xl text-center leading-tight line-clamp-2 max-w-[160px]">
+            <p className="text-white font-black text-base sm:text-xl text-center leading-tight line-clamp-2 max-w-[140px]">
               {homeTeam?.name}
             </p>
             <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-              fullscreen ? 'text-[11rem]' : 'text-[8rem] sm:text-[10rem]'
+              fullscreen ? 'text-[11rem]' : 'text-[7rem] sm:text-[10rem]'
             }`}>
               {game.home_score}
             </span>
           </div>
 
           {/* Center: colon + timer + controls */}
-          <div className="flex flex-col items-center justify-center gap-2 px-2 shrink-0">
-            <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-6xl' : 'text-5xl'}`}>
+          <div className="flex flex-col items-center justify-center gap-2 px-1 shrink-0">
+            <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-6xl' : 'text-4xl sm:text-5xl'}`}>
               :
             </span>
             <span className={`font-mono font-black tabular-nums ${
               game.timer_running ? 'text-emerald-400' : 'text-gray-600'
-            } ${fullscreen ? 'text-3xl' : 'text-2xl'}`}>
+            } ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>
               {formatTime(displaySecs)}
             </span>
             <span className="text-gray-600 text-xs font-bold uppercase tracking-wider text-center">
               {currentPeriodLabel}
             </span>
-            {/* Timer controls — center, larger */}
             {isOwner && (
               <div className="flex gap-2 mt-1">
                 <button
@@ -576,17 +634,17 @@ export default function LiveBoard({
           </div>
 
           {/* Away */}
-          <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 gap-4 min-w-0">
+          <div className="flex-1 flex flex-col items-center justify-center py-8 px-3 gap-3 min-w-0">
             <TeamAvatar
               name={awayTeam?.name ?? ''}
               logoUrl={awayTeam?.logo_url}
-              size={fullscreen ? 96 : 72}
+              size={fullscreen ? 96 : 64}
             />
-            <p className="text-white font-black text-xl sm:text-2xl text-center leading-tight line-clamp-2 max-w-[160px]">
+            <p className="text-white font-black text-base sm:text-xl text-center leading-tight line-clamp-2 max-w-[140px]">
               {awayTeam?.name}
             </p>
             <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-              fullscreen ? 'text-[11rem]' : 'text-[8rem] sm:text-[10rem]'
+              fullscreen ? 'text-[11rem]' : 'text-[7rem] sm:text-[10rem]'
             }`}>
               {game.away_score}
             </span>
@@ -598,16 +656,19 @@ export default function LiveBoard({
           <div className="mx-4 mb-4 bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
               {/* Home */}
-              <div className="p-4 space-y-2">
-                {homeStrip.map(e => (
+              <div className="p-3 sm:p-4 space-y-1.5">
+                {homePaired.map(({ evt: e, assist }) => (
                   <div key={e.id} className="flex items-center gap-2 group">
-                    <span className="text-gray-600 font-mono text-xs w-8 shrink-0">
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
                     <EventIcon type={e.type} size={13} />
                     <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
                       {e.player_name}
                       {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
+                      {assist && (
+                        <span className="text-gray-500 text-xs font-normal ml-1">({assist.player_name})</span>
+                      )}
                     </span>
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
@@ -617,22 +678,27 @@ export default function LiveBoard({
                     )}
                   </div>
                 ))}
-                {homeAssists.map(e => (
-                  <div key={e.id} className="flex items-center gap-2 group pl-10">
-                    <EventIcon type="assist" size={12} />
-                    <span className="text-xs text-gray-500 flex-1 truncate">{e.player_name}</span>
+                {/* Cards (no assist pairing needed) */}
+                {homeStrip.filter(e => e.type === 'yellow_card' || e.type === 'red_card').map(e => (
+                  <div key={e.id} className="flex items-center gap-2 group">
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
+                      {e.minute != null ? `${e.minute}'` : ''}
+                    </span>
+                    <EventIcon type={e.type} size={13} />
+                    <span className="text-sm font-semibold flex-1 min-w-0 truncate text-gray-200">{e.player_name}</span>
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
                         className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
-                        <X size={10} />
+                        <X size={11} />
                       </button>
                     )}
                   </div>
                 ))}
               </div>
+
               {/* Away — mirrored */}
-              <div className="p-4 space-y-2">
-                {awayStrip.map(e => (
+              <div className="p-3 sm:p-4 space-y-1.5">
+                {awayPaired.map(({ evt: e, assist }) => (
                   <div key={e.id} className="flex items-center gap-2 justify-end group">
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
@@ -641,25 +707,31 @@ export default function LiveBoard({
                       </button>
                     )}
                     <span className={`text-sm font-semibold flex-1 min-w-0 truncate text-right ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
+                      {assist && (
+                        <span className="text-gray-500 text-xs font-normal mr-1">({assist.player_name})</span>
+                      )}
                       {e.type === 'own_goal' && <span className="text-red-600 text-xs mr-1 font-normal">ОГ</span>}
                       {e.player_name}
                     </span>
                     <EventIcon type={e.type} size={13} />
-                    <span className="text-gray-600 font-mono text-xs w-8 shrink-0 text-right">
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
                   </div>
                 ))}
-                {awayAssists.map(e => (
-                  <div key={e.id} className="flex items-center gap-2 justify-end group pr-10">
+                {awayStrip.filter(e => e.type === 'yellow_card' || e.type === 'red_card').map(e => (
+                  <div key={e.id} className="flex items-center gap-2 justify-end group">
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
                         className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
-                        <X size={10} />
+                        <X size={11} />
                       </button>
                     )}
-                    <span className="text-xs text-gray-500 flex-1 truncate text-right">{e.player_name}</span>
-                    <EventIcon type="assist" size={12} />
+                    <span className="text-sm font-semibold flex-1 min-w-0 truncate text-right text-gray-200">{e.player_name}</span>
+                    <EventIcon type={e.type} size={13} />
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right">
+                      {e.minute != null ? `${e.minute}'` : ''}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -706,7 +778,7 @@ export default function LiveBoard({
                     onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
                       actionType === opt.value
-                        ? opt.value === 'goal'    ? 'bg-emerald-700 text-white'
+                        ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
                         : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
                         : 'bg-red-600 text-white'
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -736,14 +808,16 @@ export default function LiveBoard({
                 />
               )}
 
-              {/* Minute */}
-              <Input
-                value={minute}
-                onChange={e => setMinute(e.target.value)}
-                placeholder="Минута (необязательно)"
-                type="number" min={1} max={120}
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-9"
-              />
+              {/* Minute — auto-fills from timer, can be overridden */}
+              <div className="relative">
+                <Input
+                  value={minute}
+                  onChange={e => setMinute(e.target.value)}
+                  placeholder={currentMinute > 0 ? `${currentMinute}' (авто)` : 'Минута'}
+                  type="number" min={1} max={120}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-9"
+                />
+              </div>
 
               {/* Own goal — small secondary, goal only */}
               {actionType === 'goal' && (

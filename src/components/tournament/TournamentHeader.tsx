@@ -21,6 +21,7 @@ const FORMAT_LABEL: Record<string, string> = {
 
 export default function TournamentHeader({ tournament, isOwner = true }: Props) {
   const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/t/${tournament.id}`
     : `/t/${tournament.id}`
@@ -32,21 +33,25 @@ export default function TournamentHeader({ tournament, isOwner = true }: Props) 
   })()
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+
+      {/* Back link — prominent */}
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 mb-3 transition-colors group"
+      >
+        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+        Все турниры
+      </Link>
+
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <TeamAvatar name={tournament.name} logoUrl={tournament.logo_url} size={52} />
 
           <div>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 mb-1 transition-colors"
-            >
-              <ArrowLeft size={12} /> Все турниры
-            </Link>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                 tournament.generated ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
               }`}>
                 {tournament.generated ? 'Активен' : 'Настройка'}
@@ -66,26 +71,27 @@ export default function TournamentHeader({ tournament, isOwner = true }: Props) 
           {isOwner && !confirming && (
             <button
               onClick={() => setConfirming(true)}
-              className="w-8 h-8 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-500 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 text-xs font-bold transition-all"
             >
-              <Trash2 size={14} />
+              <Trash2 size={13} /> Удалить
             </button>
           )}
 
           {isOwner && confirming && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-red-600 font-medium">Удалить?</span>
-              <form action={deleteTournament.bind(null, tournament.id)}>
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              <span className="text-xs text-red-600 font-semibold">Удалить турнир?</span>
+              <form action={deleteTournament.bind(null, tournament.id)} onSubmit={() => setDeleting(true)}>
                 <button
                   type="submit"
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                  disabled={deleting}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
                 >
-                  Да
+                  {deleting ? '…' : 'Да'}
                 </button>
               </form>
               <button
                 onClick={() => setConfirming(false)}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors"
+                className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-white text-gray-600 transition-colors"
               >
                 Отмена
               </button>

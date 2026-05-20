@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Tournament } from '@/types'
 import Link from 'next/link'
 import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, ArrowRight } from 'lucide-react'
+import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 
 function pluralRounds(n: number) {
   const mod10 = n % 10, mod100 = n % 100
@@ -53,7 +54,6 @@ export default async function DashboardPage() {
 
       {list.length === 0 ? (
         <div className="space-y-4">
-          {/* Hero */}
           <div className="relative overflow-hidden bg-emerald-600 rounded-3xl px-8 py-12 text-center text-white">
             <div className="absolute inset-0 opacity-[0.07]"
               style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
@@ -69,11 +69,9 @@ export default async function DashboardPage() {
               <Plus size={15} /> Начать <ArrowRight size={14} className="opacity-60" />
             </Link>
           </div>
-
-          {/* Feature tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {FEATURES.map(f => (
-              <div key={f.title} className="bg-white rounded-2xl border border-gray-100 p-5 flex gap-3 items-start">
+              <div key={f.title} className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-5 flex gap-3 items-start">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                   <f.icon size={17} className="text-emerald-600" />
                 </div>
@@ -91,38 +89,40 @@ export default async function DashboardPage() {
             const teamCount = t.teams?.[0]?.count ?? 0
             const isActive = t.generated
             return (
-              <Link key={t.id} href={`/dashboard/tournament/${t.id}`} className="group">
-                <div className="bg-white rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all p-5 h-full flex flex-col gap-3">
-                  {/* Top row */}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
-                    <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${
-                      isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {isActive ? 'Активен' : 'Настройка'}
-                    </span>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
-                    {teamCount > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Users size={11} /> {teamCount} {pluralTeams(teamCount)}
+              <div key={t.id} className="group relative">
+                <Link href={`/dashboard/tournament/${t.id}`} className="block">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all p-5 h-full flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-2 pr-7">
+                      <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
+                      <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${
+                        isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {isActive ? 'Активен' : 'Настройка'}
                       </span>
-                    )}
-                    {t.format === 'round_robin' && (
-                      <span className="flex items-center gap-1">
-                        <Calendar size={11} /> {t.num_rounds} {pluralRounds(t.num_rounds)}
-                      </span>
-                    )}
-                    <span className="ml-auto">{new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
+                      {teamCount > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users size={11} /> {teamCount} {pluralTeams(teamCount)}
+                        </span>
+                      )}
+                      {t.format === 'round_robin' && (
+                        <span className="flex items-center gap-1">
+                          <Calendar size={11} /> {t.num_rounds} {pluralRounds(t.num_rounds)}
+                        </span>
+                      )}
+                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
                   </div>
+                </Link>
+                {/* Delete button sits outside the Link */}
+                <div className="absolute top-3 right-3">
+                  <DeleteTournamentButton id={t.id} name={t.name} />
                 </div>
-              </Link>
+              </div>
             )
           })}
 
-          {/* Ghost add card */}
           <Link href="/dashboard/new" className="group">
             <div className="h-full min-h-[90px] rounded-2xl border-2 border-dashed border-gray-200 group-hover:border-emerald-400 transition-colors flex items-center justify-center gap-1.5 text-gray-300 group-hover:text-emerald-500 font-bold text-sm p-5">
               <Plus size={15} /> Новый турнир

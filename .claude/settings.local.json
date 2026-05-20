@@ -23,7 +23,11 @@
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-Ps --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 98236657)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-I8 --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 98236657)",
       "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-edit --project-id PVT_kwHOBiYxQs4BXoNt --id PVTI_lAHOBiYxQs4BXoNtzgtM-RY --field-id PVTSSF_lAHOBiYxQs4BXoNtzhSzzvc --single-select-option-id 47fc9ee4)",
-      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-list 1 --owner diamondodanich --format json -q \".items[] | [.status, .title] | @tsv\")"
+      "Bash(\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" project item-list 1 --owner diamondodanich --format json -q \".items[] | [.status, .title] | @tsv\")",
+      "Bash(gh project *)",
+      "Bash(python -c \"import sys,json; items=json.load\\(sys.stdin\\)['items']; [print\\(i.get\\('status','?'\\), '|', i.get\\('title','?'\\)\\) for i in items]\")",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);j.items.forEach\\(i=>console.log\\(\\(i.status||'—'\\).padEnd\\(16\\),i.title\\)\\)}\\)\")",
+      "Bash(node -e ' *)"
     ]
   }
 }

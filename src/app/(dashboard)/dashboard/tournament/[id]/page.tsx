@@ -87,7 +87,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
       <Tabs defaultValue={defaultTab}>
         {/* ── Tab bar block ──────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm tournament-tabs">
           <div className="flex items-center gap-2 px-3 py-3 overflow-x-auto">
             <TabsList className="flex h-auto gap-1 bg-transparent p-0 flex-1 min-w-0">
               <TabsTrigger

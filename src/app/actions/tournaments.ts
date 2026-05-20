@@ -26,6 +26,79 @@ export async function createTournament(formData: FormData) {
   redirect(`/dashboard/tournament/${data.id}`)
 }
 
+export async function createTournamentWithSetup(
+  name: string,
+  format: 'round_robin' | 'playoff',
+  numRounds: number,
+  teamNames: string[]
+): Promise<{ id?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  // 1. Create tournament
+  const { data: t, error: tErr } = await supabase
+    .from('tournaments')
+    .insert({ user_id: user.id, name: name.trim(), num_rounds: numRounds, format })
+    .select()
+    .single()
+  if (tErr || !t) return { error: tErr?.message ?? 'Ошибка создания' }
+
+  // 2. Insert teams
+  const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+  if (validNames.length >= 2) {
+    const { error: teamsErr } = await supabase
+      .from('teams')
+      .insert(validNames.map(name => ({ tournament_id: t.id, name })))
+    if (teamsErr) return { error: teamsErr.message }
+  }
+
+  // 3. Generate schedule for round-robin with enough teams
+  if (format === 'round_robin' && validNames.length >= 2) {
+    const { data: teams } = await supabase
+      .from('teams').select('id').eq('tournament_id', t.id)
+
+    if (teams && teams.length >= 2) {
+      const teamIds = teams.map(t => t.id)
+      const baseRounds = generateRoundRobin(teamIds)
+      const fixtures = []
+      let matchdayCounter = 0
+
+      for (let cycle = 0; cycle < numRounds; cycle++) {
+        for (let ri = 0; ri < baseRounds.length; ri++) {
+          matchdayCounter++
+          const round = baseRounds[ri]
+          for (const [homeId, awayId] of round) {
+            if (awayId === null) {
+              const byeTeam = homeId
+              fixtures.push({
+                tournament_id: t.id, matchday: matchdayCounter,
+                round: cycle + 1, cycle_round: ri + 1,
+                home_team_id: byeTeam, away_team_id: null,
+                is_bye: true, played: false,
+              })
+            } else {
+              const [h, a] = cycle % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
+              fixtures.push({
+                tournament_id: t.id, matchday: matchdayCounter,
+                round: cycle + 1, cycle_round: ri + 1,
+                home_team_id: h, away_team_id: a,
+                is_bye: false, played: false,
+              })
+            }
+          }
+        }
+      }
+
+      await supabase.from('fixtures').insert(fixtures)
+      await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+    }
+  }
+
+  revalidatePath('/dashboard')
+  return { id: t.id }
+}
+
 export async function deleteTournament(id: string) {
   const supabase = await createClient()
   await supabase.from('tournaments').delete().eq('id', id)

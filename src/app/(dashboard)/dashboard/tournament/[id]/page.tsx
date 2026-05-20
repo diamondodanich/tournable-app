@@ -345,14 +345,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               </TabsList>
             </div>
 
-            {/* Export button — pinned right, only when generated */}
-            {tournament.generated && (
-              <div className="shrink-0 flex items-center pr-2 sm:pr-3 border-l border-gray-100 pl-2">
-                <ExportReportButton fileName={`${slug}-report`} />
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Export button — below tab bar, aligned right */}
+        {tournament.generated && (
+          <div className="flex justify-end">
+            <ExportReportButton fileName={`${slug}-report`} />
+          </div>
+        )}
 
         {/* Tab content */}
         <TabsContent value="setup" className="mt-0 pt-5">

@@ -124,20 +124,31 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
-    supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', id).order('round_order').order('match_order'),
+    // select without match_events join — works even before migration 009 is applied
+    supabase.from('playoff_matches').select('*').eq('tournament_id', id).order('round_order').order('match_order'),
     supabase.from('live_games').select('playoff_match_id').eq('tournament_id', id).maybeSingle(),
   ])
 
+  // Separately fetch playoff match events (requires migration 009 — falls back to [] if not yet applied)
+  const pmIds = (playoffMatches ?? []).map((m: { id: string }) => m.id)
+  const { data: pmEvents } = pmIds.length > 0
+    ? await supabase.from('match_events').select('*').in('playoff_match_id', pmIds)
+    : { data: [] }
+
   const t  = teams ?? []
   const f  = fixtures ?? []
-  const pm = playoffMatches ?? []
+  // Merge separately-fetched playoff events back into each match object
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pm = (playoffMatches ?? []).map((m: any) => ({
+    ...m,
+    match_events: (pmEvents ?? []).filter((e: MatchEvent) => e.playoff_match_id === m.id),
+  }))
   const slug = tournament.name.toLowerCase().replace(/\s+/g, '-')
 
   // Unified events for stats (both formats)
   const allEvents: MatchEvent[] = [
     ...f.flatMap((fx: Fixture) => fx.match_events ?? []),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...pm.flatMap((m: any) => m.match_events ?? []),
+    ...(pmEvents ?? []),
   ]
 
   const defaultTab = tournament.generated

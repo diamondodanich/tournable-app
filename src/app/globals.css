@@ -130,16 +130,17 @@
 }
 
 /* ── Tournament tab bar: force active tab green ───────────────────────────── */
-.tournament-tabs [role="tab"][data-state="active"] {
+/* base-ui/react uses data-active (not data-state="active" like Radix) */
+.tournament-tabs [data-active] {
   background-color: #059669 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25) !important;
 }
-.tournament-tabs [role="tab"][data-state="inactive"] {
-  background-color: transparent;
+.tournament-tabs [role="tab"]:not([data-active]) {
+  background-color: transparent !important;
   color: #6b7280;
 }
-.tournament-tabs [role="tab"][data-state="inactive"]:hover {
-  background-color: #f9fafb;
+.tournament-tabs [role="tab"]:not([data-active]):hover {
+  background-color: #f9fafb !important;
   color: #111827;
 }

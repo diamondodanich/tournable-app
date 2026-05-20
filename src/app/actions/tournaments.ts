@@ -214,17 +214,36 @@ export async function updateTournamentSettings(
 export async function startFixture(
   fixtureId: string,
   tournamentId: string,
+  homeTeamId?: string,
+  awayTeamId?: string,
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
 
-  const { error } = await supabase
+  // Mark fixture as live
+  const { error: fe } = await supabase
     .from('fixtures')
     .update({ status: 'live' })
     .eq('id', fixtureId)
+  if (fe) return { error: fe.message }
 
-  if (error) return { error: error.message }
+  // Pre-create the live_games record so the board opens immediately
+  if (homeTeamId && awayTeamId) {
+    await supabase.from('live_games').upsert({
+      tournament_id: tournamentId,
+      home_team_id: homeTeamId,
+      away_team_id: awayTeamId,
+      home_score: 0,
+      away_score: 0,
+      period: '1',
+      timer_running: false,
+      accumulated_secs: 0,
+      started_at: null,
+      fixture_id: fixtureId,
+    }, { onConflict: 'tournament_id' })
+  }
+
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   return {}
 }

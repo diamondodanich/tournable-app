@@ -76,7 +76,11 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     const prevStatus = status
     setStatus('live')
 
-    const result = await startFixture(fixture.id, tournamentId)
+    const result = await startFixture(
+      fixture.id, tournamentId,
+      fixture.home_team_id ?? undefined,
+      fixture.away_team_id ?? undefined,
+    )
     setStarting(false)
 
     if (result?.error) {

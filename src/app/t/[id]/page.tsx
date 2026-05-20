@@ -21,12 +21,19 @@ export default async function PublicTournamentPage({ params }: { params: Promise
   const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', id).single()
   if (!tournament) notFound()
 
-  const [{ data: teams }, { data: fixtures }] = await Promise.all([
+  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
+    supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', id).order('round_order').order('match_order'),
   ])
 
   const isRoundRobin = tournament.format === 'round_robin' || !tournament.format
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allEvents = [
+    ...(fixtures ?? []).flatMap((f: any) => f.match_events ?? []),
+    ...(playoffMatches ?? []).flatMap((m: any) => m.match_events ?? []),
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
@@ -64,7 +71,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
             </TabsContent>
             <TabsContent value="stats">
-              <StatsTab teams={teams ?? []} fixtures={fixtures ?? []} />
+              <StatsTab teams={teams ?? []} events={allEvents} />
             </TabsContent>
           </Tabs>
         ) : (

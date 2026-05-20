@@ -73,7 +73,7 @@ export async function finishLiveMatch(
 
   if (fetchError || !liveGame) return { error: 'Матч не найден' }
 
-  // Save results to fixture if linked
+  // Save results to fixture if linked (round-robin)
   if (liveGame.fixture_id) {
     const { error } = await supabase.from('fixtures').update({
       home_score: liveGame.home_score,
@@ -83,6 +83,33 @@ export async function finishLiveMatch(
     }).eq('id', liveGame.fixture_id)
 
     if (error) return { error: error.message }
+  }
+
+  // Save results to playoff_matches if linked
+  if (liveGame.playoff_match_id) {
+    const hs = liveGame.home_score
+    const as_ = liveGame.away_score
+    if (hs !== as_) {
+      const { data: pm } = await supabase
+        .from('playoff_matches')
+        .select('*')
+        .eq('id', liveGame.playoff_match_id)
+        .single()
+
+      if (pm) {
+        const winnerId = hs > as_ ? pm.home_team_id : pm.away_team_id
+        await supabase.from('playoff_matches').update({
+          home_score: hs,
+          away_score: as_,
+          winner_id: winnerId,
+        }).eq('id', liveGame.playoff_match_id)
+
+        if (pm.winner_to_match && winnerId) {
+          const field = pm.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
+          await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
+        }
+      }
+    }
   }
 
   // Delete live game record

@@ -67,13 +67,14 @@ interface Props {
   defaultHomeId?: string
   defaultAwayId?: string
   defaultFixtureId?: string
+  defaultPlayoffMatchId?: string
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function LiveBoard({
   tournament, teams, initialGame, initialEvents,
-  isOwner, defaultHomeId, defaultAwayId, defaultFixtureId,
+  isOwner, defaultHomeId, defaultAwayId, defaultFixtureId, defaultPlayoffMatchId,
 }: Props) {
   const router = useRouter()
   const supabase = createClient()
@@ -138,25 +139,28 @@ export default function LiveBoard({
   // ── Realtime: match_events ────────────────────────────────────────────────
   useEffect(() => {
     const fixtureId = game?.fixture_id ?? defaultFixtureId
-    if (!fixtureId) return
+    const playoffId = game?.playoff_match_id ?? defaultPlayoffMatchId
+    const channelKey = fixtureId ?? playoffId
+    if (!channelKey) return
+    const filterField = fixtureId ? 'fixture_id' : 'playoff_match_id'
     const channel = supabase
-      .channel(`events_${fixtureId}`)
+      .channel(`events_${channelKey}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'match_events',
-        filter: `fixture_id=eq.${fixtureId}`,
+        filter: `${filterField}=eq.${channelKey}`,
       }, payload => {
         const e = payload.new as MatchEvent
         setEvents(prev => [...prev.filter(x => x.id !== e.id), e])
       })
       .on('postgres_changes', {
         event: 'DELETE', schema: 'public', table: 'match_events',
-        filter: `fixture_id=eq.${fixtureId}`,
+        filter: `${filterField}=eq.${channelKey}`,
       }, payload => {
         setEvents(prev => prev.filter(e => e.id !== payload.old.id))
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [game?.fixture_id, defaultFixtureId])
+  }, [game?.fixture_id, game?.playoff_match_id, defaultFixtureId, defaultPlayoffMatchId])
 
   // ── Timer tick ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -209,6 +213,7 @@ export default function LiveBoard({
         period: '1', timer_running: false,
         accumulated_secs: 0, started_at: null,
         fixture_id: defaultFixtureId ?? null,
+        playoff_match_id: defaultPlayoffMatchId ?? null,
       }, { onConflict: 'tournament_id' })
       .select().single()
     if (error) { toast.error(error.message); setIniting(false); return }
@@ -253,11 +258,17 @@ export default function LiveBoard({
   async function handleSubmit() {
     if (!game) return
     const fixtureId = game.fixture_id ?? defaultFixtureId
-    if (!fixtureId) { toast.error('Матч не привязан к фикстуре'); return }
+    const playoffId = game.playoff_match_id ?? defaultPlayoffMatchId
+    if (!fixtureId && !playoffId) { toast.error('Матч не привязан'); return }
     if (!player.trim()) { toast.error('Введите имя игрока'); return }
 
     const teamId = side === 'home' ? game.home_team_id : game.away_team_id
     if (!teamId) return
+
+    // Helper: build event row for the right match type
+    const eventRow = (extra: Record<string, unknown>) => fixtureId
+      ? { fixture_id: fixtureId, team_id: teamId, minute: null, ...extra }
+      : { fixture_id: null, playoff_match_id: playoffId, team_id: teamId, minute: null, ...extra }
 
     setSubmitting(true)
     // Auto-minute: use current timer minute if field is empty
@@ -280,13 +291,13 @@ export default function LiveBoard({
 
       setEvents(prev => [
         ...prev,
-        { id: tempGoalId, fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type, minute: min, created_at: new Date().toISOString() },
-        ...(hasAssist ? [{ id: tempAssistId, fixture_id: fixtureId, team_id: teamId, player_name: assister.trim(), type: 'assist' as const, minute: min, created_at: new Date().toISOString() }] : []),
+        { id: tempGoalId, fixture_id: fixtureId ?? null, playoff_match_id: playoffId ?? null, team_id: teamId, player_name: player.trim(), type, minute: min, created_at: new Date().toISOString() },
+        ...(hasAssist ? [{ id: tempAssistId, fixture_id: fixtureId ?? null, playoff_match_id: playoffId ?? null, team_id: teamId, player_name: assister.trim(), type: 'assist' as const, minute: min, created_at: new Date().toISOString() }] : []),
       ])
 
       const { data: goalData, error: goalErr } = await supabase
         .from('match_events')
-        .insert({ fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type, minute: min })
+        .insert(eventRow({ player_name: player.trim(), type, minute: min }))
         .select().single()
 
       if (goalErr) {
@@ -306,7 +317,7 @@ export default function LiveBoard({
       if (hasAssist) {
         const { data: aData, error: aErr } = await supabase
           .from('match_events')
-          .insert({ fixture_id: fixtureId, team_id: teamId, player_name: assister.trim(), type: 'assist', minute: min })
+          .insert(eventRow({ player_name: assister.trim(), type: 'assist', minute: min }))
           .select().single()
         if (!aErr && aData) {
           setEvents(prev => prev.map(e => e.id === tempAssistId ? (aData as MatchEvent) : e))
@@ -327,10 +338,10 @@ export default function LiveBoard({
 
       const rows = isSecondYellow
         ? [
-            { fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: 'yellow_card' as const, minute: min },
-            { fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: 'red_card'    as const, minute: min },
+            eventRow({ player_name: player.trim(), type: 'yellow_card' as const, minute: min }),
+            eventRow({ player_name: player.trim(), type: 'red_card'    as const, minute: min }),
           ]
-        : [{ fixture_id: fixtureId, team_id: teamId, player_name: player.trim(), type: actionType, minute: min }]
+        : [eventRow({ player_name: player.trim(), type: actionType, minute: min })]
 
       if (isSecondYellow) toast.info(`2-я жёлтая → автоматическая красная для ${player.trim()}`)
 
@@ -417,7 +428,7 @@ export default function LiveBoard({
   const awayPaired = pairWithAssists(awayStrip, awayAssists)
 
   const hasEvents  = events.length > 0
-  const hasFixture = !!(game?.fixture_id ?? defaultFixtureId)
+  const hasFixture = !!(game?.fixture_id ?? game?.playoff_match_id ?? defaultFixtureId ?? defaultPlayoffMatchId)
 
   // Period tabs filtered by tournament settings
   const activePeriods = PERIODS.filter(p => {

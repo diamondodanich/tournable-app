@@ -15,10 +15,10 @@ export default async function LivePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ home?: string; away?: string; fixture?: string }>
+  searchParams: Promise<{ home?: string; away?: string; fixture?: string; playoff?: string }>
 }) {
   const { id } = await params
-  const { home: defaultHomeId, away: defaultAwayId, fixture: fixtureId } = await searchParams
+  const { home: defaultHomeId, away: defaultAwayId, fixture: fixtureId, playoff: playoffMatchId } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -30,15 +30,23 @@ export default async function LivePage({
     supabase.from('live_games').select('*').eq('tournament_id', id).maybeSingle(),
   ])
 
-  // Fetch initial events if there's an active fixture
+  // Fetch initial events — prefer fixture_id, then playoff_match_id
   const activeFixtureId = liveGame?.fixture_id ?? fixtureId
+  const activePlayoffId = liveGame?.playoff_match_id ?? playoffMatchId
+
   const { data: initialEvents } = activeFixtureId
     ? await supabase
         .from('match_events')
         .select('*')
         .eq('fixture_id', activeFixtureId)
         .order('minute', { ascending: true })
-    : { data: [] }
+    : activePlayoffId
+      ? await supabase
+          .from('match_events')
+          .select('*')
+          .eq('playoff_match_id', activePlayoffId)
+          .order('minute', { ascending: true })
+      : { data: [] }
 
   const isOwner = user?.id === tournament.user_id
 
@@ -72,6 +80,7 @@ export default async function LivePage({
           defaultHomeId={defaultHomeId}
           defaultAwayId={defaultAwayId}
           defaultFixtureId={fixtureId}
+          defaultPlayoffMatchId={playoffMatchId}
         />
       </main>
     </div>

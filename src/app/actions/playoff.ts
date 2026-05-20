@@ -60,11 +60,41 @@ export async function generatePlayoff(tournamentId: string) {
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }
 
+export async function startPlayoffMatch(
+  matchId: string,
+  tournamentId: string,
+  homeTeamId: string,
+  awayTeamId: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { error } = await supabase.from('live_games').upsert({
+    tournament_id: tournamentId,
+    home_team_id: homeTeamId,
+    away_team_id: awayTeamId,
+    home_score: 0,
+    away_score: 0,
+    period: '1',
+    timer_running: false,
+    accumulated_secs: 0,
+    started_at: null,
+    fixture_id: null,
+    playoff_match_id: matchId,
+  }, { onConflict: 'tournament_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return {}
+}
+
 export async function savePlayoffResult(
   matchId: string,
   tournamentId: string,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  events: { teamId: string; playerName: string; type?: string; minute?: number }[] = [],
 ) {
   const supabase = await createClient()
 
@@ -79,16 +109,35 @@ export async function savePlayoffResult(
 
   const winnerId = homeScore > awayScore ? match.home_team_id : match.away_team_id
 
-  await supabase.from('playoff_matches').update({
+  const { error: updateErr } = await supabase.from('playoff_matches').update({
     home_score: homeScore,
     away_score: awayScore,
     winner_id: winnerId,
   }).eq('id', matchId)
 
+  if (updateErr) return { error: updateErr.message }
+
   // Advance winner to next match if linked
   if (match.winner_to_match && winnerId) {
     const field = match.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
     await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', match.winner_to_match)
+  }
+
+  // Replace match events
+  await supabase.from('match_events').delete().eq('playoff_match_id', matchId)
+
+  const valid = events.filter(e => e.playerName.trim())
+  if (valid.length > 0) {
+    await supabase.from('match_events').insert(
+      valid.map(e => ({
+        playoff_match_id: matchId,
+        fixture_id: null,
+        team_id: e.teamId,
+        player_name: e.playerName.trim(),
+        type: e.type ?? 'goal',
+        minute: e.minute ?? null,
+      }))
+    )
   }
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)

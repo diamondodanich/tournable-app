@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Team, Fixture } from '@/types'
+import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import TeamAvatar from './TeamAvatar'
 
@@ -14,19 +14,16 @@ const FILTERS: { value: Filter; label: string; color: string }[] = [
   { value: 'red_card',    label: '🟥 КК',       color: 'bg-red-600 text-white' },
 ]
 
-function buildLeaderboard(teams: Team[], fixtures: Fixture[], type: Filter) {
+function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
   const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; count: number }>()
 
-  fixtures.forEach(f => {
-    if (!f.played || f.is_bye) return
-    f.match_events?.filter(e => e.type === type).forEach(e => {
-      const name = e.player_name.trim()
-      if (!name) return
-      const key = `${e.team_id}|${name.toLowerCase()}`
-      const team = teams.find(t => t.id === e.team_id)
-      if (!map.has(key)) map.set(key, { player: name, teamName: team?.name ?? '—', logoUrl: team?.logo_url ?? null, count: 0 })
-      map.get(key)!.count++
-    })
+  events.filter(e => e.type === type).forEach(e => {
+    const name = e.player_name.trim()
+    if (!name) return
+    const key = `${e.team_id}|${name.toLowerCase()}`
+    const team = teams.find(t => t.id === e.team_id)
+    if (!map.has(key)) map.set(key, { player: name, teamName: team?.name ?? '—', logoUrl: team?.logo_url ?? null, count: 0 })
+    map.get(key)!.count++
   })
 
   return [...map.values()].sort((a, b) => b.count - a.count || a.player.localeCompare(b.player, 'ru'))
@@ -34,9 +31,9 @@ function buildLeaderboard(teams: Team[], fixtures: Fixture[], type: Filter) {
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-export default function StatsTab({ teams, fixtures }: { teams: Team[]; fixtures: Fixture[] }) {
+export default function StatsTab({ teams, events }: { teams: Team[]; events: MatchEvent[] }) {
   const [filter, setFilter] = useState<Filter>('goal')
-  const list = buildLeaderboard(teams, fixtures, filter)
+  const list = buildLeaderboard(teams, events, filter)
   const active = FILTERS.find(f => f.value === filter)!
 
   return (

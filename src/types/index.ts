@@ -49,7 +49,8 @@ export type Fixture = {
 
 export type MatchEvent = {
   id: string
-  fixture_id: string
+  fixture_id: string | null
+  playoff_match_id?: string | null
   team_id: string
   player_name: string
   type: 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
@@ -85,12 +86,14 @@ export type PlayoffMatch = {
   winner_to_match: string | null
   winner_slot: 'home' | 'away' | null
   created_at: string
+  match_events?: MatchEvent[]
 }
 
 export type LiveGame = {
   id: string
   tournament_id: string
   fixture_id: string | null
+  playoff_match_id?: string | null
   home_team_id: string | null
   away_team_id: string | null
   home_score: number

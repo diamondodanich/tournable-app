@@ -6,7 +6,7 @@ import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle } from 'lucide-react'
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -105,6 +105,9 @@ export default function LiveBoard({
   // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
   const [finishing, setFinishing]                 = useState(false)
+
+  // ── Add event sheet ──
+  const [showForm, setShowForm] = useState(false)
 
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const gameRef    = useRef<LiveGame | null>(initialGame)
@@ -371,6 +374,7 @@ export default function LiveBoard({
       }
     }
 
+    setShowForm(false)
     setPlayer('')
     setAssister('')
     setMinute('')
@@ -591,40 +595,67 @@ export default function LiveBoard({
       )}
 
       {/* ── Scoreboard ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-stretch">
+      <div className="shrink-0 px-4 pt-5 pb-4">
 
-        {/* Home */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4 px-3 gap-2 min-w-0">
-          <TeamAvatar
-            name={homeTeam?.name ?? ''}
-            logoUrl={homeTeam?.logo_url}
-            size={fullscreen ? 80 : 48}
-          />
-          <p className="text-white font-black text-sm sm:text-base text-center leading-tight line-clamp-2 max-w-[120px]">
-            {homeTeam?.name}
-          </p>
-          <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-            fullscreen ? 'text-[9rem]' : 'text-[3.5rem] sm:text-[5rem]'
-          }`}>
-            {game.home_score}
-          </span>
+        {/* Teams + Score row */}
+        <div className="flex items-center">
+
+          {/* Home team */}
+          <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+            <TeamAvatar
+              name={homeTeam?.name ?? ''}
+              logoUrl={homeTeam?.logo_url}
+              size={fullscreen ? 96 : 68}
+            />
+            <p className="text-white font-black text-sm text-center leading-tight line-clamp-2 max-w-[96px]">
+              {homeTeam?.name}
+            </p>
+          </div>
+
+          {/* Score */}
+          <div className="flex items-center gap-1 px-2 shrink-0">
+            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+              fullscreen ? 'text-[9rem]' : 'text-[5.5rem] sm:text-[7rem]'
+            }`}>
+              {game.home_score}
+            </span>
+            <span className={`font-black text-gray-700 font-mono select-none leading-none ${
+              fullscreen ? 'text-6xl' : 'text-4xl sm:text-5xl'
+            }`}>
+              :
+            </span>
+            <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
+              fullscreen ? 'text-[9rem]' : 'text-[5.5rem] sm:text-[7rem]'
+            }`}>
+              {game.away_score}
+            </span>
+          </div>
+
+          {/* Away team */}
+          <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+            <TeamAvatar
+              name={awayTeam?.name ?? ''}
+              logoUrl={awayTeam?.logo_url}
+              size={fullscreen ? 96 : 68}
+            />
+            <p className="text-white font-black text-sm text-center leading-tight line-clamp-2 max-w-[96px]">
+              {awayTeam?.name}
+            </p>
+          </div>
         </div>
 
-        {/* Center: colon + timer + controls */}
-        <div className="flex flex-col items-center justify-center gap-1.5 px-1 shrink-0">
-          <span className={`font-black text-gray-700 font-mono select-none ${fullscreen ? 'text-5xl' : 'text-3xl sm:text-4xl'}`}>
-            :
-          </span>
+        {/* Timer + period + controls row */}
+        <div className="flex items-center justify-center gap-3 mt-4">
           <span className={`font-mono font-black tabular-nums ${
             game.timer_running ? 'text-emerald-400' : 'text-gray-600'
-          } ${fullscreen ? 'text-2xl' : 'text-lg sm:text-xl'}`}>
+          } ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>
             {formatTime(displaySecs)}
           </span>
-          <span className="text-gray-600 text-[10px] font-bold uppercase tracking-wider text-center">
+          <span className="text-gray-600 text-[11px] font-bold uppercase tracking-wider">
             {currentPeriodLabel}
           </span>
           {isOwner && (
-            <div className="flex gap-2 mt-1">
+            <div className="flex gap-2">
               <button
                 onClick={handleTimerToggle}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -633,7 +664,7 @@ export default function LiveBoard({
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white'
                 }`}
               >
-                {game.timer_running ? <Pause size={16} /> : <Play size={16} />}
+                {game.timer_running ? <Pause size={15} /> : <Play size={15} />}
               </button>
               <button
                 onClick={handleResetTimer}
@@ -644,30 +675,14 @@ export default function LiveBoard({
             </div>
           )}
         </div>
-
-        {/* Away */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4 px-3 gap-2 min-w-0">
-          <TeamAvatar
-            name={awayTeam?.name ?? ''}
-            logoUrl={awayTeam?.logo_url}
-            size={fullscreen ? 80 : 48}
-          />
-          <p className="text-white font-black text-sm sm:text-base text-center leading-tight line-clamp-2 max-w-[120px]">
-            {awayTeam?.name}
-          </p>
-          <span className={`font-black text-white font-mono tabular-nums leading-none select-none ${
-            fullscreen ? 'text-[9rem]' : 'text-[3.5rem] sm:text-[5rem]'
-          }`}>
-            {game.away_score}
-          </span>
-        </div>
       </div>
 
-      {/* ── TV Events strip — scrollable ────────────────────────────────── */}
-      <div className={`min-h-0 mx-4 mb-2 ${hasEvents ? 'flex-1 overflow-y-auto scrollbar-hide' : 'flex-none'}`}>
+      {/* ── Events strip — gets all remaining space, scrollable ──────────── */}
+      <div className="flex-1 min-h-0 mx-4 mb-2 overflow-y-auto scrollbar-hide">
         {hasEvents && (
           <div className="bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
+
               {/* Home */}
               <div className="p-3 space-y-1.5">
                 {homePaired.map(({ evt: e, assist }) => (
@@ -679,9 +694,7 @@ export default function LiveBoard({
                     <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
                       {e.player_name}
                       {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
-                      {assist && (
-                        <span className="text-gray-500 text-xs font-normal ml-1">({assist.player_name})</span>
-                      )}
+                      {assist && <span className="text-gray-500 text-xs font-normal ml-1">({assist.player_name})</span>}
                     </span>
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
@@ -719,9 +732,7 @@ export default function LiveBoard({
                       </button>
                     )}
                     <span className={`text-sm font-semibold flex-1 min-w-0 truncate text-right ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
-                      {assist && (
-                        <span className="text-gray-500 text-xs font-normal mr-1">({assist.player_name})</span>
-                      )}
+                      {assist && <span className="text-gray-500 text-xs font-normal mr-1">({assist.player_name})</span>}
                       {e.type === 'own_goal' && <span className="text-red-600 text-xs mr-1 font-normal">ОГ</span>}
                       {e.player_name}
                     </span>
@@ -747,128 +758,29 @@ export default function LiveBoard({
                   </div>
                 ))}
               </div>
+
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Owner: Add event form ────────────────────────────────────────── */}
-      {isOwner && hasFixture && (
-        <div className="shrink-0 mx-4 mb-2">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3 max-w-sm mx-auto space-y-2">
-
-            {/* Row 1: Team selector */}
-            <div className="grid grid-cols-2 gap-2">
-              {(['home', 'away'] as const).map(s => {
-                const t = s === 'home' ? homeTeam : awayTeam
-                const active = side === s
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setSide(s)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
-                      active
-                        ? 'border-emerald-600 bg-emerald-900/30 text-white'
-                        : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
-                    }`}
-                  >
-                    <TeamAvatar name={t?.name ?? ''} logoUrl={t?.logo_url} size={18} />
-                    <span className="text-xs font-bold truncate">{t?.name ?? (s === 'home' ? 'Хозяева' : 'Гости')}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Row 2: Action type pills */}
-            <div className="flex gap-2 justify-center">
-              {([
-                { value: 'goal',        label: '⚽ Гол' },
-                { value: 'yellow_card', label: '🟨 ЖК' },
-                { value: 'red_card',    label: '🟥 КК' },
-              ] as const).map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    actionType === opt.value
-                      ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
-                      : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
-                      : 'bg-red-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Inputs row: player + (assist) + minute inline on goal */}
-            {actionType === 'goal' ? (
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={player}
-                  onChange={e => setPlayer(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="Автор гола"
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
-                />
-                <Input
-                  value={assister}
-                  onChange={e => setAssister(e.target.value)}
-                  placeholder="Ассистент"
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
-                />
-              </div>
-            ) : (
-              <Input
-                value={player}
-                onChange={e => setPlayer(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="Игрок"
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-8 text-xs"
-              />
-            )}
-
-            {/* Bottom row: minute + own goal + submit */}
-            <div className="flex items-center gap-2">
-              <Input
-                value={minute}
-                onChange={e => setMinute(e.target.value)}
-                placeholder={currentMinute > 0 ? `${currentMinute}'` : 'Мин'}
-                type="number" min={1} max={120}
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-8 text-xs w-20 shrink-0"
-              />
-              {actionType === 'goal' && (
-                <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={isOwnGoal}
-                    onChange={e => setIsOwnGoal(e.target.checked)}
-                    className="accent-red-500 w-3 h-3"
-                  />
-                  <span className="text-xs text-gray-500 whitespace-nowrap">↩ ОГ</span>
-                </label>
-              )}
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !player.trim()}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${submitClass}`}
-              >
-                {submitLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Finish button ────────────────────────────────────────────────── */}
+      {/* ── Bottom action bar ────────────────────────────────────────────── */}
       {isOwner && (
-        <div className="shrink-0 px-4 pb-3">
+        <div className="shrink-0 px-4 pb-4 flex gap-2">
+          {hasFixture && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus size={16} />
+              Событие
+            </button>
+          )}
           <button
             onClick={() => setShowFinishConfirm(true)}
-            className="w-full py-2 text-xs text-gray-600 hover:text-red-400 border border-gray-800 hover:border-red-900/60 rounded-xl transition-colors"
+            className={`py-3 rounded-2xl border border-gray-800 hover:border-red-900/60 hover:text-red-400 text-gray-600 text-sm font-bold transition-colors ${hasFixture ? 'px-5' : 'flex-1'}`}
           >
-            Завершить матч
+            Завершить
           </button>
         </div>
       )}
@@ -896,6 +808,123 @@ export default function LiveBoard({
                 className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
               >
                 {finishing ? 'Сохраняем…' : 'Сохранить и завершить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add event bottom sheet ───────────────────────────────────────── */}
+      {showForm && isOwner && hasFixture && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="w-full bg-gray-950 border-t border-gray-800 rounded-t-3xl p-5 pb-10 space-y-3 max-w-lg mx-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div className="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-1" />
+
+            {/* Team selector */}
+            <div className="grid grid-cols-2 gap-2">
+              {(['home', 'away'] as const).map(s => {
+                const tm = s === 'home' ? homeTeam : awayTeam
+                const active = side === s
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setSide(s)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${
+                      active
+                        ? 'border-emerald-600 bg-emerald-900/30 text-white'
+                        : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
+                    }`}
+                  >
+                    <TeamAvatar name={tm?.name ?? ''} logoUrl={tm?.logo_url} size={22} />
+                    <span className="text-sm font-bold truncate">{tm?.name ?? (s === 'home' ? 'Хозяева' : 'Гости')}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Action type */}
+            <div className="flex gap-2 justify-center">
+              {([
+                { value: 'goal',        label: '⚽ Гол' },
+                { value: 'yellow_card', label: '🟨 ЖК' },
+                { value: 'red_card',    label: '🟥 КК' },
+              ] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
+                  className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+                    actionType === opt.value
+                      ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
+                      : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
+                      : 'bg-red-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Player inputs */}
+            {actionType === 'goal' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={player}
+                  onChange={e => setPlayer(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  placeholder="Автор гола"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
+                />
+                <Input
+                  value={assister}
+                  onChange={e => setAssister(e.target.value)}
+                  placeholder="Ассистент"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
+                />
+              </div>
+            ) : (
+              <Input
+                value={player}
+                onChange={e => setPlayer(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                placeholder="Игрок"
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
+              />
+            )}
+
+            {/* Minute + own goal + submit */}
+            <div className="flex items-center gap-2">
+              <Input
+                value={minute}
+                onChange={e => setMinute(e.target.value)}
+                placeholder={currentMinute > 0 ? `${currentMinute}'` : 'Мин'}
+                type="number" min={1} max={120}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-10 text-sm w-20 shrink-0"
+              />
+              {actionType === 'goal' && (
+                <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isOwnGoal}
+                    onChange={e => setIsOwnGoal(e.target.checked)}
+                    className="accent-red-500 w-3.5 h-3.5"
+                  />
+                  <span className="text-sm text-gray-500 whitespace-nowrap">↩ ОГ</span>
+                </label>
+              )}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !player.trim()}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 ${submitClass}`}
+              >
+                {submitLabel}
               </button>
             </div>
           </div>

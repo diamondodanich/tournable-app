@@ -3,6 +3,7 @@ import { Tournament } from '@/types'
 import Link from 'next/link'
 import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, ArrowRight } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
+import TeamAvatar from '@/components/tournament/TeamAvatar'
 
 function pluralRounds(n: number) {
   const mod10 = n % 10, mod100 = n % 100
@@ -95,13 +96,18 @@ export default async function DashboardPage() {
               <div key={t.id} className="group relative">
                 <Link href={`/dashboard/tournament/${t.id}`} className="block">
                   <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all p-5 h-full flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-2 pr-7">
-                      <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
-                      <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${
-                        isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {isActive ? 'Активен' : 'Настройка'}
-                      </span>
+                    <div className="flex items-start gap-3 pr-7">
+                      <TeamAvatar name={t.name} logoUrl={t.logo_url} size={40} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
+                          <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {isActive ? 'Активен' : 'Настройка'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
                       {teamCount > 0 && (

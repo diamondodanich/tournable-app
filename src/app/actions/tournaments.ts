@@ -30,8 +30,16 @@ export async function createTournamentWithSetup(
   name: string,
   format: 'round_robin' | 'playoff',
   numRounds: number,
-  teamNames: string[]
-): Promise<{ id?: string; error?: string }> {
+  teamNames: string[],
+  settings?: {
+    matchPeriods?: number
+    extraTime?: boolean
+    matchDurationMins?: number
+    pointsWin?: number
+    pointsDraw?: number
+    pointsLoss?: number
+  }
+): Promise<{ id?: string; teamIds?: string[]; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
@@ -39,27 +47,37 @@ export async function createTournamentWithSetup(
   // 1. Create tournament
   const { data: t, error: tErr } = await supabase
     .from('tournaments')
-    .insert({ user_id: user.id, name: name.trim(), num_rounds: numRounds, format })
+    .insert({
+      user_id: user.id,
+      name: name.trim(),
+      num_rounds: numRounds,
+      format,
+      match_periods:       settings?.matchPeriods      ?? 2,
+      extra_time:          settings?.extraTime         ?? false,
+      match_duration_mins: settings?.matchDurationMins ?? 45,
+      points_win:          settings?.pointsWin         ?? 3,
+      points_draw:         settings?.pointsDraw        ?? 1,
+      points_loss:         settings?.pointsLoss        ?? 0,
+    })
     .select()
     .single()
   if (tErr || !t) return { error: tErr?.message ?? 'Ошибка создания' }
 
   // 2. Insert teams
   const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+  let teamIds: string[] = []
   if (validNames.length >= 2) {
-    const { error: teamsErr } = await supabase
+    const { data: insertedTeams, error: teamsErr } = await supabase
       .from('teams')
       .insert(validNames.map(name => ({ tournament_id: t.id, name })))
+      .select('id')
     if (teamsErr) return { error: teamsErr.message }
+    teamIds = (insertedTeams ?? []).map((r: { id: string }) => r.id)
   }
 
   // 3. Generate schedule for round-robin with enough teams
-  if (format === 'round_robin' && validNames.length >= 2) {
-    const { data: teams } = await supabase
-      .from('teams').select('id').eq('tournament_id', t.id)
-
-    if (teams && teams.length >= 2) {
-      const teamIds = teams.map(t => t.id)
+  if (format === 'round_robin' && teamIds.length >= 2) {
+    {
       const baseRounds = generateRoundRobin(teamIds)
       const fixtures = []
       let matchdayCounter = 0
@@ -96,7 +114,7 @@ export async function createTournamentWithSetup(
   }
 
   revalidatePath('/dashboard')
-  return { id: t.id }
+  return { id: t.id, teamIds }
 }
 
 export async function deleteTournament(id: string) {

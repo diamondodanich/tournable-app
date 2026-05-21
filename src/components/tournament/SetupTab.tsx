@@ -209,27 +209,29 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
             </div>
           </div>
 
-          {/* Points system */}
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Система очков</p>
-            <div className="flex items-center gap-4">
-              {([
-                { label: 'Победа', value: pointsWin,  setter: setPointsWin },
-                { label: 'Ничья',  value: pointsDraw, setter: setPointsDraw },
-                { label: 'Пораж.', value: pointsLoss, setter: setPointsLoss },
-              ] as const).map(({ label, value, setter }) => (
-                <div key={label} className="flex flex-col items-center gap-1">
-                  <span className="text-xs text-gray-400">{label}</span>
-                  <Input
-                    type="number" min={0} max={9}
-                    value={value}
-                    onChange={e => setter(parseInt(e.target.value) || 0)}
-                    className="w-14 h-8 text-center font-mono font-bold text-sm"
-                  />
-                </div>
-              ))}
+          {/* Points system — round-robin only */}
+          {tournament.format !== 'playoff' && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Система очков</p>
+              <div className="flex items-center gap-4">
+                {([
+                  { label: 'Победа', value: pointsWin,  setter: setPointsWin },
+                  { label: 'Ничья',  value: pointsDraw, setter: setPointsDraw },
+                  { label: 'Пораж.', value: pointsLoss, setter: setPointsLoss },
+                ] as const).map(({ label, value, setter }) => (
+                  <div key={label} className="flex flex-col items-center gap-1">
+                    <span className="text-xs text-gray-400">{label}</span>
+                    <Input
+                      type="number" min={0} max={9}
+                      value={value}
+                      onChange={e => setter(parseInt(e.target.value) || 0)}
+                      className="w-14 h-8 text-center font-mono font-bold text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <Button
             onClick={handleSaveSettings}

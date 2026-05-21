@@ -285,6 +285,13 @@ export async function saveFixtureResult(
     if (insertError) return { error: insertError.message }
   }
 
+  // Sync score to live_games if a live game is active for this fixture
+  await supabase
+    .from('live_games')
+    .update({ home_score: homeScore, away_score: awayScore })
+    .eq('tournament_id', tournamentId)
+    .eq('fixture_id', fixtureId)
+
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   return {}
 }

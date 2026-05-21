@@ -10,6 +10,7 @@ import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTri
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useFeedback } from '@/hooks/useFeedback'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -78,6 +79,7 @@ export default function LiveBoard({
 }: Props) {
   const router = useRouter()
   const supabase = createClient()
+  const feedback = useFeedback()
 
   // ── Core state ──
   const [game, setGame]               = useState<LiveGame | null>(initialGame)
@@ -180,6 +182,7 @@ export default function LiveBoard({
         if (isOwner && secs >= totalDurationSecs && !timeUpRef.current) {
           timeUpRef.current = true
           setIsTimeUp(true)
+          feedback.timeUp()
         }
       }, 200)
     } else {
@@ -307,6 +310,8 @@ export default function LiveBoard({
         .insert(eventRow({ player_name: player.trim(), type, minute: min }))
         .select().single()
 
+      if (!goalErr) feedback.goal()
+
       if (goalErr) {
         setEvents(prev => prev.filter(e => e.id !== tempGoalId && e.id !== tempAssistId))
         setGame(prev => {
@@ -362,7 +367,10 @@ export default function LiveBoard({
       if (error) {
         setEvents(prev => prev.filter(e => !tempIds.includes(e.id)))
         toast.error(error.message)
-      } else if (data) {
+      } else {
+        feedback.card()
+      }
+      if (data) {
         setEvents(prev => {
           const result = [...prev]
           tempIds.forEach((tid, i) => {
@@ -414,6 +422,7 @@ export default function LiveBoard({
     const result = await finishLiveMatch(tournament.id)
     setFinishing(false)
     if (result?.error) { toast.error(result.error); return }
+    feedback.finish()
     setShowFinishConfirm(false)
     setIsFinished(true)
   }
@@ -767,15 +776,26 @@ export default function LiveBoard({
       {/* ── Bottom action bar ────────────────────────────────────────────── */}
       {isOwner && (
         <div className="shrink-0 px-4 pb-4 flex gap-2">
-          {hasFixture && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-            >
-              <Plus size={16} />
-              Событие
-            </button>
-          )}
+          {hasFixture && (() => {
+            const matchStarted = game.accumulated_secs > 0 || game.timer_running
+            return matchStarted ? (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+              >
+                <Plus size={16} />
+                Событие
+              </button>
+            ) : (
+              <button
+                onClick={handleTimerToggle}
+                className="flex-1 py-3 rounded-2xl bg-emerald-900/40 border border-emerald-800/60 text-emerald-500 text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-emerald-800/40"
+              >
+                <Play size={15} />
+                Начните матч для записи событий
+              </button>
+            )
+          })()}
           <button
             onClick={() => setShowFinishConfirm(true)}
             className={`py-3 rounded-2xl border border-gray-800 hover:border-red-900/60 hover:text-red-400 text-gray-600 text-sm font-bold transition-colors ${hasFixture ? 'px-5' : 'flex-1'}`}
@@ -899,15 +919,14 @@ export default function LiveBoard({
               />
             )}
 
-            {/* Minute + own goal + submit */}
+            {/* Auto-minute display + own goal + submit */}
             <div className="flex items-center gap-2">
-              <Input
-                value={minute}
-                onChange={e => setMinute(e.target.value)}
-                placeholder={currentMinute > 0 ? `${currentMinute}'` : 'Мин'}
-                type="number" min={1} max={120}
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-10 text-sm w-20 shrink-0"
-              />
+              {/* Auto-minute (read-only) */}
+              <div className="h-10 px-3 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center shrink-0">
+                <span className="text-emerald-400 font-mono text-sm font-bold tabular-nums">
+                  {currentMinute > 0 ? `${currentMinute}'` : '0\''}
+                </span>
+              </div>
               {actionType === 'goal' && (
                 <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
                   <input

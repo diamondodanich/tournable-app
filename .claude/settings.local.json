@@ -27,7 +27,10 @@
       "Bash(gh project *)",
       "Bash(python -c \"import sys,json; items=json.load\\(sys.stdin\\)['items']; [print\\(i.get\\('status','?'\\), '|', i.get\\('title','?'\\)\\) for i in items]\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);j.items.forEach\\(i=>console.log\\(\\(i.status||'—'\\).padEnd\\(16\\),i.title\\)\\)}\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(git commit -m 'fix: cast eventRow to any — Supabase types predate migration 009 \\(fixture_id nullable\\) *)",
+      "Bash(git commit -m 'fix: eventRow cast unknown→any to guarantee Supabase insert type bypass *)",
+      "Bash(git commit -m 'fix: split '\\\\''any maskable'\\\\'' into separate manifest icon entries \\(TS2820\\) *)"
     ]
   }
 }

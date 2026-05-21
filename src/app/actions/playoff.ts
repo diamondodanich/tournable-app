@@ -70,12 +70,19 @@ export async function startPlayoffMatch(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
 
+  // Use existing match scores if already recorded via card edit
+  const { data: existingMatch } = await supabase
+    .from('playoff_matches')
+    .select('home_score, away_score')
+    .eq('id', matchId)
+    .single()
+
   const { error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
-    home_score: 0,
-    away_score: 0,
+    home_score: existingMatch?.home_score ?? 0,
+    away_score: existingMatch?.away_score ?? 0,
     period: '1',
     timer_running: false,
     accumulated_secs: 0,
@@ -122,6 +129,13 @@ export async function savePlayoffResult(
     const field = match.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
     await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', match.winner_to_match)
   }
+
+  // Sync score to live_games if a live game is active for this match
+  await supabase
+    .from('live_games')
+    .update({ home_score: homeScore, away_score: awayScore })
+    .eq('tournament_id', tournamentId)
+    .eq('playoff_match_id', matchId)
 
   // Replace match events
   await supabase.from('match_events').delete().eq('playoff_match_id', matchId)

@@ -387,7 +387,7 @@ function PlayoffMatchCard({
             {/* Home column */}
             <div>
               {homeRows.map((r, i) => (
-                <div key={i} className="flex items-center gap-1 mb-1 group">
+                <div key={i} className="flex items-center gap-1 mb-1">
                   <EventIcon type={r.type} />
                   <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
                     {r.playerName}
@@ -395,7 +395,7 @@ function PlayoffMatchCard({
                   </span>
                   {r.minute && <span className="text-gray-400 text-[10px] shrink-0">{r.minute}&apos;</span>}
                   <button onClick={() => removeRow(r.i, r.assistIdx)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-opacity shrink-0 ml-0.5">
+                    className="text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-0.5 touch-manipulation">
                     <X size={10} />
                   </button>
                 </div>
@@ -412,7 +412,7 @@ function PlayoffMatchCard({
             {/* Away column */}
             <div>
               {awayRows.map((r, i) => (
-                <div key={i} className="flex items-center gap-1 mb-1 justify-end group">
+                <div key={i} className="flex items-center gap-1 mb-1 justify-end">
                   <button onClick={() => removeRow(r.i, r.assistIdx)}
                     className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-opacity shrink-0 mr-0.5">
                     <X size={10} />

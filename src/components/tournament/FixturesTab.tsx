@@ -12,28 +12,36 @@ import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 
 type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
+type ActionType = 'goal' | 'yellow_card' | 'red_card'
 type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
-
-const EDITABLE_TYPES: { value: EventType; emoji: string; label: string }[] = [
-  { value: 'goal',        emoji: '⚽', label: 'Гол' },
-  { value: 'own_goal',    emoji: '↩',  label: 'АГ' },
-  { value: 'assist',      emoji: '🎯', label: 'Ассист' },
-  { value: 'yellow_card', emoji: '🟨', label: 'ЖК' },
-  { value: 'red_card',    emoji: '🟥', label: 'КК' },
-]
 
 function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
 }
 
-// Inline icon for event type display in finished card
-function EventBadge({ type }: { type: string }) {
-  if (type === 'goal')        return <span className="text-sm">⚽</span>
-  if (type === 'own_goal')    return <span className="text-sm text-red-500">↩</span>
-  if (type === 'assist')      return <span className="text-sm">🎯</span>
-  if (type === 'yellow_card') return <span className="inline-block w-2.5 h-3.5 bg-yellow-400 rounded-[2px] align-middle" />
-  if (type === 'red_card')    return <span className="inline-block w-2.5 h-3.5 bg-red-500 rounded-[2px] align-middle" />
+function EvtIcon({ type }: { type: string }) {
+  if (type === 'goal')        return <span className="text-xs">⚽</span>
+  if (type === 'own_goal')    return <span className="text-xs text-red-500">↩</span>
+  if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
+  if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
+}
+
+function buildRows(teamId: string, events: EventEntry[]) {
+  const indexed  = events.map((e, i) => ({ ...e, i }))
+  const mine     = indexed.filter(e => e.teamId === teamId)
+  const nonAssist = mine.filter(e => e.type !== 'assist')
+  const assists  = mine.filter(e => e.type === 'assist')
+  const used     = new Set<number>()
+  return nonAssist.map(e => {
+    let assisterName: string | null = null
+    let assistIdx: number | undefined
+    if (e.type === 'goal') {
+      const a = assists.find(a => !used.has(a.i) && a.minute === e.minute)
+      if (a) { used.add(a.i); assisterName = a.playerName; assistIdx = a.i }
+    }
+    return { ...e, assisterName, assistIdx }
+  })
 }
 
 function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
@@ -47,27 +55,42 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       minute: e.minute?.toString() ?? '',
     })) ?? []
   )
-  const [saving, setSaving]   = useState(false)
+  const [saving, setSaving]     = useState(false)
   const [starting, setStarting] = useState(false)
-  const [status, setStatus]   = useState<'scheduled' | 'live' | 'finished'>(
+  const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
-  // When finished, default to summary view; can toggle to edit
   const [isEditing, setIsEditing] = useState(status !== 'finished')
+
+  // Inline event form
+  const [form, setForm] = useState<{
+    teamId: string; actionType: ActionType
+    player: string; assister: string; minute: string; isOwnGoal: boolean
+  } | null>(null)
 
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
 
-  function addEvent(teamId: string) {
-    setEvents(prev => [...prev, { teamId, playerName: '', type: 'goal', minute: '' }])
+  function openForm(teamId: string) {
+    if (form?.teamId === teamId) { setForm(null); return }
+    setForm({ teamId, actionType: 'goal', player: '', assister: '', minute: '', isOwnGoal: false })
   }
 
-  function updateEvent(idx: number, field: keyof EventEntry, value: string) {
-    setEvents(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e))
+  function confirmForm() {
+    if (!form || !form.player.trim()) return
+    const type: EventType = form.actionType === 'goal' && form.isOwnGoal ? 'own_goal' : form.actionType
+    const added: EventEntry[] = [
+      { teamId: form.teamId, playerName: form.player.trim(), type, minute: form.minute },
+    ]
+    if (form.actionType === 'goal' && !form.isOwnGoal && form.assister.trim()) {
+      added.push({ teamId: form.teamId, playerName: form.assister.trim(), type: 'assist', minute: form.minute })
+    }
+    setEvents(prev => [...prev, ...added])
+    setForm(null)
   }
 
-  function removeEvent(idx: number) {
-    setEvents(prev => prev.filter((_, i) => i !== idx))
+  function removeRow(eventIdx: number, assistIdx?: number) {
+    setEvents(prev => prev.filter((_, i) => i !== eventIdx && i !== assistIdx))
   }
 
   async function handleStart() {
@@ -75,52 +98,27 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     setStarting(true)
     const prevStatus = status
     setStatus('live')
-
-    const result = await startFixture(
-      fixture.id, tournamentId,
-      fixture.home_team_id ?? undefined,
-      fixture.away_team_id ?? undefined,
-    )
+    const result = await startFixture(fixture.id, tournamentId, fixture.home_team_id ?? undefined, fixture.away_team_id ?? undefined)
     setStarting(false)
-
-    if (result?.error) {
-      setStatus(prevStatus)
-      toast.error(`Ошибка: ${result.error}`)
-      return
-    }
-
-    window.open(
-      `/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`,
-      '_blank'
-    )
+    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`); return }
+    window.open(`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`, '_blank')
   }
 
   async function handleSave() {
     const hs  = parseInt(homeScore)
     const as_ = parseInt(awayScore)
     if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
-
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
     toast.success('Результат сохранён')
-
     const result = await saveFixtureResult(
       fixture.id, tournamentId, hs, as_,
-      events.map(e => ({
-        teamId: e.teamId, playerName: e.playerName,
-        type: e.type, minute: e.minute ? parseInt(e.minute) : undefined,
-      }))
+      events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined }))
     )
-
     setSaving(false)
-
-    if (result?.error) {
-      setStatus(prevStatus)
-      toast.error(`Ошибка: ${result.error}`)
-    } else {
-      setIsEditing(false)
-    }
+    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
+    else setIsEditing(false)
   }
 
   if (fixture.is_bye) {
@@ -132,54 +130,23 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     )
   }
 
-  // ── Finished summary view ─────────────────────────────────────────────────
+  // ── Finished summary ─────────────────────────────────────────────────────
 
   if (status === 'finished' && !isEditing) {
-    const allEvts = (fixture.match_events ?? events.map(e => ({
-      id: e.teamId + e.playerName,
-      team_id: e.teamId,
-      player_name: e.playerName,
-      type: e.type,
-      minute: e.minute ? parseInt(e.minute) : null,
-    })))
-    const homeEvts = allEvts.filter(e => e.team_id === fixture.home_team_id)
-    const awayEvts = allEvts.filter(e => e.team_id === fixture.away_team_id)
-
-    const homeGoals   = homeEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
-    const homeAssists = homeEvts.filter(e => e.type === 'assist')
-    const awayGoals   = awayEvts.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
-    const awayAssists = awayEvts.filter(e => e.type === 'assist')
-
-    // Pair goals with assists by minute
-    function pairAssist<T extends { minute: number | null; team_id: string }>(
-      goal: T, assists: T[], usedIds: Set<string>
-    ): T | null {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const match = assists.find((a: any) => !usedIds.has(a.id) && a.minute === goal.minute) as T | undefined
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (match) usedIds.add((match as any).id)
-      return match ?? null
-    }
-    const homeUsed = new Set<string>()
-    const awayUsed = new Set<string>()
+    const homeRows = buildRows(fixture.home_team_id ?? '', events)
+    const awayRows = buildRows(fixture.away_team_id ?? '', events)
+    const hasEvts  = homeRows.length > 0 || awayRows.length > 0
 
     return (
       <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-4 shadow-sm">
-        {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-            <Check size={10} className="mr-1" />Сыгран
-          </Badge>
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full transition-colors"
-          >
+          <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>
+          <button onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full transition-colors">
             <Pencil size={11} /> Изменить
           </button>
         </div>
-
-        {/* Score row */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={28} />
             <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
@@ -192,40 +159,32 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
             <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={28} />
           </div>
         </div>
-
-        {/* Events strip — two columns */}
-        {(homeGoals.length > 0 || awayGoals.length > 0) && (
-          <div className="border-t border-dashed border-emerald-200 pt-3">
-            <div className="grid grid-cols-2 gap-2">
+        {hasEvts && (
+          <div className="border-t border-dashed border-emerald-200 pt-2">
+            <div className="grid grid-cols-2 gap-x-2">
               <div className="space-y-1">
-                {homeGoals.map((e, i) => {
-                  const assist = pairAssist(e, homeAssists, homeUsed)
-                  return (
-                    <div key={i} className={`flex items-center gap-1.5 text-xs ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                      <EventBadge type={e.type} />
-                      <span className="font-medium truncate">
-                        {e.player_name}
-                        {assist && <span className="text-gray-400 font-normal"> ({assist.player_name})</span>}
-                      </span>
-                      {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
-                    </div>
-                  )
-                })}
+                {homeRows.map((r, i) => (
+                  <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                    <EvtIcon type={r.type} />
+                    <span className="font-medium truncate">
+                      {r.playerName}
+                      {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
+                    </span>
+                    {r.minute && <span className="text-gray-400 shrink-0 ml-auto">{r.minute}&apos;</span>}
+                  </div>
+                ))}
               </div>
               <div className="space-y-1">
-                {awayGoals.map((e, i) => {
-                  const assist = pairAssist(e, awayAssists, awayUsed)
-                  return (
-                    <div key={i} className={`flex items-center gap-1.5 text-xs justify-end ${e.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                      {e.minute != null && <span className="text-gray-400 shrink-0">{e.minute}&apos;</span>}
-                      <span className="font-medium truncate text-right">
-                        {assist && <span className="text-gray-400 font-normal">({assist.player_name}) </span>}
-                        {e.player_name}
-                      </span>
-                      <EventBadge type={e.type} />
-                    </div>
-                  )
-                })}
+                {awayRows.map((r, i) => (
+                  <div key={i} className={`flex items-center gap-1 text-xs justify-end ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
+                    {r.minute && <span className="text-gray-400 shrink-0">{r.minute}&apos;</span>}
+                    <span className="font-medium truncate text-right">
+                      {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
+                      {r.playerName}
+                    </span>
+                    <EvtIcon type={r.type} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -234,141 +193,182 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     )
   }
 
-  // ── Edit / scheduled / live form ──────────────────────────────────────────
+  // ── Edit / Scheduled / Live ───────────────────────────────────────────────
 
-  const homeEvents = events.map((e, i) => ({ ...e, idx: i })).filter(e => e.teamId === fixture.home_team_id)
-  const awayEvents = events.map((e, i) => ({ ...e, idx: i })).filter(e => e.teamId === fixture.away_team_id)
+  const homeRows = buildRows(fixture.home_team_id ?? '', events)
+  const awayRows = buildRows(fixture.away_team_id ?? '', events)
+
+  function InlineForm({ side }: { side: 'home' | 'away' }) {
+    if (!form || form.teamId !== (side === 'home' ? fixture.home_team_id : fixture.away_team_id)) return null
+    const isGoal = form.actionType === 'goal'
+    const submitLabel = form.isOwnGoal ? '↩ АГ' : isGoal ? '⚽ Гол' : form.actionType === 'yellow_card' ? '🟨 ЖК' : '🟥 КК'
+    const submitColor = form.isOwnGoal
+      ? 'bg-red-100 text-red-600 hover:bg-red-200'
+      : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+      : form.actionType === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+      : 'bg-red-500 text-white hover:bg-red-600'
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-1.5 space-y-1.5">
+        <div className="flex gap-1">
+          {([
+            { v: 'goal' as const, l: '⚽' },
+            { v: 'yellow_card' as const, l: '🟨' },
+            { v: 'red_card' as const, l: '🟥' },
+          ]).map(opt => (
+            <button key={opt.v}
+              onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
+              className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
+                form.actionType === opt.v
+                  ? opt.v === 'goal' ? 'bg-emerald-600 text-white'
+                  : opt.v === 'yellow_card' ? 'bg-yellow-400 text-black'
+                  : 'bg-red-500 text-white'
+                  : 'bg-white border border-gray-200 text-gray-500'
+              }`}
+            >{opt.l}</button>
+          ))}
+          {isGoal && (
+            <label className="flex items-center gap-1 ml-auto cursor-pointer select-none">
+              <input type="checkbox" checked={form.isOwnGoal}
+                onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
+                className="accent-red-500 w-3 h-3" />
+              <span className="text-xs text-gray-500">↩</span>
+            </label>
+          )}
+        </div>
+        <Input autoFocus value={form.player}
+          onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
+          onKeyDown={e => e.key === 'Enter' && confirmForm()}
+          placeholder={isGoal ? 'Автор гола' : 'Игрок'}
+          className="h-7 text-xs bg-white" />
+        {isGoal && !form.isOwnGoal && (
+          <Input value={form.assister}
+            onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
+            placeholder="Ассистент (опц.)"
+            className="h-7 text-xs bg-white" />
+        )}
+        <div className="flex gap-1">
+          <Input value={form.minute}
+            onChange={e => setForm(f => f ? { ...f, minute: e.target.value } : f)}
+            placeholder="мин." type="number" min={1} max={120}
+            className="h-7 text-xs bg-white w-14 shrink-0" />
+          <button onClick={confirmForm} disabled={!form.player.trim()}
+            className={`flex-1 h-7 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${submitColor}`}>
+            {submitLabel}
+          </button>
+          <button onClick={() => setForm(null)}
+            className="h-7 w-7 rounded-md bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0">
+            <X size={11} />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200 bg-emerald-50/20' : 'border-gray-200'}`}>
+    <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200' : 'border-gray-200'}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        {status === 'finished' && (
-          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-            <Check size={10} className="mr-1" />Сыгран
-          </Badge>
-        )}
-        {status === 'live' && (
-          <Badge className="bg-red-100 text-red-600 text-xs animate-pulse">
-            <Radio size={10} className="mr-1" />LIVE
-          </Badge>
-        )}
-        {status === 'scheduled' && (
-          <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>
-        )}
-
+        <div>
+          {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>}
+          {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />LIVE</Badge>}
+          {status === 'scheduled'&& <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>}
+        </div>
         <div className="flex items-center gap-2">
-          {/* For live matches: quick link to board + ability to save directly */}
           {status === 'live' && (
-            <Link
-              href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`}
-              target="_blank"
-              className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
-            >
+            <Link href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`} target="_blank"
+              className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors">
               <Radio size={11} /> Табло
             </Link>
           )}
           {status === 'scheduled' && (
-            <button
-              onClick={handleStart}
-              disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
-              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
-            >
+            <button onClick={handleStart} disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
+              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
               <Play size={11} /> {starting ? 'Запуск…' : 'Начать матч'}
             </button>
           )}
           {status === 'finished' && isEditing && (
-            <button
-              onClick={() => setIsEditing(false)}
-              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors"
-            >
+            <button onClick={() => setIsEditing(false)}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors">
               ← Просмотр
             </button>
           )}
         </div>
       </div>
 
-      {/* Score row */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4">
+      {/* Score row — manual input (draws allowed in round-robin) */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={22} />
+          <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={24} />
           <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Input type="number" min={0} max={99} value={homeScore} onChange={e => setHomeScore(e.target.value)}
-            className="w-12 text-center font-mono text-lg font-bold p-1 h-9" />
+            className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
           <span className="font-bold text-gray-400 text-sm">–</span>
           <Input type="number" min={0} max={99} value={awayScore} onChange={e => setAwayScore(e.target.value)}
-            className="w-12 text-center font-mono text-lg font-bold p-1 h-9" />
+            className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
         </div>
         <div className="flex items-center gap-2 justify-end min-w-0">
           <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name}</span>
-          <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={22} />
+          <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={24} />
         </div>
       </div>
 
-      {/* Events: two columns */}
-      <div className="border-t border-dashed border-gray-200 pt-3 mb-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {([
-            { team: homeTeam, teamId: fixture.home_team_id!, evts: homeEvents },
-            { team: awayTeam, teamId: fixture.away_team_id!, evts: awayEvents },
-          ] as const).map(({ team, teamId, evts }) => (
-            <div key={teamId}>
-              <div className="flex items-center gap-1.5 mb-2">
-                <TeamAvatar name={team?.name ?? ''} logoUrl={team?.logo_url} size={16} />
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{team?.name}</p>
+      {/* Events columns */}
+      <div className="border-t border-dashed border-gray-200 pt-2 mb-3">
+        <div className="grid grid-cols-2 gap-x-3">
+          {/* Home */}
+          <div>
+            {homeRows.map((r, i) => (
+              <div key={i} className="flex items-center gap-1 mb-1">
+                <EvtIcon type={r.type} />
+                <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
+                  {r.playerName}
+                  {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
+                </span>
+                {r.minute && <span className="text-gray-400 text-[10px] shrink-0">{r.minute}&apos;</span>}
+                <button onClick={() => removeRow(r.i, r.assistIdx)}
+                  className="text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-0.5 touch-manipulation">
+                  <X size={10} />
+                </button>
               </div>
-
-              {evts.map(({ idx, type, playerName, minute }) => (
-                <div key={idx} className="mb-2 bg-gray-50 rounded-lg p-2">
-                  <div className="flex gap-1 mb-1.5 flex-wrap">
-                    {EDITABLE_TYPES.map(t => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={() => updateEvent(idx, 'type', t.value)}
-                        className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
-                          type === t.value ? 'bg-emerald-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-300'
-                        }`}
-                      >
-                        {t.emoji} {t.label}
-                      </button>
-                    ))}
-                    <button onClick={() => removeEvent(idx)} className="ml-auto text-gray-300 hover:text-red-500 px-1">
-                      <X size={13} />
-                    </button>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Input
-                      value={playerName}
-                      onChange={e => updateEvent(idx, 'playerName', e.target.value)}
-                      placeholder="Имя игрока"
-                      className="h-7 text-xs flex-1 min-w-0"
-                    />
-                    <Input
-                      value={minute}
-                      onChange={e => updateEvent(idx, 'minute', e.target.value)}
-                      placeholder="мин."
-                      type="number" min={1} max={120}
-                      className="h-7 text-xs w-16 shrink-0"
-                    />
-                  </div>
-                </div>
-              ))}
-
-              <button
-                onClick={() => addEvent(teamId)}
-                className="text-xs text-gray-400 hover:text-emerald-600 flex items-center gap-1 mt-1 transition-colors"
-              >
-                <Plus size={11} /> Добавить событие
+            ))}
+            <InlineForm side="home" />
+            {form?.teamId !== fixture.home_team_id && (
+              <button onClick={() => fixture.home_team_id && openForm(fixture.home_team_id)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5">
+                <Plus size={10} /> Событие
               </button>
-            </div>
-          ))}
+            )}
+          </div>
+          {/* Away */}
+          <div>
+            {awayRows.map((r, i) => (
+              <div key={i} className="flex items-center gap-1 mb-1 justify-end">
+                <button onClick={() => removeRow(r.i, r.assistIdx)}
+                  className="text-gray-400 hover:text-red-500 transition-colors shrink-0 mr-0.5 touch-manipulation">
+                  <X size={10} />
+                </button>
+                {r.minute && <span className="text-gray-400 text-[10px] shrink-0">{r.minute}&apos;</span>}
+                <span className={`text-xs font-medium flex-1 min-w-0 truncate text-right ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
+                  {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
+                  {r.playerName}
+                </span>
+                <EvtIcon type={r.type} />
+              </div>
+            ))}
+            <InlineForm side="away" />
+            {form?.teamId !== fixture.away_team_id && (
+              <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5 ml-auto">
+                Событие <Plus size={10} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end pt-1">
+      <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">
           <Check size={13} className="mr-1.5" />
           {saving ? 'Сохраняем…' : 'Сохранить результат'}

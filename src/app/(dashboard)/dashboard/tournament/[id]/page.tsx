@@ -12,6 +12,7 @@ import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import ExportReportButton from '@/components/tournament/ExportReportButton'
 import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
 import type { Team, Fixture, MatchEvent } from '@/types'
+import ChampionBanner from '@/components/tournament/ChampionBanner'
 
 // ── Inline stats helper for server-rendered PDF export ────────────────────
 function buildStats(teams: Team[], events: MatchEvent[], type: string) {
@@ -155,6 +156,51 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     ? (isRoundRobin ? 'fixtures' : 'playoff')
     : 'setup'
 
+  // ── Champion detection ────────────────────────────────────────────────────
+  let champion: Team | null = null
+  let runnerUp: Team | null = null
+
+  if (!isRoundRobin && pm.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const finalMatch = pm.find((m: any) => m.round_order === 1)
+    if (finalMatch?.winner_id) {
+      champion  = t.find((x: Team) => x.id === finalMatch.winner_id) ?? null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loserId = finalMatch.winner_id === finalMatch.home_team_id ? finalMatch.away_team_id : finalMatch.home_team_id
+      runnerUp  = t.find((x: Team) => x.id === loserId) ?? null
+    }
+  }
+
+  if (isRoundRobin && f.length > 0 && f.filter((x: Fixture) => !x.is_bye).every((x: Fixture) => x.played)) {
+    // Simple standings: accumulate points
+    const pWin  = tournament.points_win  ?? 3
+    const pDraw = tournament.points_draw ?? 1
+    const pLoss = tournament.points_loss ?? 0
+    const pts   = new Map<string, number>()
+    const gd    = new Map<string, number>()
+    t.forEach((tm: Team) => { pts.set(tm.id, 0); gd.set(tm.id, 0) })
+    f.filter((x: Fixture) => x.played && !x.is_bye).forEach((x: Fixture) => {
+      const h = x.home_score ?? 0; const a = x.away_score ?? 0
+      if (x.home_team_id) { gd.set(x.home_team_id, (gd.get(x.home_team_id) ?? 0) + (h - a)) }
+      if (x.away_team_id) { gd.set(x.away_team_id, (gd.get(x.away_team_id) ?? 0) + (a - h)) }
+      if (h > a) {
+        if (x.home_team_id) pts.set(x.home_team_id, (pts.get(x.home_team_id) ?? 0) + pWin)
+        if (x.away_team_id) pts.set(x.away_team_id, (pts.get(x.away_team_id) ?? 0) + pLoss)
+      } else if (a > h) {
+        if (x.away_team_id) pts.set(x.away_team_id, (pts.get(x.away_team_id) ?? 0) + pWin)
+        if (x.home_team_id) pts.set(x.home_team_id, (pts.get(x.home_team_id) ?? 0) + pLoss)
+      } else {
+        if (x.home_team_id) pts.set(x.home_team_id, (pts.get(x.home_team_id) ?? 0) + pDraw)
+        if (x.away_team_id) pts.set(x.away_team_id, (pts.get(x.away_team_id) ?? 0) + pDraw)
+      }
+    })
+    const sorted = [...t].sort((a: Team, b: Team) =>
+      ((pts.get(b.id) ?? 0) - (pts.get(a.id) ?? 0)) || ((gd.get(b.id) ?? 0) - (gd.get(a.id) ?? 0))
+    )
+    champion = sorted[0] ?? null
+    runnerUp = sorted[1] ?? null
+  }
+
   const s1 = SECTION(1, '', '#059669')
   const s2 = SECTION(2, '', '#059669')
   const s3 = SECTION(3, '', '#059669')
@@ -285,6 +331,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           </>
         )}
       </div>
+
+      {/* ── Champion banner ───────────────────────────────────────── */}
+      {champion && (
+        <ChampionBanner
+          champion={champion}
+          runnerUp={runnerUp}
+          label={isRoundRobin ? 'Победитель турнира' : 'Чемпион плей-офф'}
+        />
+      )}
 
       {/* ── Tabs ──────────────────────────────────────────────────────── */}
       <Tabs defaultValue={defaultTab}>

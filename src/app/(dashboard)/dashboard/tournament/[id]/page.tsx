@@ -11,7 +11,7 @@ import StandingsTable from '@/components/tournament/StandingsTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import ExportReportButton from '@/components/tournament/ExportReportButton'
 import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
-import type { Team, Fixture, MatchEvent } from '@/types'
+import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
 
 // ── Inline stats helper for server-rendered PDF export ────────────────────
@@ -122,13 +122,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const isOwner = user?.id === tournament.user_id
   const isRoundRobin = tournament.format === 'round_robin' || !tournament.format
 
-  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }] = await Promise.all([
+  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
     // select without match_events join — works even before migration 009 is applied
     supabase.from('playoff_matches').select('*').eq('tournament_id', id).order('round_order').order('match_order'),
     supabase.from('live_games').select('playoff_match_id').eq('tournament_id', id).maybeSingle(),
+    isOwner
+      ? supabase.from('tournament_members').select('*').eq('tournament_id', id).order('created_at')
+      : Promise.resolve({ data: [] as TournamentMember[] }),
   ])
+  const members = (membersRaw ?? []) as TournamentMember[]
 
   // Separately fetch playoff match events (requires migration 009 — falls back to [] if not yet applied)
   const pmIds = (playoffMatches ?? []).map((m: { id: string }) => m.id)
@@ -211,7 +215,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-5">
-      <TournamentHeader tournament={tournament} isOwner={isOwner} />
+      <TournamentHeader tournament={tournament} isOwner={isOwner} members={members} />
 
       {/* Hidden off-screen container for full PDF export */}
       <div

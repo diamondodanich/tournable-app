@@ -1,6 +1,6 @@
 'use client'
 
-import { Tournament } from '@/types'
+import { Tournament, TournamentMember } from '@/types'
 import { deleteTournament } from '@/app/actions/tournaments'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
@@ -11,6 +11,7 @@ import TeamAvatar from './TeamAvatar'
 interface Props {
   tournament: Tournament
   isOwner?: boolean
+  members?: TournamentMember[]
 }
 
 const FORMAT_LABEL: Record<string, string> = {
@@ -19,7 +20,7 @@ const FORMAT_LABEL: Record<string, string> = {
   group_playoff: 'Группы + плей-офф',
 }
 
-export default function TournamentHeader({ tournament, isOwner = true }: Props) {
+export default function TournamentHeader({ tournament, isOwner = true, members = [] }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const publicUrl = typeof window !== 'undefined'
@@ -66,6 +67,7 @@ export default function TournamentHeader({ tournament, isOwner = true }: Props) 
             tournamentId={tournament.id}
             tournamentName={tournament.name}
             publicUrl={publicUrl}
+            members={members}
           />
 
           {isOwner && !confirming && (

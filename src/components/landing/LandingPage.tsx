@@ -258,41 +258,41 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
     <div className="min-h-screen bg-white text-gray-900" style={{ fontFamily: 'Inter,sans-serif' }}>
 
       {/* ── Topbar ──────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100/80">
+      <header className="sticky top-0 z-50" style={{ background: 'linear-gradient(90deg,#047857 0%,#059669 100%)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <Image src="/logo-green.png" alt="Tournable" width={36} height={36} className="w-9 h-9 object-contain" />
-            <span className="font-black text-[17px] tracking-tight text-gray-900 hidden sm:block" style={{ letterSpacing: '-.02em' }}>TOURNABLE</span>
+            <Image src="/logo-white.png" alt="Tournable" width={36} height={36} className="w-9 h-9 object-contain" />
+            <span className="font-black text-[17px] tracking-tight text-white hidden sm:block" style={{ letterSpacing: '-.02em' }}>TOURNABLE</span>
           </Link>
 
           {/* Nav */}
           <nav className="hidden lg:flex items-center gap-0.5">
             {([['#features', tx.nav.features], ['#pricing', tx.nav.pricing], ['#contact', tx.nav.contact]] as [string, string][]).map(([href, label]) => (
-              <a key={href} href={href} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all font-medium">{label}</a>
+              <a key={href} href={href} className="px-3.5 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">{label}</a>
             ))}
           </nav>
 
           <div className="flex items-center gap-2">
             {/* Language switcher */}
-            <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+            <div className="hidden sm:flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
               {(['ru', 'kz', 'en'] as Lang[]).map(l => (
                 <button key={l} onClick={() => setLang(l)}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                  className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
                   {T[l].label}
                 </button>
               ))}
             </div>
 
             {isLoggedIn ? (
-              <Link href="/dashboard" className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+              <Link href="/dashboard" className="flex items-center gap-1.5 bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-md">
                 {tx.nav.dashboard} <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
               <>
-                <Link href="/login" className="hidden md:block text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 transition-colors">{tx.nav.login}</Link>
-                <Link href="/register" className="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+                <Link href="/login" className="hidden md:block text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
+                <Link href="/register" className="bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
                   {tx.nav.start} <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </>

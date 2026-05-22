@@ -47,7 +47,7 @@ const T = {
       h2: 'Начните бесплатно. Обновитесь когда будете готовы.',
       sub: 'Без скрытых платежей. Отмена в один клик.',
       free: {
-        name: 'Старт', price: '0₸', sub: 'Всё необходимое, чтобы начать',
+        name: 'Старт', price: '0 ₸', sub: 'Всё необходимое, чтобы начать',
         items: ['До 3 турниров за всё время', 'До 16 команд в каждом', 'Круговой и плей-офф форматы', 'Публичная ссылка для участников', 'Статистика: голы, ассисты, карточки', 'Логотипы команд и турниров', 'Экспорт PDF и PNG'],
         cta: 'Создать турнир',
       },
@@ -119,7 +119,7 @@ const T = {
       h2: 'Тегін бастаңыз. Дайын болған кезде жаңартыңыз.',
       sub: 'Жасырын төлемдер жоқ. Бір басу арқылы болдырмау.',
       free: {
-        name: 'Бастамашы', price: '0₸', sub: 'Бастау үшін қажет нәрсенің бәрі',
+        name: 'Бастамашы', price: '0 ₸', sub: 'Бастау үшін қажет нәрсенің бәрі',
         items: ['Барлық уақытта 3 турнирге дейін', 'Әр турнирде 16 командаға дейін', 'Дөңгелек және плей-офф форматтары', 'Қатысушыларға жалпыға ортақ сілтеме', 'Статистика: голдар, ассисттер, карточкалар', 'Команда мен турнир логотиптері', 'PDF және PNG экспорты'],
         cta: 'Турнир жасау',
       },
@@ -191,7 +191,7 @@ const T = {
       h2: 'Start for free. Upgrade when you\'re ready.',
       sub: 'No hidden fees. Cancel anytime.',
       free: {
-        name: 'Starter', price: '0₸', sub: 'Everything you need to get started',
+        name: 'Starter', price: '0 ₸', sub: 'Everything you need to get started',
         items: ['Up to 3 tournaments total', 'Up to 16 teams each', 'Round-robin & playoff formats', 'Public link for participants', 'Stats: goals, assists, cards', 'Team & tournament logos', 'PDF & PNG export'],
         cta: 'Create Tournament',
       },
@@ -326,14 +326,6 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                   {tx.hero.cta2} <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
-              <div className="flex items-center gap-6 pt-8 border-t border-gray-100">
-                {tx.hero.proof.map(([top, bot]) => (
-                  <div key={top as string}>
-                    <div className="font-bold text-sm text-gray-900">{top}</div>
-                    <div className="text-xs text-gray-400">{bot}</div>
-                  </div>
-                ))}
-              </div>
             </div>
             {/* Real laptop photo */}
             <div className="relative">
@@ -398,7 +390,7 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-14 items-center">
             {/* Real phone photo */}
-            <div className="flex justify-center lg:justify-start">
+            <div className="flex justify-center lg:justify-end">
               <div className="relative">
                 <div className="absolute -inset-6 bg-emerald-50 rounded-3xl -z-10" />
                 <Image
@@ -481,14 +473,15 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
             </div>
 
             {/* Pro */}
-            <div className="relative rounded-3xl p-8 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
-              {/* Subtle pattern */}
-              <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                <span className="bg-emerald-950 text-emerald-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap">
+            <div className="relative">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                <span className="bg-emerald-950 text-emerald-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
                   {tx.pricing.pro.badge}
                 </span>
               </div>
+              <div className="relative rounded-3xl p-8 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
+              {/* Subtle pattern */}
+              <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
               <div className="relative z-10 flex-1 flex flex-col">
                 <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-4">{tx.pricing.pro.name}</div>
 
@@ -528,6 +521,7 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                   {tx.pricing.pro.cta}
                 </Link>
               </div>
+            </div>
             </div>
           </div>
 

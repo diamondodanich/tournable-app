@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, LogOut } from 'lucide-react'
+import { LayoutDashboard, LogOut, Zap, CreditCard, MessageCircle } from 'lucide-react'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -43,13 +43,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </Link>
 
           {/* Nav */}
-          <nav className="hidden sm:flex items-center gap-0.5">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 px-3.5 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Мои турниры
+          <nav className="hidden md:flex items-center gap-0.5">
+            <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              <LayoutDashboard className="w-4 h-4" /> Мои турниры
+            </Link>
+            <Link href="/#features" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              <Zap className="w-4 h-4" /> Возможности
+            </Link>
+            <Link href="/#pricing" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              <CreditCard className="w-4 h-4" /> Тарифы
+            </Link>
+            <Link href="/#contact" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              <MessageCircle className="w-4 h-4" /> Контакты
             </Link>
           </nav>
 

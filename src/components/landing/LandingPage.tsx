@@ -259,8 +259,8 @@ const FEAT_STYLES = [
 ]
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
-  const [lang, setLang] = useState<Lang>('ru')
+export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitials }: { isLoggedIn?: boolean; defaultLang?: Lang; userInitials?: string }) {
+  const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
   const tx = T[lang]
 
@@ -297,9 +297,14 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
 
             {/* Desktop CTA */}
             {isLoggedIn ? (
-              <Link href="/dashboard" className="hidden lg:flex items-center gap-1.5 bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-md">
-                {tx.nav.dashboard} <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="hidden lg:flex items-center gap-2">
+                <Link href="/dashboard" className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                  {tx.nav.dashboard}
+                </Link>
+                <Link href="/account" className="flex items-center justify-center w-9 h-9 rounded-xl bg-white text-emerald-700 font-black text-sm hover:bg-emerald-50 transition-colors shadow-md" title="Личный кабинет">
+                  {userInitials ?? '?'}
+                </Link>
+              </div>
             ) : (
               <div className="hidden lg:flex items-center gap-2">
                 <Link href="/login" className="text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
@@ -337,10 +342,16 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
 
               {/* CTA */}
               {isLoggedIn ? (
-                <Link href="/dashboard" onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-2 bg-white text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base mx-0">
-                  {tx.nav.dashboard} <ChevronRight className="w-4 h-4" />
-                </Link>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 bg-white/15 text-white font-semibold py-3 rounded-xl transition-colors text-base hover:bg-white/25">
+                    {tx.nav.dashboard}
+                  </Link>
+                  <Link href="/account" onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base">
+                    {userInitials ? `${userInitials} · ` : ''}Личный кабинет
+                  </Link>
+                </div>
               ) : (
                 <div className="flex flex-col gap-2 pt-1">
                   <Link href="/login" onClick={() => setMobileOpen(false)}

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
+import Image from 'next/image'
+import { LayoutDashboard, LogOut } from 'lucide-react'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -10,41 +12,69 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? '??'
+  const emailShort = user.email?.split('@')[0] ?? ''
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
 
-      {/* ── Premium background decoration ─────────────────────────────── */}
+      {/* ── Background decoration ──────────────────────────────────────── */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Large blurred gradient orbs */}
         <div className="absolute -top-48 -right-48 w-[600px] h-[600px] rounded-full bg-emerald-100/50 blur-3xl" />
         <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full bg-emerald-50/70 blur-3xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-emerald-50/30 blur-3xl" />
-        {/* Subtle dot grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, #059669 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
+          style={{ backgroundImage: 'radial-gradient(circle, #059669 1px, transparent 1px)', backgroundSize: '32px 32px' }}
         />
       </div>
 
       {/* ── Header ────────────────────────────────────────────────────── */}
-      <header className="relative z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/dashboard" className="text-lg font-black tracking-tight text-emerald-600 hover:text-emerald-700 transition-colors">
-            Tournable
+      <header
+        className="relative z-20 sticky top-0"
+        style={{ background: 'linear-gradient(90deg,#047857 0%,#059669 100%)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <Image src="/logo-white.png" alt="Tournable" width={36} height={36} className="w-8 h-8 object-contain" />
+            <span className="font-black text-[17px] tracking-tight text-white hidden sm:block" style={{ letterSpacing: '-.02em' }}>
+              TOURNABLE
+            </span>
           </Link>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-xs text-gray-400">{user.email}</span>
+
+          {/* Nav */}
+          <nav className="hidden sm:flex items-center gap-0.5">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Мои турниры
+            </Link>
+          </nav>
+
+          {/* Right: profile + sign out */}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/account"
+              className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"
+              title="Личный кабинет"
+            >
+              <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-[11px] font-black text-white shrink-0">
+                {initials}
+              </div>
+              <span className="hidden sm:block text-xs text-emerald-100 font-medium max-w-[130px] truncate">
+                {emailShort}
+              </span>
+            </Link>
+
             <form action={signOut}>
               <button
                 type="submit"
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-xs font-bold text-gray-500 transition-colors"
-                title="Выйти"
+                title="Выйти из аккаунта"
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                {initials}
+                <LogOut className="w-4 h-4 text-emerald-100" />
               </button>
             </form>
           </div>

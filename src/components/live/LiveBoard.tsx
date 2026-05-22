@@ -717,21 +717,6 @@ export default function LiveBoard({
                     )}
                   </div>
                 ))}
-                {homeStrip.filter(e => e.type === 'yellow_card' || e.type === 'red_card').map(e => (
-                  <div key={e.id} className="flex items-center gap-2 group">
-                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
-                      {e.minute != null ? `${e.minute}'` : ''}
-                    </span>
-                    <EventIcon type={e.type} size={13} />
-                    <span className="text-sm font-semibold flex-1 min-w-0 truncate text-gray-200">{e.player_name}</span>
-                    {isOwner && (
-                      <button onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
-                        <X size={11} />
-                      </button>
-                    )}
-                  </div>
-                ))}
               </div>
 
               {/* Away — mirrored */}
@@ -759,21 +744,6 @@ export default function LiveBoard({
                     </span>
                   </div>
                 ))}
-                {awayStrip.filter(e => e.type === 'yellow_card' || e.type === 'red_card').map(e => (
-                  <div key={e.id} className="flex items-center gap-2 justify-end group">
-                    {isOwner && (
-                      <button onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
-                        <X size={11} />
-                      </button>
-                    )}
-                    <span className="text-sm font-semibold flex-1 min-w-0 truncate text-right text-gray-200">{e.player_name}</span>
-                    <EventIcon type={e.type} size={13} />
-                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right">
-                      {e.minute != null ? `${e.minute}'` : ''}
-                    </span>
-                  </div>
-                ))}
               </div>
 
             </div>
@@ -789,7 +759,7 @@ export default function LiveBoard({
             return matchStarted ? (
               <button
                 onClick={() => setShowForm(true)}
-                className="flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                className="px-6 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
               >
                 <Plus size={16} />
                 Событие
@@ -806,7 +776,7 @@ export default function LiveBoard({
           })()}
           <button
             onClick={() => setShowFinishConfirm(true)}
-            className={`py-3 rounded-2xl border border-gray-800 hover:border-red-900/60 hover:text-red-400 text-gray-600 text-sm font-bold transition-colors ${hasFixture ? 'px-5' : 'flex-1'}`}
+            className="flex-1 py-3 rounded-2xl border border-gray-800 hover:border-red-900/60 hover:text-red-400 text-gray-600 text-sm font-bold transition-colors"
           >
             Завершить
           </button>

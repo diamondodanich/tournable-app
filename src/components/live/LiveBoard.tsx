@@ -693,21 +693,25 @@ export default function LiveBoard({
             <div className="grid grid-cols-2 divide-x divide-gray-800">
 
               {/* Home */}
-              <div className="p-3 space-y-1.5">
+              <div className="p-3 space-y-2">
                 {homePaired.map(({ evt: e, assist }) => (
-                  <div key={e.id} className="flex items-center gap-2 group">
-                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0">
+                  <div key={e.id} className="flex items-start gap-2 group">
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
-                    <EventIcon type={e.type} size={13} />
-                    <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
-                      {e.player_name}
-                      {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
-                      {assist && <span className="text-gray-500 text-xs font-normal ml-1">({assist.player_name})</span>}
-                    </span>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} /></span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate leading-tight ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
+                        {e.player_name}
+                        {e.type === 'own_goal' && <span className="text-red-600 text-xs ml-1 font-normal">ОГ</span>}
+                      </p>
+                      {assist && (
+                        <p className="text-gray-500 text-[11px] truncate leading-tight">↗ {assist.player_name}</p>
+                      )}
+                    </div>
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0 pt-0.5">
                         <X size={11} />
                       </button>
                     )}
@@ -731,22 +735,26 @@ export default function LiveBoard({
               </div>
 
               {/* Away — mirrored */}
-              <div className="p-3 space-y-1.5">
+              <div className="p-3 space-y-2">
                 {awayPaired.map(({ evt: e, assist }) => (
-                  <div key={e.id} className="flex items-center gap-2 justify-end group">
+                  <div key={e.id} className="flex items-start gap-2 justify-end group">
                     {isOwner && (
                       <button onClick={() => handleRemoveEvent(e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0">
+                        className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-500 transition-opacity shrink-0 pt-0.5">
                         <X size={11} />
                       </button>
                     )}
-                    <span className={`text-sm font-semibold flex-1 min-w-0 truncate text-right ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
-                      {assist && <span className="text-gray-500 text-xs font-normal mr-1">({assist.player_name})</span>}
-                      {e.type === 'own_goal' && <span className="text-red-600 text-xs mr-1 font-normal">ОГ</span>}
-                      {e.player_name}
-                    </span>
-                    <EventIcon type={e.type} size={13} />
-                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right">
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate leading-tight text-right ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
+                        {e.type === 'own_goal' && <span className="text-red-600 text-xs mr-1 font-normal">ОГ</span>}
+                        {e.player_name}
+                      </p>
+                      {assist && (
+                        <p className="text-gray-500 text-[11px] truncate leading-tight text-right">{assist.player_name} ↗</p>
+                      )}
+                    </div>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} /></span>
+                    <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
                   </div>

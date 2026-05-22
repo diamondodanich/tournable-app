@@ -15,6 +15,17 @@ type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
 type ActionType = 'goal' | 'yellow_card' | 'red_card'
 type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
 
+type FormState = {
+  teamId: string
+  actionType: ActionType
+  player: string
+  assister: string
+  minute: string
+  isOwnGoal: boolean
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
 function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
 }
@@ -44,6 +55,100 @@ function buildRows(teamId: string, events: EventEntry[]) {
   })
 }
 
+// ── InlineForm — defined at module level so React never remounts it when the
+//    parent re-renders (typing in assister field would re-create an inner
+//    function component, causing autoFocus to fire on the player field again).
+interface InlineFormProps {
+  form: FormState
+  setForm: React.Dispatch<React.SetStateAction<FormState | null>>
+  onConfirm: () => void
+}
+
+function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
+  const isGoal = form.actionType === 'goal'
+  const submitLabel = form.isOwnGoal ? '↩ АГ'
+    : isGoal ? '⚽ Гол'
+    : form.actionType === 'yellow_card' ? '🟨 ЖК' : '🟥 КК'
+  const submitColor = form.isOwnGoal
+    ? 'bg-red-100 text-red-600 hover:bg-red-200'
+    : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+    : form.actionType === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+    : 'bg-red-500 text-white hover:bg-red-600'
+
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-1.5 space-y-1.5">
+      {/* Type pills */}
+      <div className="flex gap-1">
+        {([
+          { v: 'goal'        as const, l: '⚽' },
+          { v: 'yellow_card' as const, l: '🟨' },
+          { v: 'red_card'    as const, l: '🟥' },
+        ]).map(opt => (
+          <button key={opt.v}
+            onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
+            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
+              form.actionType === opt.v
+                ? opt.v === 'goal' ? 'bg-emerald-600 text-white'
+                : opt.v === 'yellow_card' ? 'bg-yellow-400 text-black'
+                : 'bg-red-500 text-white'
+                : 'bg-white border border-gray-200 text-gray-500'
+            }`}
+          >{opt.l}</button>
+        ))}
+        {isGoal && (
+          <label className="flex items-center gap-1 ml-auto cursor-pointer select-none">
+            <input type="checkbox" checked={form.isOwnGoal}
+              onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
+              className="accent-red-500 w-3 h-3" />
+            <span className="text-xs text-gray-500">↩</span>
+          </label>
+        )}
+      </div>
+
+      {/* Player name — autoFocus only fires on mount (stable component type) */}
+      <Input
+        autoFocus
+        value={form.player}
+        onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
+        onKeyDown={e => e.key === 'Enter' && onConfirm()}
+        placeholder={isGoal ? 'Автор гола' : 'Игрок'}
+        className="h-7 text-xs bg-white w-full"
+      />
+
+      {/* Assister — no autoFocus; typing here no longer steals focus back */}
+      {isGoal && !form.isOwnGoal && (
+        <Input
+          value={form.assister}
+          onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
+          onKeyDown={e => e.key === 'Enter' && onConfirm()}
+          placeholder="Ассистент (опц.)"
+          className="h-7 text-xs bg-white w-full"
+        />
+      )}
+
+      {/* Minute + confirm + cancel */}
+      <div className="flex gap-1">
+        <Input
+          value={form.minute}
+          onChange={e => setForm(f => f ? { ...f, minute: e.target.value } : f)}
+          placeholder="мин." type="number" min={1} max={120}
+          className="h-7 text-xs bg-white w-14 shrink-0"
+        />
+        <button onClick={onConfirm} disabled={!form.player.trim()}
+          className={`flex-1 h-7 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${submitColor}`}>
+          {submitLabel}
+        </button>
+        <button onClick={() => setForm(null)}
+          className="h-7 w-7 rounded-md bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0">
+          <X size={11} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── FixtureCard ───────────────────────────────────────────────────────────────
+
 function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
   const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
@@ -61,15 +166,21 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
   const [isEditing, setIsEditing] = useState(status !== 'finished')
-
-  // Inline event form
-  const [form, setForm] = useState<{
-    teamId: string; actionType: ActionType
-    player: string; assister: string; minute: string; isOwnGoal: boolean
-  } | null>(null)
+  const [form, setForm]           = useState<FormState | null>(null)
 
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
+
+  // Score computed from tracked goals (same approach as PlayoffTab)
+  const hasGoals = events.some(e => e.type === 'goal' || e.type === 'own_goal')
+  const cHome = events.filter(e =>
+    (e.teamId === fixture.home_team_id && e.type === 'goal') ||
+    (e.teamId === fixture.away_team_id && e.type === 'own_goal')
+  ).length
+  const cAway = events.filter(e =>
+    (e.teamId === fixture.away_team_id && e.type === 'goal') ||
+    (e.teamId === fixture.home_team_id && e.type === 'own_goal')
+  ).length
 
   function openForm(teamId: string) {
     if (form?.teamId === teamId) { setForm(null); return }
@@ -105,8 +216,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
   }
 
   async function handleSave() {
-    const hs  = parseInt(homeScore)
-    const as_ = parseInt(awayScore)
+    // Use computed score if goals are tracked, otherwise use manual inputs
+    const hs  = hasGoals ? cHome : parseInt(homeScore)
+    const as_ = hasGoals ? cAway : parseInt(awayScore)
     if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
     const prevStatus = status
     setStatus('finished')
@@ -130,7 +242,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     )
   }
 
-  // ── Finished summary ─────────────────────────────────────────────────────
+  // ── Finished summary ──────────────────────────────────────────────────────
 
   if (status === 'finished' && !isEditing) {
     const homeRows = buildRows(fixture.home_team_id ?? '', events)
@@ -162,11 +274,11 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
         {hasEvts && (
           <div className="border-t border-dashed border-emerald-200 pt-2">
             <div className="grid grid-cols-2 gap-x-2">
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 {homeRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
                     <EvtIcon type={r.type} />
-                    <span className="font-medium truncate">
+                    <span className="font-medium truncate flex-1 min-w-0">
                       {r.playerName}
                       {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
                     </span>
@@ -174,11 +286,11 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
                   </div>
                 ))}
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 {awayRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs justify-end ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
                     {r.minute && <span className="text-gray-400 shrink-0">{r.minute}&apos;</span>}
-                    <span className="font-medium truncate text-right">
+                    <span className="font-medium truncate text-right min-w-0 flex-1">
                       {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                       {r.playerName}
                     </span>
@@ -197,72 +309,6 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
   const homeRows = buildRows(fixture.home_team_id ?? '', events)
   const awayRows = buildRows(fixture.away_team_id ?? '', events)
-
-  function InlineForm({ side }: { side: 'home' | 'away' }) {
-    if (!form || form.teamId !== (side === 'home' ? fixture.home_team_id : fixture.away_team_id)) return null
-    const isGoal = form.actionType === 'goal'
-    const submitLabel = form.isOwnGoal ? '↩ АГ' : isGoal ? '⚽ Гол' : form.actionType === 'yellow_card' ? '🟨 ЖК' : '🟥 КК'
-    const submitColor = form.isOwnGoal
-      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-      : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-      : form.actionType === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-      : 'bg-red-500 text-white hover:bg-red-600'
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-1.5 space-y-1.5">
-        <div className="flex gap-1">
-          {([
-            { v: 'goal' as const, l: '⚽' },
-            { v: 'yellow_card' as const, l: '🟨' },
-            { v: 'red_card' as const, l: '🟥' },
-          ]).map(opt => (
-            <button key={opt.v}
-              onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
-              className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
-                form.actionType === opt.v
-                  ? opt.v === 'goal' ? 'bg-emerald-600 text-white'
-                  : opt.v === 'yellow_card' ? 'bg-yellow-400 text-black'
-                  : 'bg-red-500 text-white'
-                  : 'bg-white border border-gray-200 text-gray-500'
-              }`}
-            >{opt.l}</button>
-          ))}
-          {isGoal && (
-            <label className="flex items-center gap-1 ml-auto cursor-pointer select-none">
-              <input type="checkbox" checked={form.isOwnGoal}
-                onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
-                className="accent-red-500 w-3 h-3" />
-              <span className="text-xs text-gray-500">↩</span>
-            </label>
-          )}
-        </div>
-        <Input autoFocus value={form.player}
-          onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
-          onKeyDown={e => e.key === 'Enter' && confirmForm()}
-          placeholder={isGoal ? 'Автор гола' : 'Игрок'}
-          className="h-7 text-xs bg-white" />
-        {isGoal && !form.isOwnGoal && (
-          <Input value={form.assister}
-            onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
-            placeholder="Ассистент (опц.)"
-            className="h-7 text-xs bg-white" />
-        )}
-        <div className="flex gap-1">
-          <Input value={form.minute}
-            onChange={e => setForm(f => f ? { ...f, minute: e.target.value } : f)}
-            placeholder="мин." type="number" min={1} max={120}
-            className="h-7 text-xs bg-white w-14 shrink-0" />
-          <button onClick={confirmForm} disabled={!form.player.trim()}
-            className={`flex-1 h-7 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${submitColor}`}>
-            {submitLabel}
-          </button>
-          <button onClick={() => setForm(null)}
-            className="h-7 w-7 rounded-md bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0">
-            <X size={11} />
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200' : 'border-gray-200'}`}>
@@ -295,18 +341,28 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
         </div>
       </div>
 
-      {/* Score row — manual input (draws allowed in round-robin) */}
+      {/* Score row — computed from goals when tracked, else manual inputs */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={24} />
           <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Input type="number" min={0} max={99} value={homeScore} onChange={e => setHomeScore(e.target.value)}
-            className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
-          <span className="font-bold text-gray-400 text-sm">–</span>
-          <Input type="number" min={0} max={99} value={awayScore} onChange={e => setAwayScore(e.target.value)}
-            className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
+          {hasGoals ? (
+            <span className={`font-black text-2xl font-mono tabular-nums px-1 ${
+              cHome === 0 && cAway === 0 ? 'text-gray-300' : 'text-gray-900'
+            }`}>
+              {cHome} – {cAway}
+            </span>
+          ) : (
+            <>
+              <Input type="number" min={0} max={99} value={homeScore} onChange={e => setHomeScore(e.target.value)}
+                className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
+              <span className="font-bold text-gray-400 text-sm">–</span>
+              <Input type="number" min={0} max={99} value={awayScore} onChange={e => setAwayScore(e.target.value)}
+                className="w-11 text-center font-mono text-base font-bold p-1 h-8" />
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2 justify-end min-w-0">
           <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name}</span>
@@ -314,11 +370,12 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
         </div>
       </div>
 
-      {/* Events columns */}
+      {/* Events columns — min-w-0 + overflow-hidden keeps card width stable */}
       <div className="border-t border-dashed border-gray-200 pt-2 mb-3">
         <div className="grid grid-cols-2 gap-x-3">
+
           {/* Home */}
-          <div>
+          <div className="min-w-0 overflow-hidden">
             {homeRows.map((r, i) => (
               <div key={i} className="flex items-center gap-1 mb-1">
                 <EvtIcon type={r.type} />
@@ -333,7 +390,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
                 </button>
               </div>
             ))}
-            <InlineForm side="home" />
+            {form?.teamId === fixture.home_team_id && (
+              <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
+            )}
             {form?.teamId !== fixture.home_team_id && (
               <button onClick={() => fixture.home_team_id && openForm(fixture.home_team_id)}
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5">
@@ -341,8 +400,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
               </button>
             )}
           </div>
+
           {/* Away */}
-          <div>
+          <div className="min-w-0 overflow-hidden">
             {awayRows.map((r, i) => (
               <div key={i} className="flex items-center gap-1 mb-1 justify-end">
                 <button onClick={() => removeRow(r.i, r.assistIdx)}
@@ -357,7 +417,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
                 <EvtIcon type={r.type} />
               </div>
             ))}
-            <InlineForm side="away" />
+            {form?.teamId === fixture.away_team_id && (
+              <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
+            )}
             {form?.teamId !== fixture.away_team_id && (
               <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5 ml-auto">
@@ -365,6 +427,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
               </button>
             )}
           </div>
+
         </div>
       </div>
 
@@ -377,6 +440,8 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
     </div>
   )
 }
+
+// ── FixturesTab ───────────────────────────────────────────────────────────────
 
 export default function FixturesTab({ tournament, teams, fixtures }: {
   tournament: Tournament

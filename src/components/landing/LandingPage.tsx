@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Check, ArrowRight, MessageCircle, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
+import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -32,15 +32,15 @@ const T = {
       items: ['Таблица бомбардиров: голы и ассисты', 'Учёт жёлтых и красных карточек', 'Автоматический расчёт всех показателей', 'Экспорт полного отчёта в PDF'],
     },
     features: {
-      h2: 'Всё что нужно организатору',
-      sub: 'Один инструмент вместо таблиц, мессенджеров и ручных подсчётов',
+      h2: 'Сделано для тех, кто устал от хаоса',
+      sub: 'Каждая функция закрывает реальную боль организатора',
       items: [
-        { title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — расписание сгенерируется само. Круговой, плей-офф, Лига чемпионов.' },
-        { title: 'Таблица и статистика', desc: 'Очки, разница мячей, бомбардиры — всё пересчитывается автоматически после каждого матча.' },
-        { title: 'Плей-офф сетка', desc: 'Сетка на выбывание с авто-переходом победителей. До 64 команд в одном турнире.' },
-        { title: 'Публичная ссылка', desc: 'Участники смотрят результаты без регистрации. Одна ссылка — работает всегда и везде.' },
-        { title: 'Совместная работа', desc: 'До 3 соредакторов вводят результаты параллельно. Пригласите по ссылке за секунды.' },
-        { title: 'Экспорт PDF и PNG', desc: 'Скачайте таблицу, статистику или сетку одним кликом — для печати или соцсетей.' },
+        { pain: 'Excel слетает — формулы путаются', title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — все матчи генерируются автоматически. Круговой, плей-офф, Лига чемпионов.' },
+        { pain: '«Какой счёт?» — уже десятый раз', title: 'Счёт видят все в реальном времени', desc: 'Вносите голы с телефона — участники видят обновление мгновенно по публичной ссылке. Без приложений.' },
+        { pain: 'Таблица пересчитывается вручную', title: 'Статистика без единой ошибки', desc: 'Очки, разница мячей, бомбардиры — всё пересчитывается само после каждого результата.' },
+        { pain: 'Сетка нарисована на листочке', title: 'Плей-офф — автоматически', desc: 'Победители переходят сами. До 64 команд в одном турнире, любой формат.' },
+        { pain: 'Некому доверить ввод результатов', title: 'Несколько редакторов сразу', desc: 'До 3 соредакторов работают параллельно. Пригласите ассистента по ссылке за секунды.' },
+        { pain: 'Нужно скинуть таблицу всем участникам', title: 'Экспорт одним кликом', desc: 'PDF и PNG с таблицей, статистикой и сеткой — в чат, для печати или в соцсети.' },
       ],
     },
     pricing: {
@@ -68,7 +68,7 @@ const T = {
       sub: 'Мы не просто платформа — мы ваш партнёр в каждом турнире',
       items: [
         { icon: '🎬', title: 'Видеозапись матчей', desc: 'В будущем наша команда приедет и профессионально снимет ваши матчи прямо на поле. Видеозаписи будут сохранены в вашем аккаунте.', price: null, pricePer: null, badge: 'Скоро', badgeColor: 'blue' },
-        { icon: '🏆', title: 'Выездное ведение турнира', desc: 'Наш специалист приедет лично и проведёт весь турнир от и до. Человек + платформа = идеальная организация.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
+        { icon: '🏆', title: 'Выездная фиксация результатов', desc: 'Наш специалист приедет на ваш турнир и сам будет вносить результаты всех матчей прямо в платформу. Вы проводите — мы записываем.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Остались вопросы?', sub: 'Напишите напрямую — отвечаем быстро', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21' },
@@ -104,15 +104,15 @@ const T = {
       items: ['Бомбардирлер кестесі: голдар мен ассисттер', 'Сары және қызыл карточкаларды есепке алу', 'Барлық көрсеткіштерді автоматты есептеу', 'PDF-ке толық есепті экспорттау'],
     },
     features: {
-      h2: 'Ұйымдастырушыға қажет барлығы',
-      sub: 'Кестелер, мессенджерлер мен қолмен есептеу орнына — бір құрал',
+      h2: 'Ұйымдастырушы шаршамауы үшін жасалды',
+      sub: 'Әрбір функция нақты мәселені шешеді',
       items: [
-        { title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командаларды қосыңыз — кесте автоматты жасалады. Дөңгелек, плей-офф, Чемпиондар лигасы.' },
-        { title: 'Кесте және статистика', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — әр матчтан кейін автоматты есептеледі.' },
-        { title: 'Плей-офф торы', desc: 'Жеңімпаздардың автоматты өтуімен жою торы. Бір турнирде 64 командаға дейін.' },
-        { title: 'Жалпыға ортақ сілтеме', desc: 'Қатысушылар тіркелусіз нәтижелерді қарайды. Бір сілтеме — әрқашан жұмыс істейді.' },
-        { title: 'Бірлескен жұмыс', desc: '3 редакторға дейін нәтижелерді қатар енгізеді. Секундтарда сілтеме арқылы шақырыңыз.' },
-        { title: 'PDF және PNG экспорты', desc: 'Кестені, статистиканы немесе торды бір басу арқылы жүктеп алыңыз — басып шығаруға немесе әлеуметтік желілерге.' },
+        { pain: 'Excel бұзылады — формулалар шатасады', title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты жасалады. Дөңгелек, плей-офф, Чемпиондар лигасы.' },
+        { pain: '«Есеп қандай?» — он рет сұралды', title: 'Есепті барлығы нақты уақытта көреді', desc: 'Телефоннан голдар енгізіңіз — қатысушылар жалпыға ортақ сілтеме арқылы лезде жаңартуды көреді.' },
+        { pain: 'Кесте қолмен есептеледі', title: 'Статистика қатесіз', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — нәтиже енгізілгеннен кейін автоматты есептеледі.' },
+        { pain: 'Плей-офф торы қағазда салынды', title: 'Плей-офф — автоматты', desc: 'Жеңімпаздар өздігінен өтеді. 64 командаға дейін, кез келген формат.' },
+        { pain: 'Нәтижелерді сенуге ешкім жоқ', title: 'Бірнеше редактор бір мезгілде', desc: '3 редакторға дейін паралельді жұмыс істейді. Секундтарда сілтеме арқылы шақырыңыз.' },
+        { pain: 'Кестені барлығына жіберу керек', title: 'Бір басумен экспорт', desc: 'PDF және PNG кесте, статистика және тормен — чатқа, басып шығаруға немесе әлеуметтік желілерге.' },
       ],
     },
     pricing: {
@@ -140,7 +140,7 @@ const T = {
       sub: 'Біз тек платформа емеспіз — турнир ұйымдастырудағы серіктесіңіздіз',
       items: [
         { icon: '🎬', title: 'Матчтарды бейнежазу', desc: 'Болашақта командамыз келіп, матчтарыңызды сахада кәсіби түрде түсіреді. Бейнежазбалар сіздің аккаунтыңызда сақталады.', price: null, pricePer: null, badge: 'Жақында', badgeColor: 'blue' },
-        { icon: '🏆', title: 'Сыртқы турнирді басқару', desc: 'Маманымыз жеке келіп, бүкіл турнирді бастан аяқ өткізеді. Адам + платформа = мінсіз нәтиже.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
+        { icon: '🏆', title: 'Нәтижелерді тіркеу қызметі', desc: 'Маманымыз турниріңізге келіп, барлық матч нәтижелерін тікелей платформада жеке тіркейді. Сіз өткізесіз — біз жазамыз.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Сұрақтарыңыз бар ма?', sub: 'Тікелей жазыңыз — тез жауап береміз', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21' },
@@ -176,15 +176,15 @@ const T = {
       items: ['Top scorers table: goals and assists', 'Yellow and red card tracking', 'Automatic calculation of all metrics', 'Export full report to PDF'],
     },
     features: {
-      h2: 'Everything an organizer needs',
-      sub: 'One tool instead of spreadsheets, chat apps and manual calculations',
+      h2: 'Built for organizers who are done with chaos',
+      sub: 'Every feature solves a real pain you already know',
       items: [
-        { title: 'Schedule in 30 seconds', desc: 'Choose a format, add teams — the schedule is generated automatically. Round-robin, playoff, Champions League.' },
-        { title: 'Table & Statistics', desc: 'Points, goal difference, top scorers — recalculated automatically after every match.' },
-        { title: 'Playoff Bracket', desc: 'Elimination bracket with automatic winner advancement. Up to 64 teams in one tournament.' },
-        { title: 'Public Link', desc: 'Participants view results without signing up. One link — works everywhere, always.' },
-        { title: 'Collaboration', desc: 'Up to 3 co-editors enter results simultaneously. Invite via link in seconds.' },
-        { title: 'PDF & PNG Export', desc: 'Download the table, stats or bracket with one click — for print or social media.' },
+        { pain: 'Spreadsheet crashes every time', title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches are generated instantly. Round-robin, playoff, Champions League.' },
+        { pain: '"What\'s the score?" — for the 10th time', title: 'Live score for everyone', desc: 'Enter goals on your phone — participants see updates instantly via a public link. No app needed.' },
+        { pain: 'Table recalculated by hand', title: 'Stats without errors', desc: 'Points, goal difference, top scorers — recalculated automatically after every result.' },
+        { pain: 'Bracket drawn on a piece of paper', title: 'Auto playoff bracket', desc: 'Winners advance on their own. Up to 64 teams, any format.' },
+        { pain: 'No one to trust with the results', title: 'Multiple editors at once', desc: 'Up to 3 co-editors work in parallel. Invite via link in seconds.' },
+        { pain: 'Need to share standings with everyone', title: 'Export with one click', desc: 'PDF and PNG with table, stats and bracket — for print, chat or social media.' },
       ],
     },
     pricing: {
@@ -212,7 +212,7 @@ const T = {
       sub: 'We\'re more than a platform — we\'re your tournament partner',
       items: [
         { icon: '🎬', title: 'Match Video Recording', desc: 'In the future, our team will come and professionally film your matches on the field. Videos will be saved in your account.', price: null, pricePer: null, badge: 'Coming Soon', badgeColor: 'blue' },
-        { icon: '🏆', title: 'On-site Tournament Management', desc: 'Our specialist will personally come and run the entire tournament from start to finish. Person + platform = perfect execution.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
+        { icon: '🏆', title: 'On-site Results Recording', desc: 'Our specialist comes to your tournament and personally enters all match results directly into the platform. You run it — we log it.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Have questions?', sub: 'Write directly — we respond quickly', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21' },
@@ -226,6 +226,15 @@ const T = {
     },
   },
 } as const
+
+// ─── WhatsApp icon ────────────────────────────────────────────────────────────
+function IconWhatsApp({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.38 1.26 4.81L2.05 22l5.35-1.38c1.38.73 2.93 1.14 4.64 1.14 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.52 14.15c-.23.64-1.36 1.22-1.87 1.3-.48.08-1.08.11-1.74-.11-.4-.13-.92-.3-1.58-.58-2.78-1.2-4.6-4-4.74-4.19-.14-.19-1.1-1.47-1.1-2.8 0-1.33.7-1.98 1.0-2.25.26-.27.57-.34.75-.34.19 0 .38.01.54.01.17 0 .41-.06.63.48.23.56.77 1.88.84 2.01.07.14.11.3.02.48-.09.18-.14.29-.28.45-.14.16-.29.35-.41.47-.14.13-.28.27-.12.53.16.26.71 1.17 1.52 1.89.97.87 1.79 1.14 2.05 1.26.25.12.4.1.55-.06.15-.16.64-.75.81-1.01.17-.26.34-.21.57-.13.23.08 1.48.7 1.73.82.25.12.42.18.48.28.06.1.06.56-.17 1.2z"/>
+    </svg>
+  )
+}
 
 // ─── Social icons ─────────────────────────────────────────────────────────────
 function IconTelegram({ className }: { className?: string }) {
@@ -276,11 +285,11 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* Language switcher — desktop */}
-            <div className="hidden lg:flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
+            {/* Language switcher — always visible */}
+            <div className="flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
               {(['ru', 'kz', 'en'] as Lang[]).map(l => (
                 <button key={l} onClick={() => setLang(l)}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
+                  className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
                   {T[l].label}
                 </button>
               ))}
@@ -303,7 +312,7 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
             {/* Hamburger — mobile/tablet */}
             <button
               onClick={() => setMobileOpen(o => !o)}
-              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
               aria-label="Меню"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -323,21 +332,6 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                   {label}
                 </a>
               ))}
-
-              <div className="my-2 border-t border-white/15" />
-
-              {/* Language switcher */}
-              <div className="flex items-center gap-2 px-4 py-2">
-                <span className="text-xs text-emerald-200 font-medium mr-1">Язык:</span>
-                <div className="flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
-                  {(['ru', 'kz', 'en'] as Lang[]).map(l => (
-                    <button key={l} onClick={() => setLang(l)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
-                      {T[l].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <div className="my-2 border-t border-white/15" />
 
@@ -375,7 +369,7 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                 {tx.hero.badge}
               </div>
-              <h1 className="text-[2.6rem] sm:text-[3.2rem] font-black leading-[1.06] tracking-tight text-gray-900 mb-5" style={{ letterSpacing: '-.03em' }}>
+              <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-[3.2rem] font-black leading-[1.08] tracking-tight text-gray-900 mb-5" style={{ letterSpacing: '-.03em' }}>
                 {tx.hero.h1[0]}<br />
                 {tx.hero.h1[1]}<br />
                 <span className="text-emerald-600">{tx.hero.h1[2]}</span>
@@ -482,27 +476,45 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
         </div>
       </section>
 
-      {/* ── Premium features grid ───────────────────────────────────────────── */}
-      <section id="features" className="py-24 lg:py-28">
+      {/* ── Premium features ────────────────────────────────────────────────── */}
+      <section id="features" className="py-24 lg:py-28 bg-[#030712] overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4" style={{ letterSpacing: '-.03em' }}>{tx.features.h2}</h2>
-            <p className="text-gray-400 text-lg max-w-xl mx-auto">{tx.features.sub}</p>
+          <div className="text-center mb-14">
+            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4 text-white" style={{ letterSpacing: '-.03em' }}>{tx.features.h2}</h2>
+            <p className="text-gray-400 text-base max-w-xl mx-auto">{tx.features.sub}</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {tx.features.items.map((feat, i) => {
-              const Icon = FEAT_ICONS[i]
-              const s = FEAT_STYLES[i]
-              return (
-                <div key={feat.title} className={`group relative bg-white rounded-2xl p-6 border border-gray-100 border-t-[3px] ${s.border} hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-default`}>
-                  <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center mb-5`}>
-                    <Icon className={`w-6 h-6 ${s.icon}`} />
+
+          {/* Mobile: horizontal scroll carousel | Desktop: grid */}
+          <div className="-mx-4 sm:mx-0">
+            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none px-4 sm:px-0 pb-4 sm:pb-0 scroll-smooth">
+              {tx.features.items.map((feat, i) => {
+                const Icon = FEAT_ICONS[i]
+                const s = FEAT_STYLES[i]
+                return (
+                  <div key={feat.title} className="snap-start shrink-0 w-[78vw] sm:w-auto sm:shrink bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col hover:bg-white/8 hover:border-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default group">
+                    {/* Pain badge */}
+                    <div className="inline-flex items-center gap-1.5 self-start bg-red-500/10 border border-red-500/20 rounded-lg px-2.5 py-1 mb-5">
+                      <span className="text-[10px] font-bold text-red-400 leading-none">😤 {feat.pain}</span>
+                    </div>
+                    {/* Icon */}
+                    <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                      <Icon className={`w-5 h-5 ${s.icon}`} />
+                    </div>
+                    {/* Content */}
+                    <h3 className="font-black text-[15px] text-white mb-2 leading-tight">{feat.title}</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed flex-1">{feat.desc}</p>
+                    {/* Bottom accent */}
+                    <div className={`mt-5 h-0.5 w-12 rounded-full ${s.border.replace('border-t-', 'bg-')}`} />
                   </div>
-                  <h3 className="font-black text-[15px] text-gray-900 mb-2 leading-tight">{feat.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{feat.desc}</p>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+            {/* Scroll hint dots — mobile only */}
+            <div className="flex justify-center gap-1.5 mt-5 sm:hidden">
+              {tx.features.items.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-emerald-400' : 'bg-white/20'}`} />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -633,20 +645,55 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
       </section>
 
       {/* ── Contact ─────────────────────────────────────────────────────────── */}
-      <section id="contact" className="bg-gray-50 py-20 lg:py-24">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4" style={{ letterSpacing: '-.03em' }}>{tx.contact.h2}</h2>
-          <p className="text-gray-400 text-lg mb-12">{tx.contact.sub}</p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+      <section id="contact" className="py-20 lg:py-28 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4" style={{ letterSpacing: '-.03em' }}>{tx.contact.h2}</h2>
+            <p className="text-gray-400 text-lg">{tx.contact.sub}</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            {/* WhatsApp card */}
             <a href="https://wa.me/message/YHLE2IFII4MSJ1" target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 font-semibold px-8 py-4 rounded-2xl transition-all hover:scale-[1.02] shadow-lg"
-              style={{ background: '#25D366', color: '#fff', boxShadow: '0 8px 30px rgba(37,211,102,.25)' }}>
-              <MessageCircle className="w-5 h-5" />{tx.contact.wa}
+              className="group relative overflow-hidden rounded-3xl p-8 flex flex-col gap-6 transition-all hover:scale-[1.02] hover:shadow-2xl"
+              style={{ background: 'linear-gradient(135deg,#128C7E 0%,#25D366 100%)', boxShadow: '0 8px 40px rgba(37,211,102,.2)' }}>
+              <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <IconWhatsApp className="w-8 h-8 text-white" />
+                </div>
+                <div className="font-black text-xl text-white mb-1">WhatsApp</div>
+                <div className="text-white/80 text-sm mb-4">{tx.contact.wa}</div>
+                <div className="text-white font-bold text-lg">{tx.contact.phone}</div>
+              </div>
+              <div className="relative z-10 inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors self-start">
+                {tx.contact.wa} <ArrowRight className="w-4 h-4" />
+              </div>
             </a>
-            <a href="tel:+77064092021" className="flex items-center justify-center gap-3 bg-gray-900 hover:bg-gray-700 text-white font-semibold px-8 py-4 rounded-2xl transition-all hover:scale-[1.02]">
-              <Phone className="w-5 h-5" />{tx.contact.phone}
+
+            {/* Phone card */}
+            <a href="tel:+77064092021"
+              className="group relative overflow-hidden bg-gray-900 rounded-3xl p-8 flex flex-col gap-6 transition-all hover:scale-[1.02] hover:shadow-2xl hover:bg-gray-800">
+              <div className="absolute inset-0 pointer-events-none opacity-5" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <Phone className="w-7 h-7 text-emerald-400" />
+                </div>
+                <div className="font-black text-xl text-white mb-1">{lang === 'en' ? 'Phone' : lang === 'kz' ? 'Телефон' : 'Позвонить'}</div>
+                <div className="text-gray-400 text-sm mb-4">{lang === 'en' ? 'Call directly' : lang === 'kz' ? 'Тікелей қоңырау шалу' : 'Ответим быстро'}</div>
+                <div className="text-white font-bold text-lg">{tx.contact.phone}</div>
+              </div>
+              <div className="relative z-10 inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors self-start">
+                {tx.contact.phone} <ArrowRight className="w-4 h-4" />
+              </div>
             </a>
           </div>
+
+          {/* Email line */}
+          <p className="text-center mt-8 text-sm text-gray-400">
+            {lang === 'en' ? 'Or write to us by email:' : lang === 'kz' ? 'Немесе электронды поштамен жазыңыз:' : 'Или напишите на почту:'}{' '}
+            <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 font-semibold hover:underline">tournable_webapp@gmail.com</a>
+          </p>
         </div>
       </section>
 
@@ -717,7 +764,7 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
             <div>
               <h4 className="text-xs font-black text-white mb-5 uppercase tracking-widest">{tx.footer.cols.connect}</h4>
               <ul className="space-y-3">
-                <li><a href="https://wa.me/message/YHLE2IFII4MSJ1" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"><MessageCircle className="w-3.5 h-3.5" />WhatsApp</a></li>
+                <li><a href="https://wa.me/message/YHLE2IFII4MSJ1" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"><IconWhatsApp className="w-3.5 h-3.5" />WhatsApp</a></li>
                 <li><a href="tel:+77064092021" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"><Phone className="w-3.5 h-3.5" />+7 (706) 409-20-21</a></li>
                 <li><a href="mailto:tournable_webapp@gmail.com" className="text-sm text-gray-500 hover:text-white transition-colors">tournable_webapp@gmail.com</a></li>
               </ul>

@@ -1,0 +1,145 @@
+import Link from 'next/link'
+import Image from 'next/image'
+
+export const metadata = {
+  title: 'Политика конфиденциальности — Tournable',
+  description: 'Политика обработки персональных данных сервиса Tournable',
+}
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <section className="mb-8">
+    <h2 className="text-lg font-black text-gray-900 mb-3">{title}</h2>
+    <div className="text-gray-600 text-sm leading-relaxed space-y-2">{children}</div>
+  </section>
+)
+
+export default function PrivacyPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header style={{ background: 'linear-gradient(90deg,#047857,#059669)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/logo-white.png" alt="Tournable" width={32} height={32} className="w-8 h-8 object-contain" />
+            <span className="font-black text-white text-base" style={{ letterSpacing: '-.02em' }}>TOURNABLE</span>
+          </Link>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 sm:p-10">
+          <div className="mb-8 pb-6 border-b border-gray-100">
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Политика конфиденциальности</h1>
+            <p className="text-sm text-gray-400">Дата вступления в силу: 23 мая 2026 года · Последнее обновление: 23 мая 2026 года</p>
+          </div>
+
+          <Section title="1. Общие положения">
+            <p>Настоящая Политика конфиденциальности (далее — «Политика») регулирует порядок обработки персональных данных пользователей веб-сервиса Tournable (далее — «Сервис»), доступного по адресу tournable-app.vercel.app.</p>
+            <p>Оператором персональных данных является Tournable (далее — «Оператор»). Политика разработана в соответствии с требованиями Закона Республики Казахстан «О персональных данных и их защите» от 21 мая 2013 года № 94-V ЗРК и иных применимых нормативных актов.</p>
+            <p>Используя Сервис, вы подтверждаете своё согласие с условиями настоящей Политики. Если вы не согласны с её условиями — пожалуйста, прекратите использование Сервиса.</p>
+          </Section>
+
+          <Section title="2. Какие данные мы собираем">
+            <p><strong>2.1. Данные, предоставляемые пользователем при регистрации:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Адрес электронной почты (email)</li>
+              <li>Пароль (хранится в зашифрованном виде, Оператор не имеет доступа к исходному паролю)</li>
+            </ul>
+            <p><strong>2.2. Данные, генерируемые в процессе использования Сервиса:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Информация о турнирах, командах, матчах и результатах, которую пользователь вносит самостоятельно</li>
+              <li>Загружаемые логотипы команд и турниров</li>
+              <li>Данные о членах команды (email при совместном редактировании)</li>
+            </ul>
+            <p><strong>2.3. Технические данные, собираемые автоматически:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Дата и время регистрации и последнего входа</li>
+              <li>Данные о сессии (токены аутентификации)</li>
+              <li>IP-адрес (обрабатывается платформой хостинга Vercel)</li>
+            </ul>
+            <p>Мы <strong>не собираем</strong> платёжные данные, номера банковских карт, паспортные данные, биометрические данные или иные чувствительные категории персональных данных.</p>
+          </Section>
+
+          <Section title="3. Цели обработки персональных данных">
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Предоставление доступа к функциям Сервиса (регистрация, аутентификация, управление турнирами)</li>
+              <li>Обеспечение совместной работы пользователей (соредакторы)</li>
+              <li>Техническая поддержка пользователей</li>
+              <li>Обеспечение безопасности аккаунта и предотвращение несанкционированного доступа</li>
+              <li>Совершенствование Сервиса и разработка новых функций</li>
+              <li>Информирование пользователей об изменениях в Сервисе (при наличии согласия)</li>
+            </ul>
+          </Section>
+
+          <Section title="4. Правовые основания обработки">
+            <p>Обработка персональных данных осуществляется на следующих основаниях:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Согласие субъекта персональных данных, выраженное при регистрации (принятие настоящей Политики и Пользовательского соглашения)</li>
+              <li>Исполнение договора (Пользовательского соглашения), стороной которого является пользователь</li>
+              <li>Законные интересы Оператора в части обеспечения безопасности и улучшения Сервиса</li>
+            </ul>
+          </Section>
+
+          <Section title="5. Передача данных третьим лицам">
+            <p>Для обеспечения работы Сервиса мы используем следующих субподрядчиков (провайдеров услуг), которым могут передаваться персональные данные:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong>Supabase Inc.</strong> — платформа базы данных и аутентификации (США). Данные хранятся на серверах, расположенных в регионе, выбранном при конфигурации проекта. Политика конфиденциальности: supabase.com/privacy</li>
+              <li><strong>Vercel Inc.</strong> — платформа хостинга и доставки контента (США). Политика конфиденциальности: vercel.com/legal/privacy-policy</li>
+            </ul>
+            <p>Все указанные провайдеры обрабатывают данные только по инструкции Оператора и в объёме, необходимом для оказания услуг.</p>
+            <p>Мы <strong>не продаём</strong> и <strong>не передаём</strong> персональные данные третьим лицам в маркетинговых целях.</p>
+          </Section>
+
+          <Section title="6. Хранение и защита данных">
+            <p>Персональные данные хранятся в течение всего срока действия аккаунта пользователя. После удаления аккаунта данные могут сохраняться в резервных копиях до 90 дней, после чего безвозвратно удаляются.</p>
+            <p>Для защиты данных применяются:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Шифрование данных при передаче (TLS/HTTPS)</li>
+              <li>Хэширование паролей (bcrypt)</li>
+              <li>Разграничение прав доступа на уровне базы данных (Row Level Security)</li>
+              <li>Регулярное резервное копирование</li>
+            </ul>
+          </Section>
+
+          <Section title="7. Права пользователя">
+            <p>В соответствии с применимым законодательством вы имеете право:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong>Доступ</strong> — получить информацию о том, какие ваши данные обрабатываются</li>
+              <li><strong>Исправление</strong> — потребовать исправления неточных данных</li>
+              <li><strong>Удаление</strong> — потребовать удаления ваших данных («право на забвение»)</li>
+              <li><strong>Ограничение обработки</strong> — потребовать приостановки обработки в определённых случаях</li>
+              <li><strong>Отзыв согласия</strong> — отозвать согласие на обработку данных в любое время</li>
+            </ul>
+            <p>Для реализации прав направьте запрос на email: <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 hover:underline">tournable_webapp@gmail.com</a>. Мы ответим в течение 10 рабочих дней.</p>
+          </Section>
+
+          <Section title="8. Файлы cookies">
+            <p>Сервис использует технические (обязательные) cookies для обеспечения аутентификации и работы сессии. Без этих файлов Сервис не может функционировать корректно.</p>
+            <p>Мы не используем рекламные или трекинговые cookies третьих лиц.</p>
+          </Section>
+
+          <Section title="9. Несовершеннолетние">
+            <p>Сервис не предназначен для лиц моложе 16 лет. Мы сознательно не собираем данные несовершеннолетних. Если вам стало известно о том, что ребёнок до 16 лет зарегистрировался в Сервисе, просим незамедлительно сообщить нам по указанному email.</p>
+          </Section>
+
+          <Section title="10. Изменения политики">
+            <p>Оператор вправе вносить изменения в настоящую Политику. Актуальная версия всегда доступна по адресу tournable-app.vercel.app/privacy. О существенных изменениях мы уведомим пользователей по email или через интерфейс Сервиса не менее чем за 14 дней до вступления изменений в силу.</p>
+          </Section>
+
+          <Section title="11. Контактная информация">
+            <p>По всем вопросам, связанным с обработкой персональных данных:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Email: <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 hover:underline">tournable_webapp@gmail.com</a></li>
+              <li>WhatsApp: <a href="https://wa.me/message/YHLE2IFII4MSJ1" className="text-emerald-600 hover:underline">+7 (706) 409-20-21</a></li>
+            </ul>
+          </Section>
+
+          <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+            <Link href="/" className="text-sm text-emerald-600 font-semibold hover:underline">← На главную</Link>
+            <Link href="/terms" className="text-sm text-gray-400 hover:text-gray-600">Пользовательское соглашение →</Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

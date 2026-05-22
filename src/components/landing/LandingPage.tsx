@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
+import SupportWidget from './SupportWidget'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -14,9 +15,9 @@ const T = {
     label: 'RU',
     nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Мои турниры' },
     hero: {
-      badge: 'Платформа для организаторов турниров',
+      badge: 'Для футбола, FIFA и любого командного спорта',
       h1: ['Турниры —', 'просто.', 'Профессионально.'],
-      sub: 'Автоматическое расписание, счёт в реальном времени, статистика и публичные ссылки — всё что нужно организатору, без Excel и мессенджеров.',
+      sub: 'Дворовый турнир, лига FIFA, любительский клуб, корпоратив или полупрофессиональная лига — расписание, счёт в реальном времени и статистика без единой формулы.',
       cta: 'Начать бесплатно', cta2: 'Смотреть возможности',
       proof: [['Бесплатный план', 'навсегда'], ['Готов за', '30 секунд'], ['Без карты', 'при регистрации']],
     },
@@ -32,8 +33,8 @@ const T = {
       items: ['Таблица бомбардиров: голы и ассисты', 'Учёт жёлтых и красных карточек', 'Автоматический расчёт всех показателей', 'Экспорт полного отчёта в PDF'],
     },
     features: {
-      h2: 'Сделано для тех, кто устал от хаоса',
-      sub: 'Каждая функция закрывает реальную боль организатора',
+      h2: 'Для всех — от двора до профи',
+      sub: 'Кастомные очки, время матча, форматы — подходит для любого вида спорта и уровня',
       items: [
         { pain: 'Excel слетает — формулы путаются', title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — все матчи генерируются автоматически. Круговой, плей-офф, Лига чемпионов.' },
         { pain: '«Какой счёт?» — уже десятый раз', title: 'Счёт видят все в реальном времени', desc: 'Вносите голы с телефона — участники видят обновление мгновенно по публичной ссылке. Без приложений.' },
@@ -74,7 +75,7 @@ const T = {
     contact: { h2: 'Остались вопросы?', sub: 'Напишите напрямую — отвечаем быстро', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21' },
     cta: { h2: 'Готовы к первому турниру?', sub: 'Регистрация занимает меньше минуты. Кредитная карта не нужна.', btn: 'Начать бесплатно' },
     footer: {
-      tagline: 'Платформа для организаторов турниров.',
+      tagline: 'Турниры по любому командному спорту — от двора до профи.',
       cols: { product: 'Продукт', platform: 'Платформа', connect: 'Связь' },
       links: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', register: 'Регистрация', pro: 'Тариф Про' },
       legal: '© 2026 Tournable. Все права защищены.',
@@ -86,9 +87,9 @@ const T = {
     label: 'ҚАЗ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Менің турнирларым' },
     hero: {
-      badge: 'Турнир ұйымдастырушыларға арналған платформа',
+      badge: 'Футбол, FIFA және кез келген командалық спорт үшін',
       h1: ['Турнирлер —', 'қарапайым.', 'Кәсіби.'],
-      sub: 'Автоматты кесте, нақты уақытта есеп, статистика және жалпыға ортақ сілтемелер — Excel мен мессенджерсіз ұйымдастырушыға қажет нәрсенің бәрі.',
+      sub: 'Алаңдық турнир, FIFA лигасы, жасөспірімдер клубы немесе корпоратив — формуласыз автоматты кесте, нақты уақытта есеп және статистика.',
       cta: 'Тегін бастау', cta2: 'Мүмкіндіктерді қарау',
       proof: [['Тегін жоспар', 'мәңгі'], ['Дайын болу', '30 секунд'], ['Картасыз', 'тіркелу кезінде']],
     },
@@ -104,8 +105,8 @@ const T = {
       items: ['Бомбардирлер кестесі: голдар мен ассисттер', 'Сары және қызыл карточкаларды есепке алу', 'Барлық көрсеткіштерді автоматты есептеу', 'PDF-ке толық есепті экспорттау'],
     },
     features: {
-      h2: 'Ұйымдастырушы шаршамауы үшін жасалды',
-      sub: 'Әрбір функция нақты мәселені шешеді',
+      h2: 'Барлығы үшін — алаңнан профиге дейін',
+      sub: 'Кастомды ұпайлар, матч уақыты, форматтар — кез келген спорт түрі мен деңгейіне сәйкес келеді',
       items: [
         { pain: 'Excel бұзылады — формулалар шатасады', title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты жасалады. Дөңгелек, плей-офф, Чемпиондар лигасы.' },
         { pain: '«Есеп қандай?» — он рет сұралды', title: 'Есепті барлығы нақты уақытта көреді', desc: 'Телефоннан голдар енгізіңіз — қатысушылар жалпыға ортақ сілтеме арқылы лезде жаңартуды көреді.' },
@@ -146,7 +147,7 @@ const T = {
     contact: { h2: 'Сұрақтарыңыз бар ма?', sub: 'Тікелей жазыңыз — тез жауап береміз', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21' },
     cta: { h2: 'Бірінші турнирге дайынсыз ба?', sub: 'Тіркелу бір минуттан аз уақыт алады. Несиелік карта қажет емес.', btn: 'Тегін бастау' },
     footer: {
-      tagline: 'Турнир ұйымдастырушыларға арналған платформа.',
+      tagline: 'Кез келген командалық спорт бойынша турнирлер — алаңнан профиге дейін.',
       cols: { product: 'Өнім', platform: 'Платформа', connect: 'Байланыс' },
       links: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', register: 'Тіркелу', pro: 'Про тарифі' },
       legal: '© 2026 Tournable. Барлық құқықтар қорғалған.',
@@ -158,9 +159,9 @@ const T = {
     label: 'EN',
     nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'My Tournaments' },
     hero: {
-      badge: 'Platform for tournament organizers',
+      badge: 'For football, FIFA and any team sport',
       h1: ['Tournaments —', 'simple.', 'Professional.'],
-      sub: 'Automatic scheduling, real-time scoring, statistics and public links — everything an organizer needs, without spreadsheets or chat apps.',
+      sub: 'Street football, FIFA league, amateur club, corporate event or semi-pro league — automatic schedule, real-time scoring and stats with zero spreadsheets.',
       cta: 'Start for free', cta2: 'View features',
       proof: [['Free plan', 'forever'], ['Ready in', '30 seconds'], ['No card', 'required']],
     },
@@ -176,8 +177,8 @@ const T = {
       items: ['Top scorers table: goals and assists', 'Yellow and red card tracking', 'Automatic calculation of all metrics', 'Export full report to PDF'],
     },
     features: {
-      h2: 'Built for organizers who are done with chaos',
-      sub: 'Every feature solves a real pain you already know',
+      h2: 'For everyone — from street to semi-pro',
+      sub: 'Custom points, match duration, formats — works for any sport and any level',
       items: [
         { pain: 'Spreadsheet crashes every time', title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches are generated instantly. Round-robin, playoff, Champions League.' },
         { pain: '"What\'s the score?" — for the 10th time', title: 'Live score for everyone', desc: 'Enter goals on your phone — participants see updates instantly via a public link. No app needed.' },
@@ -218,7 +219,7 @@ const T = {
     contact: { h2: 'Have questions?', sub: 'Write directly — we respond quickly', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21' },
     cta: { h2: 'Ready for your first tournament?', sub: 'Registration takes less than a minute. No credit card needed.', btn: 'Start for free' },
     footer: {
-      tagline: 'Platform for tournament organizers.',
+      tagline: 'Tournaments for any team sport — from street to professional.',
       cols: { product: 'Product', platform: 'Platform', connect: 'Connect' },
       links: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', register: 'Sign Up', pro: 'Pro Plan' },
       legal: '© 2026 Tournable. All rights reserved.',
@@ -307,8 +308,8 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-2">
-                <Link href="/login" className="text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
-                <Link href="/register" className="bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
+                <Link href={`/login${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
+                <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
                   {tx.nav.start} <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -354,11 +355,11 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 pt-1">
-                  <Link href="/login" onClick={() => setMobileOpen(false)}
+                  <Link href={`/login${lang !== 'ru' ? `?lang=${lang}` : ''}`} onClick={() => setMobileOpen(false)}
                     className="flex items-center justify-center text-base font-semibold text-emerald-100 hover:text-white py-3 rounded-xl hover:bg-white/10 transition-colors">
                     {tx.nav.login}
                   </Link>
-                  <Link href="/register" onClick={() => setMobileOpen(false)}
+                  <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} onClick={() => setMobileOpen(false)}
                     className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base">
                     {tx.nav.start} <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -387,7 +388,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               </h1>
               <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-md">{tx.hero.sub}</p>
               <div className="flex flex-wrap items-center gap-3 mb-10">
-                <Link href="/register" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-100">
+                <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-100">
                   {tx.hero.cta} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a href="#features" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 font-medium text-sm px-4 py-3.5 transition-colors">
@@ -669,13 +670,11 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               className="group relative overflow-hidden rounded-3xl p-8 flex flex-col gap-6 transition-all hover:scale-[1.02] hover:shadow-2xl"
               style={{ background: 'linear-gradient(135deg,#128C7E 0%,#25D366 100%)', boxShadow: '0 8px 40px rgba(37,211,102,.2)' }}>
               <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-              <div className="relative z-10">
+              <div className="relative z-10 flex-1">
                 <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                   <IconWhatsApp className="w-8 h-8 text-white" />
                 </div>
-                <div className="font-black text-xl text-white mb-1">WhatsApp</div>
-                <div className="text-white/80 text-sm mb-4">{tx.contact.wa}</div>
-                <div className="text-white font-bold text-lg">{tx.contact.phone}</div>
+                <div className="font-black text-2xl text-white">WhatsApp</div>
               </div>
               <div className="relative z-10 inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors self-start">
                 {tx.contact.wa} <ArrowRight className="w-4 h-4" />
@@ -686,13 +685,11 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             <a href="tel:+77064092021"
               className="group relative overflow-hidden bg-gray-900 rounded-3xl p-8 flex flex-col gap-6 transition-all hover:scale-[1.02] hover:shadow-2xl hover:bg-gray-800">
               <div className="absolute inset-0 pointer-events-none opacity-5" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-              <div className="relative z-10">
+              <div className="relative z-10 flex-1">
                 <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                   <Phone className="w-7 h-7 text-emerald-400" />
                 </div>
-                <div className="font-black text-xl text-white mb-1">{lang === 'en' ? 'Phone' : lang === 'kz' ? 'Телефон' : 'Позвонить'}</div>
-                <div className="text-gray-400 text-sm mb-4">{lang === 'en' ? 'Call directly' : lang === 'kz' ? 'Тікелей қоңырау шалу' : 'Ответим быстро'}</div>
-                <div className="text-white font-bold text-lg">{tx.contact.phone}</div>
+                <div className="font-black text-2xl text-white">{lang === 'en' ? 'Call us' : lang === 'kz' ? 'Қоңырау шалу' : 'Позвонить'}</div>
               </div>
               <div className="relative z-10 inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors self-start">
                 {tx.contact.phone} <ArrowRight className="w-4 h-4" />
@@ -785,12 +782,14 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-gray-600">{tx.footer.legal}</p>
             <div className="flex items-center gap-6 text-xs text-gray-600">
-              <a href="#" className="hover:text-gray-400 transition-colors">{tx.footer.privacy}</a>
-              <a href="#" className="hover:text-gray-400 transition-colors">{tx.footer.terms}</a>
+              <Link href="/privacy" className="hover:text-gray-400 transition-colors">{tx.footer.privacy}</Link>
+              <Link href="/terms" className="hover:text-gray-400 transition-colors">{tx.footer.terms}</Link>
             </div>
           </div>
         </div>
       </footer>
+
+      <SupportWidget />
     </div>
   )
 }

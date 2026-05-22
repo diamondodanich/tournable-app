@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Check, ArrowRight, MessageCircle, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star } from 'lucide-react'
+import { Check, ArrowRight, MessageCircle, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -252,6 +252,7 @@ const FEAT_STYLES = [
 // ─── Main component ───────────────────────────────────────────────────────────
 export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [lang, setLang] = useState<Lang>('ru')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const tx = T[lang]
 
   return (
@@ -264,10 +265,10 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <Image src="/logo-white.png" alt="Tournable" width={36} height={36} className="w-9 h-9 object-contain" />
-            <span className="font-black text-[17px] tracking-tight text-white hidden sm:block" style={{ letterSpacing: '-.02em' }}>TOURNABLE</span>
+            <span className="font-black text-[17px] tracking-tight text-white" style={{ letterSpacing: '-.02em' }}>TOURNABLE</span>
           </Link>
 
-          {/* Nav */}
+          {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-0.5">
             {([['#features', tx.nav.features], ['#pricing', tx.nav.pricing], ['#contact', tx.nav.contact]] as [string, string][]).map(([href, label]) => (
               <a key={href} href={href} className="px-3.5 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">{label}</a>
@@ -275,8 +276,8 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* Language switcher */}
-            <div className="hidden sm:flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
+            {/* Language switcher — desktop */}
+            <div className="hidden lg:flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
               {(['ru', 'kz', 'en'] as Lang[]).map(l => (
                 <button key={l} onClick={() => setLang(l)}
                   className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
@@ -285,20 +286,82 @@ export function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               ))}
             </div>
 
+            {/* Desktop CTA */}
             {isLoggedIn ? (
-              <Link href="/dashboard" className="flex items-center gap-1.5 bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-md">
+              <Link href="/dashboard" className="hidden lg:flex items-center gap-1.5 bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-md">
                 {tx.nav.dashboard} <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
-              <>
-                <Link href="/login" className="hidden md:block text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
+              <div className="hidden lg:flex items-center gap-2">
+                <Link href="/login" className="text-sm font-medium text-emerald-100 hover:text-white px-3 py-2 transition-colors">{tx.nav.login}</Link>
                 <Link href="/register" className="bg-white hover:bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md">
                   {tx.nav.start} <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
-              </>
+              </div>
             )}
+
+            {/* Hamburger — mobile/tablet */}
+            <button
+              onClick={() => setMobileOpen(o => !o)}
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
+              aria-label="Меню"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* ── Mobile drawer ────────────────────────────────────────────────── */}
+        {mobileOpen && (
+          <div className="lg:hidden border-t border-white/15" style={{ background: 'linear-gradient(180deg,#047857 0%,#059669 100%)' }}>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col gap-1">
+
+              {/* Nav links */}
+              {([['#features', tx.nav.features], ['#pricing', tx.nav.pricing], ['#contact', tx.nav.contact]] as [string, string][]).map(([href, label]) => (
+                <a key={href} href={href} onClick={() => setMobileOpen(false)}
+                  className="px-4 py-3 text-base text-emerald-100 hover:text-white hover:bg-white/10 rounded-xl transition-all font-medium">
+                  {label}
+                </a>
+              ))}
+
+              <div className="my-2 border-t border-white/15" />
+
+              {/* Language switcher */}
+              <div className="flex items-center gap-2 px-4 py-2">
+                <span className="text-xs text-emerald-200 font-medium mr-1">Язык:</span>
+                <div className="flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
+                  {(['ru', 'kz', 'en'] as Lang[]).map(l => (
+                    <button key={l} onClick={() => setLang(l)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
+                      {T[l].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="my-2 border-t border-white/15" />
+
+              {/* CTA */}
+              {isLoggedIn ? (
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 bg-white text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base mx-0">
+                  {tx.nav.dashboard} <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <div className="flex flex-col gap-2 pt-1">
+                  <Link href="/login" onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center text-base font-semibold text-emerald-100 hover:text-white py-3 rounded-xl hover:bg-white/10 transition-colors">
+                    {tx.nav.login}
+                  </Link>
+                  <Link href="/register" onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base">
+                    {tx.nav.start} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}

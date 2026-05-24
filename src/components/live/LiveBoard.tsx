@@ -481,7 +481,15 @@ export default function LiveBoard({
             </div>
           </div>
           <Button
-            onClick={() => router.push(`/dashboard/tournament/${tournament.id}`)}
+            onClick={() => {
+              // If this tab was opened by window.open(), close it and let the opener refresh
+              if (window.opener && !window.opener.closed) {
+                window.opener.location.reload()
+                window.close()
+              } else {
+                router.push(`/dashboard/tournament/${tournament.id}`)
+              }
+            }}
             className="bg-emerald-600 hover:bg-emerald-700 px-8"
           >
             Вернуться к турниру

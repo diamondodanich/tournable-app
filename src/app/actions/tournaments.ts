@@ -4,6 +4,21 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+// ─── Plan helpers ─────────────────────────────────────────────────────────────
+async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!data) return 'free'
+  if (data.plan === 'pro') {
+    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
+  }
+  return 'free'
+}
+
 export async function createTournament(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -28,7 +43,7 @@ export async function createTournament(formData: FormData) {
 
 export async function createTournamentWithSetup(
   name: string,
-  format: 'round_robin' | 'playoff',
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
   numRounds: number,
   teamNames: string[],
   settings?: {
@@ -38,13 +53,31 @@ export async function createTournamentWithSetup(
     pointsWin?: number
     pointsDraw?: number
     pointsLoss?: number
+    groupsCount?: number
+    teamsAdvance?: number
   }
 ): Promise<{ id?: string; teamIds?: string[]; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
 
-  // 1. Create tournament
+  // ── Plan enforcement ─────────────────────────────────────────────────────
+  const [plan, { count: existingCount }] = await Promise.all([
+    getUserPlan(supabase, user.id),
+    supabase.from('tournaments').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+  ])
+
+  if (plan === 'free' && (existingCount ?? 0) >= 3) {
+    return { error: 'PLAN_LIMIT_TOURNAMENTS' }
+  }
+
+  const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+
+  if (plan === 'free' && validNames.length > 16) {
+    return { error: 'PLAN_LIMIT_TEAMS' }
+  }
+
+  // ── Create tournament ────────────────────────────────────────────────────
   const { data: t, error: tErr } = await supabase
     .from('tournaments')
     .insert({
@@ -58,56 +91,48 @@ export async function createTournamentWithSetup(
       points_win:          settings?.pointsWin         ?? 3,
       points_draw:         settings?.pointsDraw        ?? 1,
       points_loss:         settings?.pointsLoss        ?? 0,
+      groups_count:        settings?.groupsCount       ?? 4,
+      teams_advance:       settings?.teamsAdvance      ?? 2,
     })
     .select()
     .single()
   if (tErr || !t) return { error: tErr?.message ?? 'Ошибка создания' }
 
-  // 2. Insert teams
-  const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+  // ── Insert teams ─────────────────────────────────────────────────────────
   let teamIds: string[] = []
   if (validNames.length >= 2) {
+    const groupsCount = settings?.groupsCount ?? 4
+    const teamsWithGroups = validNames.map((name, i) => ({
+      tournament_id: t.id,
+      name,
+      group_name: (format === 'groups_playoff')
+        ? String.fromCharCode(65 + (i % groupsCount)) // A, B, C, D...
+        : null,
+    }))
     const { data: insertedTeams, error: teamsErr } = await supabase
-      .from('teams')
-      .insert(validNames.map(name => ({ tournament_id: t.id, name })))
-      .select('id')
+      .from('teams').insert(teamsWithGroups).select('id, group_name')
     if (teamsErr) return { error: teamsErr.message }
     teamIds = (insertedTeams ?? []).map((r: { id: string }) => r.id)
   }
 
-  // 3. Generate schedule for round-robin with enough teams
+  // ── Generate schedule ────────────────────────────────────────────────────
   if (format === 'round_robin' && teamIds.length >= 2) {
-    {
-      const baseRounds = generateRoundRobin(teamIds)
-      const fixtures = []
-      let matchdayCounter = 0
+    const fixtures = buildRoundRobinFixtures(t.id, teamIds, numRounds)
+    await supabase.from('fixtures').insert(fixtures)
+    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+  }
 
-      for (let cycle = 0; cycle < numRounds; cycle++) {
-        for (let ri = 0; ri < baseRounds.length; ri++) {
-          matchdayCounter++
-          const round = baseRounds[ri]
-          for (const [homeId, awayId] of round) {
-            if (awayId === null) {
-              const byeTeam = homeId
-              fixtures.push({
-                tournament_id: t.id, matchday: matchdayCounter,
-                round: cycle + 1, cycle_round: ri + 1,
-                home_team_id: byeTeam, away_team_id: null,
-                is_bye: true, played: false,
-              })
-            } else {
-              const [h, a] = cycle % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
-              fixtures.push({
-                tournament_id: t.id, matchday: matchdayCounter,
-                round: cycle + 1, cycle_round: ri + 1,
-                home_team_id: h, away_team_id: a,
-                is_bye: false, played: false,
-              })
-            }
-          }
-        }
-      }
+  if (format === 'league_playoff' && teamIds.length >= 2) {
+    // League phase: run numRounds of round-robin (partial or full)
+    const fixtures = buildRoundRobinFixtures(t.id, teamIds, numRounds)
+    await supabase.from('fixtures').insert(fixtures)
+    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+  }
 
+  if (format === 'groups_playoff' && teamIds.length >= 2) {
+    const groupsCount = settings?.groupsCount ?? 4
+    const fixtures = buildGroupsFixtures(t.id, teamIds, groupsCount)
+    if (fixtures.length > 0) {
       await supabase.from('fixtures').insert(fixtures)
       await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
     }
@@ -117,6 +142,60 @@ export async function createTournamentWithSetup(
   return { id: t.id, teamIds }
 }
 
+function buildRoundRobinFixtures(
+  tournamentId: string,
+  teamIds: string[],
+  numRounds: number,
+) {
+  const baseRounds = generateRoundRobin(teamIds)
+  const fixtures = []
+  let matchday = 0
+  for (let cycle = 0; cycle < numRounds; cycle++) {
+    for (let ri = 0; ri < baseRounds.length; ri++) {
+      matchday++
+      for (const [homeId, awayId] of baseRounds[ri]) {
+        if (awayId === null) {
+          fixtures.push({ tournament_id: tournamentId, matchday, round: cycle + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
+        } else {
+          const [h, a] = cycle % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
+          fixtures.push({ tournament_id: tournamentId, matchday, round: cycle + 1, cycle_round: ri + 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
+        }
+      }
+    }
+  }
+  return fixtures
+}
+
+function buildGroupsFixtures(
+  tournamentId: string,
+  teamIds: string[],
+  groupsCount: number,
+) {
+  // Distribute teams across groups evenly
+  const groups: string[][] = Array.from({ length: groupsCount }, () => [])
+  teamIds.forEach((id, i) => groups[i % groupsCount].push(id))
+
+  const fixtures = []
+  let matchday = 0
+  for (let g = 0; g < groups.length; g++) {
+    const groupTeams = groups[g]
+    if (groupTeams.length < 2) continue
+    const baseRounds = generateRoundRobin(groupTeams)
+    for (let ri = 0; ri < baseRounds.length; ri++) {
+      matchday++
+      for (const [homeId, awayId] of baseRounds[ri]) {
+        if (awayId === null) {
+          fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
+        } else {
+          fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: awayId, is_bye: false, played: false })
+        }
+      }
+    }
+  }
+  return fixtures
+}
+
+// ─── addTeam with plan check ──────────────────────────────────────────────────
 export async function deleteTournament(id: string) {
   const supabase = await createClient()
   await supabase.from('tournaments').delete().eq('id', id)
@@ -126,6 +205,19 @@ export async function deleteTournament(id: string) {
 
 export async function addTeam(tournamentId: string, name: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  // Plan check: free users limited to 16 teams per tournament
+  const [plan, { count: teamCount }] = await Promise.all([
+    getUserPlan(supabase, user.id),
+    supabase.from('teams').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId),
+  ])
+
+  if (plan === 'free' && (teamCount ?? 0) >= 16) {
+    return { error: 'PLAN_LIMIT_TEAMS' }
+  }
+
   const { error } = await supabase
     .from('teams')
     .insert({ tournament_id: tournamentId, name: name.trim() })

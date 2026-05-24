@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
 import SupportWidget from './SupportWidget'
+import { setLangCookie } from '@/app/actions/lang'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -298,7 +299,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             {/* Language switcher — always visible */}
             <div className="flex items-center bg-white/15 rounded-lg p-0.5 gap-0.5">
               {(['ru', 'kz', 'en'] as Lang[]).map(l => (
-                <button key={l} onClick={() => setLang(l)}
+                <button key={l} onClick={() => { setLang(l); setLangCookie(l) }}
                   className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${lang === l ? 'bg-white text-emerald-700 shadow-sm' : 'text-emerald-100 hover:text-white hover:bg-white/10'}`}>
                   {T[l].label}
                 </button>

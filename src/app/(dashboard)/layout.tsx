@@ -1,15 +1,50 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import Image from 'next/image'
 import { LayoutDashboard, LogOut, Zap, CreditCard, MessageCircle } from 'lucide-react'
 
+type Lang = 'ru' | 'kz' | 'en'
+
+const T = {
+  ru: {
+    myTournaments: 'Мои турниры',
+    features: 'Возможности',
+    pricing: 'Тарифы',
+    contact: 'Контакты',
+    account: 'Личный кабинет',
+    signOut: 'Выйти из аккаунта',
+  },
+  kz: {
+    myTournaments: 'Менің турнирлерім',
+    features: 'Мүмкіндіктер',
+    pricing: 'Тарифтер',
+    contact: 'Байланыс',
+    account: 'Жеке кабинет',
+    signOut: 'Шығу',
+  },
+  en: {
+    myTournaments: 'My tournaments',
+    features: 'Features',
+    pricing: 'Pricing',
+    contact: 'Contact',
+    account: 'Account',
+    signOut: 'Sign out',
+  },
+} as const
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
+
+  const cookieStore = await cookies()
+  const langRaw = cookieStore.get('lang')?.value ?? 'ru'
+  const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
+  const tx = T[lang]
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? '??'
   const emailShort = user.email?.split('@')[0] ?? ''
@@ -45,16 +80,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {/* Nav */}
           <nav className="hidden md:flex items-center gap-0.5">
             <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <LayoutDashboard className="w-4 h-4" /> Мои турниры
+              <LayoutDashboard className="w-4 h-4" /> {tx.myTournaments}
             </Link>
             <Link href="/#features" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <Zap className="w-4 h-4" /> Возможности
+              <Zap className="w-4 h-4" /> {tx.features}
             </Link>
             <Link href="/#pricing" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <CreditCard className="w-4 h-4" /> Тарифы
+              <CreditCard className="w-4 h-4" /> {tx.pricing}
             </Link>
             <Link href="/#contact" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <MessageCircle className="w-4 h-4" /> Контакты
+              <MessageCircle className="w-4 h-4" /> {tx.contact}
             </Link>
           </nav>
 
@@ -63,7 +98,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link
               href="/account"
               className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"
-              title="Личный кабинет"
+              title={tx.account}
             >
               <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-[11px] font-black text-white shrink-0">
                 {initials}
@@ -76,7 +111,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <form action={signOut}>
               <button
                 type="submit"
-                title="Выйти из аккаунта"
+                title={tx.signOut}
                 className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
                 <LogOut className="w-4 h-4 text-emerald-100" />

@@ -10,8 +10,8 @@ export default function AppleIcon() {
         style={{
           width: 180,
           height: 180,
-          borderRadius: 40,
-          background: 'linear-gradient(145deg, #059669 0%, #036045 100%)',
+          borderRadius: 38,
+          background: 'linear-gradient(145deg, #047857 0%, #059669 55%, #10b981 100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -20,70 +20,58 @@ export default function AppleIcon() {
           overflow: 'hidden',
         }}
       >
-        {/* subtle field arc — top */}
+        {/* Subtle grid pattern */}
         <div
           style={{
             position: 'absolute',
-            top: -30,
-            left: -30,
-            width: 140,
-            height: 140,
-            borderRadius: '50%',
-            border: '2px solid rgba(255,255,255,0.08)',
+            inset: 0,
+            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
+            backgroundSize: '18px 18px',
             display: 'flex',
           }}
         />
-        {/* subtle field arc — bottom */}
+        {/* Glow blob top-left */}
         <div
           style={{
             position: 'absolute',
-            bottom: -30,
-            right: -30,
-            width: 140,
-            height: 140,
+            top: -20,
+            left: -20,
+            width: 100,
+            height: 100,
             borderRadius: '50%',
-            border: '2px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.08)',
             display: 'flex',
           }}
         />
 
-        {/* Big T */}
+        {/* T letter — bold, clean */}
         <span
           style={{
             color: 'white',
-            fontSize: 96,
+            fontSize: 100,
             fontWeight: 900,
             fontFamily: 'system-ui, -apple-system, sans-serif',
             lineHeight: 1,
-            letterSpacing: '-3px',
-            marginBottom: -4,
+            letterSpacing: '-4px',
+            marginBottom: 2,
           }}
         >
           T
         </span>
 
-        {/* Soccer ball + label */}
-        <div
+        {/* Brand name */}
+        <span
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            marginTop: 2,
+            color: 'rgba(255,255,255,0.65)',
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
           }}
         >
-          <span style={{ fontSize: 22 }}>⚽</span>
-          <span
-            style={{
-              color: 'rgba(255,255,255,0.7)',
-              fontSize: 14,
-              fontWeight: 700,
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              letterSpacing: '0.5px',
-            }}
-          >
-            TOURNABLE
-          </span>
-        </div>
+          TOURNABLE
+        </span>
       </div>
     ),
     { ...size },

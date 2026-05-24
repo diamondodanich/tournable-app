@@ -33,16 +33,19 @@ const T = {
       items: ['Таблица бомбардиров: голы и ассисты', 'Учёт жёлтых и красных карточек', 'Автоматический расчёт всех показателей', 'Экспорт полного отчёта в PDF'],
     },
     features: {
-      h2: 'Для всех — от двора до профи',
-      sub: 'Кастомные очки, время матча, форматы — подходит для любого вида спорта и уровня',
+      tag: 'Возможности',
+      h2: 'Платформа.\nНе Excel.',
+      sub: 'Всё что нужно для турнира любого уровня — из коробки, без формул и ручного счёта',
       items: [
-        { pain: 'Excel слетает — формулы путаются', title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — все матчи генерируются автоматически. Круговой, плей-офф, Лига чемпионов.' },
-        { pain: '«Какой счёт?» — уже десятый раз', title: 'Счёт видят все в реальном времени', desc: 'Вносите голы с телефона — участники видят обновление мгновенно по публичной ссылке. Без приложений.' },
-        { pain: 'Таблица пересчитывается вручную', title: 'Статистика без единой ошибки', desc: 'Очки, разница мячей, бомбардиры — всё пересчитывается само после каждого результата.' },
-        { pain: 'Сетка нарисована на листочке', title: 'Плей-офф — автоматически', desc: 'Победители переходят сами. До 64 команд в одном турнире, любой формат.' },
-        { pain: 'Некому доверить ввод результатов', title: 'Несколько редакторов сразу', desc: 'До 3 соредакторов работают параллельно. Пригласите ассистента по ссылке за секунды.' },
-        { pain: 'Нужно скинуть таблицу всем участникам', title: 'Экспорт одним кликом', desc: 'PDF и PNG с таблицей, статистикой и сеткой — в чат, для печати или в соцсети.' },
+        { title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — все матчи генерируются автоматически. Круговой, плей-офф, Лига чемпионов.' },
+        { title: 'Счёт в реальном времени', desc: 'Вносите голы с телефона — участники видят обновление мгновенно по публичной ссылке. Без приложений.' },
+        { title: 'Автоматическая статистика', desc: 'Очки, разница мячей, бомбардиры — пересчитываются сами после каждого результата.' },
+        { title: 'Плей-офф одним кликом', desc: 'Победители переходят автоматически. До 64 команд, любой формат — от 1/8 до финала.' },
+        { title: 'Несколько редакторов', desc: 'До 3 соредакторов работают параллельно. Пригласите по ссылке за секунды.' },
+        { title: 'Экспорт PDF и PNG', desc: 'Таблица, сетка и статистика — в чат, для печати или в соцсети. Одним кликом.' },
       ],
+      sportsLabel: 'Работает для любого вида спорта',
+      sports: ['Футбол', 'FIFA', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Киберспорт'],
     },
     pricing: {
       h2: 'Начните бесплатно. Обновитесь когда будете готовы.',
@@ -68,8 +71,8 @@ const T = {
       h2: 'Дополнительные услуги',
       sub: 'Мы не просто платформа — мы ваш партнёр в каждом турнире',
       items: [
-        { icon: '🎬', title: 'Видеозапись матчей', desc: 'В будущем наша команда приедет и профессионально снимет ваши матчи прямо на поле. Видеозаписи будут сохранены в вашем аккаунте.', price: null, pricePer: null, badge: 'Скоро', badgeColor: 'blue' },
-        { icon: '🏆', title: 'Выездная фиксация результатов', desc: 'Наш специалист приедет на ваш турнир и сам будет вносить результаты всех матчей прямо в платформу. Вы проводите — мы записываем.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
+        { icon: 'video', title: 'Видеозапись матчей', desc: 'В будущем наша команда приедет и профессионально снимет ваши матчи прямо на поле. Видеозаписи будут сохранены в вашем аккаунте.', price: null, pricePer: null, badge: 'Скоро', badgeColor: 'blue' },
+        { icon: 'trophy', title: 'Выездная фиксация результатов', desc: 'Наш специалист приедет на ваш турнир и сам будет вносить результаты всех матчей прямо в платформу. Вы проводите — мы записываем.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Остались вопросы?', sub: 'Напишите напрямую — отвечаем быстро', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21' },
@@ -84,7 +87,7 @@ const T = {
   },
 
   kz: {
-    label: 'ҚАЗ',
+    label: 'KZ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Менің турнирларым' },
     hero: {
       badge: 'Футбол, FIFA және кез келген командалық спорт үшін',
@@ -105,16 +108,19 @@ const T = {
       items: ['Бомбардирлер кестесі: голдар мен ассисттер', 'Сары және қызыл карточкаларды есепке алу', 'Барлық көрсеткіштерді автоматты есептеу', 'PDF-ке толық есепті экспорттау'],
     },
     features: {
-      h2: 'Барлығы үшін — алаңнан профиге дейін',
-      sub: 'Кастомды ұпайлар, матч уақыты, форматтар — кез келген спорт түрі мен деңгейіне сәйкес келеді',
+      tag: 'Мүмкіндіктер',
+      h2: 'Платформа.\nExcel емес.',
+      sub: 'Кез келген деңгейдегі турнир үшін қажет нәрсенің бәрі — формуласыз және қолмен есептеусіз',
       items: [
-        { pain: 'Excel бұзылады — формулалар шатасады', title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты жасалады. Дөңгелек, плей-офф, Чемпиондар лигасы.' },
-        { pain: '«Есеп қандай?» — он рет сұралды', title: 'Есепті барлығы нақты уақытта көреді', desc: 'Телефоннан голдар енгізіңіз — қатысушылар жалпыға ортақ сілтеме арқылы лезде жаңартуды көреді.' },
-        { pain: 'Кесте қолмен есептеледі', title: 'Статистика қатесіз', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — нәтиже енгізілгеннен кейін автоматты есептеледі.' },
-        { pain: 'Плей-офф торы қағазда салынды', title: 'Плей-офф — автоматты', desc: 'Жеңімпаздар өздігінен өтеді. 64 командаға дейін, кез келген формат.' },
-        { pain: 'Нәтижелерді сенуге ешкім жоқ', title: 'Бірнеше редактор бір мезгілде', desc: '3 редакторға дейін паралельді жұмыс істейді. Секундтарда сілтеме арқылы шақырыңыз.' },
-        { pain: 'Кестені барлығына жіберу керек', title: 'Бір басумен экспорт', desc: 'PDF және PNG кесте, статистика және тормен — чатқа, басып шығаруға немесе әлеуметтік желілерге.' },
+        { title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты жасалады. Дөңгелек, плей-офф, Чемпиондар лигасы.' },
+        { title: 'Нақты уақытта есеп', desc: 'Телефоннан голдар енгізіңіз — қатысушылар жалпыға ортақ сілтеме арқылы лезде жаңартуды көреді.' },
+        { title: 'Автоматты статистика', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — нәтиже енгізілгеннен кейін автоматты есептеледі.' },
+        { title: 'Плей-офф бір шертумен', desc: 'Жеңімпаздар өздігінен өтеді. 64 командаға дейін, кез келген формат — 1/8-ден финалға дейін.' },
+        { title: 'Бірнеше редактор', desc: '3 редакторға дейін параллельді жұмыс істейді. Секундтарда сілтеме арқылы шақырыңыз.' },
+        { title: 'PDF және PNG экспорты', desc: 'Кесте, тор және статистика — чатқа, басып шығаруға немесе әлеуметтік желілерге. Бір шертумен.' },
       ],
+      sportsLabel: 'Кез келген спорт үшін жұмыс істейді',
+      sports: ['Футбол', 'FIFA', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тениcі', 'Киберспорт'],
     },
     pricing: {
       h2: 'Тегін бастаңыз. Дайын болған кезде жаңартыңыз.',
@@ -140,8 +146,8 @@ const T = {
       h2: 'Қосымша қызметтер',
       sub: 'Біз тек платформа емеспіз — турнир ұйымдастырудағы серіктесіңіздіз',
       items: [
-        { icon: '🎬', title: 'Матчтарды бейнежазу', desc: 'Болашақта командамыз келіп, матчтарыңызды сахада кәсіби түрде түсіреді. Бейнежазбалар сіздің аккаунтыңызда сақталады.', price: null, pricePer: null, badge: 'Жақында', badgeColor: 'blue' },
-        { icon: '🏆', title: 'Нәтижелерді тіркеу қызметі', desc: 'Маманымыз турниріңізге келіп, барлық матч нәтижелерін тікелей платформада жеке тіркейді. Сіз өткізесіз — біз жазамыз.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
+        { icon: 'video', title: 'Матчтарды бейнежазу', desc: 'Болашақта командамыз келіп, матчтарыңызды сахада кәсіби түрде түсіреді. Бейнежазбалар сіздің аккаунтыңызда сақталады.', price: null, pricePer: null, badge: 'Жақында', badgeColor: 'blue' },
+        { icon: 'trophy', title: 'Нәтижелерді тіркеу қызметі', desc: 'Маманымыз турниріңізге келіп, барлық матч нәтижелерін тікелей платформада жеке тіркейді. Сіз өткізесіз — біз жазамыз.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Сұрақтарыңыз бар ма?', sub: 'Тікелей жазыңыз — тез жауап береміз', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21' },
@@ -177,16 +183,19 @@ const T = {
       items: ['Top scorers table: goals and assists', 'Yellow and red card tracking', 'Automatic calculation of all metrics', 'Export full report to PDF'],
     },
     features: {
-      h2: 'For everyone — from street to semi-pro',
-      sub: 'Custom points, match duration, formats — works for any sport and any level',
+      tag: 'Features',
+      h2: 'Platform.\nNot Excel.',
+      sub: 'Everything you need for any level tournament — out of the box, no formulas, no manual counting',
       items: [
-        { pain: 'Spreadsheet crashes every time', title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches are generated instantly. Round-robin, playoff, Champions League.' },
-        { pain: '"What\'s the score?" — for the 10th time', title: 'Live score for everyone', desc: 'Enter goals on your phone — participants see updates instantly via a public link. No app needed.' },
-        { pain: 'Table recalculated by hand', title: 'Stats without errors', desc: 'Points, goal difference, top scorers — recalculated automatically after every result.' },
-        { pain: 'Bracket drawn on a piece of paper', title: 'Auto playoff bracket', desc: 'Winners advance on their own. Up to 64 teams, any format.' },
-        { pain: 'No one to trust with the results', title: 'Multiple editors at once', desc: 'Up to 3 co-editors work in parallel. Invite via link in seconds.' },
-        { pain: 'Need to share standings with everyone', title: 'Export with one click', desc: 'PDF and PNG with table, stats and bracket — for print, chat or social media.' },
+        { title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches generate automatically. Round-robin, playoff, Champions League.' },
+        { title: 'Live score for everyone', desc: 'Enter goals on your phone — participants see updates instantly via a public link. No app needed.' },
+        { title: 'Automatic statistics', desc: 'Points, goal difference, top scorers — recalculated automatically after every result.' },
+        { title: 'Playoff in one click', desc: 'Winners advance on their own. Up to 64 teams, any format — from round of 16 to the final.' },
+        { title: 'Multiple editors', desc: 'Up to 3 co-editors work in parallel. Invite by link in seconds.' },
+        { title: 'PDF & PNG export', desc: 'Standings, bracket and stats — for chat, print or social media. One click.' },
       ],
+      sportsLabel: 'Works for any sport',
+      sports: ['Football', 'FIFA', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Esports'],
     },
     pricing: {
       h2: 'Start for free. Upgrade when you\'re ready.',
@@ -212,8 +221,8 @@ const T = {
       h2: 'Additional Services',
       sub: 'We\'re more than a platform — we\'re your tournament partner',
       items: [
-        { icon: '🎬', title: 'Match Video Recording', desc: 'In the future, our team will come and professionally film your matches on the field. Videos will be saved in your account.', price: null, pricePer: null, badge: 'Coming Soon', badgeColor: 'blue' },
-        { icon: '🏆', title: 'On-site Results Recording', desc: 'Our specialist comes to your tournament and personally enters all match results directly into the platform. You run it — we log it.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
+        { icon: 'video', title: 'Match Video Recording', desc: 'In the future, our team will come and professionally film your matches on the field. Videos will be saved in your account.', price: null, pricePer: null, badge: 'Coming Soon', badgeColor: 'blue' },
+        { icon: 'trophy', title: 'On-site Results Recording', desc: 'Our specialist comes to your tournament and personally enters all match results directly into the platform. You run it — we log it.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
       ],
     },
     contact: { h2: 'Have questions?', sub: 'Write directly — we respond quickly', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21' },
@@ -251,12 +260,12 @@ function IconTikTok({ className }: { className?: string }) {
 // ─── Feature icons map ────────────────────────────────────────────────────────
 const FEAT_ICONS = [Zap, BarChart3, Trophy, Share2, Users, Download]
 const FEAT_STYLES = [
-  { bg: 'bg-emerald-50', icon: 'text-emerald-600', border: 'border-t-emerald-400' },
-  { bg: 'bg-blue-50',    icon: 'text-blue-600',    border: 'border-t-blue-400' },
-  { bg: 'bg-purple-50',  icon: 'text-purple-600',  border: 'border-t-purple-400' },
-  { bg: 'bg-orange-50',  icon: 'text-orange-600',  border: 'border-t-orange-400' },
-  { bg: 'bg-pink-50',    icon: 'text-pink-600',    border: 'border-t-pink-400' },
-  { bg: 'bg-slate-50',   icon: 'text-slate-600',   border: 'border-t-slate-400' },
+  { bg: 'bg-emerald-500/15', icon: 'text-emerald-400', accent: 'bg-emerald-400' },
+  { bg: 'bg-blue-500/15',    icon: 'text-blue-400',    accent: 'bg-blue-400' },
+  { bg: 'bg-violet-500/15',  icon: 'text-violet-400',  accent: 'bg-violet-400' },
+  { bg: 'bg-orange-500/15',  icon: 'text-orange-400',  accent: 'bg-orange-400' },
+  { bg: 'bg-pink-500/15',    icon: 'text-pink-400',    accent: 'bg-pink-400' },
+  { bg: 'bg-cyan-500/15',    icon: 'text-cyan-400',    accent: 'bg-cyan-400' },
 ]
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -488,43 +497,62 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
         </div>
       </section>
 
-      {/* ── Premium features ────────────────────────────────────────────────── */}
-      <section id="features" className="py-24 lg:py-28 bg-[#030712] overflow-hidden">
+      {/* ── Features ────────────────────────────────────────────────────────── */}
+      <section id="features" className="py-24 lg:py-32 bg-[#030712]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4 text-white" style={{ letterSpacing: '-.03em' }}>{tx.features.h2}</h2>
-            <p className="text-gray-400 text-base max-w-xl mx-auto">{tx.features.sub}</p>
+          {/* Header */}
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">{tx.features.tag}</span>
+            </span>
+            <h2
+              className="text-[2.4rem] sm:text-[3.2rem] font-black text-white mb-5 whitespace-pre-line"
+              style={{ letterSpacing: '-.04em', lineHeight: 1.1 }}
+            >{tx.features.h2}</h2>
+            <p className="text-gray-400 text-base max-w-lg mx-auto leading-relaxed">{tx.features.sub}</p>
           </div>
 
-          {/* Mobile: horizontal scroll carousel | Desktop: grid */}
+          {/* Cards: scroll on mobile, 3-col grid on sm+ */}
           <div className="-mx-4 sm:mx-0">
-            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none px-4 sm:px-0 pb-4 sm:pb-0 scroll-smooth">
+            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none px-4 sm:px-0 pb-4 sm:pb-0">
               {tx.features.items.map((feat, i) => {
                 const Icon = FEAT_ICONS[i]
                 const s = FEAT_STYLES[i]
                 return (
-                  <div key={feat.title} className="snap-start shrink-0 w-[78vw] sm:w-auto sm:shrink bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col hover:bg-white/8 hover:border-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default group">
-                    {/* Pain badge */}
-                    <div className="inline-flex items-center gap-1.5 self-start bg-red-500/10 border border-red-500/20 rounded-lg px-2.5 py-1 mb-5">
-                      <span className="text-[10px] font-bold text-red-400 leading-none">😤 {feat.pain}</span>
-                    </div>
+                  <div key={i} className="snap-start shrink-0 w-[78vw] sm:w-auto sm:shrink relative bg-white/[0.03] border border-white/[0.07] rounded-2xl p-7 flex flex-col hover:bg-white/[0.06] hover:border-white/[0.15] hover:-translate-y-1.5 transition-all duration-300 group overflow-hidden cursor-default">
+                    {/* Number watermark */}
+                    <span
+                      className="absolute -top-2 right-4 font-black text-white/[0.05] select-none"
+                      style={{ fontSize: '5rem', letterSpacing: '-.04em', lineHeight: 1 }}
+                    >{String(i + 1).padStart(2, '0')}</span>
                     {/* Icon */}
-                    <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                      <Icon className={`w-5 h-5 ${s.icon}`} />
+                    <div className={`w-14 h-14 rounded-2xl ${s.bg} flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shrink-0`}>
+                      <Icon className={`w-7 h-7 ${s.icon}`} />
                     </div>
-                    {/* Content */}
-                    <h3 className="font-black text-[15px] text-white mb-2 leading-tight">{feat.title}</h3>
+                    {/* Text */}
+                    <h3 className="font-black text-[17px] sm:text-lg text-white leading-snug mb-3">{feat.title}</h3>
                     <p className="text-sm text-gray-400 leading-relaxed flex-1">{feat.desc}</p>
                     {/* Bottom accent */}
-                    <div className={`mt-5 h-0.5 w-12 rounded-full ${s.border.replace('border-t-', 'bg-')}`} />
+                    <div className={`mt-6 h-[2px] w-8 rounded-full ${s.accent} group-hover:w-14 transition-all duration-500`} />
                   </div>
                 )
               })}
             </div>
-            {/* Scroll hint dots — mobile only */}
+            {/* Scroll dots — mobile only */}
             <div className="flex justify-center gap-1.5 mt-5 sm:hidden">
               {tx.features.items.map((_, i) => (
                 <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-emerald-400' : 'bg-white/20'}`} />
+              ))}
+            </div>
+          </div>
+
+          {/* Sports compatibility row */}
+          <div className="mt-14 border-t border-white/[0.06] pt-10 text-center">
+            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mb-5">{tx.features.sportsLabel}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {tx.features.sports.map((sport) => (
+                <span key={sport} className="text-xs text-gray-500 bg-white/[0.04] border border-white/[0.08] rounded-full px-4 py-1.5 font-medium">{sport}</span>
               ))}
             </div>
           </div>
@@ -635,7 +663,11 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   <span className="absolute top-5 right-5 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest bg-blue-100 text-blue-600">{svc.badge}</span>
                 )}
                 <div className="relative z-10">
-                  <div className="text-4xl mb-5">{svc.icon}</div>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 bg-emerald-50">
+                    {svc.icon === 'video'
+                      ? <Video className="w-6 h-6 text-blue-500" />
+                      : <Trophy className="w-6 h-6 text-emerald-600" />}
+                  </div>
                   <h3 className="font-black text-xl text-gray-900 mb-3 leading-tight">{svc.title}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed mb-6">{svc.desc}</p>
                   {svc.price ? (
@@ -789,7 +821,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
         </div>
       </footer>
 
-      <SupportWidget />
+      <SupportWidget lang={lang} />
     </div>
   )
 }

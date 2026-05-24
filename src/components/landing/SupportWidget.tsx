@@ -17,102 +17,102 @@ const FAQ: Record<Lang, { q: string; a: string }[]> = {
   ru: [
     {
       q: 'Как создать турнир?',
-      a: 'Зарегистрируйтесь, нажмите «Новый турнир», выберите формат (Круговой, Плей-офф или Группы+Плей-офф), добавьте команды — расписание сгенерируется автоматически. Занимает около 30 секунд.',
+      a: 'Нажмите «Новый турнир», выберите формат (Круговой, Плей-офф, Группы+Плей-офф или Лига+Плей-офф), добавьте команды — расписание готово автоматически. Ровно 30 секунд.',
     },
     {
       q: 'Какие форматы поддерживаются?',
-      a: 'Круговой (все играют со всеми), Плей-офф (сетка на выбывание), Группы + Плей-офф (как Лига чемпионов или ЧМ). Очки, время матча и другие параметры полностью настраиваются.',
+      a: 'Четыре формата: Круговой, Плей-офф, Группы+Плей-офф (как ЧМ) и Лига+Плей-офф (как новая Лига чемпионов). Очки, длительность матча и другие параметры полностью настраиваются.',
     },
     {
       q: 'Как вести счёт в реальном времени?',
-      a: 'Зайдите в турнир, выберите матч, нажмите «Начать». Вносите голы и события с телефона. Участники видят счёт по публичной ссылке без регистрации.',
+      a: 'Войдите в турнир → выберите матч → нажмите «Начать». Вносите голы, ассисты и карточки с телефона. Участники видят всё в реальном времени по публичной ссылке — без приложений и регистрации.',
     },
     {
       q: 'Можно ли пригласить помощника?',
-      a: 'Да! В разделе «Поделиться» турнира выберите «Пригласить редактора» — скопируйте ссылку и отправьте. До 3 соредакторов могут вводить результаты одновременно.',
+      a: 'Да. В разделе «Поделиться» нажмите «Пригласить редактора», скопируйте ссылку и отправьте. До 3 соредакторов вводят результаты одновременно.',
     },
     {
-      q: 'Какие тарифы и что входит?',
-      a: 'Бесплатный план: до 3 турниров, до 16 команд. Про (4 990 ₸/мес или 44 990 ₸/год): безлимитные турниры, до 64 команд, Live-табло, приоритетная поддержка.',
+      q: 'Какие тарифы?',
+      a: 'Бесплатный: до 3 турниров, до 16 команд. Про (4 990 ₸/мес или 44 990 ₸/год): безлимитные турниры, до 64 команд, Live-табло, приоритетная поддержка 24/7.',
     },
     {
-      q: 'Как поделиться турниром?',
-      a: 'В любом турнире нажмите «Поделиться» и скопируйте публичную ссылку. Участники открывают её в браузере и видят таблицу, расписание и статистику без регистрации.',
+      q: 'Как поделиться турниром с участниками?',
+      a: 'В турнире нажмите «Поделиться» и скопируйте публичную ссылку. Участники открывают её в любом браузере и видят таблицу, расписание и статистику. Без регистрации.',
     },
   ],
   kz: [
     {
       q: 'Турнирді қалай жасауға болады?',
-      a: 'Тіркеліңіз, «Жаңа турнир» батырмасын басыңыз, формат таңдаңыз (Дөңгелек, Плей-офф немесе Топтар+Плей-офф), командаларды қосыңыз — кесте автоматты жасалады. 30 секундқа жуық уақыт алады.',
+      a: '«Жаңа турнир» батырмасын басыңыз, формат таңдаңыз (Дөңгелек, Плей-офф, Топтар+Плей-офф немесе Лига+Плей-офф), командаларды қосыңыз — кесте автоматты дайын. Дәл 30 секунд.',
     },
     {
       q: 'Қандай форматтар қолдалады?',
-      a: 'Дөңгелек (барлығы барлығымен ойнайды), Плей-офф (жою сеткасы), Топтар + Плей-офф (Чемпиондар лигасы немесе ЧА сияқты). Ұпайлар, матч уақыты және басқа параметрлер толық теңшеледі.',
+      a: 'Төрт формат: Дөңгелек, Плей-офф, Топтар+Плей-офф (ЧА сияқты) және Лига+Плей-офф (жаңа Чемпиондар лигасы сияқты). Ұпайлар, матч уақыты және басқа параметрлер толық теңшеледі.',
     },
     {
       q: 'Нақты уақытта есеп қалай жүргізіледі?',
-      a: 'Турнирге кіріңіз, матч таңдаңыз, «Бастау» батырмасын басыңыз. Телефоннан голдар мен оқиғаларды енгізіңіз. Қатысушылар жалпыға ортақ сілтеме арқылы тіркелусіз есепті көреді.',
+      a: 'Турнирге кіріңіз → матч таңдаңыз → «Бастау» батырмасын басыңыз. Телефоннан голдарды, ассисттерді және карточкаларды енгізіңіз. Қатысушылар барлығын нақты уақытта жалпыға ортақ сілтеме арқылы тіркелусіз көреді.',
     },
     {
       q: 'Көмекші шақыруға бола ма?',
-      a: 'Иә! Турнирдің «Бөлісу» бөлімінде «Редакторды шақыру» таңдаңыз — сілтемені көшіріп жіберіңіз. 3 соредакторға дейін нәтижелерді бір уақытта енгізе алады.',
+      a: 'Иә. «Бөлісу» бөлімінде «Редакторды шақыру» батырмасын басыңыз, сілтемені көшіріп жіберіңіз. 3 соредакторға дейін нәтижелерді бір уақытта енгізе алады.',
     },
     {
-      q: 'Тарифтер қандай және не кіреді?',
-      a: 'Тегін жоспар: 3 турнирге дейін, 16 командаға дейін. Про (4 990 ₸/ай немесе 44 990 ₸/жыл): шексіз турнирлер, 64 командаға дейін, Live-тақта, басым қолдау.',
+      q: 'Тарифтер қандай?',
+      a: 'Тегін: 3 турнирге дейін, 16 командаға дейін. Про (4 990 ₸/ай немесе 44 990 ₸/жыл): шексіз турнирлер, 64 командаға дейін, Live-тақта, басым қолдау 24/7.',
     },
     {
-      q: 'Турнирді қалай бөлісуге болады?',
-      a: 'Кез келген турнирде «Бөлісу» батырмасын басып, жалпыға ортақ сілтемені көшіріңіз. Қатысушылар оны браузерде ашады және тіркелусіз кестені және статистиканы көреді.',
+      q: 'Турнирді қатысушылармен қалай бөлісуге болады?',
+      a: 'Турнирде «Бөлісу» батырмасын басып, жалпыға ортақ сілтемені көшіріңіз. Қатысушылар кез келген браузерде ашады — кестені, кестені және статистиканы тіркелусіз көреді.',
     },
   ],
   en: [
     {
       q: 'How do I create a tournament?',
-      a: 'Sign up, click "New Tournament", choose a format (Round-robin, Playoff, or Groups+Playoff), add teams — the schedule generates automatically. Takes about 30 seconds.',
+      a: 'Click "New Tournament", choose a format (Round-robin, Playoff, Groups+Playoff or League+Playoff), add teams — the schedule is ready automatically. Exactly 30 seconds.',
     },
     {
       q: 'Which formats are supported?',
-      a: 'Round-robin (everyone plays everyone), Playoff (elimination bracket), Groups + Playoff (like Champions League or World Cup). Points, match duration and other settings are fully customizable.',
+      a: 'Four formats: Round-robin, Playoff, Groups+Playoff (like the World Cup) and League+Playoff (like the new Champions League). Points, match duration and other settings are fully customizable.',
     },
     {
       q: 'How do I track scores in real time?',
-      a: 'Open the tournament, select a match, press "Start". Enter goals and events from your phone. Participants see the score via a public link without registering.',
+      a: 'Open the tournament → select a match → tap "Start". Enter goals, assists and cards from your phone. Participants see everything live via a public link — no app, no sign-up.',
     },
     {
       q: 'Can I invite a helper?',
-      a: 'Yes! In the tournament "Share" section, select "Invite Editor" — copy the link and send it. Up to 3 co-editors can enter results at the same time.',
+      a: 'Yes. In the "Share" section tap "Invite Editor", copy the link and send it. Up to 3 co-editors can enter results at the same time.',
     },
     {
-      q: 'What are the plans and what\'s included?',
-      a: 'Free plan: up to 3 tournaments, up to 16 teams. Pro (4,990 ₸/mo or 44,990 ₸/yr): unlimited tournaments, up to 64 teams, live scoreboard, priority support.',
+      q: 'What are the plans?',
+      a: 'Free: up to 3 tournaments, up to 16 teams. Pro (4,990 ₸/mo or 44,990 ₸/yr): unlimited tournaments, up to 64 teams, live scoreboard, priority support 24/7.',
     },
     {
-      q: 'How do I share a tournament?',
-      a: 'In any tournament, click "Share" and copy the public link. Participants open it in their browser and see the standings, schedule and stats without signing up.',
+      q: 'How do I share a tournament with participants?',
+      a: 'In the tournament tap "Share" and copy the public link. Participants open it in any browser and see standings, schedule and stats — no sign-up required.',
     },
   ],
 }
 
 const UI: Record<Lang, { greeting: string; header: string; online: string; faqTitle: string; wa: string }> = {
   ru: {
-    greeting: 'Привет! Я помогу разобраться с платформой. Выберите вопрос или напишите в WhatsApp для живого общения.',
+    greeting: 'Привет! Помогу разобраться с Tournable — быстро и без лишних слов. Выберите вопрос ниже или напишите напрямую в WhatsApp.',
     header: 'Поддержка Tournable',
-    online: 'Онлайн',
+    online: 'Онлайн — отвечаем быстро',
     faqTitle: 'Частые вопросы',
     wa: 'Написать в WhatsApp',
   },
   kz: {
-    greeting: 'Сәлем! Мен платформаны түсінуге көмектесемін. Сұрақ таңдаңыз немесе тікелей байланыс үшін WhatsApp-қа жазыңыз.',
+    greeting: 'Сәлем! Tournable-мен тез және анық танысуға көмектесемін. Төменнен сұрақ таңдаңыз немесе WhatsApp-қа жазыңыз.',
     header: 'Tournable қолдауы',
-    online: 'Онлайн',
+    online: 'Онлайн — тез жауап береміз',
     faqTitle: 'Жиі сұрақтар',
     wa: 'WhatsApp-қа жазу',
   },
   en: {
-    greeting: 'Hi! I can help you get started. Choose a question below or message us on WhatsApp for live support.',
+    greeting: 'Hey! Happy to help you get started with Tournable. Pick a question below or reach us directly on WhatsApp.',
     header: 'Tournable Support',
-    online: 'Online',
+    online: 'Online — fast response',
     faqTitle: 'FAQ',
     wa: 'Message on WhatsApp',
   },

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { generatePlayoffBracket } from '@/lib/tournament/playoff'
 
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
 async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
@@ -140,6 +141,46 @@ export async function createTournamentWithSetup(
       await supabase.from('fixtures').insert(fixtures)
       await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
     }
+  }
+
+  if (format === 'playoff' && teamIds.length >= 2) {
+    // Auto-generate fair seeded bracket immediately on creation
+    const matches = generatePlayoffBracket(teamIds)
+
+    // Insert without winner_to_match first (need real UUIDs for cross-linking)
+    const { data: inserted } = await supabase
+      .from('playoff_matches')
+      .insert(matches.map(m => ({
+        tournament_id: t.id,
+        round_order: m.round_order,
+        match_order: m.match_order,
+        home_team_id: m.home_team_id,
+        away_team_id: m.away_team_id,
+        winner_slot: m.winner_slot,
+      })))
+      .select('id, round_order, match_order')
+
+    if (inserted) {
+      // Build (round_order:match_order) → real UUID lookup
+      const lookup = new Map<string, string>()
+      inserted.forEach((r: { id: string; round_order: number; match_order: number }) =>
+        lookup.set(`${r.round_order}:${r.match_order}`, r.id)
+      )
+
+      // Second pass: wire up winner_to_match with real IDs
+      for (const m of matches) {
+        if (m.winner_to_match !== null) {
+          const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
+          const targetId = lookup.get(targetKey)
+          const selfId   = lookup.get(`${m.round_order}:${m.match_order}`)
+          if (targetId && selfId) {
+            await supabase.from('playoff_matches').update({ winner_to_match: targetId }).eq('id', selfId)
+          }
+        }
+      }
+    }
+
+    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
   }
 
   revalidatePath('/dashboard')

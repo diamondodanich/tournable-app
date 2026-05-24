@@ -122,6 +122,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const isOwner = user?.id === tournament.user_id
   const isRoundRobin = tournament.format === 'round_robin' || !tournament.format
 
+  // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
+  const fmt = tournament.format ?? 'round_robin'
+  const showFixturesTab  = fmt !== 'playoff'      // round_robin, groups_playoff, league_playoff
+  const showStandingsTab = fmt === 'round_robin' || !tournament.format  // only pure round-robin has a unified table
+  const showPlayoffTab   = fmt !== 'round_robin'  // playoff, groups_playoff, league_playoff
+
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
@@ -157,7 +163,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   ]
 
   const defaultTab = tournament.generated
-    ? (isRoundRobin ? 'fixtures' : 'playoff')
+    ? (fmt === 'playoff' ? 'playoff' : 'fixtures')
     : 'setup'
 
   // ── Champion detection ────────────────────────────────────────────────────
@@ -364,7 +370,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   <span>Настройка</span>
                 </TabsTrigger>
 
-                {isRoundRobin && (
+                {showFixturesTab && (
                   <TabsTrigger value="fixtures"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
@@ -379,7 +385,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   </TabsTrigger>
                 )}
 
-                {isRoundRobin && (
+                {showStandingsTab && (
                   <TabsTrigger value="standings"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
@@ -389,7 +395,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   </TabsTrigger>
                 )}
 
-                {!isRoundRobin && (
+                {showPlayoffTab && (
                   <TabsTrigger value="playoff"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
@@ -429,17 +435,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         <TabsContent value="setup" className="mt-0 pt-5">
           <SetupTab tournament={tournament} teams={t} />
         </TabsContent>
-        {isRoundRobin && (
+        {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
             <FixturesTab tournament={tournament} teams={t} fixtures={f} />
           </TabsContent>
         )}
-        {isRoundRobin && (
+        {showStandingsTab && (
           <TabsContent value="standings" className="mt-0 pt-5">
             <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} />
           </TabsContent>
         )}
-        {!isRoundRobin && (
+        {showPlayoffTab && (
           <TabsContent value="playoff" className="mt-0 pt-5">
             <PlayoffTab
               tournament={tournament}

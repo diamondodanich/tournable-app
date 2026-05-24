@@ -36,8 +36,8 @@ function teamById(teams: Team[], id: string | null) {
 }
 
 function EventIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <span className="text-xs">⚽</span>
-  if (type === 'own_goal')    return <span className="text-xs text-red-500">↩</span>
+  if (type === 'goal')        return <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+  if (type === 'own_goal')    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400 shrink-0" />
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
@@ -73,7 +73,7 @@ interface PlayoffInlineFormProps {
 function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFormProps) {
   if (!form || form.teamId !== teamId) return null
   const isGoal      = form.actionType === 'goal'
-  const submitLabel = form.isOwnGoal ? '↩ АГ' : isGoal ? '⚽ Гол' : form.actionType === 'yellow_card' ? '🟨 ЖК' : '🟥 КК'
+  const submitLabel = form.isOwnGoal ? 'АГ' : isGoal ? 'Гол' : form.actionType === 'yellow_card' ? 'ЖК' : 'КК'
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
     : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -85,9 +85,9 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
       {/* Action type pills */}
       <div className="flex gap-1">
         {([
-          { v: 'goal' as const,        l: '⚽' },
-          { v: 'yellow_card' as const, l: '🟨' },
-          { v: 'red_card' as const,    l: '🟥' },
+          { v: 'goal' as const,        l: 'Гол' },
+          { v: 'yellow_card' as const, l: 'ЖК'  },
+          { v: 'red_card' as const,    l: 'КК'  },
         ]).map(opt => (
           <button key={opt.v}
             onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
@@ -103,12 +103,17 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
           </button>
         ))}
         {isGoal && (
-          <label className="flex items-center gap-1 ml-auto cursor-pointer select-none">
-            <input type="checkbox" checked={form.isOwnGoal}
-              onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
-              className="accent-red-500 w-3 h-3" />
-            <span className="text-xs text-gray-500">↩</span>
-          </label>
+          <button
+            type="button"
+            onClick={() => setForm(f => f ? { ...f, isOwnGoal: !f.isOwnGoal } : f)}
+            className={`ml-auto px-2 py-0.5 rounded text-xs font-bold transition-all border ${
+              form.isOwnGoal
+                ? 'bg-red-100 text-red-600 border-red-300'
+                : 'bg-white text-gray-400 border-gray-200 hover:border-red-200 hover:text-red-400'
+            }`}
+          >
+            АГ
+          </button>
         )}
       </div>
 
@@ -263,7 +268,7 @@ function PlayoffMatchCard({
     const hasEvts  = homeRows.length > 0 || awayRows.length > 0
 
     return (
-      <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-3 shadow-sm min-w-[220px]">
+      <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-3 shadow-sm min-w-[300px]">
         {/* Header */}
         <div className="flex items-center justify-between mb-2.5">
           <Badge className="bg-emerald-100 text-emerald-700 text-xs">
@@ -281,7 +286,7 @@ function PlayoffMatchCard({
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={22} />
-            <span className={`font-bold text-xs truncate ${match.winner_id === match.home_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
+            <span className={`font-bold text-xs ${match.winner_id === match.home_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
               {homeTeam?.name ?? 'TBD'}
               {match.winner_id === match.home_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
             </span>
@@ -290,7 +295,7 @@ function PlayoffMatchCard({
             {scoreHome} – {scoreAway}
           </div>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-            <span className={`font-bold text-xs truncate text-right ${match.winner_id === match.away_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
+            <span className={`font-bold text-xs text-right ${match.winner_id === match.away_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
               {match.winner_id === match.away_team_id && <Trophy size={10} className="inline mr-1 text-amber-500" />}
               {awayTeam?.name ?? 'TBD'}
             </span>
@@ -339,7 +344,7 @@ function PlayoffMatchCard({
   const awayRows = buildRows(match.away_team_id ?? '', events)
 
   return (
-    <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[240px] ${
+    <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[300px] ${
       isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
     }`}>
 
@@ -374,17 +379,17 @@ function PlayoffMatchCard({
 
       {/* ── Score row (computed, read-only) ── */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
           <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={22} />
-          <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name ?? 'TBD'}</span>
+          <span className="font-bold text-sm text-gray-900">{homeTeam?.name ?? 'TBD'}</span>
         </div>
-        <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-1 ${
+        <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
           scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
         }`}>
           {scoreHome} – {scoreAway}
         </div>
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-          <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name ?? 'TBD'}</span>
+        <div className="flex items-center gap-1.5 justify-end">
+          <span className="font-bold text-sm text-gray-900 text-right">{awayTeam?.name ?? 'TBD'}</span>
           <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={22} />
         </div>
       </div>
@@ -484,7 +489,9 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   if (matches.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="text-5xl mb-4">🏆</p>
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
+          <Trophy size={28} className="text-amber-500" />
+        </div>
         <p className="font-bold text-gray-700 text-lg mb-2">Сетка плей-офф</p>
         <p className="text-sm text-gray-400 mb-6">Добавьте команды и сгенерируйте сетку</p>
         <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">

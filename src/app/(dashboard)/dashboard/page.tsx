@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, ArrowRight } from 'lucide-react'
+import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
               href="/dashboard/new"
               className="inline-flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 font-bold px-7 py-3 rounded-xl shadow-md transition-colors text-sm"
             >
-              <Plus size={15} /> {tx.start} <ArrowRight size={14} className="opacity-60" />
+              <Plus size={15} /> {tx.start}
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

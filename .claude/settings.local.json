@@ -30,7 +30,24 @@
       "Bash(node -e ' *)",
       "Bash(git commit -m 'fix: cast eventRow to any — Supabase types predate migration 009 \\(fixture_id nullable\\) *)",
       "Bash(git commit -m 'fix: eventRow cast unknown→any to guarantee Supabase insert type bypass *)",
-      "Bash(git commit -m 'fix: split '\\\\''any maskable'\\\\'' into separate manifest icon entries \\(TS2820\\) *)"
+      "Bash(git commit -m 'fix: split '\\\\''any maskable'\\\\'' into separate manifest icon entries \\(TS2820\\) *)",
+      "Bash(gh pr *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\wonderful-liskov-ee48dc\\\\src\\\\app\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(npx next *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx kill-port *)",
+      "Bash(cp \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.env.local\" \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\wonderful-liskov-ee48dc\\\\.env.local\" && echo \"copied\")",
+      "Bash(git log *)",
+      "Bash(git pull *)",
+      "Bash(gh run *)",
+      "Bash(cp \"C:\\\\Users\\\\user\\\\Downloads\\\\ChatGPT-Image-21-мая-2026-г._-21_13_10.svg\" \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\wonderful-liskov-ee48dc\\\\public\\\\logo.svg\" && echo \"copied\")",
+      "Bash(ls \"C:\\\\Users\\\\user\\\\Downloads\\\\\"*.png 2>/dev/null | head -10)",
+      "Bash(ls /mnt/c/Users/user/Downloads/*.png 2>/dev/null | head -10)",
+      "Bash(xargs ls -t)",
+      "Bash(git stash *)",
+      "Bash(xargs grep -l \"plan\\\\|subscription\\\\|pro\\\\|limit\\\\|quota\")"
     ]
   }
 }

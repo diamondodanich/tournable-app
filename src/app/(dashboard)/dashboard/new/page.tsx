@@ -48,6 +48,7 @@ const T = {
     errTeams: 'Добавьте минимум 2 команды',
     errDuplicates: 'Уберите команды с одинаковыми названиями',
     errTeamsMin: (n: number) => `Для этого формата нужно минимум ${n} команд`,
+    errRatings: 'Укажите силу для каждой команды',
     seedingLbl: 'Посев команд',
     seedingRandom: 'Случайный жребий',
     seedingRandomDesc: 'Команды распределяются случайно',
@@ -96,6 +97,7 @@ const T = {
     errTeams: 'Кемінде 2 команда қосыңыз',
     errDuplicates: 'Бірдей атаулы командаларды алып тастаңыз',
     errTeamsMin: (n: number) => `Бұл формат үшін кемінде ${n} команда қажет`,
+    errRatings: 'Әр команданың күшін көрсетіңіз',
     seedingLbl: 'Командаларды бөлу',
     seedingRandom: 'Кездейсоқ жеребе',
     seedingRandomDesc: 'Командалар кездейсоқ бөлінеді',
@@ -144,6 +146,7 @@ const T = {
     errTeams: 'Add at least 2 teams',
     errDuplicates: 'Remove teams with duplicate names',
     errTeamsMin: (n: number) => `This format requires at least ${n} teams`,
+    errRatings: 'Set the strength rating for every team',
     seedingLbl: 'Team seeding',
     seedingRandom: 'Random draw',
     seedingRandomDesc: 'Teams are distributed randomly',
@@ -322,7 +325,7 @@ export default function NewTournamentPage() {
   const [teamNames, setTeamNames] = useState<string[]>(['', ''])
   const [teamLogos, setTeamLogos] = useState<(string | null)[]>([null, null])
   const [seedingMode, setSeedingMode] = useState<'random' | 'seeded'>('random')
-  const [teamRatings, setTeamRatings] = useState<number[]>([3, 3])
+  const [teamRatings, setTeamRatings] = useState<(number | null)[]>([null, null])
   const lastInputRef = useRef<HTMLInputElement>(null)
 
   // Step 3
@@ -358,6 +361,10 @@ export default function NewTournamentPage() {
       setError(min === 2 ? tx.errTeams : tx.errTeamsMin(min))
       return
     }
+    if (seedingMode === 'seeded') {
+      const missingRating = teamNames.some((n, i) => n.trim() && teamRatings[i] === null)
+      if (missingRating) { setError(tx.errRatings); return }
+    }
     setError(null); setStep(3)
   }
   function goToStep4() { setError(null); setStep(4) }
@@ -367,7 +374,7 @@ export default function NewTournamentPage() {
   function addTeamField() {
     setTeamNames(prev => [...prev, ''])
     setTeamLogos(prev => [...prev, null])
-    setTeamRatings(prev => [...prev, 3])
+    setTeamRatings(prev => [...prev, null])
     setTimeout(() => lastInputRef.current?.focus(), 50)
   }
   function removeTeam(i: number) {
@@ -407,7 +414,7 @@ export default function NewTournamentPage() {
     let orderedNames = teamNames
     let orderedLogos = teamLogos
     if (seedingMode === 'seeded') {
-      const indexed = teamNames.map((n, i) => ({ name: n, logo: teamLogos[i], rating: teamRatings[i] }))
+      const indexed = teamNames.map((n, i) => ({ name: n, logo: teamLogos[i], rating: teamRatings[i] ?? 0 }))
       indexed.sort((a, b) => b.rating - a.rating)
       orderedNames = indexed.map(x => x.name)
       orderedLogos = indexed.map(x => x.logo)
@@ -599,7 +606,11 @@ export default function NewTournamentPage() {
                   className={`flex-1 ${duplicateIndices.has(i) ? 'border-red-400 focus:border-red-400 bg-red-50' : ''}`} />
                 {/* Rating picker (visible only in seeded mode) */}
                 {seedingMode === 'seeded' && (
-                  <div className="flex items-center gap-0.5 shrink-0">
+                  <div className={`flex items-center gap-0.5 shrink-0 rounded p-0.5 transition-all ${
+                    teamRatings[i] === null && val.trim()
+                      ? 'ring-1 ring-amber-400 ring-dashed'
+                      : ''
+                  }`}>
                     {([
                       { active: 'bg-red-500 text-white',    inactive: 'bg-gray-100 text-gray-400 hover:bg-red-100'    },
                       { active: 'bg-orange-500 text-white', inactive: 'bg-gray-100 text-gray-400 hover:bg-orange-100' },
@@ -608,10 +619,11 @@ export default function NewTournamentPage() {
                       { active: 'bg-emerald-500 text-white',inactive: 'bg-gray-100 text-gray-400 hover:bg-emerald-100'},
                     ] as const).map((colors, idx) => {
                       const star = idx + 1
+                      const rating = teamRatings[i]
                       return (
                         <button key={star} type="button" onClick={() => setTeamRating(i, star)}
                           className={`w-5 h-5 rounded text-[10px] font-black transition-colors ${
-                            teamRatings[i] >= star ? colors.active : colors.inactive
+                            rating !== null && rating >= star ? colors.active : colors.inactive
                           }`}>
                           {star}
                         </button>

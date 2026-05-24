@@ -102,13 +102,17 @@ export async function createTournamentWithSetup(
   let teamIds: string[] = []
   if (validNames.length >= 2) {
     const groupsCount = settings?.groupsCount ?? 4
-    const teamsWithGroups = validNames.map((name, i) => ({
-      tournament_id: t.id,
-      name,
-      group_name: (format === 'groups_playoff')
-        ? String.fromCharCode(65 + (i % groupsCount)) // A, B, C, D...
-        : null,
-    }))
+    const teamsWithGroups = validNames.map((name, i) => {
+      let group_name: string | null = null
+      if (format === 'groups_playoff') {
+        // Serpentine seeding: pot 1 → A,B,C,D; pot 2 → D,C,B,A etc.
+        const pot = Math.floor(i / groupsCount)
+        const posInPot = i % groupsCount
+        const groupIdx = pot % 2 === 0 ? posInPot : (groupsCount - 1 - posInPot)
+        group_name = String.fromCharCode(65 + groupIdx) // A, B, C, D...
+      }
+      return { tournament_id: t.id, name, group_name }
+    })
     const { data: insertedTeams, error: teamsErr } = await supabase
       .from('teams').insert(teamsWithGroups).select('id, group_name')
     if (teamsErr) return { error: teamsErr.message }
@@ -171,9 +175,15 @@ function buildGroupsFixtures(
   teamIds: string[],
   groupsCount: number,
 ) {
-  // Distribute teams across groups evenly
+  // Serpentine (snake) seeding: pot 1 → A,B,C,D; pot 2 → D,C,B,A; pot 3 → A,B,C,D …
+  // This ensures balanced strength distribution (top team + bottom team in same group).
   const groups: string[][] = Array.from({ length: groupsCount }, () => [])
-  teamIds.forEach((id, i) => groups[i % groupsCount].push(id))
+  teamIds.forEach((id, i) => {
+    const pot = Math.floor(i / groupsCount)
+    const posInPot = i % groupsCount
+    const groupIdx = pot % 2 === 0 ? posInPot : (groupsCount - 1 - posInPot)
+    groups[groupIdx].push(id)
+  })
 
   const fixtures = []
   let matchday = 0

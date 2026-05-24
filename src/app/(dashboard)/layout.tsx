@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, LogOut, Zap, CreditCard, MessageCircle } from 'lucide-react'
+import { LayoutDashboard, LogOut, Zap, CreditCard, MessageCircle, User } from 'lucide-react'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -98,14 +98,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link
               href="/account"
               className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"
-              title={tx.account}
             >
-              <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-[11px] font-black text-white shrink-0">
-                {initials}
+              {/* Avatar with user icon badge */}
+              <div className="relative shrink-0">
+                <div className="w-7 h-7 rounded-full bg-white/25 ring-1 ring-white/40 flex items-center justify-center text-[11px] font-black text-white">
+                  {initials}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border border-emerald-700 flex items-center justify-center">
+                  <User size={7} className="text-emerald-900" />
+                </div>
               </div>
-              <span className="hidden sm:block text-xs text-emerald-100 font-medium max-w-[130px] truncate">
-                {emailShort}
-              </span>
+              {/* Label + email */}
+              <div className="hidden sm:flex flex-col leading-none">
+                <span className="text-[10px] text-emerald-300 font-semibold mb-0.5">{tx.account}</span>
+                <span className="text-xs text-white font-bold max-w-[110px] truncate">{emailShort}</span>
+              </div>
             </Link>
 
             <form action={signOut}>

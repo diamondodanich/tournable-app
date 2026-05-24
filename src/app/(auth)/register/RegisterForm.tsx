@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import Image from 'next/image'
+import OAuthButtons from '@/components/auth/OAuthButtons'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -84,6 +85,8 @@ export default function RegisterForm({ lang }: { lang: Lang }) {
           </div>
 
           <h1 className="text-xl font-black text-gray-900 mb-6">{tx.title}</h1>
+
+          <OAuthButtons lang={lang} mode="register" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">

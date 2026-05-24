@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Tournament, Team, PlayoffMatch, MatchEvent } from '@/types'
 import { savePlayoffResult, generatePlayoff, startPlayoffMatch } from '@/app/actions/playoff'
+import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -166,12 +167,14 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, isLive,
+  match, teams, tournamentId, isLive, homeLabel, awayLabel,
 }: {
   match: PlayoffMatch
   teams: Team[]
   tournamentId: string
   isLive: boolean
+  homeLabel?: string   // shown when home_team_id is null (e.g. "A1", "1-е м.")
+  awayLabel?: string   // shown when away_team_id is null
 }) {
   const [events, setEvents] = useState<EventEntry[]>(
     match.match_events?.map(e => ({
@@ -285,9 +288,9 @@ function PlayoffMatchCard({
         {/* Score */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={22} />
-            <span className={`font-bold text-xs ${match.winner_id === match.home_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
-              {homeTeam?.name ?? 'TBD'}
+            {homeTeam && <TeamAvatar name={homeTeam.name} logoUrl={homeTeam.logo_url} size={22} />}
+            <span className={`font-bold text-xs ${homeTeam ? (match.winner_id === match.home_team_id ? 'text-emerald-700' : 'text-gray-700') : 'text-gray-400 italic'}`}>
+              {homeTeam?.name ?? homeLabel ?? 'TBD'}
               {match.winner_id === match.home_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
             </span>
           </div>
@@ -295,11 +298,11 @@ function PlayoffMatchCard({
             {scoreHome} – {scoreAway}
           </div>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-            <span className={`font-bold text-xs text-right ${match.winner_id === match.away_team_id ? 'text-emerald-700' : 'text-gray-700'}`}>
+            <span className={`font-bold text-xs text-right ${awayTeam ? (match.winner_id === match.away_team_id ? 'text-emerald-700' : 'text-gray-700') : 'text-gray-400 italic'}`}>
               {match.winner_id === match.away_team_id && <Trophy size={10} className="inline mr-1 text-amber-500" />}
-              {awayTeam?.name ?? 'TBD'}
+              {awayTeam?.name ?? awayLabel ?? 'TBD'}
             </span>
-            <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={22} />
+            {awayTeam && <TeamAvatar name={awayTeam.name} logoUrl={awayTeam.logo_url} size={22} />}
           </div>
         </div>
 
@@ -380,8 +383,10 @@ function PlayoffMatchCard({
       {/* ── Score row (computed, read-only) ── */}
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center gap-1.5">
-          <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={22} />
-          <span className="font-bold text-sm text-gray-900">{homeTeam?.name ?? 'TBD'}</span>
+          {homeTeam && <TeamAvatar name={homeTeam.name} logoUrl={homeTeam.logo_url} size={22} />}
+          <span className={`font-bold text-sm ${homeTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+            {homeTeam?.name ?? homeLabel ?? 'TBD'}
+          </span>
         </div>
         <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
           scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
@@ -389,8 +394,10 @@ function PlayoffMatchCard({
           {scoreHome} – {scoreAway}
         </div>
         <div className="flex items-center gap-1.5 justify-end">
-          <span className="font-bold text-sm text-gray-900 text-right">{awayTeam?.name ?? 'TBD'}</span>
-          <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={22} />
+          <span className={`font-bold text-sm text-right ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+            {awayTeam?.name ?? awayLabel ?? 'TBD'}
+          </span>
+          {awayTeam && <TeamAvatar name={awayTeam.name} logoUrl={awayTeam.logo_url} size={22} />}
         </div>
       </div>
 
@@ -469,6 +476,29 @@ function PlayoffMatchCard({
 
 // ── PlayoffTab ────────────────────────────────────────────────────────────
 
+// ── Position label helpers ─────────────────────────────────────────────────
+
+/**
+ * Computes a position label for a given seed index based on tournament format.
+ *
+ * groups_playoff → "A1", "B2", "C1" …
+ * league_playoff → "1-е м.", "2-е м.", "8-е м." …
+ */
+function seedLabel(seedIndex: number, format: string, groupsCount: number): string {
+  if (format === 'groups_playoff') {
+    const place    = Math.floor(seedIndex / groupsCount) + 1
+    const letter   = String.fromCharCode(65 + (seedIndex % groupsCount))  // A, B, C …
+    return `${letter}${place}`
+  }
+  if (format === 'league_playoff') {
+    const n = seedIndex + 1
+    return `${n}-е м.`
+  }
+  return 'TBD'
+}
+
+// ── PlayoffTab ────────────────────────────────────────────────────────────
+
 export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatchId }: {
   tournament: Tournament
   teams: Team[]
@@ -476,9 +506,10 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   livePlayoffMatchId?: string | null
 }) {
   const [generating, setGenerating] = useState(false)
+  const fmt = tournament.format ?? 'playoff'
 
   async function handleGenerate() {
-    if (teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
+    if (fmt === 'playoff' && teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
     setGenerating(true)
     const res = await generatePlayoff(tournament.id)
     if (res?.error) toast.error(res.error)
@@ -494,32 +525,72 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         </div>
         <p className="font-bold text-gray-700 text-lg mb-2">Сетка плей-офф</p>
         <p className="text-sm text-gray-400 mb-6">Добавьте команды и сгенерируйте сетку</p>
-        <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
-          {generating ? 'Генерируем…' : 'Создать сетку'}
-        </Button>
+        {fmt === 'playoff' && (
+          <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
+            {generating ? 'Генерируем…' : 'Создать сетку'}
+          </Button>
+        )}
       </div>
     )
   }
 
   // Group by round_order, sort descending (largest = first round)
   const rounds = [...new Set(matches.map(m => m.round_order))].sort((a, b) => b - a)
+  const maxRound = rounds[0]  // first (largest) round
+
+  // Compute position labels for groups_playoff and league_playoff
+  const groupsCount   = tournament.groups_count   ?? 4
+  const teamsAdvance  = tournament.teams_advance  ?? 2
+  const totalSeeds    = fmt === 'groups_playoff'
+    ? groupsCount * teamsAdvance
+    : fmt === 'league_playoff'
+      ? teamsAdvance
+      : 0
+
+  const positions = totalSeeds >= 2 ? seededBracketPositions(totalSeeds) : []
+
+  // Build a label map: matchId → { home, away }
+  const labelMap = new Map<string, { home: string; away: string }>()
+  if (positions.length > 0) {
+    const firstRoundMatches = matches
+      .filter(m => m.round_order === maxRound)
+      .sort((a, b) => a.match_order - b.match_order)
+    firstRoundMatches.forEach((m, i) => {
+      const hiIdx = i * 2
+      const aiIdx = i * 2 + 1
+      if (hiIdx < positions.length && aiIdx < positions.length) {
+        labelMap.set(m.id, {
+          home: seedLabel(positions[hiIdx], fmt, groupsCount),
+          away: seedLabel(positions[aiIdx], fmt, groupsCount),
+        })
+      }
+    })
+  }
 
   const played  = matches.filter(m => m.winner_id !== null).length
   const total   = matches.length
+  const isPlaceholderOnly = fmt !== 'playoff' && matches.every(m => !m.home_team_id && !m.away_team_id && !m.winner_id)
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Сыграно {played} из {total} матчей</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleGenerate}
-          disabled={generating}
-          className="gap-2 text-xs"
-        >
-          <RefreshCw size={12} /> {generating ? '…' : 'Пересоздать'}
-        </Button>
+        <p className="text-sm text-gray-500">
+          {isPlaceholderOnly
+            ? 'Места будут определены после группового / лигового этапа'
+            : `Сыграно ${played} из ${total} матчей`}
+        </p>
+        {/* "Пересоздать" only for pure playoff format */}
+        {fmt === 'playoff' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGenerate}
+            disabled={generating}
+            className="gap-2 text-xs"
+          >
+            <RefreshCw size={12} /> {generating ? '…' : 'Пересоздать'}
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto pb-4">
@@ -533,15 +604,20 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                 {matches
                   .filter(m => m.round_order === ro)
                   .sort((a, b) => a.match_order - b.match_order)
-                  .map(m => (
-                    <PlayoffMatchCard
-                      key={m.id}
-                      match={m}
-                      teams={teams}
-                      tournamentId={tournament.id}
-                      isLive={livePlayoffMatchId === m.id}
-                    />
-                  ))}
+                  .map(m => {
+                    const labels = labelMap.get(m.id)
+                    return (
+                      <PlayoffMatchCard
+                        key={m.id}
+                        match={m}
+                        teams={teams}
+                        tournamentId={tournament.id}
+                        isLive={livePlayoffMatchId === m.id}
+                        homeLabel={labels?.home}
+                        awayLabel={labels?.away}
+                      />
+                    )
+                  })}
               </div>
             </div>
           ))}

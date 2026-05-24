@@ -71,6 +71,12 @@ const T = {
     rounds: ['1 круг', '2 круга — дома и в гостях', '3 круга', '4 круга'],
     groups: ['2 группы', '4 группы', '6 групп', '8 групп'],
     advance: ['1 выходит', '2 выходят', '3 выходят', '4 выходят'],
+    groupLegsLbl: 'Встречи в группе',
+    groupLegsOpts: ['1 матч', '2 матча — дома и в гостях'],
+    leagueTourLbl: 'Количество туров',
+    leagueTourHint: 'Рекомендуется N−1 туров (N — количество команд)',
+    leagueAdvanceLbl: 'Выходят в плей-офф',
+    leagueAdvance: ['2 команды', '4 команды', '8 команд', '16 команд'],
   },
   kz: {
     back: 'Менің турнирларым',
@@ -120,6 +126,12 @@ const T = {
     rounds: ['1 айналым', '2 айналым — үйде және қонақта', '3 айналым', '4 айналым'],
     groups: ['2 топ', '4 топ', '6 топ', '8 топ'],
     advance: ['1 шығады', '2 шығады', '3 шығады', '4 шығады'],
+    groupLegsLbl: 'Топ ішіндегі кездесулер',
+    groupLegsOpts: ['1 матч', '2 матч — үй және қонақ'],
+    leagueTourLbl: 'Айналым саны',
+    leagueTourHint: 'N−1 айналым ұсынылады (N — команда саны)',
+    leagueAdvanceLbl: 'Плей-оффқа шығатындар',
+    leagueAdvance: ['2 команда', '4 команда', '8 команда', '16 команда'],
   },
   en: {
     back: 'My Tournaments',
@@ -169,6 +181,12 @@ const T = {
     rounds: ['1 round', '2 rounds — home & away', '3 rounds', '4 rounds'],
     groups: ['2 groups', '4 groups', '6 groups', '8 groups'],
     advance: ['1 advances', '2 advance', '3 advance', '4 advance'],
+    groupLegsLbl: 'Group legs',
+    groupLegsOpts: ['1 match', '2 matches — home & away'],
+    leagueTourLbl: 'Matchdays',
+    leagueTourHint: 'Recommended: N−1 matchdays (N = number of teams)',
+    leagueAdvanceLbl: 'Teams to playoff',
+    leagueAdvance: ['2 teams', '4 teams', '8 teams', '16 teams'],
   },
 }
 
@@ -191,7 +209,7 @@ const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
 const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   round_robin:    { ru: 'Каждая команда играет с каждой. Идеально для лиг.',              kz: 'Барлығы барлығымен ойнайды. Лигаларға өте қолайлы.',         en: 'Every team plays each other. Perfect for leagues.' },
   playoff:        { ru: 'Сетка на выбывание. Идеально для кубков.',                       kz: 'Жою сеткасы. Кубоктарға өте қолайлы.',                      en: 'Elimination bracket. Perfect for cups.' },
-  groups_playoff: { ru: 'Групповой этап, затем нокаут. Формат ЧМ и старой ЛЧ.',           kz: 'Топ кезеңі, содан кейін нокаут. ЧА және ескі ЧЛ форматы.', en: 'Group stage then knockout. World Cup & classic UCL format.' },
+  groups_playoff: { ru: 'Групповой этап, затем плей-офф. Формат ЧМ и старой ЛЧ.',           kz: 'Топ кезеңі, содан кейін плей-офф. ЧА және ескі ЧЛ форматы.', en: 'Group stage then playoff. World Cup & classic UCL format.' },
   league_playoff: { ru: 'Единая таблица, топ команды выходят в плей-офф. Новая ЛЧ 2024+.', kz: 'Бір кесте, үздік командалар плей-оффқа шығады. Жаңа ЧЛ 2024+.', en: 'Single table, top teams advance to knockout. New UCL 2024+ format.' },
 }
 
@@ -317,9 +335,17 @@ export default function NewTournamentPage() {
   // Step 1
   const [name, setName]           = useState('')
   const [format, setFormat]       = useState<Format>('round_robin')
-  const [numRounds, setNumRounds] = useState(2)
+  const [numRounds, setNumRounds] = useState(2)   // round_robin: circles | league_playoff: matchdays | groups_playoff: legs
   const [groupsCount, setGroupsCount] = useState(4)
-  const [teamsAdvance, setTeamsAdvance] = useState(2)
+  const [teamsAdvance, setTeamsAdvance] = useState(2)  // groups_playoff: per-group | league_playoff: total
+
+  function changeFormat(newFormat: Format) {
+    setFormat(newFormat)
+    if (newFormat === 'round_robin')    { setNumRounds(2); setTeamsAdvance(2) }
+    if (newFormat === 'league_playoff') { setNumRounds(5); setTeamsAdvance(8) }
+    if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
+    if (newFormat === 'playoff')        { setNumRounds(1) }
+  }
 
   // Step 2
   const [teamNames, setTeamNames] = useState<string[]>(['', ''])
@@ -454,6 +480,7 @@ export default function NewTournamentPage() {
   const ROUNDS_OPTS = tx.rounds.map((label, i) => ({ value: i + 1, label }))
   const GROUPS_OPTS = [2, 4, 6, 8].map((v, i) => ({ value: v, label: tx.groups[i] }))
   const ADVANCE_OPTS = [1, 2, 3, 4].map((v, i) => ({ value: v, label: tx.advance[i] }))
+  const LEAGUE_ADVANCE_OPTS = [2, 4, 8, 16].map((v, i) => ({ value: v, label: tx.leagueAdvance[i] }))
 
   return (
     <div className="max-w-lg mx-auto">
@@ -487,7 +514,7 @@ export default function NewTournamentPage() {
                 const Icon = f.icon
                 const active = format === f.value
                 return (
-                  <button key={f.value} type="button" onClick={() => setFormat(f.value)}
+                  <button key={f.value} type="button" onClick={() => changeFormat(f.value)}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
@@ -504,7 +531,7 @@ export default function NewTournamentPage() {
             </div>
           </div>
 
-          {(format === 'round_robin' || format === 'league_playoff') && (
+          {format === 'round_robin' && (
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-gray-700">{tx.roundsLbl}</label>
               <div className="grid grid-cols-2 gap-2">
@@ -522,15 +549,22 @@ export default function NewTournamentPage() {
             </div>
           )}
 
-          {format === 'groups_playoff' && (
-            <div className="grid grid-cols-2 gap-4">
+          {format === 'league_playoff' && (
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
+                <label className="text-sm font-bold text-gray-700">{tx.leagueTourLbl}</label>
+                <p className="text-xs text-gray-400">{tx.leagueTourHint}</p>
+                <Input type="number" min={1} value={numRounds}
+                  onChange={e => setNumRounds(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-24 text-center font-mono font-bold" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">{tx.leagueAdvanceLbl}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {GROUPS_OPTS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
+                  {LEAGUE_ADVANCE_OPTS.map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                        groupsCount === opt.value
+                        teamsAdvance === opt.value
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}>
@@ -539,17 +573,54 @@ export default function NewTournamentPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {format === 'groups_playoff' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {GROUPS_OPTS.map(opt => (
+                      <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                          groupsCount === opt.value
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-gray-700">{tx.advanceLbl}</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ADVANCE_OPTS.map(opt => (
+                      <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                          teamsAdvance === opt.value
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.advanceLbl}</label>
+                <label className="text-sm font-bold text-gray-700">{tx.groupLegsLbl}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {ADVANCE_OPTS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
+                  {[1, 2].map((legs, i) => (
+                    <button key={legs} type="button" onClick={() => setNumRounds(legs)}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                        teamsAdvance === opt.value
+                        numRounds === legs
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}>
-                      {opt.label}
+                      {tx.groupLegsOpts[i]}
                     </button>
                   ))}
                 </div>
@@ -774,11 +845,14 @@ export default function NewTournamentPage() {
                 <p className="font-black text-gray-900 text-lg leading-tight">{name}</p>
                 <p className="text-sm text-gray-500">
                   {fmtLabel(format)}
-                  {(format === 'round_robin' || format === 'league_playoff') && (
-                    <span> · {numRounds} {ROUNDS_OPTS[numRounds - 1]?.label ?? ''}</span>
+                  {format === 'round_robin' && (
+                    <span> · {ROUNDS_OPTS[numRounds - 1]?.label ?? ''}</span>
+                  )}
+                  {format === 'league_playoff' && (
+                    <span> · {numRounds} {tx.leagueTourLbl.toLowerCase()} · {tx.leagueAdvanceLbl}: {teamsAdvance}</span>
                   )}
                   {format === 'groups_playoff' && (
-                    <span> · {groupsCount} {tx.groups[GROUPS_OPTS.findIndex(o => o.value === groupsCount)] ?? ''}</span>
+                    <span> · {GROUPS_OPTS.find(o => o.value === groupsCount)?.label ?? ''} · {tx.groupLegsOpts[(numRounds - 1) as 0 | 1] ?? tx.groupLegsOpts[0]}</span>
                   )}
                 </p>
               </div>

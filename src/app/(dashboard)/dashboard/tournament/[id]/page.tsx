@@ -124,9 +124,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
   const fmt = tournament.format ?? 'round_robin'
-  const showFixturesTab  = fmt !== 'playoff'      // round_robin, groups_playoff, league_playoff
-  const showStandingsTab = fmt === 'round_robin' || !tournament.format  // only pure round-robin has a unified table
-  const showPlayoffTab   = fmt !== 'round_robin'  // playoff, groups_playoff, league_playoff
+  const showFixturesTab  = fmt !== 'playoff'                                          // round_robin, groups_playoff, league_playoff
+  const showStandingsTab = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format  // unified standings table
+  const showPlayoffTab   = fmt !== 'round_robin'                                      // playoff, groups_playoff, league_playoff
+  // Label for fixtures tab varies by format
+  const fixturesTabLabel = fmt === 'groups_playoff' ? 'Групп. этап' : 'Матчи'
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
@@ -376,7 +378,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                       data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
                     <CalendarDays size={13} className="shrink-0" />
-                    <span>Матчи</span>
+                    <span>{fixturesTabLabel}</span>
                     {f.filter((x: Fixture) => !x.is_bye).length > 0 && (
                       <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                         {f.filter((x: Fixture) => !x.is_bye).length}

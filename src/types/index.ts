@@ -4,8 +4,11 @@ export type Tournament = {
   name: string
   num_rounds: number
   generated: boolean
-  format: 'round_robin' | 'playoff' | 'group_playoff'
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
   logo_url: string | null
+  // Multi-format fields
+  groups_count: number | null   // groups_playoff: number of groups
+  teams_advance: number | null  // groups_playoff: per-group advance; league_playoff: total advance
   // Match rules
   match_periods: number       // 1 or 2 halves
   extra_time: boolean         // show OT tab on live board

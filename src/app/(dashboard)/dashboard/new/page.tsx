@@ -46,6 +46,13 @@ const T = {
     next: 'Далее', back2: 'Назад', create: 'Создать турнир', creating: 'Создаём…',
     errName: 'Введите название турнира',
     errTeams: 'Добавьте минимум 2 команды',
+    errTeamsMin: (n: number) => `Для этого формата нужно минимум ${n} команд`,
+    seedingLbl: 'Посев команд',
+    seedingRandom: 'Случайный жребий',
+    seedingRandomDesc: 'Команды распределяются случайно',
+    seedingSeeded: 'По силе команды',
+    seedingSeededDesc: 'Сильные команды попадают в разные части сетки',
+    ratingLabel: 'Сила',
     matchesHint: (teams: number, matches: number) => `${teams} команд — ${matches} матч${matches === 1 ? '' : matches <= 4 ? 'а' : 'ей'}`,
     scheduleHint: (matches: number) => `Расписание из ${matches} матч${matches === 1 ? 'а' : 'ей'} сгенерируется автоматически`,
     summary: { format: 'Формат', teams: 'команд', periods: 'Таймы', pts: 'Очки' },
@@ -86,6 +93,13 @@ const T = {
     next: 'Келесі', back2: 'Артқа', create: 'Турнир жасау', creating: 'Жасалуда…',
     errName: 'Турнир атауын енгізіңіз',
     errTeams: 'Кемінде 2 команда қосыңыз',
+    errTeamsMin: (n: number) => `Бұл формат үшін кемінде ${n} команда қажет`,
+    seedingLbl: 'Командаларды бөлу',
+    seedingRandom: 'Кездейсоқ жеребе',
+    seedingRandomDesc: 'Командалар кездейсоқ бөлінеді',
+    seedingSeeded: 'Команда күші бойынша',
+    seedingSeededDesc: 'Күшті командалар торлар/топтар бойынша бөлінеді',
+    ratingLabel: 'Күш',
     matchesHint: (teams: number, matches: number) => `${teams} команда — ${matches} матч`,
     scheduleHint: (matches: number) => `${matches} матчтан тұратын кесте автоматты жасалады`,
     summary: { format: 'Формат', teams: 'команда', periods: 'Таймдар', pts: 'Ұпайлар' },
@@ -126,6 +140,13 @@ const T = {
     next: 'Next', back2: 'Back', create: 'Create tournament', creating: 'Creating…',
     errName: 'Enter a tournament name',
     errTeams: 'Add at least 2 teams',
+    errTeamsMin: (n: number) => `This format requires at least ${n} teams`,
+    seedingLbl: 'Team seeding',
+    seedingRandom: 'Random draw',
+    seedingRandomDesc: 'Teams are distributed randomly',
+    seedingSeeded: 'By team strength',
+    seedingSeededDesc: 'Stronger teams are placed in different brackets or groups',
+    ratingLabel: 'Strength',
     matchesHint: (teams: number, matches: number) => `${teams} teams — ${matches} match${matches === 1 ? '' : 'es'}`,
     scheduleHint: (matches: number) => `Schedule of ${matches} match${matches === 1 ? '' : 'es'} will generate automatically`,
     summary: { format: 'Format', teams: 'teams', periods: 'Periods', pts: 'Points' },
@@ -147,15 +168,15 @@ const T = {
 
 type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
 
-const FORMATS: { value: Format; icon: React.ElementType; labelKey: string; descKey: string }[] = [
-  { value: 'round_robin',    icon: RotateCcw, labelKey: 'Круговой',               descKey: 'Каждая команда играет с каждой. Идеально для лиг.' },
-  { value: 'playoff',        icon: Trophy,    labelKey: 'Плей-офф',               descKey: 'Сетка на выбывание. Идеально для кубков.' },
-  { value: 'groups_playoff', icon: Layers,    labelKey: 'Группы + Плей-офф',      descKey: 'Групповой этап, затем нокаут. Формат ЧМ и старой ЛЧ.' },
-  { value: 'league_playoff', icon: Crown,     labelKey: 'Лига + Плей-офф',        descKey: 'Единая таблица, топ команды выходят в плей-офф. Формат новой ЛЧ.' },
+const FORMATS: { value: Format; icon: React.ElementType }[] = [
+  { value: 'round_robin',    icon: RotateCcw },
+  { value: 'playoff',        icon: Trophy    },
+  { value: 'groups_playoff', icon: Layers    },
+  { value: 'league_playoff', icon: Crown     },
 ]
 
 const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
-  round_robin:    { ru: 'Круговой',          kz: 'Дөңгелек',            en: 'Round-robin' },
+  round_robin:    { ru: 'Круговой',          kz: 'Айналмалы',           en: 'Round-robin' },
   playoff:        { ru: 'Плей-офф',          kz: 'Плей-офф',            en: 'Playoff' },
   groups_playoff: { ru: 'Группы + Плей-офф', kz: 'Топтар + Плей-офф',   en: 'Groups + Playoff' },
   league_playoff: { ru: 'Лига + Плей-офф',   kz: 'Лига + Плей-офф',     en: 'League + Playoff' },
@@ -297,6 +318,8 @@ export default function NewTournamentPage() {
   // Step 2
   const [teamNames, setTeamNames] = useState<string[]>(['', ''])
   const [teamLogos, setTeamLogos] = useState<(string | null)[]>([null, null])
+  const [seedingMode, setSeedingMode] = useState<'random' | 'seeded'>('random')
+  const [teamRatings, setTeamRatings] = useState<number[]>([3, 3])
   const lastInputRef = useRef<HTMLInputElement>(null)
 
   // Step 3
@@ -313,13 +336,24 @@ export default function NewTournamentPage() {
   const [error, setError]       = useState<string | null>(null)
   const [planLimit, setPlanLimit] = useState<'tournament' | 'team' | null>(null)
 
+  // ── Min-teams per format ────────────────────────────────────────────────────
+  function minTeamsRequired(): number {
+    if (format === 'playoff') return 4
+    if (format === 'groups_playoff') return groupsCount * 3
+    return 2 // round_robin, league_playoff
+  }
+
   // ── Navigation ─────────────────────────────────────────────────────────────
   function goToStep2() {
     if (!name.trim()) { setError(tx.errName); return }
     setError(null); setStep(2)
   }
   function goToStep3() {
-    if (filledTeams.length < 2) { setError(tx.errTeams); return }
+    const min = minTeamsRequired()
+    if (filledTeams.length < min) {
+      setError(min === 2 ? tx.errTeams : tx.errTeamsMin(min))
+      return
+    }
     setError(null); setStep(3)
   }
   function goToStep4() { setError(null); setStep(4) }
@@ -329,14 +363,18 @@ export default function NewTournamentPage() {
   function addTeamField() {
     setTeamNames(prev => [...prev, ''])
     setTeamLogos(prev => [...prev, null])
+    setTeamRatings(prev => [...prev, 3])
     setTimeout(() => lastInputRef.current?.focus(), 50)
   }
   function removeTeam(i: number) {
     setTeamNames(prev => prev.filter((_, j) => j !== i))
     setTeamLogos(prev => prev.filter((_, j) => j !== i))
+    setTeamRatings(prev => prev.filter((_, j) => j !== i))
   }
   const setTeamLogo = (i: number, dataUrl: string | null) =>
     setTeamLogos(prev => prev.map((l, j) => j === i ? dataUrl : l))
+  const setTeamRating = (i: number, rating: number) =>
+    setTeamRatings(prev => prev.map((r, j) => j === i ? rating : r))
 
   const filledTeams = teamNames.filter(n => n.trim())
   const matchCount = format === 'round_robin' && filledTeams.length >= 2
@@ -347,7 +385,18 @@ export default function NewTournamentPage() {
   async function handleCreate() {
     setLoading(true); setError(null)
 
-    const result = await createTournamentWithSetup(name, format, numRounds, teamNames, {
+    // If seeded mode: sort teams by rating desc so strong teams go into separate
+    // groups/brackets during schedule generation
+    let orderedNames = teamNames
+    let orderedLogos = teamLogos
+    if (seedingMode === 'seeded') {
+      const indexed = teamNames.map((n, i) => ({ name: n, logo: teamLogos[i], rating: teamRatings[i] }))
+      indexed.sort((a, b) => b.rating - a.rating)
+      orderedNames = indexed.map(x => x.name)
+      orderedLogos = indexed.map(x => x.logo)
+    }
+
+    const result = await createTournamentWithSetup(name, format, numRounds, orderedNames, {
       matchPeriods, extraTime, matchDurationMins: durationMins,
       pointsWin, pointsDraw, pointsLoss,
       groupsCount, teamsAdvance,
@@ -363,10 +412,10 @@ export default function NewTournamentPage() {
     const uploads: Promise<unknown>[] = []
     if (tournamentLogo) uploads.push(uploadTournamentLogo(tournamentId, tournamentLogo))
 
-    teamNames.map((n, i) => ({ name: n.trim(), origIdx: i }))
+    orderedNames.map((n, i) => ({ name: n.trim(), origIdx: i }))
       .filter(({ name }) => !!name)
       .forEach(({ origIdx }, teamIdx) => {
-        const logoDataUrl = teamLogos[origIdx]
+        const logoDataUrl = orderedLogos[origIdx]
         const teamId = teamIds[teamIdx]
         if (logoDataUrl && teamId) uploads.push(uploadTeamLogo(teamId, tournamentId, logoDataUrl))
       })
@@ -499,6 +548,28 @@ export default function NewTournamentPage() {
             <p className="text-sm text-gray-400 mt-0.5">{tx.step2.sub}</p>
           </div>
 
+          {/* ── Seeding mode toggle ───────────────────────────────────── */}
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-gray-700">{tx.seedingLbl}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(['random', 'seeded'] as const).map(mode => {
+                const active = seedingMode === mode
+                const label = mode === 'random' ? tx.seedingRandom : tx.seedingSeeded
+                const desc  = mode === 'random' ? tx.seedingRandomDesc : tx.seedingSeededDesc
+                return (
+                  <button key={mode} type="button" onClick={() => setSeedingMode(mode)}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                    <p className={`text-sm font-bold ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{label}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-snug">{desc}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── Team list ─────────────────────────────────────────────── */}
           <div className="space-y-2">
             {teamNames.map((val, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -508,6 +579,21 @@ export default function NewTournamentPage() {
                   value={val} onChange={e => updateTeam(i, e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addTeamField() }}
                   placeholder={tx.teamPh(i)} maxLength={30} className="flex-1" />
+                {/* Rating picker (visible only in seeded mode) */}
+                {seedingMode === 'seeded' && (
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button key={star} type="button" onClick={() => setTeamRating(i, star)}
+                        className={`w-5 h-5 rounded text-[10px] font-black transition-colors ${
+                          teamRatings[i] >= star
+                            ? 'bg-amber-400 text-white'
+                            : 'bg-gray-100 text-gray-400 hover:bg-amber-100'
+                        }`}>
+                        {star}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {teamNames.length > 2 && (
                   <button onClick={() => removeTeam(i)} className="text-gray-300 hover:text-red-400 transition-colors p-1 shrink-0">
                     <X size={14} />
@@ -521,10 +607,16 @@ export default function NewTournamentPage() {
             </button>
           </div>
 
-          {filledTeams.length >= 2 && (
+          {filledTeams.length >= minTeamsRequired() && (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
               <Zap size={14} className="shrink-0" />
               <span className="font-medium">{tx.matchesHint(filledTeams.length, matchCount)}</span>
+            </div>
+          )}
+          {filledTeams.length < minTeamsRequired() && filledTeams.length > 0 && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+              <Zap size={14} className="shrink-0 opacity-70" />
+              <span className="font-medium">{tx.errTeamsMin(minTeamsRequired())}</span>
             </div>
           )}
 

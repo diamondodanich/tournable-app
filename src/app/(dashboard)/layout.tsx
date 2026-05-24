@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, LogOut, Zap, CreditCard, MessageCircle, User } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
+import LangSwitcher from '@/components/dashboard/LangSwitcher'
+import SupportWidget from '@/components/landing/SupportWidget'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -79,22 +81,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           {/* Nav */}
           <nav className="hidden md:flex items-center gap-0.5">
-            <Link href="/dashboard" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <LayoutDashboard className="w-4 h-4" /> {tx.myTournaments}
+            <Link href="/dashboard" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              {tx.myTournaments}
             </Link>
-            <Link href="/#features" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <Zap className="w-4 h-4" /> {tx.features}
+            <Link href="/#features" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              {tx.features}
             </Link>
-            <Link href="/#pricing" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <CreditCard className="w-4 h-4" /> {tx.pricing}
+            <Link href="/#pricing" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              {tx.pricing}
             </Link>
-            <Link href="/#contact" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-              <MessageCircle className="w-4 h-4" /> {tx.contact}
+            <Link href="/#contact" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+              {tx.contact}
             </Link>
           </nav>
 
-          {/* Right: profile + sign out */}
+          {/* Right: lang switcher + profile + sign out */}
           <div className="flex items-center gap-2">
+            <LangSwitcher current={lang} />
             <Link
               href="/account"
               className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"
@@ -132,6 +135,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {children}
       </main>
+
+      {/* ── Support widget ────────────────────────────────────────────── */}
+      <SupportWidget lang={lang} />
     </div>
   )
 }

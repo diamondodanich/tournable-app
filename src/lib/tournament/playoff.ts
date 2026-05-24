@@ -28,7 +28,7 @@ function nextPow2(n: number): number {
  *  - Both halves of the bracket receive the same number of teams
  *  - Byes (appended at the end of seeded[]) go to the highest seeds automatically
  */
-function seededBracketPositions(size: number): number[] {
+export function seededBracketPositions(size: number): number[] {
   if (size === 2) return [0, 1]
   const half = seededBracketPositions(size / 2)
   const result: number[] = []

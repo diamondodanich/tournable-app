@@ -128,19 +128,28 @@ export async function createTournamentWithSetup(
   }
 
   if (format === 'league_playoff' && teamIds.length >= 2) {
-    // League phase: run numRounds of round-robin (partial or full)
-    const fixtures = buildRoundRobinFixtures(t.id, teamIds, numRounds)
-    await supabase.from('fixtures').insert(fixtures)
-    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
-  }
-
-  if (format === 'groups_playoff' && teamIds.length >= 2) {
-    const groupsCount = settings?.groupsCount ?? 4
-    const fixtures = buildGroupsFixtures(t.id, teamIds, groupsCount)
+    // numRounds for league_playoff = number of matchdays (1 to N-1)
+    const fixtures = buildLeagueFixtures(t.id, teamIds, numRounds)
     if (fixtures.length > 0) {
       await supabase.from('fixtures').insert(fixtures)
       await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
     }
+    // Pre-generate placeholder bracket so "Сетка" tab shows position labels immediately
+    const ta = settings?.teamsAdvance ?? 8
+    await insertPlaceholderBracket(supabase, t.id, ta)
+  }
+
+  if (format === 'groups_playoff' && teamIds.length >= 2) {
+    const groupsCount = settings?.groupsCount ?? 4
+    // numRounds for groups_playoff = number of legs (1 or 2)
+    const fixtures = buildGroupsFixtures(t.id, teamIds, groupsCount, numRounds)
+    if (fixtures.length > 0) {
+      await supabase.from('fixtures').insert(fixtures)
+      await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+    }
+    // Pre-generate placeholder bracket with null team IDs → shows A1/B2 labels in UI
+    const teamsAdvance = settings?.teamsAdvance ?? 2
+    await insertPlaceholderBracket(supabase, t.id, groupsCount * teamsAdvance)
   }
 
   if (format === 'playoff' && teamIds.length >= 2) {
@@ -215,6 +224,7 @@ function buildGroupsFixtures(
   tournamentId: string,
   teamIds: string[],
   groupsCount: number,
+  legs: number = 1,   // 1 = single round-robin in each group; 2 = home & away
 ) {
   // Serpentine (snake) seeding: pot 1 → A,B,C,D; pot 2 → D,C,B,A; pot 3 → A,B,C,D …
   // This ensures balanced strength distribution (top team + bottom team in same group).
@@ -232,18 +242,70 @@ function buildGroupsFixtures(
     const groupTeams = groups[g]
     if (groupTeams.length < 2) continue
     const baseRounds = generateRoundRobin(groupTeams)
-    for (let ri = 0; ri < baseRounds.length; ri++) {
-      matchday++
-      for (const [homeId, awayId] of baseRounds[ri]) {
-        if (awayId === null) {
-          fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
-        } else {
-          fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: awayId, is_bye: false, played: false })
+    for (let leg = 0; leg < legs; leg++) {
+      for (let ri = 0; ri < baseRounds.length; ri++) {
+        matchday++
+        for (const [homeId, awayId] of baseRounds[ri]) {
+          if (awayId === null) {
+            fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
+          } else {
+            // Flip home/away for second leg
+            const [h, a] = leg % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
+            fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
+          }
         }
       }
     }
   }
   return fixtures
+}
+
+// League fixtures: generates a partial round-robin of exactly `numMatchdays` matchdays.
+// numMatchdays = 1..N-1 (N = number of teams). If numMatchdays >= N-1, all matchdays are included.
+function buildLeagueFixtures(
+  tournamentId: string,
+  teamIds: string[],
+  numMatchdays: number,
+) {
+  const allFixtures = buildRoundRobinFixtures(tournamentId, teamIds, 1)  // 1 full circle
+  return allFixtures.filter(f => f.matchday <= Math.max(1, numMatchdays))
+}
+
+// Insert a fully-null placeholder bracket into playoff_matches.
+// Used by groups_playoff and league_playoff so the "Сетка" tab shows position labels
+// before the actual knockout stage begins.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function insertPlaceholderBracket(supabase: any, tournamentId: string, totalSeeds: number) {
+  if (totalSeeds < 2) return
+  const matches = generatePlayoffBracket(Array(totalSeeds).fill(''))
+  const { data: inserted } = await supabase
+    .from('playoff_matches')
+    .insert(matches.map(m => ({
+      tournament_id: tournamentId,
+      round_order: m.round_order,
+      match_order: m.match_order,
+      home_team_id: null,
+      away_team_id: null,
+      winner_slot: m.winner_slot,
+    })))
+    .select('id, round_order, match_order')
+
+  if (inserted) {
+    const lookup = new Map<string, string>()
+    inserted.forEach((r: { id: string; round_order: number; match_order: number }) =>
+      lookup.set(`${r.round_order}:${r.match_order}`, r.id)
+    )
+    for (const m of matches) {
+      if (m.winner_to_match !== null) {
+        const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
+        const targetId = lookup.get(targetKey)
+        const selfId   = lookup.get(`${m.round_order}:${m.match_order}`)
+        if (targetId && selfId) {
+          await supabase.from('playoff_matches').update({ winner_to_match: targetId }).eq('id', selfId)
+        }
+      }
+    }
+  }
 }
 
 // ─── addTeam with plan check ──────────────────────────────────────────────────

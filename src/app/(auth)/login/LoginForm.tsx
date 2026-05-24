@@ -41,7 +41,7 @@ const T = {
   },
 } as const
 
-export default function LoginForm({ lang }: { lang: Lang }) {
+export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
@@ -79,6 +79,7 @@ export default function LoginForm({ lang }: { lang: Lang }) {
           <OAuthButtons lang={lang} mode="login" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {next && <input type="hidden" name="next" value={next} />}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-semibold text-gray-700">{tx.email}</Label>
               <Input id="email" name="email" type="email" placeholder={tx.emailPh} required

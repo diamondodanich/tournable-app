@@ -14,6 +14,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: data ? `${data.name} — Tournable` : 'Tournable' }
 }
 
+const FORMAT_LABELS: Record<string, string> = {
+  round_robin:    'Круговой',
+  playoff:        'Плей-офф',
+  groups_playoff: 'Группы + Плей-офф',
+  league_playoff: 'Лига + Плей-офф',
+}
+
 export default async function PublicTournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -27,7 +34,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
     supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', id).order('round_order').order('match_order'),
   ])
 
-  const isRoundRobin = tournament.format === 'round_robin' || !tournament.format
+  const fmt = tournament.format ?? 'round_robin'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allEvents = [
@@ -35,31 +42,41 @@ export default async function PublicTournamentPage({ params }: { params: Promise
     ...(playoffMatches ?? []).flatMap((m: any) => m.match_events ?? []),
   ]
 
+  const showGroupStandings = fmt === 'groups_playoff' && (teams ?? []).some((t: any) => t.group_name)
+  const groups = showGroupStandings
+    ? [...new Set((teams ?? []).map((t: any) => t.group_name).filter(Boolean))].sort()
+    : []
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
-      <header className="bg-white border-b border-emerald-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-2xl font-black tracking-tight text-emerald-700">TOURNABLE</span>
-          <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-            Режим просмотра
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 50%,#ffffff 100%)' }}>
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-emerald-100 sticky top-0 z-20">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+          <span className="font-black text-lg tracking-tight text-emerald-700" style={{ letterSpacing: '-.03em' }}>TOURNABLE</span>
+          <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
+            Просмотр
           </span>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-start gap-3 mb-6">
-          <TeamAvatar name={tournament.name} logoUrl={tournament.logo_url} size={48} />
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Tournament identity */}
+        <div className="flex items-center gap-4 mb-6">
+          <TeamAvatar name={tournament.name} logoUrl={tournament.logo_url} size={56} />
           <div>
-            <h1 className="text-3xl font-black text-gray-900">{tournament.name}</h1>
-            <p className="text-gray-400 text-sm mt-0.5">
-              {tournament.format === 'playoff' ? 'Плей-офф' : `${tournament.num_rounds} ${tournament.num_rounds === 1 ? 'круг' : 'круга'}`}
+            <h1 className="text-2xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {FORMAT_LABELS[fmt] ?? fmt}
+              {fmt === 'round_robin' && tournament.num_rounds > 1 && ` · ${tournament.num_rounds} круга`}
+              {fmt === 'groups_playoff' && tournament.groups_count && ` · ${tournament.groups_count} групп`}
             </p>
           </div>
         </div>
 
-        {isRoundRobin ? (
+        {/* ── ROUND-ROBIN / LEAGUE+PLAYOFF: standings + fixtures + stats ── */}
+        {(fmt === 'round_robin' || fmt === 'league_playoff') && (
           <Tabs defaultValue="standings">
-            <TabsList className="mb-6 bg-white border border-emerald-100">
+            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
               <TabsTrigger value="standings">Таблица</TabsTrigger>
               <TabsTrigger value="fixtures">Матчи</TabsTrigger>
               <TabsTrigger value="stats">Статистика</TabsTrigger>
@@ -74,10 +91,57 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <StatsTab teams={teams ?? []} events={allEvents} />
             </TabsContent>
           </Tabs>
-        ) : (
+        )}
+
+        {/* ── GROUPS + PLAYOFF: group stage standings + fixtures + stats ── */}
+        {fmt === 'groups_playoff' && (
+          <Tabs defaultValue="groups">
+            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
+              <TabsTrigger value="groups">Группы</TabsTrigger>
+              <TabsTrigger value="fixtures">Матчи</TabsTrigger>
+              <TabsTrigger value="stats">Статистика</TabsTrigger>
+            </TabsList>
+            <TabsContent value="groups">
+              {showGroupStandings ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {groups.map(groupName => {
+                    const groupTeams = (teams ?? []).filter((t: any) => t.group_name === groupName)
+                    const groupFixtures = (fixtures ?? []).filter((f: any) =>
+                      groupTeams.some((t: any) => t.id === f.home_team_id || t.id === f.away_team_id)
+                    )
+                    return (
+                      <div key={groupName} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                        <div className="px-4 py-3 bg-emerald-600">
+                          <p className="font-black text-white text-sm">Группа {groupName}</p>
+                        </div>
+                        <StandingsTab teams={groupTeams} fixtures={groupFixtures} tournamentName="" />
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                  <p className="font-bold text-gray-500">Групповой этап начнётся после старта турнира</p>
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="fixtures">
+              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
+            </TabsContent>
+            <TabsContent value="stats">
+              <StatsTab teams={teams ?? []} events={allEvents} />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* ── PLAYOFF: bracket view ── */}
+        {fmt === 'playoff' && (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-            <p className="text-4xl mb-3">🏆</p>
-            <p className="font-bold text-gray-600">Турнир в формате плей-офф</p>
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-black text-emerald-600">PO</span>
+            </div>
+            <p className="font-bold text-gray-700 text-lg mb-1">Плей-офф</p>
+            <p className="text-sm text-gray-400">{(teams ?? []).length} команд</p>
           </div>
         )}
       </main>

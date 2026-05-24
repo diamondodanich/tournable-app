@@ -114,7 +114,7 @@ export default async function DashboardPage() {
       {list.length === 0 ? (
         <div className="space-y-4">
           <div className="relative overflow-hidden bg-emerald-600 rounded-3xl px-8 py-12 text-center text-white">
-            <div className="absolute inset-0 opacity-[0.07]"
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
               style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
             <Trophy size={52} className="mx-auto mb-4 opacity-90" />
             <h2 className="text-2xl font-black mb-2">{tx.emptyTitle}</h2>

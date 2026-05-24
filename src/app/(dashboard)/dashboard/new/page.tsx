@@ -46,6 +46,7 @@ const T = {
     next: 'Далее', back2: 'Назад', create: 'Создать турнир', creating: 'Создаём…',
     errName: 'Введите название турнира',
     errTeams: 'Добавьте минимум 2 команды',
+    errDuplicates: 'Уберите команды с одинаковыми названиями',
     errTeamsMin: (n: number) => `Для этого формата нужно минимум ${n} команд`,
     seedingLbl: 'Посев команд',
     seedingRandom: 'Случайный жребий',
@@ -93,6 +94,7 @@ const T = {
     next: 'Келесі', back2: 'Артқа', create: 'Турнир жасау', creating: 'Жасалуда…',
     errName: 'Турнир атауын енгізіңіз',
     errTeams: 'Кемінде 2 команда қосыңыз',
+    errDuplicates: 'Бірдей атаулы командаларды алып тастаңыз',
     errTeamsMin: (n: number) => `Бұл формат үшін кемінде ${n} команда қажет`,
     seedingLbl: 'Командаларды бөлу',
     seedingRandom: 'Кездейсоқ жеребе',
@@ -140,6 +142,7 @@ const T = {
     next: 'Next', back2: 'Back', create: 'Create tournament', creating: 'Creating…',
     errName: 'Enter a tournament name',
     errTeams: 'Add at least 2 teams',
+    errDuplicates: 'Remove teams with duplicate names',
     errTeamsMin: (n: number) => `This format requires at least ${n} teams`,
     seedingLbl: 'Team seeding',
     seedingRandom: 'Random draw',
@@ -349,6 +352,7 @@ export default function NewTournamentPage() {
     setError(null); setStep(2)
   }
   function goToStep3() {
+    if (hasDuplicates) { setError(tx.errDuplicates); return }
     const min = minTeamsRequired()
     if (filledTeams.length < min) {
       setError(min === 2 ? tx.errTeams : tx.errTeamsMin(min))
@@ -377,6 +381,19 @@ export default function NewTournamentPage() {
     setTeamRatings(prev => prev.map((r, j) => j === i ? rating : r))
 
   const filledTeams = teamNames.filter(n => n.trim())
+
+  // Duplicate detection: find indices with non-unique names (case-insensitive)
+  const nameCounts = new Map<string, number[]>()
+  teamNames.forEach((n, i) => {
+    if (!n.trim()) return
+    const key = n.trim().toLowerCase()
+    if (!nameCounts.has(key)) nameCounts.set(key, [])
+    nameCounts.get(key)!.push(i)
+  })
+  const duplicateIndices = new Set<number>()
+  nameCounts.forEach(indices => { if (indices.length > 1) indices.forEach(i => duplicateIndices.add(i)) })
+  const hasDuplicates = duplicateIndices.size > 0
+
   const matchCount = format === 'round_robin' && filledTeams.length >= 2
     ? Math.floor(filledTeams.length * (filledTeams.length - 1) / 2) * numRounds
     : 0
@@ -578,20 +595,28 @@ export default function NewTournamentPage() {
                 <Input ref={i === teamNames.length - 1 ? lastInputRef : undefined}
                   value={val} onChange={e => updateTeam(i, e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addTeamField() }}
-                  placeholder={tx.teamPh(i)} maxLength={30} className="flex-1" />
+                  placeholder={tx.teamPh(i)} maxLength={30}
+                  className={`flex-1 ${duplicateIndices.has(i) ? 'border-red-400 focus:border-red-400 bg-red-50' : ''}`} />
                 {/* Rating picker (visible only in seeded mode) */}
                 {seedingMode === 'seeded' && (
                   <div className="flex items-center gap-0.5 shrink-0">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <button key={star} type="button" onClick={() => setTeamRating(i, star)}
-                        className={`w-5 h-5 rounded text-[10px] font-black transition-colors ${
-                          teamRatings[i] >= star
-                            ? 'bg-amber-400 text-white'
-                            : 'bg-gray-100 text-gray-400 hover:bg-amber-100'
-                        }`}>
-                        {star}
-                      </button>
-                    ))}
+                    {([
+                      { active: 'bg-red-500 text-white',    inactive: 'bg-gray-100 text-gray-400 hover:bg-red-100'    },
+                      { active: 'bg-orange-500 text-white', inactive: 'bg-gray-100 text-gray-400 hover:bg-orange-100' },
+                      { active: 'bg-amber-400 text-white',  inactive: 'bg-gray-100 text-gray-400 hover:bg-amber-100'  },
+                      { active: 'bg-lime-500 text-white',   inactive: 'bg-gray-100 text-gray-400 hover:bg-lime-100'   },
+                      { active: 'bg-emerald-500 text-white',inactive: 'bg-gray-100 text-gray-400 hover:bg-emerald-100'},
+                    ] as const).map((colors, idx) => {
+                      const star = idx + 1
+                      return (
+                        <button key={star} type="button" onClick={() => setTeamRating(i, star)}
+                          className={`w-5 h-5 rounded text-[10px] font-black transition-colors ${
+                            teamRatings[i] >= star ? colors.active : colors.inactive
+                          }`}>
+                          {star}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
                 {teamNames.length > 2 && (

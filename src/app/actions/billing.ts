@@ -23,3 +23,55 @@ export async function getUserPlan(): Promise<Plan> {
   }
   return 'free'
 }
+
+// ── Читает план ВЛАДЕЛЬЦА турнира ─────────────────────────────────────────────
+// Используется в server actions для Live/Fixture — редактор работает
+// в рамках плана владельца, а не своего собственного.
+export async function getOwnerPlan(tournamentId: string): Promise<Plan> {
+  const supabase = await createClient()
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('user_id')
+    .eq('id', tournamentId)
+    .maybeSingle()
+
+  if (!tournament) return 'free'
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at')
+    .eq('id', tournament.user_id)
+    .maybeSingle()
+
+  if (!data) return 'free'
+  if (data.plan === 'pro') {
+    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
+  }
+  return 'free'
+}
+
+// ── Активирует Pro-тариф для пользователя ─────────────────────────────────────
+// Вызывается из webhook-обработчиков платёжных систем (Kaspi, CloudPayments).
+// Не экспортируется как публичный server action — только для внутреннего использования.
+export async function activatePro(
+  userId: string,
+  expiresAt: Date | null,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        id: userId,
+        plan: 'pro',
+        plan_expires_at: expiresAt ? expiresAt.toISOString() : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    )
+
+  if (error) return { error: error.message }
+  return {}
+}

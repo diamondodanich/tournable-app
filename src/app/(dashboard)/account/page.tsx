@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUserPlan } from '@/app/actions/billing'
 import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, LogOut, Check, Star,
-  Mail, Calendar, Trophy, Zap
+  Mail, Calendar, Trophy, Zap, Infinity
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -12,18 +13,30 @@ export default async function AccountPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { count: tournamentCount } = await supabase
-    .from('tournaments')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user!.id)
+  const [{ count: tournamentCount }, plan, { data: profileData }] = await Promise.all([
+    supabase
+      .from('tournaments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user!.id),
+    getUserPlan(),
+    supabase
+      .from('profiles')
+      .select('plan_expires_at')
+      .eq('id', user!.id)
+      .maybeSingle(),
+  ])
 
   const initials = user!.email?.slice(0, 2).toUpperCase() ?? '??'
   const joinDate = new Date(user!.created_at).toLocaleDateString('ru-RU', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
   const tc = tournamentCount ?? 0
-  // Free plan if < 3 tournaments used (no subscriptions table yet)
-  const isFreePlan = true
+  const isFreePlan = plan === 'free'
+  const proExpiresAt = profileData?.plan_expires_at
+    ? new Date(profileData.plan_expires_at).toLocaleDateString('ru-RU', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })
+    : null
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -83,8 +96,16 @@ export default async function AccountPage() {
                   <Zap className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div>
-                  <div className="text-xl font-black text-gray-900">{Math.max(0, 3 - tc)}</div>
-                  <div className="text-xs text-gray-400">осталось по плану</div>
+                  {isFreePlan ? (
+                    <div className="text-xl font-black text-gray-900">{Math.max(0, 3 - tc)}</div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <Infinity className="w-5 h-5 text-emerald-600" />
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-400">
+                    {isFreePlan ? 'осталось по плану' : 'без лимита'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -157,13 +178,51 @@ export default async function AccountPage() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <Star className="w-5 h-5 text-emerald-600" fill="currentColor" />
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl font-black text-gray-900">Про</span>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wide"
+                    style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>
+                    Активный план
+                  </span>
+                </div>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {[
+                    'Бесконечные турниры',
+                    'До 64 команд в турнире',
+                    'Live-табло в реальном времени',
+                    'До 3 соредакторов',
+                    'Круговой, плей-офф и групповой форматы',
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                {proExpiresAt && (
+                  <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    Действует до: {proExpiresAt}
+                  </p>
+                )}
+                {!proExpiresAt && (
+                  <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
+                    <Infinity className="w-3 h-3 shrink-0" />
+                    Бессрочная подписка
+                  </p>
+                )}
               </div>
-              <div>
-                <div className="font-black text-gray-900">Про</div>
-                <div className="text-sm text-gray-500">Активная подписка</div>
+              <div className="shrink-0 w-full sm:w-auto">
+                <Link
+                  href="https://wa.me/message/YHLE2IFII4MSJ1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                >
+                  Связаться с поддержкой
+                </Link>
               </div>
             </div>
           )}

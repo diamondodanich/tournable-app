@@ -3,10 +3,13 @@
 import { useState } from 'react'
 import { Check, Copy, Star, MessageCircle, CheckCircle2 } from 'lucide-react'
 
+const MONTHLY_PRICE = 4990
 const PLANS = {
-  monthly: { label: 'Месяц', price: 4990, suffix: '/ месяц', save: null },
-  annual:  { label: 'Год',   price: 44990, suffix: '/ год',   save: 'Скидка −25%' },
+  monthly: { label: 'Месяц', price: MONTHLY_PRICE,            suffix: '/ месяц', save: null },
+  annual:  { label: 'Год',   price: 44990,                    suffix: '/ год',   save: 'Скидка −25%' },
 }
+// Реальная скидка: 4990 × 12 − 44990 = 14890 ₸
+const ANNUAL_DISCOUNT = MONTHLY_PRICE * 12 - PLANS.annual.price
 
 const FEATURES = [
   'Неограниченные турниры',
@@ -96,7 +99,7 @@ export function CheckoutForm({ userEmail }: Props) {
           </div>
           {period === 'annual' && (
             <p className="text-xs text-emerald-600 font-bold mb-5">
-              Экономия 14 900 ₸ по сравнению с ежемесячной оплатой
+              Экономия {ANNUAL_DISCOUNT.toLocaleString('ru-RU')} ₸ по сравнению с ежемесячной оплатой
             </p>
           )}
           {period === 'monthly' && <div className="mb-5" />}
@@ -119,14 +122,21 @@ export function CheckoutForm({ userEmail }: Props) {
         {/* Order summary */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-black text-gray-900 mb-4">Итого</h2>
-          <div className="flex justify-between items-center py-3 border-b border-gray-100">
-            <span className="text-sm text-gray-600">Tournable Про — {plan.label}</span>
-            <span className="font-black text-gray-900">{plan.price.toLocaleString('ru-RU')} ₸</span>
-          </div>
-          {period === 'annual' && (
+          {period === 'annual' ? (
+            <>
+              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Tournable Про — Год (12 мес.)</span>
+                <span className="text-sm text-gray-400 line-through">{(MONTHLY_PRICE * 12).toLocaleString('ru-RU')} ₸</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-sm text-emerald-600 font-bold">Скидка −25%</span>
+                <span className="font-bold text-emerald-600">−{ANNUAL_DISCOUNT.toLocaleString('ru-RU')} ₸</span>
+              </div>
+            </>
+          ) : (
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
-              <span className="text-sm text-emerald-600 font-bold">Скидка −25%</span>
-              <span className="font-bold text-emerald-600">−14 990 ₸</span>
+              <span className="text-sm text-gray-600">Tournable Про — Месяц</span>
+              <span className="font-black text-gray-900">{plan.price.toLocaleString('ru-RU')} ₸</span>
             </div>
           )}
           <div className="flex justify-between items-center pt-3">

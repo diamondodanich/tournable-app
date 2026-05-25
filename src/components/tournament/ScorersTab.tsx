@@ -9,7 +9,9 @@ export default function ScorersTab({ teams, fixtures }: { teams: Team[]; fixture
   if (list.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="text-4xl mb-3">⚽</p>
+        <div className="w-12 h-12 rounded-full bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center mx-auto mb-3">
+          <span className="inline-block w-4 h-4 rounded-full bg-emerald-300" />
+        </div>
         <p className="font-bold text-gray-600 mb-1">Голов пока нет</p>
         <p className="text-sm text-gray-400">Указывайте авторов голов при вводе результатов</p>
       </div>

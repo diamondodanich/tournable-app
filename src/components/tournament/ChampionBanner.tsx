@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { Trophy, X } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 import type { Team } from '@/types'
 
@@ -39,9 +39,7 @@ export default function ChampionBanner({
       <div className="flex flex-col items-center text-center gap-3">
 
         {/* Trophy */}
-        <span className="text-5xl leading-none animate-bounce select-none" style={{ animationDuration: '2s' }}>
-          🏆
-        </span>
+        <Trophy size={48} className="text-amber-500 animate-bounce" style={{ animationDuration: '2s' }} />
 
         {/* Label */}
         <p className="text-xs font-black uppercase tracking-widest text-amber-600">
@@ -59,7 +57,7 @@ export default function ChampionBanner({
         {/* Runner-up */}
         {runnerUp && (
           <div className="flex items-center gap-2 text-amber-700 text-sm font-semibold">
-            <span className="text-lg">🥈</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-[10px] font-black shrink-0">2</span>
             <TeamAvatar name={runnerUp.name} logoUrl={runnerUp.logo_url} size={20} />
             <span>{runnerUp.name}</span>
           </div>

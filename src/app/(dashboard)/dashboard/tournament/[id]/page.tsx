@@ -274,7 +274,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 3. Goals */}
             <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>3. Бомбардиры ⚽</p>
+              <p style={{ ...s3.header, color: '#059669' }}>3. Бомбардиры</p>
               <div style={s3.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="goal" label="Голы" accent="#059669" />
               </div>
@@ -282,7 +282,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 4. Assists */}
             <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>4. Ассистенты 🎯</p>
+              <p style={{ ...s4.header, color: '#d97706' }}>4. Ассистенты</p>
               <div style={s4.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="assist" label="Ассисты" accent="#2563eb" />
               </div>
@@ -290,7 +290,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 5. Yellow cards */}
             <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>5. Жёлтые карточки 🟨</p>
+              <p style={{ ...s5.header, color: '#d97706' }}>5. Жёлтые карточки</p>
               <div style={s5.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label="ЖК" accent="#d97706" />
               </div>
@@ -298,7 +298,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 6. Red cards */}
             <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s6.header, color: '#dc2626' }}>6. Красные карточки 🟥</p>
+              <p style={{ ...s6.header, color: '#dc2626' }}>6. Красные карточки</p>
               <div style={s6.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="red_card" label="КК" accent="#dc2626" />
               </div>
@@ -316,7 +316,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 2. Goals */}
             <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>2. Бомбардиры ⚽</p>
+              <p style={{ ...s3.header, color: '#059669' }}>2. Бомбардиры</p>
               <div style={s3.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="goal" label="Голы" accent="#059669" />
               </div>
@@ -324,7 +324,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 3. Assists */}
             <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>3. Ассистенты 🎯</p>
+              <p style={{ ...s4.header, color: '#d97706' }}>3. Ассистенты</p>
               <div style={s4.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="assist" label="Ассисты" accent="#2563eb" />
               </div>
@@ -332,7 +332,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 4. Yellow cards */}
             <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>4. Жёлтые карточки 🟨</p>
+              <p style={{ ...s5.header, color: '#d97706' }}>4. Жёлтые карточки</p>
               <div style={s5.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label="ЖК" accent="#d97706" />
               </div>
@@ -340,7 +340,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             {/* 5. Red cards */}
             <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s7.header, color: '#dc2626' }}>5. Красные карточки 🟥</p>
+              <p style={{ ...s7.header, color: '#dc2626' }}>5. Красные карточки</p>
               <div style={s7.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="red_card" label="КК" accent="#dc2626" />
               </div>

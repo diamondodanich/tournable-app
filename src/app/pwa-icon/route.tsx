@@ -81,7 +81,7 @@ export function GET() {
             marginTop: 4,
           }}
         >
-          <span style={{ fontSize: 56 }}>⚽</span>
+          <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex' }} />
           <span
             style={{
               color: 'rgba(255,255,255,0.72)',

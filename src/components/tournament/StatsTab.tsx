@@ -8,10 +8,10 @@ import TeamAvatar from './TeamAvatar'
 type Filter = 'goal' | 'assist' | 'yellow_card' | 'red_card'
 
 const FILTERS: { value: Filter; label: string; color: string }[] = [
-  { value: 'goal',        label: '⚽ Голы',     color: 'bg-emerald-600 text-white' },
-  { value: 'assist',      label: '🎯 Ассисты',  color: 'bg-blue-600 text-white' },
-  { value: 'yellow_card', label: '🟨 ЖК',       color: 'bg-amber-500 text-white' },
-  { value: 'red_card',    label: '🟥 КК',       color: 'bg-red-600 text-white' },
+  { value: 'goal',        label: 'Голы',     color: 'bg-emerald-600 text-white' },
+  { value: 'assist',      label: 'Ассисты',  color: 'bg-blue-600 text-white' },
+  { value: 'yellow_card', label: 'ЖК',       color: 'bg-amber-500 text-white' },
+  { value: 'red_card',    label: 'КК',       color: 'bg-red-600 text-white' },
 ]
 
 function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
@@ -29,7 +29,12 @@ function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
   return [...map.values()].sort((a, b) => b.count - a.count || a.player.localeCompare(b.player, 'ru'))
 }
 
-const MEDALS = ['🥇', '🥈', '🥉']
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 0) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400 text-amber-900 text-[10px] font-black">1</span>
+  if (rank === 1) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-300 text-gray-700 text-[10px] font-black">2</span>
+  if (rank === 2) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/50 text-amber-100 text-[10px] font-black">3</span>
+  return <span className="text-gray-400 text-sm font-bold">{rank + 1}</span>
+}
 
 export default function StatsTab({ teams, events }: { teams: Team[]; events: MatchEvent[] }) {
   const [filter, setFilter] = useState<Filter>('goal')
@@ -54,7 +59,9 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
 
       {list.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-          <p className="text-4xl mb-3">{active.label.split(' ')[0]}</p>
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+            <span className="text-xs font-black text-gray-400">{active.label}</span>
+          </div>
           <p className="font-bold text-gray-600">Событий пока нет</p>
           <p className="text-sm text-gray-400 mt-1">Указывайте события при вводе результатов</p>
         </div>
@@ -63,16 +70,16 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="w-12 text-center text-gray-500">#</TableHead>
+                <TableHead className="w-14 text-center text-gray-500">#</TableHead>
                 <TableHead className="text-gray-700">Игрок</TableHead>
                 <TableHead className="text-gray-700">Команда</TableHead>
-                <TableHead className="text-center text-gray-700 w-16">{active.label.split(' ')[0]}</TableHead>
+                <TableHead className="text-center text-gray-700 w-16">{active.label}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {list.map((p, i) => (
                 <TableRow key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                  <TableCell className="text-center text-lg">{MEDALS[i] ?? i + 1}</TableCell>
+                  <TableCell className="text-center"><RankBadge rank={i} /></TableCell>
                   <TableCell className="font-bold text-gray-900">{p.player}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

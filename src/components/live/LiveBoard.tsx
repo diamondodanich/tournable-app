@@ -29,9 +29,10 @@ function formatTime(secs: number) {
 }
 
 function EventIcon({ type, size = 14 }: { type: string; size?: number }) {
-  if (type === 'goal')        return <span style={{ fontSize: size }}>⚽</span>
+  if (type === 'goal')        return <span className="inline-block rounded-full bg-emerald-400 shrink-0"
+    style={{ width: Math.round(size * 0.85), height: Math.round(size * 0.85) }} />
   if (type === 'own_goal')    return <span style={{ fontSize: size }} className="text-red-400">↩</span>
-  if (type === 'assist')      return <span style={{ fontSize: size }}>🎯</span>
+  if (type === 'assist')      return <span style={{ fontSize: size }} className="text-sky-400">↗</span>
   if (type === 'yellow_card') return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0"
     style={{ width: Math.round(size * 0.65), height: size }} />
   if (type === 'red_card')    return <span className="inline-block rounded-[2px] bg-red-500 shrink-0"
@@ -551,8 +552,8 @@ export default function LiveBoard({
   const submitLabel = submitting
     ? 'Сохраняем…'
     : actionType === 'goal'
-      ? (isOwnGoal ? '↩ Авто-гол' : '⚽ Гол')
-      : actionType === 'yellow_card' ? '🟨 Жёлтая' : '🟥 Красная'
+      ? (isOwnGoal ? '↩ Авто-гол' : 'Гол')
+      : actionType === 'yellow_card' ? 'Жёлтая' : 'Красная'
 
   const submitClass = actionType === 'goal' && isOwnGoal
     ? 'bg-red-900/70 hover:bg-red-900 text-red-200'
@@ -858,9 +859,9 @@ export default function LiveBoard({
             {/* Action type */}
             <div className="flex gap-2 justify-center">
               {([
-                { value: 'goal',        label: '⚽ Гол' },
-                { value: 'yellow_card', label: '🟨 ЖК' },
-                { value: 'red_card',    label: '🟥 КК' },
+                { value: 'goal',        label: 'Гол' },
+                { value: 'yellow_card', label: 'ЖК' },
+                { value: 'red_card',    label: 'КК' },
               ] as const).map(opt => (
                 <button
                   key={opt.value}

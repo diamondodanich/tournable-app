@@ -32,7 +32,7 @@ function teamById(teams: Team[], id: string | null) {
 }
 
 function EvtIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <span className="text-xs">⚽</span>
+  if (type === 'goal')        return <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 align-middle shrink-0" />
   if (type === 'own_goal')    return <span className="text-xs text-red-500">↩</span>
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
@@ -68,8 +68,8 @@ interface InlineFormProps {
 function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
   const isGoal = form.actionType === 'goal'
   const submitLabel = form.isOwnGoal ? '↩ АГ'
-    : isGoal ? '⚽ Гол'
-    : form.actionType === 'yellow_card' ? '🟨 ЖК' : '🟥 КК'
+    : isGoal ? 'Гол'
+    : form.actionType === 'yellow_card' ? 'ЖК' : 'КК'
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
     : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -81,9 +81,9 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
       {/* Type pills */}
       <div className="flex gap-1">
         {([
-          { v: 'goal'        as const, l: '⚽' },
-          { v: 'yellow_card' as const, l: '🟨' },
-          { v: 'red_card'    as const, l: '🟥' },
+          { v: 'goal'        as const, l: 'Гол' },
+          { v: 'yellow_card' as const, l: 'ЖК' },
+          { v: 'red_card'    as const, l: 'КК' },
         ]).map(opt => (
           <button key={opt.v}
             onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}

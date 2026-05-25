@@ -12,9 +12,10 @@ import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
 
 const FORMAT_LABEL: Record<string, string> = {
-  round_robin: 'Круговой',
-  playoff: 'Плей-офф',
-  group_playoff: 'Группы + плей-офф',
+  round_robin:    'Круговой',
+  playoff:        'Плей-офф',
+  groups_playoff: 'Группы + Плей-офф',
+  league_playoff: 'Лига + Плей-офф',
 }
 
 export default function SetupTab({ tournament, teams }: { tournament: Tournament; teams: Team[] }) {
@@ -50,7 +51,13 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
     setLoading(false)
   }
 
-  async function handleRemoveTeam(teamId: string) {
+  async function handleRemoveTeam(teamId: string, teamName: string) {
+    if (tournament.generated) {
+      const ok = window.confirm(
+        `Удалить команду «${teamName}»?\n\nРасписание уже сгенерировано — матчи этой команды станут некорректными. Рекомендуется пересоздать расписание после удаления.`
+      )
+      if (!ok) return
+    }
     await removeTeam(teamId, tournament.id)
   }
 
@@ -280,7 +287,7 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
                     logoUrl={team.logo_url}
                   />
                   <span className="flex-1 font-medium text-sm text-gray-800">{team.name}</span>
-                  <button onClick={() => handleRemoveTeam(team.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                  <button onClick={() => handleRemoveTeam(team.id, team.name)} className="text-gray-300 hover:text-red-500 transition-colors">
                     <X size={14} />
                   </button>
                 </div>

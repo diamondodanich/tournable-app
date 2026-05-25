@@ -4,7 +4,7 @@ import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, LogOut, Check, Star,
-  Mail, Calendar, Trophy, Zap, Infinity
+  Mail, Calendar, Trophy, Zap, Infinity, Trash2
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -265,6 +265,25 @@ export default async function AccountPage() {
               Выйти из аккаунта
             </button>
           </form>
+        </div>
+
+        {/* ── Delete account card ───────────────────────────────────── */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-black text-lg text-gray-900 mb-1 flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-gray-400" />
+            Удаление аккаунта
+          </h2>
+          <p className="text-sm text-gray-400 mb-5">
+            Все данные будут безвозвратно удалены в течение 90 дней согласно{' '}
+            <a href="/privacy" className="text-emerald-600 hover:underline">Политике конфиденциальности</a>.
+          </p>
+          <a
+            href={`mailto:tournable_webapp@gmail.com?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${user!.email}`)}`}
+            className="inline-flex items-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-gray-200"
+          >
+            <Trash2 className="w-4 h-4" />
+            Запросить удаление
+          </a>
         </div>
 
       </div>

@@ -17,6 +17,7 @@ const T = {
     title: 'Войдите в Tournable',
     email: 'Email', emailPh: 'Введите email',
     password: 'Пароль', passwordPh: 'Введите пароль',
+    forgotPassword: 'Забыли пароль?',
     btn: 'Войти', btnLoading: 'Входим…',
     noAccount: 'Нет аккаунта?', registerLink: 'Зарегистрируйтесь бесплатно',
     registerHref: '/register',
@@ -26,6 +27,7 @@ const T = {
     title: 'Tournable-ге кіріңіз',
     email: 'Email', emailPh: 'Email енгізіңіз',
     password: 'Құпия сөз', passwordPh: 'Құпия сөзді енгізіңіз',
+    forgotPassword: 'Құпия сөзді ұмыттыңыз ба?',
     btn: 'Кіру', btnLoading: 'Кіруде…',
     noAccount: 'Аккаунт жоқ па?', registerLink: 'Тегін тіркелу',
     registerHref: '/register?lang=kz',
@@ -35,6 +37,7 @@ const T = {
     title: 'Sign in to Tournable',
     email: 'Email', emailPh: 'Enter your email',
     password: 'Password', passwordPh: 'Enter your password',
+    forgotPassword: 'Forgot password?',
     btn: 'Sign in', btnLoading: 'Signing in…',
     noAccount: "Don't have an account?", registerLink: 'Create one free',
     registerHref: '/register?lang=en',
@@ -86,7 +89,15 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
                 className="rounded-xl border-gray-200 focus:border-emerald-400 focus:ring-emerald-400" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-semibold text-gray-700">{tx.password}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">{tx.password}</Label>
+                <a
+                  href={`mailto:tournable_webapp@gmail.com?subject=${encodeURIComponent('Сброс пароля')}`}
+                  className="text-xs text-emerald-600 hover:underline font-medium"
+                >
+                  {tx.forgotPassword}
+                </a>
+              </div>
               <Input id="password" name="password" type="password" placeholder={tx.passwordPh} required
                 className="rounded-xl border-gray-200 focus:border-emerald-400 focus:ring-emerald-400" />
             </div>

@@ -5,7 +5,102 @@ import StandingsTab from '@/components/tournament/StandingsTab'
 import StatsTab from '@/components/tournament/StatsTab'
 import PublicFixturesTab from '@/components/tournament/PublicFixturesTab'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
+import { Trophy } from 'lucide-react'
 import type { Metadata } from 'next'
+
+// ── Inline public bracket (read-only, no actions) ─────────────────────────────
+const ROUND_LABELS: Record<number, string> = {
+  1: 'Финал', 2: 'Полуфинал', 4: 'Четвертьфинал', 8: '1/8 финала', 16: '1/16 финала',
+}
+
+function PublicBracket({
+  teams, matches,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  teams: any[]; matches: any[]
+}) {
+  if (!matches || matches.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+        <p className="font-bold text-gray-500">Сетка ещё не сформирована</p>
+      </div>
+    )
+  }
+  const rounds = [...new Set(matches.map((m: any) => m.round_order as number))].sort((a, b) => b - a)
+
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div className="flex gap-6 min-w-max">
+        {rounds.map(ro => (
+          <div key={ro} className="flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 text-center">
+              {ROUND_LABELS[ro] ?? `Раунд ${ro}`}
+            </p>
+            <div className="flex flex-col gap-4 justify-around flex-1">
+              {matches
+                .filter((m: any) => m.round_order === ro)
+                .sort((a: any, b: any) => a.match_order - b.match_order)
+                .map((m: any) => {
+                  const homeTeam = teams.find((t: any) => t.id === m.home_team_id)
+                  const awayTeam = teams.find((t: any) => t.id === m.away_team_id)
+                  const isReady  = !!(m.home_team_id && m.away_team_id)
+                  const isDone   = !!m.winner_id
+                  return (
+                    <div
+                      key={m.id}
+                      className={`bg-white border rounded-xl p-3 min-w-[260px] shadow-sm ${
+                        isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
+                      }`}
+                    >
+                      {isDone && (
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-2">Сыгран</p>
+                      )}
+                      {/* Home */}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {homeTeam
+                            ? <>
+                                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.home_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                                <span className={`text-sm font-bold truncate ${m.winner_id === m.home_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
+                                  {homeTeam.name}
+                                  {m.winner_id === m.home_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
+                                </span>
+                              </>
+                            : <span className="text-sm text-gray-400 italic">TBD</span>
+                          }
+                        </div>
+                        <span className="font-black text-lg font-mono tabular-nums shrink-0">
+                          {m.home_score != null ? m.home_score : '–'}
+                        </span>
+                      </div>
+                      {/* Away */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {awayTeam
+                            ? <>
+                                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.away_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                                <span className={`text-sm font-bold truncate ${m.winner_id === m.away_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
+                                  {awayTeam.name}
+                                  {m.winner_id === m.away_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
+                                </span>
+                              </>
+                            : <span className="text-sm text-gray-400 italic">TBD</span>
+                          }
+                        </div>
+                        <span className="font-black text-lg font-mono tabular-nums shrink-0">
+                          {m.away_score != null ? m.away_score : '–'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -73,8 +168,8 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           </div>
         </div>
 
-        {/* ── ROUND-ROBIN / LEAGUE+PLAYOFF: standings + fixtures + stats ── */}
-        {(fmt === 'round_robin' || fmt === 'league_playoff') && (
+        {/* ── ROUND-ROBIN: standings + fixtures + stats ── */}
+        {fmt === 'round_robin' && (
           <Tabs defaultValue="standings">
             <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
               <TabsTrigger value="standings">Таблица</TabsTrigger>
@@ -93,12 +188,37 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           </Tabs>
         )}
 
-        {/* ── GROUPS + PLAYOFF: group stage standings + fixtures + stats ── */}
+        {/* ── LEAGUE+PLAYOFF: standings + fixtures + playoff + stats ── */}
+        {fmt === 'league_playoff' && (
+          <Tabs defaultValue="standings">
+            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
+              <TabsTrigger value="standings">Таблица</TabsTrigger>
+              <TabsTrigger value="fixtures">Матчи</TabsTrigger>
+              <TabsTrigger value="playoff">Плей-офф</TabsTrigger>
+              <TabsTrigger value="stats">Статистика</TabsTrigger>
+            </TabsList>
+            <TabsContent value="standings">
+              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} />
+            </TabsContent>
+            <TabsContent value="fixtures">
+              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
+            </TabsContent>
+            <TabsContent value="playoff">
+              <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />
+            </TabsContent>
+            <TabsContent value="stats">
+              <StatsTab teams={teams ?? []} events={allEvents} />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* ── GROUPS + PLAYOFF: group stage standings + fixtures + playoff + stats ── */}
         {fmt === 'groups_playoff' && (
           <Tabs defaultValue="groups">
             <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
               <TabsTrigger value="groups">Группы</TabsTrigger>
               <TabsTrigger value="fixtures">Матчи</TabsTrigger>
+              <TabsTrigger value="playoff">Плей-офф</TabsTrigger>
               <TabsTrigger value="stats">Статистика</TabsTrigger>
             </TabsList>
             <TabsContent value="groups">
@@ -128,21 +248,29 @@ export default async function PublicTournamentPage({ params }: { params: Promise
             <TabsContent value="fixtures">
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
             </TabsContent>
+            <TabsContent value="playoff">
+              <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />
+            </TabsContent>
             <TabsContent value="stats">
               <StatsTab teams={teams ?? []} events={allEvents} />
             </TabsContent>
           </Tabs>
         )}
 
-        {/* ── PLAYOFF: bracket view ── */}
+        {/* ── PLAYOFF: full bracket view ── */}
         {fmt === 'playoff' && (
-          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-black text-emerald-600">PO</span>
-            </div>
-            <p className="font-bold text-gray-700 text-lg mb-1">Плей-офф</p>
-            <p className="text-sm text-gray-400">{(teams ?? []).length} команд</p>
-          </div>
+          <Tabs defaultValue="playoff">
+            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
+              <TabsTrigger value="playoff">Сетка</TabsTrigger>
+              <TabsTrigger value="stats">Статистика</TabsTrigger>
+            </TabsList>
+            <TabsContent value="playoff">
+              <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />
+            </TabsContent>
+            <TabsContent value="stats">
+              <StatsTab teams={teams ?? []} events={allEvents} />
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>

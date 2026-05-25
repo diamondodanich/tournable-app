@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { getUserPlan } from '@/app/actions/billing'
+import { getOwnerPlan } from '@/app/actions/billing'
 import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import SetupTab from '@/components/tournament/SetupTab'
@@ -128,7 +128,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   const [{ data: { user } }, plan] = await Promise.all([
     supabase.auth.getUser(),
-    getUserPlan(),
+    getOwnerPlan(id),
   ])
   const isPro = plan === 'pro'
 
@@ -475,6 +475,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               teams={t}
               matches={pm}
               livePlayoffMatchId={liveGame?.playoff_match_id ?? null}
+              isPro={isPro}
             />
           </TabsContent>
         )}

@@ -7,10 +7,11 @@ import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2 } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
+import UpgradePrompt from '@/components/billing/UpgradePrompt'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -167,7 +168,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, isLive, homeLabel, awayLabel,
+  match, teams, tournamentId, isLive, homeLabel, awayLabel, isPro,
 }: {
   match: PlayoffMatch
   teams: Team[]
@@ -175,6 +176,7 @@ function PlayoffMatchCard({
   isLive: boolean
   homeLabel?: string   // shown when home_team_id is null (e.g. "A1", "1-е м.")
   awayLabel?: string   // shown when away_team_id is null
+  isPro?: boolean
 }) {
   const [events, setEvents] = useState<EventEntry[]>(
     match.match_events?.map(e => ({
@@ -186,6 +188,7 @@ function PlayoffMatchCard({
   )
   const [saving, setSaving]     = useState(false)
   const [starting, setStarting] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     match.winner_id ? 'finished' : isLive ? 'live' : 'scheduled'
   )
@@ -239,6 +242,7 @@ function PlayoffMatchCard({
 
   async function handleStart() {
     if (!match.home_team_id || !match.away_team_id) return
+    if (!isPro) { setShowUpgrade(true); return }
     setStarting(true)
     const prevStatus = status
     setStatus('live')
@@ -253,14 +257,13 @@ function PlayoffMatchCard({
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
-    toast.success('Результат сохранён')
     const result = await savePlayoffResult(
       match.id, tournamentId, scoreHome, scoreAway,
       events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined })),
     )
     setSaving(false)
     if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
-    else setIsEditing(false)
+    else { toast.success('Результат сохранён'); setIsEditing(false) }
   }
 
   // ── Finished summary view ─────────────────────────────────────────────
@@ -350,6 +353,9 @@ function PlayoffMatchCard({
     <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[300px] ${
       isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
     }`}>
+      {showUpgrade && (
+        <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-2.5">
@@ -367,8 +373,13 @@ function PlayoffMatchCard({
           )}
           {status === 'scheduled' && isReady && (
             <button onClick={handleStart} disabled={starting}
-              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full transition-colors disabled:opacity-50">
-              <Play size={10} /> {starting ? 'Запуск…' : 'Начать матч'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${
+                isPro
+                  ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
+                  : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
+              }`}>
+              {isPro ? <Play size={10} /> : <Lock size={10} />}
+              {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
             </button>
           )}
           {status === 'finished' && isEditing && (
@@ -501,17 +512,22 @@ function seedLabel(seedIndex: number, format: string, groupsCount: number): stri
 
 // ── PlayoffTab ────────────────────────────────────────────────────────────
 
-export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatchId }: {
+export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatchId, isPro = false }: {
   tournament: Tournament
   teams: Team[]
   matches: PlayoffMatch[]
   livePlayoffMatchId?: string | null
+  isPro?: boolean
 }) {
   const [generating, setGenerating] = useState(false)
   const fmt = tournament.format ?? 'playoff'
 
   async function handleGenerate() {
     if (fmt === 'playoff' && teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
+    if (matches.length > 0) {
+      const ok = window.confirm('Пересоздать сетку плей-офф? Все введённые результаты будут удалены.')
+      if (!ok) return
+    }
     setGenerating(true)
     const res = await generatePlayoff(tournament.id)
     if (res?.error) toast.error(res.error)
@@ -618,6 +634,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                         isLive={livePlayoffMatchId === m.id}
                         homeLabel={labels?.home}
                         awayLabel={labels?.away}
+                        isPro={isPro}
                       />
                     )
                   })}

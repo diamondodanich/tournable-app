@@ -226,14 +226,13 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
-    toast.success('Результат сохранён')
     const result = await saveFixtureResult(
       fixture.id, tournamentId, hs, as_,
       events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined }))
     )
     setSaving(false)
     if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
-    else setIsEditing(false)
+    else { toast.success('Результат сохранён'); setIsEditing(false) }
   }
 
   if (fixture.is_bye) {

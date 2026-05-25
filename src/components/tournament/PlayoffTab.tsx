@@ -7,7 +7,7 @@ import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
@@ -465,8 +465,10 @@ function PlayoffMatchCard({
         <div className="flex justify-end pt-1">
           <Button onClick={handleSave} disabled={saving} size="sm"
             className="bg-emerald-600 hover:bg-emerald-700 h-7 text-xs px-4">
-            <Check size={11} className="mr-1" />
-            {saving ? '…' : isDone ? 'Обновить' : 'Сохранить'}
+            {saving
+              ? <Loader2 size={11} className="mr-1 animate-spin" />
+              : <Check size={11} className="mr-1" />}
+            {saving ? 'Сохраняем…' : isDone ? 'Обновить' : 'Сохранить'}
           </Button>
         </div>
       )}
@@ -527,6 +529,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         <p className="text-sm text-gray-400 mb-6">Добавьте команды и сгенерируйте сетку</p>
         {fmt === 'playoff' && (
           <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
+            {generating && <Loader2 size={14} className="mr-2 animate-spin" />}
             {generating ? 'Генерируем…' : 'Создать сетку'}
           </Button>
         )}

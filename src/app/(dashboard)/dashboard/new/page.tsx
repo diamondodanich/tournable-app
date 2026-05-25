@@ -1,16 +1,18 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
+import { getUserPlan } from '@/app/actions/billing'
 import { uploadTournamentLogo, uploadTeamLogo } from '@/app/actions/logos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Globe, Layers, Star,
+  Check, Settings2, RotateCcw, Crown, Globe, Layers, Star, Lock,
 } from 'lucide-react'
 import Link from 'next/link'
+import UpgradePrompt from '@/components/billing/UpgradePrompt'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -332,6 +334,13 @@ export default function NewTournamentPage() {
   const lang = getLang()
   const tx = T[lang]
 
+  // Plan
+  const [isPro, setIsPro] = useState(false)
+  const [upgradeFor, setUpgradeFor] = useState<string | null>(null)
+  useEffect(() => {
+    getUserPlan().then(p => setIsPro(p === 'pro'))
+  }, [])
+
   // Step 1
   const [name, setName]           = useState('')
   const [format, setFormat]       = useState<Format>('round_robin')
@@ -485,6 +494,7 @@ export default function NewTournamentPage() {
   return (
     <div className="max-w-lg mx-auto">
       {planLimit && <PlanLimitModal type={planLimit} tx={tx} onClose={() => setPlanLimit(null)} />}
+      {upgradeFor && <UpgradePrompt featureName={`Формат "${upgradeFor}"`} onClose={() => setUpgradeFor(null)} />}
 
       <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
         <ArrowLeft size={15} /> {tx.back}
@@ -513,17 +523,30 @@ export default function NewTournamentPage() {
               {FORMATS.map(f => {
                 const Icon = f.icon
                 const active = format === f.value
+                const isProOnly = f.value === 'groups_playoff' || f.value === 'league_playoff'
+                const locked = isProOnly && !isPro
                 return (
-                  <button key={f.value} type="button" onClick={() => changeFormat(f.value)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                  <button key={f.value} type="button"
+                    onClick={() => {
+                      if (locked) { setUpgradeFor(fmtLabel(f.value)); return }
+                      changeFormat(f.value)
+                    }}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      active ? 'border-emerald-500 bg-emerald-50'
+                      : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
+                    {locked && (
+                      <span className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                        <Lock size={9} /> PRO
+                      </span>
+                    )}
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
-                      active ? 'bg-emerald-600' : 'bg-gray-100'
+                      active ? 'bg-emerald-600' : locked ? 'bg-gray-200' : 'bg-gray-100'
                     }`}>
-                      <Icon size={16} className={active ? 'text-white' : 'text-gray-500'} />
+                      <Icon size={16} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
                     </div>
-                    <p className={`text-sm font-bold ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{fmtLabel(f.value)}</p>
+                    <p className={`text-sm font-bold ${active ? 'text-emerald-700' : locked ? 'text-gray-400' : 'text-gray-800'}`}>{fmtLabel(f.value)}</p>
                     <p className="text-xs text-gray-400 mt-0.5 leading-snug">{fmtDesc(f.value)}</p>
                   </button>
                 )

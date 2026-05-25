@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
+import { getUserPlan } from '@/app/actions/billing'
 import Link from 'next/link'
 import Image from 'next/image'
 import { LogOut, User } from 'lucide-react'
@@ -43,10 +44,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  const cookieStore = await cookies()
+  const [cookieStore, plan] = await Promise.all([cookies(), getUserPlan()])
   const langRaw = cookieStore.get('lang')?.value ?? 'ru'
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
+  const isPro = plan === 'pro'
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? '??'
   const emailShort = user.email?.split('@')[0] ?? ''
@@ -113,7 +115,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </div>
               {/* Label + email */}
               <div className="hidden sm:flex flex-col leading-none">
-                <span className="text-[10px] text-emerald-300 font-semibold mb-0.5">{tx.account}</span>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-[10px] text-emerald-300 font-semibold">{tx.account}</span>
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none ${
+                    isPro
+                      ? 'bg-amber-400 text-amber-900'
+                      : 'bg-white/20 text-emerald-100'
+                  }`}>
+                    {isPro ? 'PRO' : 'FREE'}
+                  </span>
+                </div>
                 <span className="text-xs text-white font-bold max-w-[110px] truncate">{emailShort}</span>
               </div>
             </Link>

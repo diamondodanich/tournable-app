@@ -6,10 +6,11 @@ import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
+import UpgradePrompt from '@/components/billing/UpgradePrompt'
 
 type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
 type ActionType = 'goal' | 'yellow_card' | 'red_card'
@@ -149,7 +150,7 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams: Team[]; tournamentId: string }) {
+function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture; teams: Team[]; tournamentId: string; isPro: boolean }) {
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
   const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
   const [events, setEvents] = useState<EventEntry[]>(
@@ -160,8 +161,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
       minute: e.minute?.toString() ?? '',
     })) ?? []
   )
-  const [saving, setSaving]     = useState(false)
-  const [starting, setStarting] = useState(false)
+  const [saving, setSaving]       = useState(false)
+  const [starting, setStarting]   = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
@@ -206,6 +208,7 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
   async function handleStart() {
     if (!fixture.home_team_id || !fixture.away_team_id) return
+    if (!isPro) { setShowUpgrade(true); return }
     setStarting(true)
     const prevStatus = status
     setStatus('live')
@@ -312,6 +315,9 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
   return (
     <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200' : 'border-gray-200'}`}>
+      {showUpgrade && (
+        <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
@@ -328,8 +334,13 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
           )}
           {status === 'scheduled' && (
             <button onClick={handleStart} disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
-              className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors disabled:opacity-50">
-              <Play size={11} /> {starting ? 'Запуск…' : 'Начать матч'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                isPro
+                  ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
+                  : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
+              }`}>
+              {isPro ? <Play size={11} /> : <Lock size={11} />}
+              {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
             </button>
           )}
           {status === 'finished' && isEditing && (
@@ -443,15 +454,15 @@ function FixtureCard({ fixture, teams, tournamentId }: { fixture: Fixture; teams
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures }: {
+export default function FixturesTab({ tournament, teams, fixtures, isPro = false }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
+  isPro?: boolean
 }) {
   if (!tournament.generated || fixtures.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="text-4xl mb-3">⚽</p>
         <p className="font-bold text-gray-600 mb-1">Матчей пока нет</p>
         <p className="text-sm text-gray-400">Добавьте команды и сгенерируйте расписание</p>
       </div>
@@ -478,7 +489,7 @@ export default function FixturesTab({ tournament, teams, fixtures }: {
             <span className="text-xs text-gray-400 uppercase tracking-wide">Круг {mxs[0].round} из {tournament.num_rounds}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} isPro={isPro} />)}
           </div>
         </div>
       ))}

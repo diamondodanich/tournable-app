@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { getUserPlan } from '@/app/actions/billing'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import SetupTab from '@/components/tournament/SetupTab'
 import FixturesTab from '@/components/tournament/FixturesTab'
@@ -109,7 +110,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const [{ data: { user } }, plan] = await Promise.all([
+    supabase.auth.getUser(),
+    getUserPlan(),
+  ])
+  const isPro = plan === 'pro'
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -429,7 +434,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {/* Export button — below tab bar, aligned right */}
         {tournament.generated && (
           <div className="flex justify-end">
-            <ExportReportButton fileName={`${slug}-report`} />
+            <ExportReportButton fileName={`${slug}-report`} isPro={isPro} />
           </div>
         )}
 
@@ -439,7 +444,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
-            <FixturesTab tournament={tournament} teams={t} fixtures={f} />
+            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} />
           </TabsContent>
         )}
         {showStandingsTab && (

@@ -3,26 +3,28 @@
 import { useState } from 'react'
 import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
-import { FileDown } from 'lucide-react'
+import { FileDown, Lock } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
+import UpgradePrompt from '@/components/billing/UpgradePrompt'
 
-export default function ExportReportButton({ fileName }: { fileName: string }) {
+export default function ExportReportButton({ fileName, isPro = false }: {
+  fileName: string
+  isPro?: boolean
+}) {
   const [loading, setLoading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   async function handleExport() {
+    if (!isPro) { setShowUpgrade(true); return }
+
     const el = document.getElementById('full-report-export') as HTMLElement | null
     if (!el) return
     setLoading(true)
     try {
-      // html-to-image cannot capture off-screen elements (height = 0).
-      // Temporarily position on-screen behind page content.
       const prev = el.style.cssText
       el.style.cssText = 'position:fixed;left:0;top:0;width:900px;background:white;padding:32px;z-index:-1;font-family:system-ui,-apple-system,sans-serif;'
-
       await new Promise<void>(r => requestAnimationFrame(() => { requestAnimationFrame(() => r()) }))
-
       const dataUrl = await captureNoPng(el)
-
       el.style.cssText = prev
 
       const img = new Image()
@@ -42,9 +44,19 @@ export default function ExportReportButton({ fileName }: { fileName: string }) {
   }
 
   return (
-    <Button onClick={handleExport} disabled={loading} size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-      <FileDown size={15} />
-      {loading ? 'Формируем PDF…' : 'Скачать полный отчёт PDF'}
-    </Button>
+    <>
+      {showUpgrade && (
+        <UpgradePrompt featureName="Экспорт PDF" onClose={() => setShowUpgrade(false)} />
+      )}
+      <Button
+        onClick={handleExport}
+        disabled={loading}
+        size="sm"
+        className={`gap-2 ${isPro ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200'}`}
+      >
+        {isPro ? <FileDown size={15} /> : <Lock size={14} />}
+        {loading ? 'Формируем PDF…' : isPro ? 'Скачать полный отчёт PDF' : 'Отчёт PDF — Pro'}
+      </Button>
+    </>
   )
 }

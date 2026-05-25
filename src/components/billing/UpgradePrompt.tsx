@@ -67,9 +67,7 @@ export default function UpgradePrompt({ featureName, onClose }: Props) {
             Закрыть
           </button>
           <a
-            href="https://wa.me/message/YHLE2IFII4MSJ1"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/checkout"
             className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors text-center"
           >
             Перейти на Pro

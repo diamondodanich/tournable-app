@@ -30,7 +30,7 @@ const T = {
     steps: ['Название', 'Команды', 'Настройки', 'Старт'],
     step1: { title: 'Новый турнир', sub: 'Шаг 1 из 4 — основная информация' },
     step2: { title: 'Команды', sub: 'Шаг 2 из 4 — добавьте участников и логотипы' },
-    step3: { title: 'Настройки', sub: 'Шаг 3 из 4 — логотип и правила матча' },
+    step3: { title: 'Настройки', sub: 'Шаг 3 из 4 — параметры формата и правила матча' },
     step4: { title: 'Всё готово!', sub: 'Шаг 4 из 4 — подтвердите и запустите' },
     nameLbl: 'Название', namePh: 'например: Кубок компании 2026',
     formatLbl: 'Формат',
@@ -77,15 +77,24 @@ const T = {
     groupLegsOpts: ['1 матч', '2 матча — дома и в гостях'],
     leagueTourLbl: 'Количество туров',
     leagueTourHint: 'Рекомендуется N−1 туров (N — количество команд)',
+    leagueTourSmartHint: (teams: number) => `Рекомендуется ${teams - 1} туров для ${teams} команд`,
     leagueAdvanceLbl: 'Выходят в плей-офф',
     leagueAdvance: ['2 команды', '4 команды', '8 команд', '16 команд'],
+    leagueSettingsLbl: 'Этап лиги',
+    leagueSettingsNote: 'Количество туров и выход в плей-офф настроите на следующем шаге',
+    groupSettingsLbl: 'Групповой этап',
+    groupAdvanceNote: 'Выход из групп и количество матчей настроите на следующем шаге',
+    groupsCompositionHint: (groups: number, perGroup: number) => `${groups} групп × до ${perGroup} команд в каждой`,
+    playoffHint: (teams: number) => `${teams} команд — сетка на выбывание`,
+    groupsHint: (teams: number, groups: number) => `${teams} команд — ${groups} групп`,
+    leagueHint: (teams: number) => `${teams} команд — таблица + плей-офф`,
   },
   kz: {
     back: 'Менің турнирларым',
     steps: ['Атауы', 'Командалар', 'Параметрлер', 'Старт'],
     step1: { title: 'Жаңа турнир', sub: '4-тен 1-қадам — негізгі ақпарат' },
     step2: { title: 'Командалар', sub: '4-тен 2-қадам — қатысушылар мен логотиптер' },
-    step3: { title: 'Параметрлер', sub: '4-тен 3-қадам — логотип және матч ережелері' },
+    step3: { title: 'Параметрлер', sub: '4-тен 3-қадам — формат параметрлері және матч ережелері' },
     step4: { title: 'Дайын!', sub: '4-тен 4-қадам — растаңыз және іске қосыңыз' },
     nameLbl: 'Атауы', namePh: 'мысалы: Компания кубогы 2026',
     formatLbl: 'Формат',
@@ -132,15 +141,24 @@ const T = {
     groupLegsOpts: ['1 матч', '2 матч — үй және қонақ'],
     leagueTourLbl: 'Айналым саны',
     leagueTourHint: 'N−1 айналым ұсынылады (N — команда саны)',
+    leagueTourSmartHint: (teams: number) => `${teams} команда үшін ${teams - 1} айналым ұсынылады`,
     leagueAdvanceLbl: 'Плей-оффқа шығатындар',
     leagueAdvance: ['2 команда', '4 команда', '8 команда', '16 команда'],
+    leagueSettingsLbl: 'Лига кезеңі',
+    leagueSettingsNote: 'Айналым саны мен плей-офф шығуын келесі қадамда баптайсыз',
+    groupSettingsLbl: 'Топтық кезең',
+    groupAdvanceNote: 'Топтан шығу және матч саны келесі қадамда баптайды',
+    groupsCompositionHint: (groups: number, perGroup: number) => `${groups} топ × ${perGroup} командаға дейін`,
+    playoffHint: (teams: number) => `${teams} команда — жою сеткасы`,
+    groupsHint: (teams: number, groups: number) => `${teams} команда — ${groups} топ`,
+    leagueHint: (teams: number) => `${teams} команда — кесте + плей-офф`,
   },
   en: {
     back: 'My Tournaments',
     steps: ['Name', 'Teams', 'Settings', 'Launch'],
     step1: { title: 'New Tournament', sub: 'Step 1 of 4 — basic info' },
     step2: { title: 'Teams', sub: 'Step 2 of 4 — add participants and logos' },
-    step3: { title: 'Settings', sub: 'Step 3 of 4 — logo and match rules' },
+    step3: { title: 'Settings', sub: 'Step 3 of 4 — format settings and match rules' },
     step4: { title: 'Ready!', sub: 'Step 4 of 4 — confirm and launch' },
     nameLbl: 'Name', namePh: 'e.g. Company Cup 2026',
     formatLbl: 'Format',
@@ -187,8 +205,17 @@ const T = {
     groupLegsOpts: ['1 match', '2 matches — home & away'],
     leagueTourLbl: 'Matchdays',
     leagueTourHint: 'Recommended: N−1 matchdays (N = number of teams)',
+    leagueTourSmartHint: (teams: number) => `Recommended: ${teams - 1} matchdays for ${teams} teams`,
     leagueAdvanceLbl: 'Teams to playoff',
     leagueAdvance: ['2 teams', '4 teams', '8 teams', '16 teams'],
+    leagueSettingsLbl: 'League stage',
+    leagueSettingsNote: 'Matchdays and playoff advancement — configure in the next step',
+    groupSettingsLbl: 'Group stage',
+    groupAdvanceNote: 'Advancement and group legs — configure in the next step',
+    groupsCompositionHint: (groups: number, perGroup: number) => `${groups} groups × up to ${perGroup} teams each`,
+    playoffHint: (teams: number) => `${teams} teams — elimination bracket`,
+    groupsHint: (teams: number, groups: number) => `${teams} teams — ${groups} groups`,
+    leagueHint: (teams: number) => `${teams} teams — league table + playoff`,
   },
 }
 
@@ -400,6 +427,10 @@ export default function NewTournamentPage() {
       const missingRating = teamNames.some((n, i) => n.trim() && teamRatings[i] === null)
       if (missingRating) { setError(tx.errRatings); return }
     }
+    // Smart default: for league_playoff set N-1 matchdays based on actual team count
+    if (format === 'league_playoff' && numRounds === 5 && filledTeams.length >= 2) {
+      setNumRounds(filledTeams.length - 1)
+    }
     setError(null); setStep(3)
   }
   function goToStep4() { setError(null); setStep(4) }
@@ -439,6 +470,15 @@ export default function NewTournamentPage() {
   const matchCount = format === 'round_robin' && filledTeams.length >= 2
     ? Math.floor(filledTeams.length * (filledTeams.length - 1) / 2) * numRounds
     : 0
+
+  const teamsHint = (() => {
+    if (!filledTeams.length) return ''
+    if (format === 'round_robin')    return tx.matchesHint(filledTeams.length, matchCount)
+    if (format === 'playoff')        return tx.playoffHint(filledTeams.length)
+    if (format === 'groups_playoff') return tx.groupsHint(filledTeams.length, groupsCount)
+    if (format === 'league_playoff') return tx.leagueHint(filledTeams.length)
+    return tx.matchesHint(filledTeams.length, matchCount)
+  })()
 
   // ── Create ─────────────────────────────────────────────────────────────────
   async function handleCreate() {
@@ -573,21 +613,21 @@ export default function NewTournamentPage() {
           )}
 
           {format === 'league_playoff' && (
-            <div className="space-y-4">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
+              <Settings2 size={13} className="shrink-0 opacity-70" />
+              <span>{tx.leagueSettingsNote}</span>
+            </div>
+          )}
+
+          {format === 'groups_playoff' && (
+            <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.leagueTourLbl}</label>
-                <p className="text-xs text-gray-400">{tx.leagueTourHint}</p>
-                <Input type="number" min={1} value={numRounds}
-                  onChange={e => setNumRounds(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-24 text-center font-mono font-bold" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.leagueAdvanceLbl}</label>
+                <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {LEAGUE_ADVANCE_OPTS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
+                  {GROUPS_OPTS.map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                        teamsAdvance === opt.value
+                        groupsCount === opt.value
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}>
@@ -596,57 +636,9 @@ export default function NewTournamentPage() {
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {format === 'groups_playoff' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {GROUPS_OPTS.map(opt => (
-                      <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                          groupsCount === opt.value
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700">{tx.advanceLbl}</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ADVANCE_OPTS.map(opt => (
-                      <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                          teamsAdvance === opt.value
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.groupLegsLbl}</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[1, 2].map((legs, i) => (
-                    <button key={legs} type="button" onClick={() => setNumRounds(legs)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                        numRounds === legs
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}>
-                      {tx.groupLegsOpts[i]}
-                    </button>
-                  ))}
-                </div>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
+                <Settings2 size={13} className="shrink-0 opacity-70" />
+                <span>{tx.groupAdvanceNote}</span>
               </div>
             </div>
           )}
@@ -741,7 +733,7 @@ export default function NewTournamentPage() {
           {filledTeams.length >= minTeamsRequired() && (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
               <Zap size={14} className="shrink-0" />
-              <span className="font-medium">{tx.matchesHint(filledTeams.length, matchCount)}</span>
+              <span className="font-medium">{teamsHint}</span>
             </div>
           )}
           {filledTeams.length < minTeamsRequired() && filledTeams.length > 0 && (
@@ -772,6 +764,80 @@ export default function NewTournamentPage() {
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">{tx.step3.sub}</p>
           </div>
+
+          {/* Format-specific settings (moved here so team count is known) */}
+          {format === 'league_playoff' && (
+            <div className="space-y-4 border-b border-gray-100 pb-5">
+              <p className="text-sm font-black text-gray-800">{tx.leagueSettingsLbl}</p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">{tx.leagueTourLbl}</label>
+                <p className="text-xs text-emerald-600 font-medium">
+                  {filledTeams.length >= 2
+                    ? tx.leagueTourSmartHint(filledTeams.length)
+                    : tx.leagueTourHint}
+                </p>
+                <Input type="number" min={1} value={numRounds}
+                  onChange={e => setNumRounds(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-24 text-center font-mono font-bold" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">{tx.leagueAdvanceLbl}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {LEAGUE_ADVANCE_OPTS.map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                        teamsAdvance === opt.value
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {format === 'groups_playoff' && (
+            <div className="space-y-4 border-b border-gray-100 pb-5">
+              <p className="text-sm font-black text-gray-800">{tx.groupSettingsLbl}</p>
+              {filledTeams.length >= groupsCount && (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5 text-sm text-emerald-700 font-medium">
+                  {tx.groupsCompositionHint(groupsCount, Math.ceil(filledTeams.length / groupsCount))}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">{tx.advanceLbl}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ADVANCE_OPTS.map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                        teamsAdvance === opt.value
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700">{tx.groupLegsLbl}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[1, 2].map((legs, i) => (
+                    <button key={legs} type="button" onClick={() => setNumRounds(legs)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                        numRounds === legs
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}>
+                      {tx.groupLegsOpts[i]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <p className="text-sm font-bold text-gray-700">{tx.logoLbl}</p>

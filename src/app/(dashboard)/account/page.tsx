@@ -167,9 +167,7 @@ export default async function AccountPage() {
                   ))}
                 </ul>
                 <Link
-                  href="https://wa.me/message/YHLE2IFII4MSJ1"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/checkout"
                   className="block bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
                 >
                   Перейти на Про →

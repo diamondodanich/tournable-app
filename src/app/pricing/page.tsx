@@ -172,9 +172,7 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href="https://wa.me/message/YHLE2IFII4MSJ1"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/checkout"
                 className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 rounded-xl transition-colors text-sm shadow-md"
               >
                 Перейти на Про

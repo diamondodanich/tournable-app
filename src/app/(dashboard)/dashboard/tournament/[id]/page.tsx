@@ -1,19 +1,36 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { getUserPlan } from '@/app/actions/billing'
+import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import SetupTab from '@/components/tournament/SetupTab'
-import FixturesTab from '@/components/tournament/FixturesTab'
-import StandingsTab from '@/components/tournament/StandingsTab'
-import StatsTab from '@/components/tournament/StatsTab'
-import PlayoffTab from '@/components/tournament/PlayoffTab'
 import TournamentHeader from '@/components/tournament/TournamentHeader'
 import StandingsTable from '@/components/tournament/StandingsTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
-import ExportReportButton from '@/components/tournament/ExportReportButton'
 import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
+
+// ── Tab skeleton — shown while lazy JS chunk is loading ───────────────────
+function TabSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse pt-1">
+      <div className="h-20 bg-gray-100 rounded-xl" />
+      <div className="h-20 bg-gray-100 rounded-xl" />
+      <div className="h-20 bg-gray-100 rounded-xl" />
+    </div>
+  )
+}
+
+// ── Lazy-loaded heavy client components ───────────────────────────────────
+const FixturesTab       = dynamic(() => import('@/components/tournament/FixturesTab'),   { loading: () => <TabSkeleton /> })
+const StandingsTab      = dynamic(() => import('@/components/tournament/StandingsTab'),  { loading: () => <TabSkeleton /> })
+const PlayoffTab        = dynamic(() => import('@/components/tournament/PlayoffTab'),    { loading: () => <TabSkeleton /> })
+const StatsTab          = dynamic(() => import('@/components/tournament/StatsTab'),      { loading: () => <TabSkeleton /> })
+const ExportReportButton = dynamic(() => import('@/components/tournament/ExportReportButton'), {
+  ssr: false,
+  loading: () => <div className="h-8 w-44 bg-gray-100 rounded-lg animate-pulse" />,
+})
 
 // ── Inline stats helper for server-rendered PDF export ────────────────────
 function buildStats(teams: Team[], events: MatchEvent[], type: string) {

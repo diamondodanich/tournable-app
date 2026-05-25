@@ -6,7 +6,7 @@ import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil, Lock } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Lock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
@@ -444,7 +444,9 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">
-          <Check size={13} className="mr-1.5" />
+          {saving
+            ? <Loader2 size={13} className="mr-1.5 animate-spin" />
+            : <Check size={13} className="mr-1.5" />}
           {saving ? 'Сохраняем…' : 'Сохранить результат'}
         </Button>
       </div>

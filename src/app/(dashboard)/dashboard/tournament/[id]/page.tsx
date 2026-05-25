@@ -28,7 +28,6 @@ const StandingsTab      = dynamic(() => import('@/components/tournament/Standing
 const PlayoffTab        = dynamic(() => import('@/components/tournament/PlayoffTab'),    { loading: () => <TabSkeleton /> })
 const StatsTab          = dynamic(() => import('@/components/tournament/StatsTab'),      { loading: () => <TabSkeleton /> })
 const ExportReportButton = dynamic(() => import('@/components/tournament/ExportReportButton'), {
-  ssr: false,
   loading: () => <div className="h-8 w-44 bg-gray-100 rounded-lg animate-pulse" />,
 })
 

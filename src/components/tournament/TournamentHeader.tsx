@@ -15,9 +15,10 @@ interface Props {
 }
 
 const FORMAT_LABEL: Record<string, string> = {
-  round_robin: 'Круговой турнир',
-  playoff: 'Плей-офф',
-  group_playoff: 'Группы + плей-офф',
+  round_robin:    'Круговой турнир',
+  playoff:        'Плей-офф',
+  groups_playoff: 'Групповой этап + Плей-офф',
+  league_playoff: 'Лига + Плей-офф',
 }
 
 export default function TournamentHeader({ tournament, isOwner = true, members = [] }: Props) {
@@ -29,7 +30,16 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
 
   const formatDesc = (() => {
     const base = FORMAT_LABEL[tournament.format] ?? tournament.format
-    if (tournament.format === 'round_robin') return `${base} · ${tournament.num_rounds} ${tournament.num_rounds === 1 ? 'круг' : 'круга'}`
+    if (tournament.format === 'round_robin') {
+      const n = tournament.num_rounds
+      return `${base} · ${n} ${n === 1 ? 'круг' : n < 5 ? 'круга' : 'кругов'}`
+    }
+    if (tournament.format === 'groups_playoff' && tournament.groups_count) {
+      return `${base} · ${tournament.groups_count} групп`
+    }
+    if (tournament.format === 'league_playoff' && tournament.teams_advance) {
+      return `${base} · ${tournament.teams_advance} команд в плей-офф`
+    }
     return base
   })()
 

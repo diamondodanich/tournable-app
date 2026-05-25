@@ -2,6 +2,12 @@
 
 # Project Rules
 
+## Language — Russian Only
+All chat responses, reports, and instructions MUST be in Russian.
+Technical terms (component names, library names, CLI commands, file paths, etc.) may remain in their original form.
+
+
+
 ## No Emojis — Ever
 NEVER use emojis anywhere in this codebase: not in UI text, not in data/arrays, not in JSX, not in comments.
 Replace any emoji with a premium visual element instead:

@@ -16,8 +16,8 @@ const T = {
     label: 'RU',
     nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Мои турниры' },
     hero: {
-      badge: 'Для футбола, FIFA и любого командного спорта',
-      h1: ['Забудьте про Excel.', 'Организуйте турнир', 'за 30 секунд.'],
+      badge: 'Для любого командного спорта',
+      h1: ['Профессиональный турнир.', 'Организуйте', 'за 30 секунд.'],
       sub: 'Расписание строится само. Участники следят за счётом по ссылке без регистрации. Статистика в реальном времени. Вы просто проводите турнир.',
       cta: 'Начать бесплатно', cta2: 'Смотреть возможности',
       proof: [['Бесплатный план', 'навсегда'], ['Первый турнир', 'за 30 секунд'], ['Карта', 'не нужна']],
@@ -45,10 +45,10 @@ const T = {
     },
     features: {
       tag: 'Возможности',
-      h2: 'Платформа.\nНе Excel.',
-      sub: 'Всё что раньше занимало часы — теперь секунды. Из коробки, без формул и ручного счёта.',
+      h2: 'Всё для турнира.\nИз коробки.',
+      sub: 'Всё что раньше занимало часы — теперь секунды. Без ручного счёта и формул.',
       items: [
-        { title: 'Расписание за 30 секунд', desc: 'Выбери формат, добавь команды — все матчи готовы автоматически. Круговой, плей-офф, Лига чемпионов, Чемпионат мира.' },
+        { title: 'Расписание за 30 секунд', desc: 'Выбери формат, добавь команды — все матчи готовы автоматически. Круговой, плей-офф, групповой этап, лига с плей-офф.' },
         { title: 'Живое табло для всех', desc: 'Голы с телефона — счёт у всех мгновенно. Никто больше не ждёт скрина из WhatsApp. Просто ссылка.' },
         { title: 'Статистика без рук', desc: 'Очки, разница мячей, бомбардиры — пересчитываются сами после каждого матча. Всегда актуально.' },
         { title: 'Плей-офф — одним кликом', desc: 'Победители переходят дальше автоматически. До 64 команд, от 1/8 до финала.' },
@@ -56,7 +56,7 @@ const T = {
         { title: 'PDF и PNG за секунду', desc: 'Таблица, сетка, статистика — готовы к печати, в чат или в Инстаграм. Один клик — всё готово.' },
       ],
       sportsLabel: 'Работает для любого командного спорта',
-      sports: ['Футбол', 'FIFA', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Киберспорт'],
+      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Бадминтон'],
     },
     pricing: {
       h2: 'Бесплатно — навсегда.\nПро — когда будете готовы.',
@@ -101,8 +101,8 @@ const T = {
     label: 'KZ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Менің турнирларым' },
     hero: {
-      badge: 'Футбол, FIFA және кез келген командалық спорт үшін',
-      h1: ['Excel-ді ұмытыңыз.', 'Турнирді 30 секундта', 'ұйымдастырыңыз.'],
+      badge: 'Кез келген командалық спорт үшін',
+      h1: ['Кәсіби турнир.', 'Турнирді 30 секундта', 'ұйымдастырыңыз.'],
       sub: 'Кесте өздігінен жасалады. Қатысушылар сілтеме арқылы тіркелусіз есепті қарайды. Статистика нақты уақытта жаңарады. Сіз тек турнирді өткізесіз.',
       cta: 'Тегін бастау', cta2: 'Мүмкіндіктерді қарау',
       proof: [['Тегін жоспар', 'мәңгі'], ['Бірінші турнир', '30 секундта'], ['Карта', 'қажет емес']],
@@ -130,10 +130,10 @@ const T = {
     },
     features: {
       tag: 'Мүмкіндіктер',
-      h2: 'Платформа.\nExcel емес.',
+      h2: 'Турнир үшін бәрі.\nДайын күйде.',
       sub: 'Бұрын сағат алатын нәрсе — енді секундтар. Формуласыз және қолмен есептеусіз.',
       items: [
-        { title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты дайын. Дөңгелек, плей-офф, Чемпиондар лигасы, Әлем чемпионаты.' },
+        { title: '30 секундта кесте', desc: 'Форматты таңдаңыз, командалар қосыңыз — барлық матчтар автоматты дайын. Дөңгелек, плей-офф, топтық кезең, лига + плей-офф.' },
         { title: 'Барлығына тірі тақта', desc: 'Телефоннан голдар — есеп барлығына лезде. Ешкім WhatsApp скриншотын күтпейді. Тек сілтеме.' },
         { title: 'Статистика өздігінен', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — әр матчтан кейін өздігінен есептеледі. Әрқашан өзекті.' },
         { title: 'Плей-офф — бір шертумен', desc: 'Жеңімпаздар автоматты алға өтеді. 64 командаға дейін, 1/8-ден финалға дейін.' },
@@ -141,7 +141,7 @@ const T = {
         { title: 'PDF және PNG бір секундта', desc: 'Кесте, тор, статистика — басып шығаруға, чатқа немесе Инстаграмға дайын. Бір шерту — бәрі дайын.' },
       ],
       sportsLabel: 'Кез келген командалық спорт үшін жұмыс істейді',
-      sports: ['Футбол', 'FIFA', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тенисі', 'Киберспорт'],
+      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тенисі', 'Бадминтон'],
     },
     pricing: {
       h2: 'Тегін — мәңгі.\nПро — дайын болғанда.',
@@ -186,8 +186,8 @@ const T = {
     label: 'EN',
     nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'My Tournaments' },
     hero: {
-      badge: 'For football, FIFA and any team sport',
-      h1: ['Forget Excel.', 'Set up your tournament', 'in 30 seconds.'],
+      badge: 'For any team sport',
+      h1: ['Professional tournaments.', 'Set up yours', 'in 30 seconds.'],
       sub: 'The schedule builds itself. Participants follow the score via a link — no sign-up needed. Stats update in real time. You just run the game.',
       cta: 'Start for free', cta2: 'See how it works',
       proof: [['Free plan', 'forever'], ['First tournament', 'in 30 seconds'], ['No card', 'required']],
@@ -215,10 +215,10 @@ const T = {
     },
     features: {
       tag: 'Features',
-      h2: 'Platform.\nNot Excel.',
-      sub: 'Everything that used to take hours now takes seconds. Out of the box, no formulas, no manual counting.',
+      h2: 'Everything for your tournament.\nOut of the box.',
+      sub: 'Everything that used to take hours now takes seconds. No formulas, no manual counting.',
       items: [
-        { title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches ready automatically. Round-robin, playoff, Champions League, World Cup.' },
+        { title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — all matches ready automatically. Round-robin, playoff, group stage, league with playoff.' },
         { title: 'Live scoreboard for everyone', desc: 'Enter goals on your phone — everyone gets the update instantly. No one waits for a WhatsApp screenshot. Just a link.' },
         { title: 'Stats that update themselves', desc: 'Points, goal difference, top scorers — recalculated after every match. Always accurate, always live.' },
         { title: 'Playoff in one click', desc: 'Winners advance automatically. Up to 64 teams, from round of 16 to the final.' },
@@ -226,7 +226,7 @@ const T = {
         { title: 'PDF & PNG in one second', desc: 'Standings, bracket, stats — ready for print, chat or Instagram. One click and it\'s done.' },
       ],
       sportsLabel: 'Works for any team sport',
-      sports: ['Football', 'FIFA', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Esports'],
+      sports: ['Football', 'Futsal', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Badminton'],
     },
     pricing: {
       h2: 'Free — forever.\nPro — when you\'re ready.',

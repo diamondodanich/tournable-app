@@ -41,6 +41,11 @@ export default function StandingsTab({
             pointsWin={tournament?.points_win}
             pointsDraw={tournament?.points_draw}
             pointsLoss={tournament?.points_loss}
+            playoffZone={
+              tournament?.format === 'league_playoff' && tournament.teams_advance
+                ? tournament.teams_advance
+                : undefined
+            }
           />
         </div>
       </div>

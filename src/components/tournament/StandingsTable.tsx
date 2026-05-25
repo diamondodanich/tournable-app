@@ -46,67 +46,93 @@ const FORM_LABELS = { W: 'В', D: 'Н', L: 'П' }
 
 export default function StandingsTable({
   teams, fixtures, pointsWin, pointsDraw, pointsLoss,
+  playoffZone,
 }: {
   teams: Team[]
   fixtures: Fixture[]
   pointsWin?: number
   pointsDraw?: number
   pointsLoss?: number
+  /** Количество команд, выходящих в плей-офф (показывает разделительную линию) */
+  playoffZone?: number
 }) {
   const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss })
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow className="bg-emerald-50">
-          <TableHead className="w-10 text-center text-emerald-700">#</TableHead>
-          <TableHead className="text-emerald-700">Команда</TableHead>
-          <TableHead className="text-center text-emerald-700 w-10">И</TableHead>
-          <TableHead className="text-center text-emerald-700 w-10">В</TableHead>
-          <TableHead className="text-center text-emerald-700 w-10">Н</TableHead>
-          <TableHead className="text-center text-emerald-700 w-10">П</TableHead>
-          <TableHead className="text-center text-emerald-700">Форма</TableHead>
-          <TableHead className="text-center text-emerald-700 w-12">ЗМ</TableHead>
-          <TableHead className="text-center text-emerald-700 w-12">ПМ</TableHead>
-          <TableHead className="text-center text-emerald-700 w-12">РМ</TableHead>
-          <TableHead className="text-center text-emerald-700 w-12 font-black">О</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((r, i) => (
-          <TableRow key={r.teamId} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-            <TableCell className="text-center font-bold text-gray-500">{i + 1}</TableCell>
-            <TableCell className="font-bold text-gray-900">
-              <div className="flex items-center gap-2">
-                <TeamAvatar name={r.name} logoUrl={r.logoUrl} size={22} />
-                {r.name}
-              </div>
-            </TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.GP}</TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.W}</TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.D}</TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.L}</TableCell>
-            <TableCell className="text-center">
-              <div className="flex gap-0.5 justify-center">
-                {Array.from({ length: 5 }).map((_, j) => {
-                  const res = r.form.slice(-5)[j]
-                  return (
-                    <span key={j} className={`w-4 h-4 rounded text-white text-[9px] font-black flex items-center justify-center ${res ? FORM_COLORS[res] : 'bg-gray-100'}`}>
-                      {res ? FORM_LABELS[res] : '·'}
-                    </span>
-                  )
-                })}
-              </div>
-            </TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.GF}</TableCell>
-            <TableCell className="text-center font-mono text-sm">{r.GA}</TableCell>
-            <TableCell className={`text-center font-mono text-sm font-bold ${r.GD > 0 ? 'text-emerald-600' : r.GD < 0 ? 'text-red-500' : ''}`}>
-              {r.GD > 0 ? `+${r.GD}` : r.GD}
-            </TableCell>
-            <TableCell className="text-center font-black text-emerald-700 text-base">{r.Pts}</TableCell>
+    <div>
+      {playoffZone && playoffZone > 0 && (
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Плей-офф</span>
+          <span className="text-[11px] text-gray-400">— топ {playoffZone} команд</span>
+        </div>
+      )}
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-emerald-50">
+            <TableHead className="w-10 text-center text-emerald-700">#</TableHead>
+            <TableHead className="text-emerald-700">Команда</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">И</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">В</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">Н</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">П</TableHead>
+            <TableHead className="text-center text-emerald-700">Форма</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">ЗМ</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">ПМ</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">РМ</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12 font-black">О</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((r, i) => {
+            const isLastInZone = playoffZone && i === playoffZone - 1
+            const isInZone     = playoffZone && i < playoffZone
+            return (
+              <TableRow
+                key={r.teamId}
+                className={[
+                  i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                  isInZone ? 'border-l-2 border-l-emerald-400' : '',
+                  isLastInZone ? 'border-b-2 border-b-emerald-300' : '',
+                ].join(' ')}
+              >
+                <TableCell className="text-center font-bold text-gray-500">{i + 1}</TableCell>
+                <TableCell className="font-bold text-gray-900">
+                  <div className="flex items-center gap-2">
+                    <TeamAvatar name={r.name} logoUrl={r.logoUrl} size={22} />
+                    <span>{r.name}</span>
+                    {isInZone && (
+                      <span className="ml-auto shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400" title="Выходит в плей-офф" />
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.GP}</TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.W}</TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.D}</TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.L}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex gap-0.5 justify-center">
+                    {Array.from({ length: 5 }).map((_, j) => {
+                      const res = r.form.slice(-5)[j]
+                      return (
+                        <span key={j} className={`w-4 h-4 rounded text-white text-[9px] font-black flex items-center justify-center ${res ? FORM_COLORS[res] : 'bg-gray-100'}`}>
+                          {res ? FORM_LABELS[res] : '·'}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.GF}</TableCell>
+                <TableCell className="text-center font-mono text-sm">{r.GA}</TableCell>
+                <TableCell className={`text-center font-mono text-sm font-bold ${r.GD > 0 ? 'text-emerald-600' : r.GD < 0 ? 'text-red-500' : ''}`}>
+                  {r.GD > 0 ? `+${r.GD}` : r.GD}
+                </TableCell>
+                <TableCell className="text-center font-black text-emerald-700 text-base">{r.Pts}</TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

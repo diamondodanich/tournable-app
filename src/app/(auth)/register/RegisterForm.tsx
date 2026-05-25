@@ -13,7 +13,7 @@ type Lang = 'ru' | 'kz' | 'en'
 
 const T = {
   ru: {
-    tagline: 'Профессиональные турниры — без Excel',
+    tagline: 'Профессиональные турниры — в вашем телефоне',
     title: 'Создайте аккаунт — это бесплатно',
     email: 'Email', emailPh: 'Введите email',
     password: 'Пароль', passwordPh: 'Придумайте пароль',
@@ -25,7 +25,7 @@ const T = {
     tooShort: 'Пароль должен быть не менее 6 символов',
   },
   kz: {
-    tagline: 'Кәсіби турнирлер — Excel-сіз',
+    tagline: 'Кәсіби турнирлер — телефоныңызда',
     title: 'Аккаунт жасаңыз — бұл тегін',
     email: 'Email', emailPh: 'Email енгізіңіз',
     password: 'Құпия сөз', passwordPh: 'Құпия сөз ойлап табыңыз',
@@ -37,7 +37,7 @@ const T = {
     tooShort: 'Құпия сөз кемінде 6 таңбадан тұруы керек',
   },
   en: {
-    tagline: 'Professional tournaments — without Excel',
+    tagline: 'Professional tournaments — at your fingertips',
     title: 'Create your account — it\'s free',
     email: 'Email', emailPh: 'Enter your email',
     password: 'Password', passwordPh: 'Create a password',

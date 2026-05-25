@@ -13,7 +13,7 @@ type Lang = 'ru' | 'kz' | 'en'
 
 const T = {
   ru: {
-    tagline: 'Профессиональные турниры — без Excel',
+    tagline: 'Профессиональные турниры — в вашем телефоне',
     title: 'Войдите в Tournable',
     email: 'Email', emailPh: 'Введите email',
     password: 'Пароль', passwordPh: 'Введите пароль',
@@ -23,7 +23,7 @@ const T = {
     registerHref: '/register',
   },
   kz: {
-    tagline: 'Кәсіби турнирлер — Excel-сіз',
+    tagline: 'Кәсіби турнирлер — телефоныңызда',
     title: 'Tournable-ге кіріңіз',
     email: 'Email', emailPh: 'Email енгізіңіз',
     password: 'Құпия сөз', passwordPh: 'Құпия сөзді енгізіңіз',
@@ -33,7 +33,7 @@ const T = {
     registerHref: '/register?lang=kz',
   },
   en: {
-    tagline: 'Professional tournaments — without Excel',
+    tagline: 'Professional tournaments — at your fingertips',
     title: 'Sign in to Tournable',
     email: 'Email', emailPh: 'Enter your email',
     password: 'Password', passwordPh: 'Enter your password',

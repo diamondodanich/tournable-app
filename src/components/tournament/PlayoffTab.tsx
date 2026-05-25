@@ -595,7 +595,11 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
           {isPlaceholderOnly
-            ? 'Места будут определены после группового / лигового этапа'
+            ? fmt === 'league_playoff'
+              ? 'Места определяются по итогам Этапа лиги'
+              : fmt === 'groups_playoff'
+                ? 'Места определяются по итогам Группового этапа'
+                : 'Места ещё не определены'
             : `Сыграно ${played} из ${total} матчей`}
         </p>
         {/* "Пересоздать" only for pure playoff format */}

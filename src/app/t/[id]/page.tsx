@@ -177,7 +177,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <TabsTrigger value="stats">Статистика</TabsTrigger>
             </TabsList>
             <TabsContent value="standings">
-              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} />
+              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
             <TabsContent value="fixtures">
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
@@ -198,7 +198,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <TabsTrigger value="stats">Статистика</TabsTrigger>
             </TabsList>
             <TabsContent value="standings">
-              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} />
+              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
             <TabsContent value="fixtures">
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />

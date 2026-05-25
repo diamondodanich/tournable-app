@@ -149,7 +149,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const showStandingsTab = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format  // unified standings table
   const showPlayoffTab   = fmt !== 'round_robin'                                      // playoff, groups_playoff, league_playoff
   // Label for fixtures tab varies by format
-  const fixturesTabLabel = fmt === 'groups_playoff' ? 'Групп. этап' : 'Матчи'
+  const fixturesTabLabel = fmt === 'groups_playoff' ? 'Групповой этап' : fmt === 'league_playoff' ? 'Этап лиги' : 'Матчи'
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),

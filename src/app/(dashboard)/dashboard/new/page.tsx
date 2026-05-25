@@ -202,17 +202,17 @@ const FORMATS: { value: Format; icon: React.ElementType }[] = [
 ]
 
 const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
-  round_robin:    { ru: 'Круговой',          kz: 'Айналмалы',           en: 'Round-robin' },
-  playoff:        { ru: 'Плей-офф',          kz: 'Плей-офф',            en: 'Playoff' },
-  groups_playoff: { ru: 'Группы + Плей-офф', kz: 'Топтар + Плей-офф',   en: 'Groups + Playoff' },
-  league_playoff: { ru: 'Лига + Плей-офф',   kz: 'Лига + Плей-офф',     en: 'League + Playoff' },
+  round_robin:    { ru: 'Круговой',              kz: 'Айналмалы',               en: 'Round-robin' },
+  playoff:        { ru: 'Плей-офф',              kz: 'Плей-офф',                en: 'Playoff' },
+  groups_playoff: { ru: 'Групповой + Плей-офф',  kz: 'Топтар + Плей-офф',       en: 'Groups + Playoff' },
+  league_playoff: { ru: 'Лига + Плей-офф',       kz: 'Лига + Плей-офф',         en: 'League + Playoff' },
 }
 
 const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
-  round_robin:    { ru: 'Каждая команда играет с каждой. Идеально для лиг.',              kz: 'Барлығы барлығымен ойнайды. Лигаларға өте қолайлы.',         en: 'Every team plays each other. Perfect for leagues.' },
-  playoff:        { ru: 'Сетка на выбывание. Идеально для кубков.',                       kz: 'Жою сеткасы. Кубоктарға өте қолайлы.',                      en: 'Elimination bracket. Perfect for cups.' },
-  groups_playoff: { ru: 'Групповой этап, затем плей-офф. Формат ЧМ и старой ЛЧ.',           kz: 'Топ кезеңі, содан кейін плей-офф. ЧА және ескі ЧЛ форматы.', en: 'Group stage then playoff. World Cup & classic UCL format.' },
-  league_playoff: { ru: 'Единая таблица, топ команды выходят в плей-офф. Новая ЛЧ 2024+.', kz: 'Бір кесте, үздік командалар плей-оффқа шығады. Жаңа ЧЛ 2024+.', en: 'Single table, top teams advance to knockout. New UCL 2024+ format.' },
+  round_robin:    { ru: 'Каждая команда играет с каждой. Идеально для лиг и чемпионатов.',           kz: 'Барлығы барлығымен ойнайды. Лигалар мен чемпионаттарға өте қолайлы.',   en: 'Every team plays each other. Ideal for leagues and championships.' },
+  playoff:        { ru: 'Сетка на выбывание. Идеально для кубков и разовых турниров.',               kz: 'Жою сеткасы. Кубоктар мен бір реттік турнирлерге өте қолайлы.',         en: 'Elimination bracket. Perfect for cups and single-event tournaments.' },
+  groups_playoff: { ru: 'Командки делятся на группы, потом лучшие встречаются в плей-офф.',          kz: 'Командалар топтарға бөлінеді, содан кейін үздіктер плей-оффта кездеседі.', en: 'Teams split into groups, then the best meet in a playoff bracket.' },
+  league_playoff: { ru: 'Все играют в единой таблице, топ команды выходят в плей-офф.',             kz: 'Барлығы бір кестеде ойнайды, үздік командалар плей-оффқа шығады.',      en: 'All teams play in one table, top teams advance to playoff bracket.' },
 }
 
 // ─── Image helpers ────────────────────────────────────────────────────────────

@@ -86,8 +86,12 @@ const T = {
     groupAdvanceNote: 'Выход из групп и количество матчей настроите на следующем шаге',
     groupsCompositionHint: (groups: number, perGroup: number) => `${groups} групп × до ${perGroup} команд в каждой`,
     playoffHint: (teams: number) => `${teams} команд — сетка на выбывание`,
-    groupsHint: (teams: number, groups: number) => `${teams} команд — ${groups} групп`,
-    leagueHint: (teams: number) => `${teams} команд — таблица + плей-офф`,
+    groupsHint: (teams: number, groups: number) => {
+      const n = groups % 10
+      const form = (n >= 2 && n <= 4) ? 'группы' : 'групп'
+      return `${teams} команд — ${groups} ${form}`
+    },
+    leagueHint: (teams: number) => `${teams} команд — Лига + Плей-офф`,
   },
   kz: {
     back: 'Менің турнирларым',
@@ -151,7 +155,8 @@ const T = {
     groupsCompositionHint: (groups: number, perGroup: number) => `${groups} топ × ${perGroup} командаға дейін`,
     playoffHint: (teams: number) => `${teams} команда — жою сеткасы`,
     groupsHint: (teams: number, groups: number) => `${teams} команда — ${groups} топ`,
-    leagueHint: (teams: number) => `${teams} команда — кесте + плей-офф`,
+
+    leagueHint: (teams: number) => `${teams} команда — Лига + Плей-офф`,
   },
   en: {
     back: 'My Tournaments',
@@ -430,6 +435,11 @@ export default function NewTournamentPage() {
     // Smart default: for league_playoff set N-1 matchdays based on actual team count
     if (format === 'league_playoff' && numRounds === 5 && filledTeams.length >= 2) {
       setNumRounds(filledTeams.length - 1)
+    }
+    // Bug fix: teamsAdvance must be less than total teams
+    if (format === 'league_playoff' && teamsAdvance >= filledTeams.length) {
+      const validOpts = [2, 4, 8, 16].filter(v => v < filledTeams.length)
+      setTeamsAdvance(validOpts.length > 0 ? validOpts[validOpts.length - 1] : 2)
     }
     setError(null); setStep(3)
   }
@@ -783,7 +793,7 @@ export default function NewTournamentPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700">{tx.leagueAdvanceLbl}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {LEAGUE_ADVANCE_OPTS.map(opt => (
+                  {LEAGUE_ADVANCE_OPTS.filter(opt => opt.value < filledTeams.length).map(opt => (
                     <button key={opt.value} type="button" onClick={() => setTeamsAdvance(opt.value)}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
                         teamsAdvance === opt.value
@@ -793,6 +803,9 @@ export default function NewTournamentPage() {
                       {opt.label}
                     </button>
                   ))}
+                  {LEAGUE_ADVANCE_OPTS.filter(opt => opt.value < filledTeams.length).length === 0 && (
+                    <p className="text-xs text-amber-600">Добавьте больше команд для настройки плей-офф</p>
+                  )}
                 </div>
               </div>
             </div>

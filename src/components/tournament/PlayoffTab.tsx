@@ -7,7 +7,7 @@ import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
@@ -350,67 +350,82 @@ function PlayoffMatchCard({
   const awayRows = buildRows(match.away_team_id ?? '', events)
 
   return (
-    <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[300px] ${
-      isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
+    <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[260px] ${
+      isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-dashed border-gray-200 bg-gray-50/40'
     }`}>
       {showUpgrade && (
         <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
       )}
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-2.5">
-        <div>
-          {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>}
-          {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />LIVE</Badge>}
-          {status === 'scheduled'&& <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>}
+      {/* ── Header (only shown when match has teams or is in progress) ── */}
+      {(isReady || status === 'finished' || status === 'live') && (
+        <div className="flex items-center justify-between mb-2.5">
+          <div>
+            {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>}
+            {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />LIVE</Badge>}
+            {status === 'scheduled' && isReady && <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {status === 'live' && (
+              <Link href={`/t/${tournamentId}/live?playoff=${match.id}&home=${match.home_team_id}&away=${match.away_team_id}`} target="_blank"
+                className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-full transition-colors">
+                <Radio size={10} /> Табло
+              </Link>
+            )}
+            {status === 'scheduled' && isReady && (
+              <button onClick={handleStart} disabled={starting}
+                className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${
+                  isPro
+                    ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
+                    : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
+                }`}>
+                {isPro ? <Play size={10} /> : <Lock size={10} />}
+                {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
+              </button>
+            )}
+            {status === 'finished' && isEditing && (
+              <button onClick={() => setIsEditing(false)}
+                className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2 py-0.5 rounded-full transition-colors">
+                ← Просмотр
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          {status === 'live' && (
-            <Link href={`/t/${tournamentId}/live?playoff=${match.id}&home=${match.home_team_id}&away=${match.away_team_id}`} target="_blank"
-              className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-full transition-colors">
-              <Radio size={10} /> Табло
-            </Link>
-          )}
-          {status === 'scheduled' && isReady && (
-            <button onClick={handleStart} disabled={starting}
-              className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${
-                isPro
-                  ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
-                  : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
-              }`}>
-              {isPro ? <Play size={10} /> : <Lock size={10} />}
-              {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
-            </button>
-          )}
-          {status === 'finished' && isEditing && (
-            <button onClick={() => setIsEditing(false)}
-              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2 py-0.5 rounded-full transition-colors">
-              ← Просмотр
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* ── Score row (computed, read-only) ── */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex items-center gap-1.5">
-          {homeTeam && <TeamAvatar name={homeTeam.name} logoUrl={homeTeam.logo_url} size={22} />}
-          <span className={`font-bold text-sm ${homeTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
-            {homeTeam?.name ?? homeLabel ?? 'TBD'}
+      {/* ── Score row ── */}
+      {!homeTeam && !awayTeam ? (
+        // Placeholder state: show seed labels as pills
+        <div className="flex items-center justify-between gap-2 py-2">
+          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full leading-none shrink-0">
+            {homeLabel ?? 'TBD'}
+          </span>
+          <span className="text-[10px] text-gray-300 font-black tracking-widest">VS</span>
+          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full leading-none shrink-0">
+            {awayLabel ?? 'TBD'}
           </span>
         </div>
-        <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
-          scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
-        }`}>
-          {scoreHome} – {scoreAway}
+      ) : (
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {homeTeam && <TeamAvatar name={homeTeam.name} logoUrl={homeTeam.logo_url} size={22} />}
+            <span className={`font-bold text-sm truncate ${homeTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+              {homeTeam?.name ?? homeLabel ?? 'TBD'}
+            </span>
+          </div>
+          <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
+            scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
+          }`}>
+            {scoreHome} – {scoreAway}
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+            <span className={`font-bold text-sm text-right truncate ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+              {awayTeam?.name ?? awayLabel ?? 'TBD'}
+            </span>
+            {awayTeam && <TeamAvatar name={awayTeam.name} logoUrl={awayTeam.logo_url} size={22} />}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 justify-end">
-          <span className={`font-bold text-sm text-right ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
-            {awayTeam?.name ?? awayLabel ?? 'TBD'}
-          </span>
-          {awayTeam && <TeamAvatar name={awayTeam.name} logoUrl={awayTeam.logo_url} size={22} />}
-        </div>
-      </div>
+      )}
 
       {/* ── Events columns ── */}
       {isReady && (
@@ -592,29 +607,32 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {isPlaceholderOnly
-            ? fmt === 'league_playoff'
-              ? 'Места определяются по итогам Этапа лиги'
-              : fmt === 'groups_playoff'
-                ? 'Места определяются по итогам Группового этапа'
-                : 'Места ещё не определены'
-            : `Сыграно ${played} из ${total} матчей`}
-        </p>
-        {/* "Пересоздать" only for pure playoff format */}
-        {fmt === 'playoff' && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="gap-2 text-xs"
-          >
-            <RefreshCw size={12} /> {generating ? '…' : 'Пересоздать'}
-          </Button>
-        )}
-      </div>
+      {isPlaceholderOnly ? (
+        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <Clock size={18} className="text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-amber-800">
+              {fmt === 'league_playoff' ? 'Ожидаем завершения Этапа лиги' : 'Ожидаем завершения Группового этапа'}
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              {fmt === 'league_playoff'
+                ? 'Участники плей-офф определятся по итогам турнирной таблицы'
+                : 'Участники плей-офф определятся по итогам групповых матчей'}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">{`Сыграно ${played} из ${total} матчей`}</p>
+          {fmt === 'playoff' && (
+            <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating} className="gap-2 text-xs">
+              <RefreshCw size={12} /> {generating ? '…' : 'Пересоздать'}
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-6 min-w-max">

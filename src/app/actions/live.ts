@@ -3,6 +3,29 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+// Проверяет план ВЛАДЕЛЬЦА турнира
+async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro'> {
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('user_id')
+    .eq('id', tournamentId)
+    .maybeSingle()
+
+  if (!tournament) return 'free'
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at')
+    .eq('id', tournament.user_id)
+    .maybeSingle()
+
+  if (!data) return 'free'
+  if (data.plan === 'pro') {
+    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
+  }
+  return 'free'
+}
+
 async function getOwnerOrEditorCheck(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tournamentId: string
@@ -40,6 +63,10 @@ export async function initLiveGame(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+
+  // Live-табло — только для тарифа Про (проверяем план владельца турнира)
+  const ownerPlan = await getOwnerPlan(supabase, tournamentId)
+  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
   const { error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,

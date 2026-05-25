@@ -20,6 +20,18 @@ async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, u
   return 'free'
 }
 
+// Проверяет план ВЛАДЕЛЬЦА турнира (не текущего пользователя — он может быть редактором)
+async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string) {
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('user_id')
+    .eq('id', tournamentId)
+    .maybeSingle()
+
+  if (!tournament) return 'free'
+  return getUserPlan(supabase, tournament.user_id)
+}
+
 export async function createTournament(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -443,6 +455,10 @@ export async function startFixture(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
+
+  // Live-табло — только для тарифа Про (проверяем план владельца турнира)
+  const ownerPlan = await getOwnerPlan(supabase, tournamentId)
+  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
   // Mark fixture as live
   const { error: fe } = await supabase

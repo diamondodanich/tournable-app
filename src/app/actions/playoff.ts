@@ -4,6 +4,29 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { generatePlayoffBracket } from '@/lib/tournament/playoff'
 
+// Проверяет план ВЛАДЕЛЬЦА турнира
+async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro'> {
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('user_id')
+    .eq('id', tournamentId)
+    .maybeSingle()
+
+  if (!tournament) return 'free'
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at')
+    .eq('id', tournament.user_id)
+    .maybeSingle()
+
+  if (!data) return 'free'
+  if (data.plan === 'pro') {
+    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
+  }
+  return 'free'
+}
+
 export async function generatePlayoff(tournamentId: string) {
   const supabase = await createClient()
 
@@ -69,6 +92,10 @@ export async function startPlayoffMatch(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
+
+  // Live-табло — только для тарифа Про (проверяем план владельца турнира)
+  const ownerPlan = await getOwnerPlan(supabase, tournamentId)
+  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
   // Use existing match scores if already recorded via card edit
   const { data: existingMatch } = await supabase

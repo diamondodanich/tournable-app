@@ -33,6 +33,7 @@ const T = {
     step3: { title: 'Настройки', sub: 'Шаг 3 из 4 — параметры формата и правила матча' },
     step4: { title: 'Всё готово!', sub: 'Шаг 4 из 4 — подтвердите и запустите' },
     nameLbl: 'Название', namePh: 'например: Кубок компании 2026',
+    sportLbl: 'Вид спорта',
     formatLbl: 'Формат',
     roundsLbl: 'Количество кругов',
     groupsLbl: 'Количество групп',
@@ -101,6 +102,7 @@ const T = {
     step3: { title: 'Параметрлер', sub: '4-тен 3-қадам — формат параметрлері және матч ережелері' },
     step4: { title: 'Дайын!', sub: '4-тен 4-қадам — растаңыз және іске қосыңыз' },
     nameLbl: 'Атауы', namePh: 'мысалы: Компания кубогы 2026',
+    sportLbl: 'Спорт түрі',
     formatLbl: 'Формат',
     roundsLbl: 'Айналым саны',
     groupsLbl: 'Топтар саны',
@@ -166,6 +168,7 @@ const T = {
     step3: { title: 'Settings', sub: 'Step 3 of 4 — format settings and match rules' },
     step4: { title: 'Ready!', sub: 'Step 4 of 4 — confirm and launch' },
     nameLbl: 'Name', namePh: 'e.g. Company Cup 2026',
+    sportLbl: 'Sport type',
     formatLbl: 'Format',
     roundsLbl: 'Number of rounds',
     groupsLbl: 'Number of groups',
@@ -225,6 +228,71 @@ const T = {
 }
 
 type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
+type Sport  = 'football' | 'futsal' | 'basketball' | 'streetball' | 'volleyball' | 'hockey' | 'other'
+
+const SPORT_DEFAULTS: Record<Sport, { periods: number; duration: number; extraTime: boolean; ptsWin: number; ptsDraw: number; ptsLoss: number }> = {
+  football:   { periods: 2, duration: 45, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
+  futsal:     { periods: 2, duration: 20, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
+  basketball: { periods: 4, duration: 10, extraTime: false, ptsWin: 2, ptsDraw: 0, ptsLoss: 0 },
+  streetball: { periods: 2, duration: 10, extraTime: false, ptsWin: 2, ptsDraw: 0, ptsLoss: 0 },
+  volleyball: { periods: 3, duration: 25, extraTime: false, ptsWin: 3, ptsDraw: 0, ptsLoss: 0 },
+  hockey:     { periods: 3, duration: 20, extraTime: true,  ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
+  other:      { periods: 2, duration: 45, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
+}
+
+const PERIOD_OPTS: Record<Sport, number[]> = {
+  football:   [1, 2],
+  futsal:     [1, 2],
+  basketball: [2, 4],
+  streetball: [1, 2],
+  volleyball: [3, 5],
+  hockey:     [2, 3],
+  other:      [1, 2],
+}
+
+const PERIOD_LABEL: Record<Sport, Record<Lang, string>> = {
+  football:   { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
+  futsal:     { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
+  basketball: { ru: 'Четверти', kz: 'Ширбелтер', en: 'Quarters' },
+  streetball: { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
+  volleyball: { ru: 'Сеты',     kz: 'Сеттер',    en: 'Sets'     },
+  hockey:     { ru: 'Периоды',  kz: 'Кезеңдер',  en: 'Periods'  },
+  other:      { ru: 'Периоды',  kz: 'Кезеңдер',  en: 'Periods'  },
+}
+
+const DURATION_LABEL: Record<Sport, Record<Lang, string>> = {
+  football:   { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
+  futsal:     { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
+  basketball: { ru: 'Длительность четверти',  kz: 'Ширбел ұзақтығы',    en: 'Quarter duration' },
+  streetball: { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
+  volleyball: { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
+  hockey:     { ru: 'Длительность периода',   kz: 'Кезең ұзақтығы',     en: 'Period duration'  },
+  other:      { ru: 'Длительность периода',   kz: 'Кезең ұзақтығы',     en: 'Period duration'  },
+}
+
+const SPORT_LIST: { value: Sport; label: Record<Lang, string>; desc: Record<Lang, string>; color: string; abbr: string }[] = [
+  { value: 'football',   color: 'bg-emerald-500', abbr: 'F',
+    label: { ru: 'Футбол',        kz: 'Футбол',        en: 'Football'     },
+    desc:  { ru: '11×11 · 2×45 мин', kz: '11×11 · 2×45 мин', en: '11v11 · 2×45 min' } },
+  { value: 'futsal',     color: 'bg-teal-500',    abbr: 'MF',
+    label: { ru: 'Мини-футбол',   kz: 'Мини-футбол',   en: 'Futsal'       },
+    desc:  { ru: '5×5 · 2×20 мин',   kz: '5×5 · 2×20 мин',   en: '5v5 · 2×20 min'  } },
+  { value: 'basketball', color: 'bg-orange-500',  abbr: 'B',
+    label: { ru: 'Баскетбол',     kz: 'Баскетбол',     en: 'Basketball'   },
+    desc:  { ru: '5×5 · 4 четв × 10 мин', kz: '5×5 · 4×10 мин', en: '5v5 · 4×10 min' } },
+  { value: 'streetball', color: 'bg-amber-500',   abbr: '3×3',
+    label: { ru: 'Стритбол 3×3',  kz: 'Стритбол 3×3',  en: 'Streetball 3×3' },
+    desc:  { ru: '3×3 · 2×10 мин',   kz: '3×3 · 2×10 мин',   en: '3v3 · 2×10 min'  } },
+  { value: 'volleyball', color: 'bg-blue-500',    abbr: 'V',
+    label: { ru: 'Волейбол',      kz: 'Волейбол',      en: 'Volleyball'   },
+    desc:  { ru: '6×6 · до 5 сетов',  kz: '6×6 · 5 сетке дейін', en: '6v6 · up to 5 sets' } },
+  { value: 'hockey',     color: 'bg-slate-500',   abbr: 'H',
+    label: { ru: 'Хоккей',        kz: 'Хоккей',        en: 'Hockey'       },
+    desc:  { ru: '3 периода × 20 мин', kz: '3×20 мин',     en: '3 periods × 20 min' } },
+  { value: 'other',      color: 'bg-gray-400',    abbr: '...',
+    label: { ru: 'Другое',        kz: 'Басқа',         en: 'Other'        },
+    desc:  { ru: 'Свои правила',     kz: 'Өз ережелер',   en: 'Custom rules' } },
+]
 
 const FORMATS: { value: Format; icon: React.ElementType }[] = [
   { value: 'round_robin',    icon: RotateCcw },
@@ -375,6 +443,7 @@ export default function NewTournamentPage() {
 
   // Step 1
   const [name, setName]           = useState('')
+  const [sport, setSport]         = useState<Sport>('football')
   const [format, setFormat]       = useState<Format>('round_robin')
   const [numRounds, setNumRounds] = useState(2)   // round_robin: circles | league_playoff: matchdays | groups_playoff: legs
   const [groupsCount, setGroupsCount] = useState(4)
@@ -386,6 +455,17 @@ export default function NewTournamentPage() {
     if (newFormat === 'league_playoff') { setNumRounds(5); setTeamsAdvance(8) }
     if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
     if (newFormat === 'playoff')        { setNumRounds(1) }
+  }
+
+  function changeSport(newSport: Sport) {
+    setSport(newSport)
+    const d = SPORT_DEFAULTS[newSport]
+    setMatchPeriods(d.periods)
+    setDurationMins(d.duration)
+    setExtraTime(d.extraTime)
+    setPointsWin(d.ptsWin)
+    setPointsDraw(d.ptsDraw)
+    setPointsLoss(d.ptsLoss)
   }
 
   // Step 2
@@ -508,7 +588,7 @@ export default function NewTournamentPage() {
     const result = await createTournamentWithSetup(name, format, numRounds, orderedNames, {
       matchPeriods, extraTime, matchDurationMins: durationMins,
       pointsWin, pointsDraw, pointsLoss,
-      groupsCount, teamsAdvance,
+      groupsCount, teamsAdvance, sport,
     })
 
     if (result.error === 'PLAN_LIMIT_TOURNAMENTS') { setPlanLimit('tournament'); setLoading(false); return }
@@ -565,6 +645,29 @@ export default function NewTournamentPage() {
             <Input value={name} onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && goToStep2()}
               placeholder={tx.namePh} maxLength={40} autoFocus className="text-base" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-gray-700">{tx.sportLbl}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {SPORT_LIST.map(s => {
+                const active = sport === s.value
+                return (
+                  <button key={s.value} type="button" onClick={() => changeSport(s.value)}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                      active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-[10px] leading-none ${s.color}`}>
+                      {s.abbr}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-bold truncate ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{s.label[lang]}</p>
+                      <p className="text-[11px] text-gray-400 leading-snug truncate">{s.desc[lang]}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -862,10 +965,10 @@ export default function NewTournamentPage() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-bold text-gray-700">{tx.periodsLbl}</p>
+            <p className="text-sm font-bold text-gray-700">{PERIOD_LABEL[sport][lang]}</p>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
-                {[1, 2].map(n => (
+                {PERIOD_OPTS[sport].map(n => (
                   <button key={n} type="button" onClick={() => setMatchPeriods(n)}
                     className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
                       matchPeriods === n ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
@@ -874,27 +977,38 @@ export default function NewTournamentPage() {
                   </button>
                 ))}
               </div>
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <div onClick={() => setExtraTime(v => !v)}
-                  className={`relative rounded-full transition-colors cursor-pointer ${extraTime ? 'bg-emerald-600' : 'bg-gray-200'}`}
-                  style={{ width: 40, height: 22 }}>
-                  <span className="absolute top-0.5 bg-white rounded-full shadow transition-transform"
-                    style={{ left: 2, width: 18, height: 18, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }} />
-                </div>
-                <span className="text-sm text-gray-600">{tx.extraTimeLbl}</span>
-              </label>
+              {sport !== 'volleyball' && (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <div onClick={() => setExtraTime(v => !v)}
+                    className={`relative rounded-full transition-colors cursor-pointer ${extraTime ? 'bg-emerald-600' : 'bg-gray-200'}`}
+                    style={{ width: 40, height: 22 }}>
+                    <span className="absolute top-0.5 bg-white rounded-full shadow transition-transform"
+                      style={{ left: 2, width: 18, height: 18, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }} />
+                  </div>
+                  <span className="text-sm text-gray-600">{tx.extraTimeLbl}</span>
+                </label>
+              )}
             </div>
+            {sport === 'volleyball' && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-xs text-blue-700 leading-relaxed">
+                {lang === 'ru' && 'Счёт матча — количество выигранных сетов (например 3:1, 3:0). Побед нет — нет ничьей.'}
+                {lang === 'kz' && 'Матч есебі — жеңілген сеттер саны (мысалы 3:1, 3:0). Тең болмайды.'}
+                {lang === 'en' && 'Match score = sets won (e.g. 3:1, 3:0). Draws are not possible.'}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-bold text-gray-700">{tx.durationLbl}</p>
-            <div className="flex items-center gap-2">
-              <Input type="number" min={1} max={90} value={durationMins}
-                onChange={e => setDurationMins(parseInt(e.target.value) || 45)}
-                className="w-20 h-8 text-sm text-center font-mono" />
-              <span className="text-sm text-gray-500">{tx.durationUnit}</span>
+          {sport !== 'volleyball' && (
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-gray-700">{DURATION_LABEL[sport][lang]}</p>
+              <div className="flex items-center gap-2">
+                <Input type="number" min={1} max={90} value={durationMins}
+                  onChange={e => setDurationMins(parseInt(e.target.value) || 45)}
+                  className="w-20 h-8 text-sm text-center font-mono" />
+                <span className="text-sm text-gray-500">{tx.durationUnit}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {(format === 'round_robin' || format === 'groups_playoff' || format === 'league_playoff') && (
             <div className="space-y-2">
@@ -986,7 +1100,7 @@ export default function NewTournamentPage() {
             )}
 
             <div className="border-t border-emerald-100 pt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
-              <span><span className="font-medium text-gray-700">{tx.summary.periods}:</span> {matchPeriods}×{durationMins} {tx.durationUnit}</span>
+              <span><span className="font-medium text-gray-700">{PERIOD_LABEL[sport][lang]}:</span> {matchPeriods}{sport !== 'volleyball' ? `×${durationMins} ${tx.durationUnit}` : ` ${lang === 'ru' ? 'сет' : lang === 'kz' ? 'сет' : 'sets'}`}</span>
               {extraTime && <span className="text-emerald-600 font-medium">{tx.extraTimeLbl}</span>}
               {format !== 'playoff' && (
                 <span><span className="font-medium text-gray-700">{tx.summary.pts}:</span> {pointsWin}/{pointsDraw}/{pointsLoss}</span>

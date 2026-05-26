@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 export const metadata: Metadata = {
   title: 'Tournable — Управление турнирами',
   description: 'Создавайте турниры, управляйте матчами и делитесь результатами',
+  icons: {
+    icon: '/logo-green.png',
+    shortcut: '/logo-green.png',
+    apple: '/logo-green.png',
+  },
   appleWebApp: {
     capable: true,
     title: 'Tournable',

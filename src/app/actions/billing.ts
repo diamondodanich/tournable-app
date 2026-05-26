@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 export type Plan = 'free' | 'pro'
 
 // ── Читает план текущего пользователя ────────────────────────────────────────
-// Используется как в других server actions, так и напрямую из Server Components.
 export async function getUserPlan(): Promise<Plan> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,6 +21,28 @@ export async function getUserPlan(): Promise<Plan> {
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }
   return 'free'
+}
+
+// ── Читает план + admin-статус текущего пользователя ─────────────────────────
+export async function getUserPlanAndAdmin(): Promise<{ plan: Plan; isAdmin: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { plan: 'free', isAdmin: false }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at, is_admin')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!data) return { plan: 'free', isAdmin: false }
+
+  const isAdmin = data.is_admin === true
+  let plan: Plan = 'free'
+  if (data.plan === 'pro') {
+    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) plan = 'pro'
+  }
+  return { plan, isAdmin }
 }
 
 // ── Читает план ВЛАДЕЛЬЦА турнира ─────────────────────────────────────────────

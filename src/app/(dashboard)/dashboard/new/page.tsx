@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
-import { getUserPlan } from '@/app/actions/billing'
+import { getUserPlanAndAdmin } from '@/app/actions/billing'
 import { uploadTournamentLogo, uploadTeamLogo } from '@/app/actions/logos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -434,11 +434,15 @@ export default function NewTournamentPage() {
   const lang = getLang()
   const tx = T[lang]
 
-  // Plan
+  // Plan & admin
   const [isPro, setIsPro] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [upgradeFor, setUpgradeFor] = useState<string | null>(null)
   useEffect(() => {
-    getUserPlan().then(p => setIsPro(p === 'pro'))
+    getUserPlanAndAdmin().then(({ plan, isAdmin }) => {
+      setIsPro(plan === 'pro')
+      setIsAdmin(isAdmin)
+    })
   }, [])
 
   // Step 1
@@ -647,28 +651,30 @@ export default function NewTournamentPage() {
               placeholder={tx.namePh} maxLength={40} autoFocus className="text-base" />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700">{tx.sportLbl}</label>
-            <div className="grid grid-cols-2 gap-2">
-              {SPORT_LIST.map(s => {
-                const active = sport === s.value
-                return (
-                  <button key={s.value} type="button" onClick={() => changeSport(s.value)}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
-                      active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}>
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-[10px] leading-none ${s.color}`}>
-                      {s.abbr}
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`text-sm font-bold truncate ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{s.label[lang]}</p>
-                      <p className="text-[11px] text-gray-400 leading-snug truncate">{s.desc[lang]}</p>
-                    </div>
-                  </button>
-                )
-              })}
+          {isAdmin && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">{tx.sportLbl}</label>
+              <div className="grid grid-cols-2 gap-2">
+                {SPORT_LIST.map(s => {
+                  const active = sport === s.value
+                  return (
+                    <button key={s.value} type="button" onClick={() => changeSport(s.value)}
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                        active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-[10px] leading-none ${s.color}`}>
+                        {s.abbr}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold truncate ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{s.label[lang]}</p>
+                        <p className="text-[11px] text-gray-400 leading-snug truncate">{s.desc[lang]}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-gray-700">{tx.formatLbl}</label>

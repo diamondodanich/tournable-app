@@ -68,6 +68,7 @@ export async function createTournamentWithSetup(
     pointsLoss?: number
     groupsCount?: number
     teamsAdvance?: number
+    sport?: string
   }
 ): Promise<{ id?: string; teamIds?: string[]; error?: string }> {
   const supabase = await createClient()
@@ -106,6 +107,7 @@ export async function createTournamentWithSetup(
       points_loss:         settings?.pointsLoss        ?? 0,
       groups_count:        settings?.groupsCount       ?? 4,
       teams_advance:       settings?.teamsAdvance      ?? 2,
+      sport:               settings?.sport             ?? 'football',
     })
     .select()
     .single()

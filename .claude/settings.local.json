@@ -47,7 +47,17 @@
       "Bash(ls /mnt/c/Users/user/Downloads/*.png 2>/dev/null | head -10)",
       "Bash(xargs ls -t)",
       "Bash(git stash *)",
-      "Bash(xargs grep -l \"plan\\\\|subscription\\\\|pro\\\\|limit\\\\|quota\")"
+      "Bash(xargs grep -l \"plan\\\\|subscription\\\\|pro\\\\|limit\\\\|quota\")",
+      "Bash(dir \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\worktrees\\\\bold-darwin-46890f\\\\public\" /b)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(identify public/logo-white.png)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(git remote *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\scripts\" && echo \"ok\")",
+      "Bash(bash \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\.claude\\\\scripts\\\\auto-deploy.sh\")",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

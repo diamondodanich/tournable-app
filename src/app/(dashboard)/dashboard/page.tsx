@@ -92,6 +92,7 @@ export default async function DashboardPage() {
     .from('tournaments')
     .select('*, teams(count)')
     .eq('user_id', user!.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   const list = (tournaments ?? []) as TournamentWithCount[]

@@ -78,7 +78,7 @@ export async function createTournamentWithSetup(
   // ── Plan enforcement ─────────────────────────────────────────────────────
   const [plan, { count: existingCount }] = await Promise.all([
     getUserPlan(supabase, user.id),
-    supabase.from('tournaments').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('tournaments').select('*', { count: 'exact', head: true }).eq('user_id', user.id).is('deleted_at', null),
   ])
 
   if (plan === 'free' && (existingCount ?? 0) >= 3) {
@@ -325,7 +325,11 @@ async function insertPlaceholderBracket(supabase: any, tournamentId: string, tot
 // ─── addTeam with plan check ──────────────────────────────────────────────────
 export async function deleteTournament(id: string) {
   const supabase = await createClient()
-  await supabase.from('tournaments').delete().eq('id', id)
+  // Soft delete: set deleted_at so the slot is freed for the free plan limit
+  await supabase
+    .from('tournaments')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
   revalidatePath('/dashboard')
   redirect('/dashboard')
 }

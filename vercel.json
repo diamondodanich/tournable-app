@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "0 9 1,6,11,16,21,26 * *"
+    },
+    {
+      "path": "/api/cron/deactivate-expired",
+      "schedule": "0 6 * * *"
     }
   ]
 }

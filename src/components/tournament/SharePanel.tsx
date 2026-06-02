@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { createInviteLink, removeMember } from '@/app/actions/members'
+import { createInviteLink, removeMember, inviteByEmail } from '@/app/actions/members'
 import { TournamentMember } from '@/types'
 import {
   Share2, Copy, Check, Link2, X,
-  Eye, Pencil, ChevronLeft, Clock, UserX,
+  Eye, Pencil, ChevronLeft, Clock, UserX, Mail, Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -21,14 +21,16 @@ type Mode = null | 'view' | 'edit'
 
 // ─────────────────────────────────────────────────────────────
 export default function SharePanel({ tournamentId, tournamentName, publicUrl, members: initial }: Props) {
-  const [open, setOpen]           = useState(false)
-  const [mode, setMode]           = useState<Mode>(null)
-  const [copiedId, setCopiedId]   = useState<string | null>(null)
-  const [creating, setCreating]   = useState(false)
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
-  const [members, setMembers]     = useState(initial)
-  const [mounted, setMounted]     = useState(false)
-  const [dropPos, setDropPos]     = useState({ top: 0, right: 0 })
+  const [open, setOpen]             = useState(false)
+  const [mode, setMode]             = useState<Mode>(null)
+  const [copiedId, setCopiedId]     = useState<string | null>(null)
+  const [creating, setCreating]     = useState(false)
+  const [inviteUrl, setInviteUrl]   = useState<string | null>(null)
+  const [members, setMembers]       = useState(initial)
+  const [mounted, setMounted]       = useState(false)
+  const [dropPos, setDropPos]       = useState({ top: 0, right: 0 })
+  const [emailInput, setEmailInput] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => setMounted(true), [])
@@ -74,12 +76,24 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
   async function selectEditMode() {
     setMode('edit')
     setCreating(true)
+    setEmailInput('')
     const res = await createInviteLink(tournamentId, 'editor')
     if (res?.error) { toast.error(res.error); setCreating(false); return }
     if ('token' in res) {
       setInviteUrl(`${window.location.origin}/invite/${res.token}`)
     }
     setCreating(false)
+  }
+
+  async function handleEmailInvite() {
+    const email = emailInput.trim()
+    if (!email || !email.includes('@')) { toast.error('Введите корректный email'); return }
+    setSendingEmail(true)
+    const res = await inviteByEmail(tournamentId, 'editor', email)
+    setSendingEmail(false)
+    if (res?.error) { toast.error(res.error); return }
+    toast.success(`Приглашение отправлено на ${email}`)
+    setEmailInput('')
   }
 
   async function handleRemove(memberId: string) {
@@ -266,6 +280,31 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                 <p className="text-[10px] text-gray-400 text-center leading-relaxed">
                   Одноразовая ссылка · Нужна регистрация
                 </p>
+
+                {/* Email invite */}
+                <div className="border-t border-gray-100 pt-3 space-y-2">
+                  <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1.5">
+                    <Mail size={11} /> Или пригласить по email
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={e => setEmailInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleEmailInvite()}
+                      placeholder="email@example.com"
+                      className="flex-1 h-8 rounded-lg border border-gray-200 px-3 text-xs focus:outline-none focus:border-violet-400 min-w-0"
+                    />
+                    <button
+                      onClick={handleEmailInvite}
+                      disabled={sendingEmail || !emailInput.trim()}
+                      className="h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1 shrink-0"
+                    >
+                      <Send size={11} />
+                      {sendingEmail ? '…' : 'Послать'}
+                    </button>
+                  </div>
+                </div>
 
                 {/* Generate another */}
                 <button

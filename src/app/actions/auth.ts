@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
@@ -11,7 +12,10 @@ export async function signUp(formData: FormData) {
   const { error } = await supabase.auth.signUp({ email, password })
   if (error) return { error: error.message }
 
-  redirect('/dashboard')
+  // Fire-and-forget — not blocking redirect on email failure
+  sendWelcomeEmail(email).catch(() => {})
+
+  redirect('/onboarding')
 }
 
 export async function signIn(formData: FormData) {

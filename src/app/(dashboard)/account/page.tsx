@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserPlan } from '@/app/actions/billing'
 import { signOut } from '@/app/actions/auth'
+import ChangePasswordForm from './ChangePasswordForm'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, LogOut, Check, Star,
@@ -232,45 +233,33 @@ export default async function AccountPage() {
             <Shield className="w-5 h-5 text-emerald-600" />
             Безопасность
           </h2>
-          <p className="text-sm text-gray-400 mb-5">Управление доступом к аккаунту</p>
+          <p className="text-sm text-gray-400 mb-5">Email и пароль для входа в аккаунт</p>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl gap-3">
+              <div className="min-w-0">
                 <div className="text-sm font-semibold text-gray-700">Email</div>
                 <div className="text-xs text-gray-400 break-all">{user!.email}</div>
               </div>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div>
-                <div className="text-sm font-semibold text-gray-700">Пароль</div>
-                <div className="text-xs text-gray-400">••••••••••••</div>
-              </div>
-              <span className="text-xs text-gray-400">Для смены свяжитесь с поддержкой</span>
-            </div>
+            <ChangePasswordForm />
           </div>
         </div>
 
-        {/* ── Sign out card ─────────────────────────────────────────── */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="font-black text-lg text-gray-900 mb-4 flex items-center gap-2">
-            <LogOut className="w-5 h-5 text-red-500" />
-            Выход
-          </h2>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-red-100"
-            >
-              <LogOut className="w-4 h-4" />
-              Выйти из аккаунта
-            </button>
-          </form>
-        </div>
+        {/* ── Account actions: sign out ─────────────────────────────── */}
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="w-full flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-gray-50 text-gray-600 hover:text-gray-900 font-bold px-5 py-3.5 rounded-2xl transition-colors text-sm border border-gray-200 shadow-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            Выйти из аккаунта
+          </button>
+        </form>
 
-        {/* ── Delete account card ───────────────────────────────────── */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
+        {/* ── Danger zone: delete account ───────────────────────────── */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-red-100 shadow-sm p-6">
           <h2 className="font-black text-lg text-gray-900 mb-1 flex items-center gap-2">
-            <Trash2 className="w-5 h-5 text-gray-400" />
+            <Trash2 className="w-5 h-5 text-red-400" />
             Удаление аккаунта
           </h2>
           <p className="text-sm text-gray-400 mb-5">
@@ -279,7 +268,7 @@ export default async function AccountPage() {
           </p>
           <a
             href={`mailto:tournable_webapp@gmail.com?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${user!.email}`)}`}
-            className="inline-flex items-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-gray-200"
+            className="inline-flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-red-100"
           >
             <Trash2 className="w-4 h-4" />
             Запросить удаление

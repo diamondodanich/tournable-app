@@ -37,3 +37,26 @@ export async function signOut() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function changePassword(formData: FormData) {
+  const password = (formData.get('password') as string | null) ?? ''
+  const confirm = (formData.get('confirm') as string | null) ?? ''
+
+  if (password.length < 6) return { error: 'Пароль должен быть не менее 6 символов' }
+  if (password !== confirm) return { error: 'Пароли не совпадают' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Сессия истекла. Войдите заново.' }
+
+  // OAuth-only accounts have no password to change
+  const hasPasswordIdentity = user.identities?.some(i => i.provider === 'email')
+  if (user.identities && !hasPasswordIdentity) {
+    return { error: 'Аккаунт создан через Google. Сменить пароль нельзя.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) return { error: error.message }
+
+  return { success: true }
+}

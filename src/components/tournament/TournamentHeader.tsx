@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
+import { getSportTheme } from '@/lib/sports'
 
 interface Props {
   tournament: Tournament
@@ -24,6 +25,7 @@ const FORMAT_LABEL: Record<string, string> = {
 export default function TournamentHeader({ tournament, isOwner = true, members = [] }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const theme = getSportTheme(tournament.sport)
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/t/${tournament.id}`
     : `/t/${tournament.id}`
@@ -44,12 +46,16 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
   })()
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+    <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+
+      {/* Sport-coloured top accent */}
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: theme.gradient }} />
 
       {/* Back link — prominent */}
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 mb-3 transition-colors group"
+        style={{ color: theme.primary }}
+        className="inline-flex items-center gap-1.5 text-sm font-semibold hover:opacity-80 mb-3 mt-1 transition-opacity group"
       >
         <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
         Все турниры
@@ -62,9 +68,10 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                tournament.generated ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-              }`}>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                style={tournament.generated
+                  ? { background: theme.light, color: theme.primaryDark }
+                  : { background: '#f3f4f6', color: '#6b7280' }}>
                 {tournament.generated ? 'Активен' : 'Настройка'}
               </span>
             </div>

@@ -17,6 +17,8 @@ export type Tournament = {
   points_win: number
   points_draw: number
   points_loss: number
+  // Sport (subtype value, e.g. 'football', 'basketball', 'efootball')
+  sport: string | null
   created_at: string
   updated_at: string
 }

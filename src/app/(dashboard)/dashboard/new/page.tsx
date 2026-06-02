@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Globe, Layers, Star, Lock, Loader2,
+  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
+import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, type SportTheme } from '@/lib/sports'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -228,71 +229,6 @@ const T = {
 }
 
 type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
-type Sport  = 'football' | 'futsal' | 'basketball' | 'streetball' | 'volleyball' | 'hockey' | 'other'
-
-const SPORT_DEFAULTS: Record<Sport, { periods: number; duration: number; extraTime: boolean; ptsWin: number; ptsDraw: number; ptsLoss: number }> = {
-  football:   { periods: 2, duration: 45, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
-  futsal:     { periods: 2, duration: 20, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
-  basketball: { periods: 4, duration: 10, extraTime: false, ptsWin: 2, ptsDraw: 0, ptsLoss: 0 },
-  streetball: { periods: 2, duration: 10, extraTime: false, ptsWin: 2, ptsDraw: 0, ptsLoss: 0 },
-  volleyball: { periods: 3, duration: 25, extraTime: false, ptsWin: 3, ptsDraw: 0, ptsLoss: 0 },
-  hockey:     { periods: 3, duration: 20, extraTime: true,  ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
-  other:      { periods: 2, duration: 45, extraTime: false, ptsWin: 3, ptsDraw: 1, ptsLoss: 0 },
-}
-
-const PERIOD_OPTS: Record<Sport, number[]> = {
-  football:   [1, 2],
-  futsal:     [1, 2],
-  basketball: [2, 4],
-  streetball: [1, 2],
-  volleyball: [3, 5],
-  hockey:     [2, 3],
-  other:      [1, 2],
-}
-
-const PERIOD_LABEL: Record<Sport, Record<Lang, string>> = {
-  football:   { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
-  futsal:     { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
-  basketball: { ru: 'Четверти', kz: 'Ширбелтер', en: 'Quarters' },
-  streetball: { ru: 'Таймы',    kz: 'Таймдар',   en: 'Halves'   },
-  volleyball: { ru: 'Сеты',     kz: 'Сеттер',    en: 'Sets'     },
-  hockey:     { ru: 'Периоды',  kz: 'Кезеңдер',  en: 'Periods'  },
-  other:      { ru: 'Периоды',  kz: 'Кезеңдер',  en: 'Periods'  },
-}
-
-const DURATION_LABEL: Record<Sport, Record<Lang, string>> = {
-  football:   { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
-  futsal:     { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
-  basketball: { ru: 'Длительность четверти',  kz: 'Ширбел ұзақтығы',    en: 'Quarter duration' },
-  streetball: { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
-  volleyball: { ru: 'Длительность тайма',     kz: 'Тайм ұзақтығы',      en: 'Half duration'    },
-  hockey:     { ru: 'Длительность периода',   kz: 'Кезең ұзақтығы',     en: 'Period duration'  },
-  other:      { ru: 'Длительность периода',   kz: 'Кезең ұзақтығы',     en: 'Period duration'  },
-}
-
-const SPORT_LIST: { value: Sport; label: Record<Lang, string>; desc: Record<Lang, string>; color: string; abbr: string }[] = [
-  { value: 'football',   color: 'bg-emerald-500', abbr: 'F',
-    label: { ru: 'Футбол',        kz: 'Футбол',        en: 'Football'     },
-    desc:  { ru: '11×11 · 2×45 мин', kz: '11×11 · 2×45 мин', en: '11v11 · 2×45 min' } },
-  { value: 'futsal',     color: 'bg-teal-500',    abbr: 'MF',
-    label: { ru: 'Мини-футбол',   kz: 'Мини-футбол',   en: 'Futsal'       },
-    desc:  { ru: '5×5 · 2×20 мин',   kz: '5×5 · 2×20 мин',   en: '5v5 · 2×20 min'  } },
-  { value: 'basketball', color: 'bg-orange-500',  abbr: 'B',
-    label: { ru: 'Баскетбол',     kz: 'Баскетбол',     en: 'Basketball'   },
-    desc:  { ru: '5×5 · 4 четв × 10 мин', kz: '5×5 · 4×10 мин', en: '5v5 · 4×10 min' } },
-  { value: 'streetball', color: 'bg-amber-500',   abbr: '3×3',
-    label: { ru: 'Стритбол 3×3',  kz: 'Стритбол 3×3',  en: 'Streetball 3×3' },
-    desc:  { ru: '3×3 · 2×10 мин',   kz: '3×3 · 2×10 мин',   en: '3v3 · 2×10 min'  } },
-  { value: 'volleyball', color: 'bg-blue-500',    abbr: 'V',
-    label: { ru: 'Волейбол',      kz: 'Волейбол',      en: 'Volleyball'   },
-    desc:  { ru: '6×6 · до 5 сетов',  kz: '6×6 · 5 сетке дейін', en: '6v6 · up to 5 sets' } },
-  { value: 'hockey',     color: 'bg-slate-500',   abbr: 'H',
-    label: { ru: 'Хоккей',        kz: 'Хоккей',        en: 'Hockey'       },
-    desc:  { ru: '3 периода × 20 мин', kz: '3×20 мин',     en: '3 periods × 20 min' } },
-  { value: 'other',      color: 'bg-gray-400',    abbr: '...',
-    label: { ru: 'Другое',        kz: 'Басқа',         en: 'Other'        },
-    desc:  { ru: 'Свои правила',     kz: 'Өз ережелер',   en: 'Custom rules' } },
-]
 
 const FORMATS: { value: Format; icon: React.ElementType }[] = [
   { value: 'round_robin',    icon: RotateCcw },
@@ -373,25 +309,31 @@ function AvatarPicker({ dataUrl, name, size, onPick, onRemove }: {
 }
 
 // ─── StepBar ─────────────────────────────────────────────────────────────────
-function StepBar({ step, labels }: { step: number; labels: readonly string[] }) {
+function StepBar({ step, labels, accent }: { step: number; labels: readonly string[]; accent: string }) {
   return (
     <div className="flex items-center mb-8">
-      {labels.map((label, i) => (
-        <div key={i} className="flex items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all ${
-              step > i + 1 ? 'bg-emerald-600 text-white' :
-              step === i + 1 ? 'bg-emerald-600 text-white ring-4 ring-emerald-100' : 'bg-gray-100 text-gray-400'
-            }`}>
-              {step > i + 1 ? <Check size={14} /> : i + 1}
+      {labels.map((label, i) => {
+        const done = step > i + 1
+        const current = step === i + 1
+        return (
+          <div key={i} className="flex items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all ${done || current ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
+                style={done || current
+                  ? { background: accent, boxShadow: current ? `0 0 0 4px ${accent}22` : undefined }
+                  : undefined}
+              >
+                {done ? <Check size={14} /> : i + 1}
+              </div>
+              <span className="text-xs font-bold hidden sm:block" style={current ? { color: accent } : { color: '#9ca3af' }}>{label}</span>
             </div>
-            <span className={`text-xs font-bold hidden sm:block ${step === i + 1 ? 'text-emerald-700' : 'text-gray-400'}`}>{label}</span>
+            {i < labels.length - 1 && (
+              <div className="h-0.5 w-10 sm:w-16 mx-1 mb-4 sm:mb-0 transition-colors" style={{ background: done ? accent : '#e5e7eb' }} />
+            )}
           </div>
-          {i < labels.length - 1 && (
-            <div className={`h-0.5 w-10 sm:w-16 mx-1 mb-4 sm:mb-0 transition-colors ${step > i + 1 ? 'bg-emerald-400' : 'bg-gray-200'}`} />
-          )}
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -434,25 +376,22 @@ export default function NewTournamentPage() {
   const lang = getLang()
   const tx = T[lang]
 
-  // Plan & admin
+  // Plan
   const [isPro, setIsPro] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [upgradeFor, setUpgradeFor] = useState<string | null>(null)
   useEffect(() => {
-    getUserPlanAndAdmin().then(({ plan, isAdmin }) => {
-      setIsPro(plan === 'pro')
-      setIsAdmin(isAdmin)
-    })
+    getUserPlanAndAdmin().then(({ plan }) => setIsPro(plan === 'pro'))
   }, [])
 
   // Step 1
   const [name, setName]           = useState('')
-  const [sport, setSport]         = useState<Sport>('football')
+  const [sport, setSport]         = useState<string>('football')
   const [format, setFormat]       = useState<Format>('round_robin')
   const [numRounds, setNumRounds] = useState(2)   // round_robin: circles | league_playoff: matchdays | groups_playoff: legs
   const [groupsCount, setGroupsCount] = useState(4)
   const [teamsAdvance, setTeamsAdvance] = useState(2)  // groups_playoff: per-group | league_playoff: total
   const [sheetFormat, setSheetFormat] = useState<Format | null>(null)  // open format bottom-sheet
+  const [sportSheet, setSportSheet]   = useState<string | null>(null)  // open subtype sheet (category id)
 
   function changeFormat(newFormat: Format) {
     setFormat(newFormat)
@@ -464,15 +403,19 @@ export default function NewTournamentPage() {
     if (newFormat === 'playoff')        { setNumRounds(1) }
   }
 
-  function changeSport(newSport: Sport) {
-    setSport(newSport)
-    const d = SPORT_DEFAULTS[newSport]
-    setMatchPeriods(d.periods)
-    setDurationMins(d.duration)
-    setExtraTime(d.extraTime)
-    setPointsWin(d.ptsWin)
-    setPointsDraw(d.ptsDraw)
-    setPointsLoss(d.ptsLoss)
+  // Pick a sport subtype: store its value, apply match defaults and the sport's
+  // recommended format (formats adapt to the chosen sport).
+  function selectSubtype(value: string) {
+    const st = getSubtype(value)
+    if (!st) return
+    setSport(value)
+    setMatchPeriods(st.periods)
+    setDurationMins(st.duration)
+    setExtraTime(st.extraTime)
+    setPointsWin(st.pts.win)
+    setPointsDraw(st.pts.draw)
+    setPointsLoss(st.pts.loss)
+    changeFormat(st.recommendedFormat)
   }
 
   // Step 2
@@ -495,6 +438,25 @@ export default function NewTournamentPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
   const [planLimit, setPlanLimit] = useState<'tournament' | 'team' | null>(null)
+
+  // ── Derived sport config + colour theme ──────────────────────────────────────
+  const subtype = getSubtype(sport)
+  const theme: SportTheme = getSportTheme(sport)
+  // CSS variables let us tint Tailwind-styled elements with the sport colour.
+  const themeVars = {
+    ['--sp' as string]:  theme.primary,
+    ['--spd' as string]: theme.primaryDark,
+    ['--spl' as string]: theme.light,
+    ['--spr' as string]: theme.ringRgba,
+  } as React.CSSProperties
+  // Formats ordered & filtered to those practised in the chosen sport.
+  const sportFormats: Format[] = subtype?.formats ?? ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
+  // Settings labels driven by the chosen subtype.
+  const periodLabelTxt   = subtype?.periodLabel[lang]   ?? tx.periodsLbl
+  const durationLabelTxt = subtype?.durationLabel[lang] ?? tx.durationLbl
+  const periodOptions    = subtype?.periodOptions ?? [1, 2]
+  const isSetBased       = subtype?.hideDuration ?? false   // sets/maps based → hide duration & extra time
+  const scoreNoteTxt     = subtype?.scoreNote?.[lang]
 
   // ── Min-teams per format ────────────────────────────────────────────────────
   function minTeamsRequired(): number {
@@ -638,7 +600,9 @@ export default function NewTournamentPage() {
   const LEAGUE_ADVANCE_OPTS = [2, 4, 8, 16].map((v, i) => ({ value: v, label: tx.leagueAdvance[i] }))
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto" style={themeVars}>
+      {/* Sport-themed buttons: background driven by CSS vars set above */}
+      <style>{`.sport-btn{background:var(--sp)}.sport-btn:hover{background:var(--spd)}@keyframes sheet-up{0%{transform:translateY(100%)}100%{transform:translateY(0)}}@keyframes sheet-fade{0%{opacity:0}100%{opacity:1}}`}</style>
       {planLimit && <PlanLimitModal type={planLimit} tx={tx} onClose={() => setPlanLimit(null)} />}
       {upgradeFor && <UpgradePrompt featureName={`Формат "${upgradeFor}"`} onClose={() => setUpgradeFor(null)} />}
 
@@ -646,7 +610,7 @@ export default function NewTournamentPage() {
         <ArrowLeft size={15} /> {tx.back}
       </Link>
 
-      <StepBar step={step} labels={tx.steps} />
+      <StepBar step={step} labels={tx.steps} accent={theme.primary} />
 
       {/* ── Step 1: Name & Format ──────────────────────────────────────── */}
       {step === 1 && (
@@ -656,64 +620,88 @@ export default function NewTournamentPage() {
             <p className="text-sm text-gray-400 mt-0.5">{tx.step1.sub}</p>
           </div>
 
+          {/* ── Sport category (premium · two-level → subtype sheet) ── */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-gray-700">{tx.sportLbl}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {SPORT_CATEGORIES.map(cat => {
+                const active = getCategoryForSport(sport)?.id === cat.id
+                const locked = cat.proOnly && !isPro
+                const chosen = active ? getSubtype(sport) : undefined
+                return (
+                  <button key={cat.id} type="button"
+                    onClick={() => {
+                      if (locked) { setUpgradeFor(cat.label[lang]); return }
+                      setSportSheet(cat.id)
+                    }}
+                    style={active ? { borderColor: cat.theme.primary, background: cat.theme.light } : undefined}
+                    className={`relative flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                      active ? '' : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-xs shadow-sm"
+                      style={{ background: cat.theme.gradient }}>
+                      {cat.abbr}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold leading-tight" style={active ? { color: cat.theme.primary } : undefined}>{cat.label[lang]}</p>
+                      <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">{chosen ? chosen.label[lang] : cat.tagline[lang]}</p>
+                    </div>
+                    {locked && (
+                      <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
+                        <Lock size={8} /> PRO
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-400 pt-0.5">Выберите вид спорта — правила и форматы подстроятся автоматически</p>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-gray-700">{tx.nameLbl}</label>
             <Input value={name} onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && goToStep2()}
-              placeholder={tx.namePh} maxLength={40} autoFocus className="text-base" />
+              placeholder={tx.namePh} maxLength={40} className="text-base" />
           </div>
-
-          {isAdmin && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">{tx.sportLbl}</label>
-              <div className="grid grid-cols-2 gap-2">
-                {SPORT_LIST.map(s => {
-                  const active = sport === s.value
-                  return (
-                    <button key={s.value} type="button" onClick={() => changeSport(s.value)}
-                      className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
-                        active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-[10px] leading-none ${s.color}`}>
-                        {s.abbr}
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`text-sm font-bold truncate ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{s.label[lang]}</p>
-                        <p className="text-[11px] text-gray-400 leading-snug truncate">{s.desc[lang]}</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
 
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-gray-700">{tx.formatLbl}</label>
             <div className="grid grid-cols-2 gap-2">
-              {FORMATS.map(f => {
-                const Icon = f.icon
-                const active = format === f.value
-                const isProOnly = f.value === 'groups_playoff' || f.value === 'league_playoff'
+              {sportFormats.map(value => {
+                const Icon = FORMATS.find(f => f.value === value)!.icon
+                const active = format === value
+                const isProOnly = value === 'groups_playoff' || value === 'league_playoff'
                 const locked = isProOnly && !isPro
+                const recommended = subtype?.recommendedFormat === value
                 return (
-                  <button key={f.value} type="button"
+                  <button key={value} type="button"
                     onClick={() => {
-                      if (locked) { setUpgradeFor(fmtLabel(f.value)); return }
-                      changeFormat(f.value)
-                      setSheetFormat(f.value)   // open details bottom-sheet
+                      if (locked) { setUpgradeFor(fmtLabel(value)); return }
+                      changeFormat(value)
+                      setSheetFormat(value)   // open details bottom-sheet
                     }}
+                    style={active ? { borderColor: theme.primary, background: theme.light } : undefined}
                     className={`relative flex items-start gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all ${
-                      active ? 'border-emerald-500 bg-emerald-50'
+                      active ? ''
                       : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      active ? 'bg-emerald-600' : locked ? 'bg-gray-200' : 'bg-gray-100'
-                    }`}>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? '' : locked ? 'bg-gray-200' : 'bg-gray-100'}`}
+                      style={active ? { background: theme.primary } : undefined}>
                       <Icon size={17} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
                     </div>
-                    <p className={`text-sm font-bold leading-tight ${active ? 'text-emerald-700' : locked ? 'text-gray-400' : 'text-gray-800'}`}>{fmtLabel(f.value)}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold leading-tight" style={active ? { color: theme.primary } : undefined}>
+                        <span className={active ? '' : locked ? 'text-gray-400' : 'text-gray-800'}>{fmtLabel(value)}</span>
+                      </p>
+                      {recommended && !locked && (
+                        <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                          style={{ background: theme.light, color: theme.primary }}>
+                          Рекомендуется
+                        </span>
+                      )}
+                    </div>
                     {locked && (
                       <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
                         <Lock size={8} /> PRO
@@ -727,7 +715,7 @@ export default function NewTournamentPage() {
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
-          <Button onClick={goToStep2} className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 text-base font-bold">
+          <Button onClick={goToStep2} className="sport-btn w-full h-11 text-base font-bold text-white">
             {tx.next} <ArrowRight size={16} className="ml-2" />
           </Button>
 
@@ -753,11 +741,11 @@ export default function NewTournamentPage() {
 
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: theme.gradient }}>
                       <SheetIcon size={22} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">{tx.formatLbl}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: theme.primary }}>{tx.formatLbl}</p>
                       <h3 className="text-lg font-black text-gray-900 leading-tight">{fmtLabel(sheetFormat)}</h3>
                     </div>
                   </div>
@@ -772,10 +760,9 @@ export default function NewTournamentPage() {
                       <div className="grid grid-cols-2 gap-2">
                         {ROUNDS_OPTS.map(opt => (
                           <button key={opt.value} type="button" onClick={() => setNumRounds(opt.value)}
+                            style={numRounds === opt.value ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                             className={`py-2.5 px-3 rounded-xl border text-left text-sm transition-all ${
-                              numRounds === opt.value
-                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
-                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                              numRounds === opt.value ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                             }`}>
                             {opt.label}
                           </button>
@@ -785,7 +772,7 @@ export default function NewTournamentPage() {
                   )}
 
                   {sheetFormat === 'league_playoff' && (
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2 mb-5">
+                    <div className="rounded-xl px-4 py-3 text-xs flex items-center gap-2 mb-5" style={{ background: theme.light, color: theme.primaryDark }}>
                       <Settings2 size={13} className="shrink-0 opacity-70" />
                       <span>{tx.leagueSettingsNote}</span>
                     </div>
@@ -798,17 +785,16 @@ export default function NewTournamentPage() {
                         <div className="flex flex-wrap gap-1.5">
                           {GROUPS_OPTS.map(opt => (
                             <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
+                              style={groupsCount === opt.value ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                               className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                                groupsCount === opt.value
-                                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                groupsCount === opt.value ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                               }`}>
                               {opt.label}
                             </button>
                           ))}
                         </div>
                       </div>
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
+                      <div className="rounded-xl px-4 py-3 text-xs flex items-center gap-2" style={{ background: theme.light, color: theme.primaryDark }}>
                         <Settings2 size={13} className="shrink-0 opacity-70" />
                         <span>{tx.groupAdvanceNote}</span>
                       </div>
@@ -816,9 +802,59 @@ export default function NewTournamentPage() {
                   )}
 
                   {/* Continue */}
-                  <Button onClick={confirmFormatSheet} className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-bold">
+                  <Button onClick={confirmFormatSheet} className="sport-btn w-full h-12 text-base font-bold text-white">
                     {tx.next} <ArrowRight size={16} className="ml-2" />
                   </Button>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* ── Sport subtype bottom-sheet ─────────────────────────────── */}
+          {sportSheet && (() => {
+            const cat = SPORT_CATEGORIES.find(c => c.id === sportSheet)!
+            return (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" style={{ animation: 'sheet-fade .2s ease-out' }} onClick={() => setSportSheet(null)} />
+                <div
+                  className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-t border-gray-100 p-6 pb-8 max-h-[88vh] overflow-y-auto"
+                  style={{ animation: 'sheet-up .3s cubic-bezier(.2,.8,.2,1)' }}
+                >
+                  <div className="sm:hidden flex justify-center -mt-2 mb-4"><div className="w-10 h-1 bg-gray-300 rounded-full" /></div>
+                  <button onClick={() => setSportSheet(null)}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+                    <X size={15} />
+                  </button>
+
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm text-white font-black" style={{ background: cat.theme.gradient }}>
+                      {cat.abbr}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: cat.theme.primary }}>{tx.sportLbl}</p>
+                      <h3 className="text-lg font-black text-gray-900 leading-tight">{cat.label[lang]}</h3>
+                    </div>
+                  </div>
+
+                  {/* Subtypes */}
+                  <div className="space-y-2">
+                    {cat.subtypes.map(st => {
+                      const active = sport === st.value
+                      return (
+                        <button key={st.value} type="button"
+                          onClick={() => { selectSubtype(st.value); setSportSheet(null) }}
+                          style={active ? { borderColor: cat.theme.primary, background: cat.theme.light } : undefined}
+                          className={`w-full flex items-start gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${active ? '' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                          <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: active ? cat.theme.primary : '#d1d5db' }} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold leading-tight" style={{ color: active ? cat.theme.primary : '#1f2937' }}>{st.label[lang]}</p>
+                            <p className="text-xs text-gray-400 leading-snug mt-0.5">{st.desc[lang]}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )
@@ -929,7 +965,7 @@ export default function NewTournamentPage() {
             <Button variant="outline" onClick={() => { setError(null); setStep(1) }} className="flex-1 h-11">
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
-            <Button onClick={goToStep3} className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 font-bold">
+            <Button onClick={goToStep3} className="sport-btn flex-1 h-11 text-white font-bold">
               {tx.next} <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
@@ -1033,23 +1069,24 @@ export default function NewTournamentPage() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-bold text-gray-700">{PERIOD_LABEL[sport][lang]}</p>
+            <p className="text-sm font-bold text-gray-700">{periodLabelTxt}</p>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
-                {PERIOD_OPTS[sport].map(n => (
+                {periodOptions.map(n => (
                   <button key={n} type="button" onClick={() => setMatchPeriods(n)}
+                    style={matchPeriods === n ? { color: theme.primary } : undefined}
                     className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
-                      matchPeriods === n ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                      matchPeriods === n ? 'bg-white shadow-sm' : 'text-gray-400 hover:text-gray-600'
                     }`}>
                     {n}
                   </button>
                 ))}
               </div>
-              {sport !== 'volleyball' && (
+              {!isSetBased && (
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <div onClick={() => setExtraTime(v => !v)}
-                    className={`relative rounded-full transition-colors cursor-pointer ${extraTime ? 'bg-emerald-600' : 'bg-gray-200'}`}
-                    style={{ width: 40, height: 22 }}>
+                    className="relative rounded-full transition-colors cursor-pointer"
+                    style={{ width: 40, height: 22, background: extraTime ? theme.primary : '#e5e7eb' }}>
                     <span className="absolute top-0.5 bg-white rounded-full shadow transition-transform"
                       style={{ left: 2, width: 18, height: 18, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }} />
                   </div>
@@ -1057,18 +1094,16 @@ export default function NewTournamentPage() {
                 </label>
               )}
             </div>
-            {sport === 'volleyball' && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-xs text-blue-700 leading-relaxed">
-                {lang === 'ru' && 'Счёт матча — количество выигранных сетов (например 3:1, 3:0). Побед нет — нет ничьей.'}
-                {lang === 'kz' && 'Матч есебі — жеңілген сеттер саны (мысалы 3:1, 3:0). Тең болмайды.'}
-                {lang === 'en' && 'Match score = sets won (e.g. 3:1, 3:0). Draws are not possible.'}
+            {isSetBased && scoreNoteTxt && (
+              <div className="rounded-xl px-4 py-2.5 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
+                {scoreNoteTxt}
               </div>
             )}
           </div>
 
-          {sport !== 'volleyball' && (
+          {!isSetBased && (
             <div className="space-y-2">
-              <p className="text-sm font-bold text-gray-700">{DURATION_LABEL[sport][lang]}</p>
+              <p className="text-sm font-bold text-gray-700">{durationLabelTxt}</p>
               <div className="flex items-center gap-2">
                 <Input type="number" min={1} max={90} value={durationMins}
                   onChange={e => setDurationMins(parseInt(e.target.value) || 45)}
@@ -1102,7 +1137,7 @@ export default function NewTournamentPage() {
             <Button variant="outline" onClick={() => { setError(null); setStep(2) }} className="flex-1 h-11">
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
-            <Button onClick={goToStep4} className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 font-bold">
+            <Button onClick={goToStep4} className="sport-btn flex-1 h-11 text-white font-bold">
               {tx.next} <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
@@ -1168,7 +1203,7 @@ export default function NewTournamentPage() {
             )}
 
             <div className="border-t border-emerald-100 pt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
-              <span><span className="font-medium text-gray-700">{PERIOD_LABEL[sport][lang]}:</span> {matchPeriods}{sport !== 'volleyball' ? `×${durationMins} ${tx.durationUnit}` : ` ${lang === 'ru' ? 'сет' : lang === 'kz' ? 'сет' : 'sets'}`}</span>
+              <span><span className="font-medium text-gray-700">{periodLabelTxt}:</span> {matchPeriods}{!isSetBased ? `×${durationMins} ${tx.durationUnit}` : ` ${lang === 'ru' ? 'сет' : lang === 'kz' ? 'сет' : 'sets'}`}</span>
               {extraTime && <span className="text-emerald-600 font-medium">{tx.extraTimeLbl}</span>}
               {format !== 'playoff' && (
                 <span><span className="font-medium text-gray-700">{tx.summary.pts}:</span> {pointsWin}/{pointsDraw}/{pointsLoss}</span>
@@ -1183,7 +1218,7 @@ export default function NewTournamentPage() {
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
             <Button onClick={handleCreate} disabled={loading}
-              className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 font-bold">
+              className="sport-btn flex-1 h-11 text-white font-bold">
               {loading
                 ? <Loader2 size={15} className="mr-1.5 animate-spin" />
                 : <Zap size={15} className="mr-1.5" />}

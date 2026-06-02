@@ -10,6 +10,7 @@ import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
+import { getSportTheme } from '@/lib/sports'
 
 // ── Tab skeleton — shown while lazy JS chunk is loading ───────────────────
 function TabSkeleton() {
@@ -242,8 +243,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const s6 = SECTION(6, '', '#d97706')
   const s7 = SECTION(7, '', '#dc2626')
 
+  const sportTheme = getSportTheme(tournament.sport)
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
       <TournamentHeader tournament={tournament} isOwner={isOwner} members={members} />
 
       {/* Hidden off-screen container for full PDF export */}
@@ -373,6 +376,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           label={isRoundRobin ? 'Победитель турнира' : 'Чемпион плей-офф'}
           tournamentName={tournament.name}
           tournamentId={tournament.id}
+          sport={tournament.sport}
         />
       )}
 
@@ -390,7 +394,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 <TabsTrigger value="setup"
                   className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                     text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                    data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                    data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                   <Settings2 size={13} className="shrink-0" />
                   <span>Настройка</span>
                 </TabsTrigger>
@@ -399,7 +403,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   <TabsTrigger value="fixtures"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                      data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <CalendarDays size={13} className="shrink-0" />
                     <span>{fixturesTabLabel}</span>
                     {f.filter((x: Fixture) => !x.is_bye).length > 0 && (
@@ -414,7 +418,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   <TabsTrigger value="standings"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                      data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <BarChart2 size={13} className="shrink-0" />
                     <span>Таблица</span>
                   </TabsTrigger>
@@ -424,7 +428,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   <TabsTrigger value="playoff"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                      data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <Trophy size={13} className="shrink-0" />
                     <span>Сетка</span>
                     {pm.filter((m: any) => m.winner_id !== null).length > 0 && (
@@ -438,7 +442,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 <TabsTrigger value="stats"
                   className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
                     text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                    data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                    data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                   <Users size={13} className="shrink-0" />
                   <span>Статистика</span>
                 </TabsTrigger>

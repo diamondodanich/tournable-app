@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Trophy, Crown, Medal, Share2, Copy, Check, Send, X } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
+import { getSportTheme } from '@/lib/sports'
 import type { Team } from '@/types'
 
 export default function ChampionBanner({
@@ -11,13 +12,16 @@ export default function ChampionBanner({
   label = 'Чемпион турнира',
   tournamentName,
   tournamentId,
+  sport,
 }: {
   champion: Team
   runnerUp?: Team | null
   label?: string
   tournamentName?: string
   tournamentId?: string
+  sport?: string
 }) {
+  const theme = getSportTheme(sport)
   const [dismissed, setDismissed] = useState(false)
   const [copied, setCopied]       = useState(false)
 
@@ -63,7 +67,7 @@ export default function ChampionBanner({
   return (
     <div
       className="relative overflow-hidden rounded-3xl shadow-2xl"
-      style={{ background: 'linear-gradient(135deg,#0b3b2e 0%,#0f5132 45%,#064e3b 100%)' }}
+      style={{ background: theme.heroDark }}
     >
       {/* Scoped animations */}
       <style>{`
@@ -95,7 +99,7 @@ export default function ChampionBanner({
       {/* Dismiss */}
       <button
         onClick={() => setDismissed(true)}
-        className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-emerald-100 flex items-center justify-center transition-colors backdrop-blur-sm"
+        className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-colors backdrop-blur-sm"
         aria-label="Закрыть"
       >
         <X size={14} />
@@ -135,7 +139,7 @@ export default function ChampionBanner({
           </div>
 
           {tournamentName && (
-            <p className="text-sm text-emerald-200/80 font-medium">{tournamentName}</p>
+            <p className="text-sm text-white/70 font-medium">{tournamentName}</p>
           )}
 
           {/* Runner-up */}
@@ -144,7 +148,7 @@ export default function ChampionBanner({
               <Medal size={13} className="text-gray-300" />
               <span className="text-[11px] font-bold uppercase tracking-wide text-gray-300">Финалист</span>
               <TeamAvatar name={runnerUp.name} logoUrl={runnerUp.logo_url} size={18} />
-              <span className="text-sm font-semibold text-emerald-50">{runnerUp.name}</span>
+              <span className="text-sm font-semibold text-white/90">{runnerUp.name}</span>
             </div>
           )}
         </div>
@@ -152,7 +156,7 @@ export default function ChampionBanner({
         {/* Share row */}
         {tournamentId && (
           <div className="mt-7 flex flex-col items-center gap-3" style={{ animation: 'champ-rise .8s ease-out both' }}>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-200/60">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/50">
               Поделиться достижением
             </p>
             <div className="flex items-center gap-2">
@@ -164,21 +168,21 @@ export default function ChampionBanner({
               </button>
               <button
                 onClick={openTelegram}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 flex items-center justify-center transition-colors backdrop-blur-sm"
                 title="Telegram"
               >
                 <Send size={16} />
               </button>
               <button
                 onClick={openWhatsApp}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm font-black text-xs"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 flex items-center justify-center transition-colors backdrop-blur-sm font-black text-xs"
                 title="WhatsApp"
               >
                 WA
               </button>
               <button
                 onClick={copyLink}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 flex items-center justify-center transition-colors backdrop-blur-sm"
                 title="Скопировать ссылку"
               >
                 {copied ? <Check size={16} className="text-amber-300" /> : <Copy size={16} />}

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { sendWelcomeEmail } from '@/lib/email'
 
@@ -49,14 +50,43 @@ export async function changePassword(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Сессия истекла. Войдите заново.' }
 
-  // OAuth-only accounts have no password to change
-  const hasPasswordIdentity = user.identities?.some(i => i.provider === 'email')
-  if (user.identities && !hasPasswordIdentity) {
-    return { error: 'Аккаунт создан через Google. Сменить пароль нельзя.' }
-  }
-
+  // Works for any account — including Google sign-ups: updateUser sets (or updates)
+  // the password and enables email+password login alongside the OAuth provider.
   const { error } = await supabase.auth.updateUser({ password })
   if (error) return { error: error.message }
 
+  // Whether the account previously had a password (email identity) — lets the UI
+  // say "пароль установлен" vs "пароль изменён".
+  const hadPassword = user.identities?.some(i => i.provider === 'email') ?? true
+  return { success: true, wasSet: !hadPassword }
+}
+
+// ── Self-service account deletion ────────────────────────────────────────────
+// Hard-deletes the auth user via the admin API; FK cascades remove the profile,
+// tournaments, teams, fixtures, memberships and subscriptions. Irreversible.
+export async function deleteAccount(confirmation: string) {
+  // Anti-accident guard: the client must echo this exact word.
+  if (confirmation !== 'УДАЛИТЬ') return { error: 'Подтверждение не совпадает' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Сессия истекла. Войдите заново.' }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceKey) {
+    // Service role key not configured — cannot delete the auth user safely.
+    return { error: 'NOT_CONFIGURED' }
+  }
+
+  const admin = createAdminClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  const { error } = await admin.auth.admin.deleteUser(user.id)
+  if (error) return { error: error.message }
+
+  // Clear the now-orphaned session cookies on this device.
+  await supabase.auth.signOut()
   return { success: true }
 }

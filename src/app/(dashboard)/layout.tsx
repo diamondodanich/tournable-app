@@ -1,13 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { signOut } from '@/app/actions/auth'
 import { getUserPlan } from '@/app/actions/billing'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LogOut, User } from 'lucide-react'
+import { User } from 'lucide-react'
 import LangSwitcher from '@/components/dashboard/LangSwitcher'
 import SupportWidget from '@/components/landing/SupportWidget'
+import SignOutButton from '@/components/account/SignOutButton'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -129,15 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </div>
             </Link>
 
-            <form action={signOut}>
-              <button
-                type="submit"
-                title={tx.signOut}
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              >
-                <LogOut className="w-4 h-4 text-emerald-100" />
-              </button>
-            </form>
+            <SignOutButton variant="icon" title={tx.signOut} />
           </div>
         </div>
       </header>

@@ -42,8 +42,8 @@ export default function ChangePasswordForm() {
       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-gray-700">Пароль</div>
-          <div className="text-xs text-gray-400">
-            {done ? 'Пароль успешно изменён' : '••••••••••••'}
+          <div className={`text-xs ${done ? 'text-emerald-600 font-semibold' : 'text-gray-400'}`}>
+            {done ? 'Пароль сохранён' : '••••••••••••'}
           </div>
         </div>
         <button

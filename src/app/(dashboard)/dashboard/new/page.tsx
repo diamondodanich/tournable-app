@@ -71,11 +71,11 @@ const T = {
       desc: 'Бесплатный план — до 16 команд. Перейдите на Про для турниров до 64 команд.',
       cta: 'Перейти на Про', dismiss: 'Закрыть',
     },
-    rounds: ['1 круг', '2 круга — дома и в гостях', '3 круга', '4 круга'],
+    rounds: ['1 круг', '2 круга', '3 круга', '4 круга'],
     groups: ['2 группы', '4 группы', '6 групп', '8 групп'],
     advance: ['1 выходит', '2 выходят', '3 выходят', '4 выходят'],
     groupLegsLbl: 'Встречи в группе',
-    groupLegsOpts: ['1 матч', '2 матча — дома и в гостях'],
+    groupLegsOpts: ['1 матч', '2 матча'],
     leagueTourLbl: 'Количество туров',
     leagueTourHint: 'Рекомендуется N−1 туров (N — количество команд)',
     leagueTourSmartHint: (teams: number) => `Рекомендуется ${teams - 1} туров для ${teams} команд`,
@@ -140,11 +140,11 @@ const T = {
       desc: 'Тегін жоспар — 16 командаға дейін. Про-ға өтіп, 64 командаға дейін ойнаңыз.',
       cta: 'Про-ға өту', dismiss: 'Жабу',
     },
-    rounds: ['1 айналым', '2 айналым — үйде және қонақта', '3 айналым', '4 айналым'],
+    rounds: ['1 айналым', '2 айналым', '3 айналым', '4 айналым'],
     groups: ['2 топ', '4 топ', '6 топ', '8 топ'],
     advance: ['1 шығады', '2 шығады', '3 шығады', '4 шығады'],
     groupLegsLbl: 'Топ ішіндегі кездесулер',
-    groupLegsOpts: ['1 матч', '2 матч — үй және қонақ'],
+    groupLegsOpts: ['1 матч', '2 матч'],
     leagueTourLbl: 'Айналым саны',
     leagueTourHint: 'N−1 айналым ұсынылады (N — команда саны)',
     leagueTourSmartHint: (teams: number) => `${teams} команда үшін ${teams - 1} айналым ұсынылады`,
@@ -206,11 +206,11 @@ const T = {
       desc: 'Free plan allows up to 16 teams. Upgrade to Pro for tournaments with up to 64 teams.',
       cta: 'Upgrade to Pro', dismiss: 'Dismiss',
     },
-    rounds: ['1 round', '2 rounds — home & away', '3 rounds', '4 rounds'],
+    rounds: ['1 round', '2 rounds', '3 rounds', '4 rounds'],
     groups: ['2 groups', '4 groups', '6 groups', '8 groups'],
     advance: ['1 advances', '2 advance', '3 advance', '4 advance'],
     groupLegsLbl: 'Group legs',
-    groupLegsOpts: ['1 match', '2 matches — home & away'],
+    groupLegsOpts: ['1 match', '2 matches'],
     leagueTourLbl: 'Matchdays',
     leagueTourHint: 'Recommended: N−1 matchdays (N = number of teams)',
     leagueTourSmartHint: (teams: number) => `Recommended: ${teams - 1} matchdays for ${teams} teams`,
@@ -456,6 +456,8 @@ export default function NewTournamentPage() {
 
   function changeFormat(newFormat: Format) {
     setFormat(newFormat)
+    // Seeding is meaningless in a full round-robin — reset to random draw.
+    if (newFormat === 'round_robin') setSeedingMode('random')
     if (newFormat === 'round_robin')    { setNumRounds(2); setTeamsAdvance(2) }
     if (newFormat === 'league_playoff') { setNumRounds(5); setTeamsAdvance(8) }
     if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
@@ -833,25 +835,30 @@ export default function NewTournamentPage() {
           </div>
 
           {/* ── Seeding mode toggle ───────────────────────────────────── */}
-          <div className="space-y-2">
-            <p className="text-sm font-bold text-gray-700">{tx.seedingLbl}</p>
-            <div className="grid grid-cols-2 gap-2">
-              {(['random', 'seeded'] as const).map(mode => {
-                const active = seedingMode === mode
-                const label = mode === 'random' ? tx.seedingRandom : tx.seedingSeeded
-                const desc  = mode === 'random' ? tx.seedingRandomDesc : tx.seedingSeededDesc
-                return (
-                  <button key={mode} type="button" onClick={() => setSeedingMode(mode)}
-                    className={`p-3 rounded-xl border-2 text-left transition-all ${
-                      active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}>
-                    <p className={`text-sm font-bold ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-snug">{desc}</p>
-                  </button>
-                )
-              })}
+          {/* Hidden for round-robin: there everyone plays everyone, so seeding
+              changes only the order of matchdays — not who meets whom. It matters
+              only for bracket/group draws (playoff, groups, league). */}
+          {format !== 'round_robin' && (
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-gray-700">{tx.seedingLbl}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(['random', 'seeded'] as const).map(mode => {
+                  const active = seedingMode === mode
+                  const label = mode === 'random' ? tx.seedingRandom : tx.seedingSeeded
+                  const desc  = mode === 'random' ? tx.seedingRandomDesc : tx.seedingSeededDesc
+                  return (
+                    <button key={mode} type="button" onClick={() => setSeedingMode(mode)}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                      <p className={`text-sm font-bold ${active ? 'text-emerald-700' : 'text-gray-800'}`}>{label}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 leading-snug">{desc}</p>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ── Team list ─────────────────────────────────────────────── */}
           <div className="space-y-2">

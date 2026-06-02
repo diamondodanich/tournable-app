@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserPlan } from '@/app/actions/billing'
-import { signOut } from '@/app/actions/auth'
 import ChangePasswordForm from './ChangePasswordForm'
+import SignOutButton from '@/components/account/SignOutButton'
+import DeleteAccountButton from '@/components/account/DeleteAccountButton'
 import Link from 'next/link'
 import {
-  ArrowLeft, CreditCard, Shield, LogOut, Check, Star,
+  ArrowLeft, CreditCard, Shield, Check, Star,
   Mail, Calendar, Trophy, Zap, Infinity, Trash2
 } from 'lucide-react'
 
@@ -245,16 +246,8 @@ export default async function AccountPage() {
           </div>
         </div>
 
-        {/* ── Account actions: sign out ─────────────────────────────── */}
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-gray-50 text-gray-600 hover:text-gray-900 font-bold px-5 py-3.5 rounded-2xl transition-colors text-sm border border-gray-200 shadow-sm"
-          >
-            <LogOut className="w-4 h-4" />
-            Выйти из аккаунта
-          </button>
-        </form>
+        {/* ── Account actions: sign out (with confirmation) ─────────── */}
+        <SignOutButton />
 
         {/* ── Danger zone: delete account ───────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-red-100 shadow-sm p-6">
@@ -263,16 +256,11 @@ export default async function AccountPage() {
             Удаление аккаунта
           </h2>
           <p className="text-sm text-gray-400 mb-5">
-            Все данные будут безвозвратно удалены в течение 90 дней согласно{' '}
+            Удаление необратимо: аккаунт, турниры и статистика будут стёрты безвозвратно.
+            Чтобы исключить случайность, потребуется подтверждение. Подробнее — в{' '}
             <a href="/privacy" className="text-emerald-600 hover:underline">Политике конфиденциальности</a>.
           </p>
-          <a
-            href={`mailto:tournable_webapp@gmail.com?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${user!.email}`)}`}
-            className="inline-flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-red-100"
-          >
-            <Trash2 className="w-4 h-4" />
-            Запросить удаление
-          </a>
+          <DeleteAccountButton email={user!.email!} />
         </div>
 
       </div>

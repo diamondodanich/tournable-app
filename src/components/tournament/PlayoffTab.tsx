@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Tournament, Team, PlayoffMatch, MatchEvent } from '@/types'
 import { savePlayoffResult, generatePlayoff, startPlayoffMatch } from '@/app/actions/playoff'
 import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock, Clock } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock, Clock, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
@@ -274,7 +274,7 @@ function PlayoffMatchCard({
     const hasEvts  = homeRows.length > 0 || awayRows.length > 0
 
     return (
-      <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-3 shadow-sm min-w-[300px]">
+      <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-3 shadow-sm w-[300px] max-w-[85vw]">
         {/* Header */}
         <div className="flex items-center justify-between mb-2.5">
           <Badge className="bg-emerald-100 text-emerald-700 text-xs">
@@ -350,7 +350,7 @@ function PlayoffMatchCard({
   const awayRows = buildRows(match.away_team_id ?? '', events)
 
   return (
-    <div className={`bg-white border rounded-xl p-3 shadow-sm min-w-[260px] ${
+    <div className={`bg-white border rounded-xl p-3 shadow-sm w-[300px] max-w-[85vw] ${
       isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-dashed border-gray-200 bg-gray-50/40'
     }`}>
       {showUpgrade && (
@@ -409,7 +409,7 @@ function PlayoffMatchCard({
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {homeTeam && <TeamAvatar name={homeTeam.name} logoUrl={homeTeam.logo_url} size={22} />}
-            <span className={`font-bold text-sm truncate ${homeTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+            <span className={`font-bold text-sm leading-tight break-words line-clamp-2 ${homeTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
               {homeTeam?.name ?? homeLabel ?? 'TBD'}
             </span>
           </div>
@@ -419,7 +419,7 @@ function PlayoffMatchCard({
             {scoreHome} – {scoreAway}
           </div>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-            <span className={`font-bold text-sm text-right truncate ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+            <span className={`font-bold text-sm text-right leading-tight break-words line-clamp-2 ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
               {awayTeam?.name ?? awayLabel ?? 'TBD'}
             </span>
             {awayTeam && <TeamAvatar name={awayTeam.name} logoUrl={awayTeam.logo_url} size={22} />}
@@ -448,13 +448,12 @@ function PlayoffMatchCard({
                   </button>
                 </div>
               ))}
-              <PlayoffInlineForm teamId={match.home_team_id} form={form} setForm={setForm} onConfirm={confirmForm} />
-              {form?.teamId !== match.home_team_id && (
-                <button onClick={() => match.home_team_id && openForm(match.home_team_id)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5">
-                  <Plus size={10} /> Событие
-                </button>
-              )}
+              <button onClick={() => match.home_team_id && openForm(match.home_team_id)}
+                className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
+                  form?.teamId === match.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                }`}>
+                <Plus size={10} /> Событие
+              </button>
             </div>
 
             {/* Away column */}
@@ -473,16 +472,28 @@ function PlayoffMatchCard({
                   <EventIcon type={r.type} />
                 </div>
               ))}
-              <PlayoffInlineForm teamId={match.away_team_id} form={form} setForm={setForm} onConfirm={confirmForm} />
-              {form?.teamId !== match.away_team_id && (
-                <button onClick={() => match.away_team_id && openForm(match.away_team_id)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5 ml-auto">
-                  Событие <Plus size={10} />
-                </button>
-              )}
+              <button onClick={() => match.away_team_id && openForm(match.away_team_id)}
+                className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
+                  form?.teamId === match.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                }`}>
+                Событие <Plus size={10} />
+              </button>
             </div>
 
           </div>
+
+          {/* Full-width add-event form — spans whole card so inputs never widen it */}
+          {form && (form.teamId === match.home_team_id || form.teamId === match.away_team_id) && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Событие для</span>
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
+                  {form.teamId === match.home_team_id ? homeTeam?.name : awayTeam?.name}
+                </span>
+              </div>
+              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} />
+            </div>
+          )}
         </div>
       )}
 
@@ -536,6 +547,23 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
 }) {
   const [generating, setGenerating] = useState(false)
   const fmt = tournament.format ?? 'playoff'
+
+  // Horizontal-scroll affordance for the bracket (mobile)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const update = () => setCanScrollRight(el.scrollWidth - el.clientWidth - el.scrollLeft > 24)
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { el.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [matches.length])
+
+  function scrollRightBy() {
+    scrollRef.current?.scrollBy({ left: 280, behavior: 'smooth' })
+  }
 
   async function handleGenerate() {
     if (fmt === 'playoff' && teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
@@ -634,7 +662,8 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         </div>
       )}
 
-      <div className="overflow-x-auto pb-4">
+      <div className="relative">
+        <div ref={scrollRef} className="overflow-x-auto pb-4">
         <div className="flex gap-6 min-w-max">
           {rounds.map(ro => (
             <div key={ro} className="flex flex-col gap-4">
@@ -664,6 +693,24 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
             </div>
           ))}
         </div>
+        </div>
+
+        {/* Scroll affordance — fade + tappable chevron when more cards are off-screen */}
+        <div
+          className={`pointer-events-none absolute top-0 right-0 bottom-4 w-16 bg-gradient-to-l from-gray-50 to-transparent transition-opacity duration-200 ${
+            canScrollRight ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        <button
+          type="button"
+          onClick={scrollRightBy}
+          aria-label="Листать дальше"
+          className={`absolute top-1/2 right-1 -translate-y-1/2 flex items-center gap-1 bg-white shadow-md border border-gray-200 rounded-full pl-2.5 pr-2 py-1 text-[10px] font-bold text-gray-500 hover:text-emerald-600 transition-all duration-200 ${
+            canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          Ещё <ChevronRight size={13} />
+        </button>
       </div>
     </div>
   )

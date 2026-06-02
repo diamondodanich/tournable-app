@@ -135,75 +135,71 @@ export async function createTournamentWithSetup(
   }
 
   // ── Generate schedule ────────────────────────────────────────────────────
+  // Each format runs its independent writes in parallel to minimise round-trips.
   if (format === 'round_robin' && teamIds.length >= 2) {
     const fixtures = buildRoundRobinFixtures(t.id, teamIds, numRounds)
-    await supabase.from('fixtures').insert(fixtures)
-    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+    await Promise.all([
+      supabase.from('fixtures').insert(fixtures),
+      supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
+    ])
   }
 
   if (format === 'league_playoff' && teamIds.length >= 2) {
     // numRounds for league_playoff = number of matchdays (1 to N-1)
     const fixtures = buildLeagueFixtures(t.id, teamIds, numRounds)
-    if (fixtures.length > 0) {
-      await supabase.from('fixtures').insert(fixtures)
-      await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
-    }
-    // Pre-generate placeholder bracket so "Сетка" tab shows position labels immediately
     const ta = settings?.teamsAdvance ?? 8
-    await insertPlaceholderBracket(supabase, t.id, ta)
+    await Promise.all([
+      fixtures.length > 0 ? supabase.from('fixtures').insert(fixtures) : Promise.resolve(),
+      fixtures.length > 0 ? supabase.from('tournaments').update({ generated: true }).eq('id', t.id) : Promise.resolve(),
+      // Pre-generate placeholder bracket so "Сетка" tab shows position labels immediately
+      insertPlaceholderBracket(supabase, t.id, ta),
+    ])
   }
 
   if (format === 'groups_playoff' && teamIds.length >= 2) {
     const groupsCount = settings?.groupsCount ?? 4
     // numRounds for groups_playoff = number of legs (1 or 2)
     const fixtures = buildGroupsFixtures(t.id, teamIds, groupsCount, numRounds)
-    if (fixtures.length > 0) {
-      await supabase.from('fixtures').insert(fixtures)
-      await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
-    }
-    // Pre-generate placeholder bracket with null team IDs → shows A1/B2 labels in UI
     const teamsAdvance = settings?.teamsAdvance ?? 2
-    await insertPlaceholderBracket(supabase, t.id, groupsCount * teamsAdvance)
+    await Promise.all([
+      fixtures.length > 0 ? supabase.from('fixtures').insert(fixtures) : Promise.resolve(),
+      fixtures.length > 0 ? supabase.from('tournaments').update({ generated: true }).eq('id', t.id) : Promise.resolve(),
+      // Pre-generate placeholder bracket with null team IDs → shows A1/B2 labels in UI
+      insertPlaceholderBracket(supabase, t.id, groupsCount * teamsAdvance),
+    ])
   }
 
   if (format === 'playoff' && teamIds.length >= 2) {
-    // Auto-generate fair seeded bracket immediately on creation
+    // Auto-generate fair seeded bracket immediately on creation.
+    // Pre-assign UUIDs so winner_to_match links resolve in a SINGLE insert
+    // (previously this did insert + N sequential UPDATE round-trips — very slow for big brackets).
     const matches = generatePlayoffBracket(teamIds)
+    const ids = matches.map(() => crypto.randomUUID())
+    const idByKey = new Map<string, string>()
+    matches.forEach((m, i) => idByKey.set(`${m.round_order}:${m.match_order}`, ids[i]))
 
-    // Insert without winner_to_match first (need real UUIDs for cross-linking)
-    const { data: inserted } = await supabase
-      .from('playoff_matches')
-      .insert(matches.map(m => ({
+    const rows = matches.map((m, i) => {
+      let winner_to_match: string | null = null
+      if (m.winner_to_match !== null) {
+        const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
+        winner_to_match = idByKey.get(targetKey) ?? null
+      }
+      return {
+        id: ids[i],
         tournament_id: t.id,
         round_order: m.round_order,
         match_order: m.match_order,
         home_team_id: m.home_team_id,
         away_team_id: m.away_team_id,
         winner_slot: m.winner_slot,
-      })))
-      .select('id, round_order, match_order')
-
-    if (inserted) {
-      // Build (round_order:match_order) → real UUID lookup
-      const lookup = new Map<string, string>()
-      inserted.forEach((r: { id: string; round_order: number; match_order: number }) =>
-        lookup.set(`${r.round_order}:${r.match_order}`, r.id)
-      )
-
-      // Second pass: wire up winner_to_match with real IDs
-      for (const m of matches) {
-        if (m.winner_to_match !== null) {
-          const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
-          const targetId = lookup.get(targetKey)
-          const selfId   = lookup.get(`${m.round_order}:${m.match_order}`)
-          if (targetId && selfId) {
-            await supabase.from('playoff_matches').update({ winner_to_match: targetId }).eq('id', selfId)
-          }
-        }
+        winner_to_match,
       }
-    }
+    })
 
-    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
+    await Promise.all([
+      supabase.from('playoff_matches').insert(rows),
+      supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
+    ])
   }
 
   revalidatePath('/dashboard')
@@ -292,34 +288,30 @@ function buildLeagueFixtures(
 async function insertPlaceholderBracket(supabase: any, tournamentId: string, totalSeeds: number) {
   if (totalSeeds < 2) return
   const matches = generatePlayoffBracket(Array(totalSeeds).fill(''))
-  const { data: inserted } = await supabase
-    .from('playoff_matches')
-    .insert(matches.map(m => ({
+  // Pre-assign UUIDs so winner_to_match links resolve in a single insert (no second pass).
+  const ids = matches.map(() => crypto.randomUUID())
+  const idByKey = new Map<string, string>()
+  matches.forEach((m, i) => idByKey.set(`${m.round_order}:${m.match_order}`, ids[i]))
+
+  const rows = matches.map((m, i) => {
+    let winner_to_match: string | null = null
+    if (m.winner_to_match !== null) {
+      const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
+      winner_to_match = idByKey.get(targetKey) ?? null
+    }
+    return {
+      id: ids[i],
       tournament_id: tournamentId,
       round_order: m.round_order,
       match_order: m.match_order,
       home_team_id: null,
       away_team_id: null,
       winner_slot: m.winner_slot,
-    })))
-    .select('id, round_order, match_order')
-
-  if (inserted) {
-    const lookup = new Map<string, string>()
-    inserted.forEach((r: { id: string; round_order: number; match_order: number }) =>
-      lookup.set(`${r.round_order}:${r.match_order}`, r.id)
-    )
-    for (const m of matches) {
-      if (m.winner_to_match !== null) {
-        const targetKey = `${m.winner_to_match}:${Math.ceil(m.match_order / 2)}`
-        const targetId = lookup.get(targetKey)
-        const selfId   = lookup.get(`${m.round_order}:${m.match_order}`)
-        if (targetId && selfId) {
-          await supabase.from('playoff_matches').update({ winner_to_match: targetId }).eq('id', selfId)
-        }
-      }
+      winner_to_match,
     }
-  }
+  })
+
+  await supabase.from('playoff_matches').insert(rows)
 }
 
 // ─── addTeam with plan check ──────────────────────────────────────────────────

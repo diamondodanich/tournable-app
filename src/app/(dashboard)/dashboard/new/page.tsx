@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Globe, Layers, Star, Lock,
+  Check, Settings2, RotateCcw, Crown, Globe, Layers, Star, Lock, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
@@ -452,6 +452,7 @@ export default function NewTournamentPage() {
   const [numRounds, setNumRounds] = useState(2)   // round_robin: circles | league_playoff: matchdays | groups_playoff: legs
   const [groupsCount, setGroupsCount] = useState(4)
   const [teamsAdvance, setTeamsAdvance] = useState(2)  // groups_playoff: per-group | league_playoff: total
+  const [sheetFormat, setSheetFormat] = useState<Format | null>(null)  // open format bottom-sheet
 
   function changeFormat(newFormat: Format) {
     setFormat(newFormat)
@@ -502,6 +503,12 @@ export default function NewTournamentPage() {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   function goToStep2() {
+    if (!name.trim()) { setError(tx.errName); return }
+    setError(null); setStep(2)
+  }
+  // Confirm format choice from the bottom sheet, then advance
+  function confirmFormatSheet() {
+    setSheetFormat(null)
     if (!name.trim()) { setError(tx.errName); return }
     setError(null); setStep(2)
   }
@@ -613,7 +620,10 @@ export default function NewTournamentPage() {
         if (logoDataUrl && teamId) uploads.push(uploadTeamLogo(teamId, tournamentId, logoDataUrl))
       })
 
-    if (uploads.length > 0) await Promise.all(uploads)
+    // Navigate immediately — the tournament, teams and schedule are already created.
+    // Logo uploads continue in the background; the tournament page revalidates and
+    // shows each logo as its upload finishes (no need to block the redirect on them).
+    if (uploads.length > 0) Promise.all(uploads).catch(() => {})
     router.push(`/dashboard/tournament/${tournamentId}`)
   }
 
@@ -659,7 +669,7 @@ export default function NewTournamentPage() {
                   const active = sport === s.value
                   return (
                     <button key={s.value} type="button" onClick={() => changeSport(s.value)}
-                      className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                      className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
                         active ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}>
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-[10px] leading-none ${s.color}`}>
@@ -689,83 +699,128 @@ export default function NewTournamentPage() {
                     onClick={() => {
                       if (locked) { setUpgradeFor(fmtLabel(f.value)); return }
                       changeFormat(f.value)
+                      setSheetFormat(f.value)   // open details bottom-sheet
                     }}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`relative flex items-start gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all ${
                       active ? 'border-emerald-500 bg-emerald-50'
                       : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                    {locked && (
-                      <span className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                        <Lock size={9} /> PRO
-                      </span>
-                    )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                       active ? 'bg-emerald-600' : locked ? 'bg-gray-200' : 'bg-gray-100'
                     }`}>
-                      <Icon size={16} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
+                      <Icon size={17} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
                     </div>
-                    <p className={`text-sm font-bold ${active ? 'text-emerald-700' : locked ? 'text-gray-400' : 'text-gray-800'}`}>{fmtLabel(f.value)}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-snug">{fmtDesc(f.value)}</p>
+                    <p className={`text-sm font-bold leading-tight ${active ? 'text-emerald-700' : locked ? 'text-gray-400' : 'text-gray-800'}`}>{fmtLabel(f.value)}</p>
+                    {locked && (
+                      <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
+                        <Lock size={8} /> PRO
+                      </span>
+                    )}
                   </button>
                 )
               })}
             </div>
+            <p className="text-xs text-gray-400 pt-0.5">Нажмите на формат, чтобы увидеть описание и продолжить</p>
           </div>
-
-          {format === 'round_robin' && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">{tx.roundsLbl}</label>
-              <div className="grid grid-cols-2 gap-2">
-                {ROUNDS_OPTS.map(opt => (
-                  <button key={opt.value} type="button" onClick={() => setNumRounds(opt.value)}
-                    className={`py-2.5 px-3 rounded-xl border text-left text-sm transition-all ${
-                      numRounds === opt.value
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {format === 'league_playoff' && (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
-              <Settings2 size={13} className="shrink-0 opacity-70" />
-              <span>{tx.leagueSettingsNote}</span>
-            </div>
-          )}
-
-          {format === 'groups_playoff' && (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {GROUPS_OPTS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                        groupsCount === opt.value
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
-                <Settings2 size={13} className="shrink-0 opacity-70" />
-                <span>{tx.groupAdvanceNote}</span>
-              </div>
-            </div>
-          )}
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
           <Button onClick={goToStep2} className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 text-base font-bold">
             {tx.next} <ArrowRight size={16} className="ml-2" />
           </Button>
+
+          {/* ── Format details bottom-sheet ─────────────────────────────── */}
+          {sheetFormat && (() => {
+            const SheetIcon = FORMATS.find(f => f.value === sheetFormat)!.icon
+            return (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                <style>{`@keyframes sheet-up{0%{transform:translateY(100%)}100%{transform:translateY(0)}}@keyframes sheet-fade{0%{opacity:0}100%{opacity:1}}`}</style>
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" style={{ animation: 'sheet-fade .2s ease-out' }} onClick={() => setSheetFormat(null)} />
+                <div
+                  className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-t border-gray-100 p-6 pb-8 max-h-[88vh] overflow-y-auto"
+                  style={{ animation: 'sheet-up .3s cubic-bezier(.2,.8,.2,1)' }}
+                >
+                  {/* Drag handle (mobile) */}
+                  <div className="sm:hidden flex justify-center -mt-2 mb-4"><div className="w-10 h-1 bg-gray-300 rounded-full" /></div>
+
+                  {/* Close */}
+                  <button onClick={() => setSheetFormat(null)}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+                    <X size={15} />
+                  </button>
+
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
+                      <SheetIcon size={22} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">{tx.formatLbl}</p>
+                      <h3 className="text-lg font-black text-gray-900 leading-tight">{fmtLabel(sheetFormat)}</h3>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-500 leading-relaxed mb-5">{fmtDesc(sheetFormat)}</p>
+
+                  {/* Format-specific options */}
+                  {sheetFormat === 'round_robin' && (
+                    <div className="space-y-1.5 mb-5">
+                      <label className="text-sm font-bold text-gray-700">{tx.roundsLbl}</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {ROUNDS_OPTS.map(opt => (
+                          <button key={opt.value} type="button" onClick={() => setNumRounds(opt.value)}
+                            className={`py-2.5 px-3 rounded-xl border text-left text-sm transition-all ${
+                              numRounds === opt.value
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            }`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sheetFormat === 'league_playoff' && (
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2 mb-5">
+                      <Settings2 size={13} className="shrink-0 opacity-70" />
+                      <span>{tx.leagueSettingsNote}</span>
+                    </div>
+                  )}
+
+                  {sheetFormat === 'groups_playoff' && (
+                    <div className="space-y-3 mb-5">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-gray-700">{tx.groupsLbl}</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {GROUPS_OPTS.map(opt => (
+                            <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                                groupsCount === opt.value
+                                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                              }`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700 flex items-center gap-2">
+                        <Settings2 size={13} className="shrink-0 opacity-70" />
+                        <span>{tx.groupAdvanceNote}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Continue */}
+                  <Button onClick={confirmFormatSheet} className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-bold">
+                    {tx.next} <ArrowRight size={16} className="ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       )}
 
@@ -1122,7 +1177,9 @@ export default function NewTournamentPage() {
             </Button>
             <Button onClick={handleCreate} disabled={loading}
               className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 font-bold">
-              <Zap size={15} className="mr-1.5" />
+              {loading
+                ? <Loader2 size={15} className="mr-1.5 animate-spin" />
+                : <Zap size={15} className="mr-1.5" />}
               {loading ? tx.creating : tx.create}
             </Button>
           </div>

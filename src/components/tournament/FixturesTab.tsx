@@ -263,13 +263,13 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={28} />
-            <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
+            <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2">{homeTeam?.name}</span>
           </div>
           <div className="font-black text-2xl text-gray-900 font-mono shrink-0 tabular-nums">
             {fixture.home_score ?? homeScore} – {fixture.away_score ?? awayScore}
           </div>
           <div className="flex items-center gap-2 justify-end min-w-0">
-            <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name}</span>
+            <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2 text-right">{awayTeam?.name}</span>
             <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={28} />
           </div>
         </div>
@@ -355,7 +355,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={24} />
-          <span className="font-bold text-sm text-gray-900 truncate">{homeTeam?.name}</span>
+          <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2">{homeTeam?.name}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {hasGoals ? (
@@ -375,7 +375,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
           )}
         </div>
         <div className="flex items-center gap-2 justify-end min-w-0">
-          <span className="font-bold text-sm text-gray-900 truncate text-right">{awayTeam?.name}</span>
+          <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2 text-right">{awayTeam?.name}</span>
           <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={24} />
         </div>
       </div>
@@ -400,15 +400,12 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
                 </button>
               </div>
             ))}
-            {form?.teamId === fixture.home_team_id && (
-              <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
-            )}
-            {form?.teamId !== fixture.home_team_id && (
-              <button onClick={() => fixture.home_team_id && openForm(fixture.home_team_id)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5">
-                <Plus size={10} /> Событие
-              </button>
-            )}
+            <button onClick={() => fixture.home_team_id && openForm(fixture.home_team_id)}
+              className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
+                form?.teamId === fixture.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+              }`}>
+              <Plus size={10} /> Событие
+            </button>
           </div>
 
           {/* Away */}
@@ -427,18 +424,28 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
                 <EvtIcon type={r.type} />
               </div>
             ))}
-            {form?.teamId === fixture.away_team_id && (
-              <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
-            )}
-            {form?.teamId !== fixture.away_team_id && (
-              <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors mt-0.5 ml-auto">
-                Событие <Plus size={10} />
-              </button>
-            )}
+            <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
+              className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
+                form?.teamId === fixture.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+              }`}>
+              Событие <Plus size={10} />
+            </button>
           </div>
 
         </div>
+
+        {/* Full-width add-event form — spans the whole card so inputs never widen it */}
+        {form && (
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Событие для</span>
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
+                {form.teamId === fixture.home_team_id ? homeTeam?.name : awayTeam?.name}
+              </span>
+            </div>
+            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end">

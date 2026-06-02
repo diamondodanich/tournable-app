@@ -3,15 +3,23 @@
 import { useState } from 'react'
 import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Goal, Handshake, RectangleVertical } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 
 type Filter = 'goal' | 'assist' | 'yellow_card' | 'red_card'
 
-const FILTERS: { value: Filter; label: string; color: string }[] = [
-  { value: 'goal',        label: 'Голы',     color: 'bg-emerald-600 text-white' },
-  { value: 'assist',      label: 'Ассисты',  color: 'bg-blue-600 text-white' },
-  { value: 'yellow_card', label: 'ЖК',       color: 'bg-amber-500 text-white' },
-  { value: 'red_card',    label: 'КК',       color: 'bg-red-600 text-white' },
+const FILTERS: {
+  value: Filter
+  label: string       // full label, e.g. "Ассисты"
+  short: string       // table column header, e.g. "Голы"
+  color: string       // active pill bg
+  icon: React.ElementType
+  iconColor: string   // empty-state icon container accent
+}[] = [
+  { value: 'goal',        label: 'Бомбардиры', short: 'Голы',    color: 'bg-emerald-600 text-white', icon: Goal,              iconColor: 'bg-emerald-100 text-emerald-600' },
+  { value: 'assist',      label: 'Ассистенты', short: 'Ассисты', color: 'bg-blue-600 text-white',    icon: Handshake,         iconColor: 'bg-blue-100 text-blue-600' },
+  { value: 'yellow_card', label: 'Жёлтые',     short: 'ЖК',      color: 'bg-amber-500 text-white',   icon: RectangleVertical, iconColor: 'bg-amber-100 text-amber-600' },
+  { value: 'red_card',    label: 'Красные',    short: 'КК',      color: 'bg-red-600 text-white',     icon: RectangleVertical, iconColor: 'bg-red-100 text-red-600' },
 ]
 
 function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
@@ -41,28 +49,35 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
   const list = buildLeaderboard(teams, events, filter)
   const active = FILTERS.find(f => f.value === filter)!
 
+  const ActiveIcon = active.icon
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
-        {FILTERS.map(f => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all ${
-              filter === f.value ? f.color : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+        {FILTERS.map(f => {
+          const Icon = f.icon
+          const isActive = filter === f.value
+          return (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
+                isActive ? f.color : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <Icon size={15} className="shrink-0" />
+              <span>{f.label}</span>
+            </button>
+          )
+        })}
       </div>
 
       {list.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-            <span className="text-xs font-black text-gray-400">{active.label}</span>
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${active.iconColor}`}>
+            <ActiveIcon size={26} />
           </div>
-          <p className="font-bold text-gray-600">Событий пока нет</p>
+          <p className="font-bold text-gray-600">{active.label} — пока пусто</p>
           <p className="text-sm text-gray-400 mt-1">Указывайте события при вводе результатов</p>
         </div>
       ) : (
@@ -73,7 +88,7 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
                 <TableHead className="w-14 text-center text-gray-500">#</TableHead>
                 <TableHead className="text-gray-700">Игрок</TableHead>
                 <TableHead className="text-gray-700">Команда</TableHead>
-                <TableHead className="text-center text-gray-700 w-16">{active.label}</TableHead>
+                <TableHead className="text-center text-gray-700 w-16">{active.short}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -6,7 +6,7 @@ import { addTeam, removeTeam, generateSchedule, renameTournament, updateTourname
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users, Settings2, Check, Pencil, Sliders } from 'lucide-react'
+import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
@@ -130,7 +130,7 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
                       onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
                     />
                     <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 px-2" onClick={handleSaveName} disabled={savingName}>
-                      <Check size={14} />
+                      {savingName ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     </Button>
                     <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => { setEditingName(false); setNameValue(tournament.name) }}>
                       <X size={14} />
@@ -246,7 +246,9 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
             size="sm"
             className="bg-emerald-600 hover:bg-emerald-700"
           >
-            <Check size={13} className="mr-1.5" />
+            {savingSettings
+              ? <Loader2 size={13} className="mr-1.5 animate-spin" />
+              : <Check size={13} className="mr-1.5" />}
             {savingSettings ? 'Сохраняем…' : 'Сохранить настройки'}
           </Button>
         </CardContent>
@@ -268,7 +270,8 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
               maxLength={30}
             />
             <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>
-              + Добавить
+              {loading ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
+              {loading ? 'Добавляем…' : '+ Добавить'}
             </Button>
           </form>
 
@@ -304,7 +307,7 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
           className="bg-emerald-600 hover:bg-emerald-700 gap-2"
           size="lg"
         >
-          <Zap size={16} />
+          {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
           {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
         </Button>
       )}

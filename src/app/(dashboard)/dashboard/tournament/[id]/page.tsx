@@ -371,6 +371,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           champion={champion}
           runnerUp={runnerUp}
           label={isRoundRobin ? 'Победитель турнира' : 'Чемпион плей-офф'}
+          tournamentName={tournament.name}
+          tournamentId={tournament.id}
         />
       )}
 

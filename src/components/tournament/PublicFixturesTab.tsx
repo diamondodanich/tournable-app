@@ -72,13 +72,13 @@ export default function PublicFixturesTab({ tournament, teams, fixtures }: {
                   <div className="px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <TeamAvatar name={home?.name ?? '—'} logoUrl={home?.logo_url} size={28} />
-                      <span className="font-bold text-sm text-gray-900 truncate">{home?.name ?? '—'}</span>
+                      <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2">{home?.name ?? '—'}</span>
                     </div>
                     <span className={`font-black font-mono text-xl px-3 ${f.played ? 'text-gray-900' : 'text-gray-300'}`}>
                       {f.played ? `${f.home_score} : ${f.away_score}` : '— : —'}
                     </span>
                     <div className="flex items-center gap-2 justify-end min-w-0">
-                      <span className="font-bold text-sm text-gray-900 truncate text-right">{away?.name ?? '—'}</span>
+                      <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2 text-right">{away?.name ?? '—'}</span>
                       <TeamAvatar name={away?.name ?? '—'} logoUrl={away?.logo_url} size={28} />
                     </div>
                   </div>

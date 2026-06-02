@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, X } from 'lucide-react'
+import { Trophy, Crown, Medal, Share2, Copy, Check, Send, X } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 import type { Team } from '@/types'
 
@@ -9,57 +9,181 @@ export default function ChampionBanner({
   champion,
   runnerUp,
   label = 'Чемпион турнира',
+  tournamentName,
+  tournamentId,
 }: {
   champion: Team
   runnerUp?: Team | null
   label?: string
+  tournamentName?: string
+  tournamentId?: string
 }) {
   const [dismissed, setDismissed] = useState(false)
+  const [copied, setCopied]       = useState(false)
+
   if (dismissed) return null
 
-  return (
-    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-lg p-5">
+  const shareText = `${champion.name} — ${label.toLowerCase()}${tournamentName ? ` «${tournamentName}»` : ''}`
 
-      {/* Decorative corner stars */}
-      <span className="absolute top-3 left-5 text-amber-300/70 text-xl select-none">★</span>
-      <span className="absolute top-2 right-12 text-amber-200/70 text-sm select-none">★</span>
-      <span className="absolute bottom-3 left-10 text-amber-200/60 text-sm select-none">★</span>
-      <span className="absolute bottom-2 right-6 text-amber-300/70 text-xl select-none">★</span>
+  // Origin is only known in the browser — resolve the public URL lazily at click time.
+  function getShareUrl() {
+    if (typeof window === 'undefined') return ''
+    return `${window.location.origin}/t/${tournamentId}`
+  }
+
+  async function nativeShare() {
+    const url = getShareUrl()
+    if (!url) return
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share({ title: tournamentName ?? 'Tournable', text: shareText, url }) } catch {}
+    } else {
+      copyLink()
+    }
+  }
+
+  async function copyLink() {
+    const url = getShareUrl()
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${url}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {}
+  }
+
+  function openTelegram() {
+    const url = getShareUrl()
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener')
+  }
+  function openWhatsApp() {
+    const url = getShareUrl()
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}`, '_blank', 'noopener')
+  }
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-3xl shadow-2xl"
+      style={{ background: 'linear-gradient(135deg,#0b3b2e 0%,#0f5132 45%,#064e3b 100%)' }}
+    >
+      {/* Scoped animations */}
+      <style>{`
+        @keyframes champ-shimmer { 0% { transform: translateX(-120%) skewX(-18deg) } 100% { transform: translateX(320%) skewX(-18deg) } }
+        @keyframes champ-rise { 0% { opacity: 0; transform: translateY(10px) } 100% { opacity: 1; transform: translateY(0) } }
+        @keyframes champ-glow { 0%,100% { opacity: .35 } 50% { opacity: .7 } }
+      `}</style>
+
+      {/* Ambient gold glow */}
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full blur-3xl"
+        style={{ background: 'radial-gradient(circle,rgba(251,191,36,.45),transparent 70%)', animation: 'champ-glow 4s ease-in-out infinite' }}
+      />
+      {/* Fine grid texture */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '26px 26px' }}
+      />
+      {/* Moving shimmer sweep */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute top-0 left-0 h-full w-1/3"
+          style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent)', animation: 'champ-shimmer 5.5s ease-in-out infinite' }}
+        />
+      </div>
+      {/* Gold top hairline */}
+      <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(251,191,36,.8),transparent)' }} />
 
       {/* Dismiss */}
       <button
         onClick={() => setDismissed(true)}
-        className="absolute top-3 right-3 text-amber-400 hover:text-amber-700 transition-colors"
+        className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-emerald-100 flex items-center justify-center transition-colors backdrop-blur-sm"
         aria-label="Закрыть"
       >
-        <X size={15} />
+        <X size={14} />
       </button>
 
-      {/* Content */}
-      <div className="flex flex-col items-center text-center gap-3">
+      <div className="relative px-6 py-7 sm:px-8 sm:py-8">
 
-        {/* Trophy */}
-        <Trophy size={48} className="text-amber-500 animate-bounce" style={{ animationDuration: '2s' }} />
-
-        {/* Label */}
-        <p className="text-xs font-black uppercase tracking-widest text-amber-600">
-          {label}
-        </p>
-
-        {/* Champion */}
-        <div className="flex items-center gap-2.5 bg-white/70 rounded-2xl px-5 py-2.5 shadow-sm">
-          <TeamAvatar name={champion.name} logoUrl={champion.logo_url} size={40} />
-          <p className="text-xl font-black text-amber-900 leading-tight">
-            {champion.name}
-          </p>
+        {/* Eyebrow */}
+        <div className="flex items-center justify-center gap-2 mb-5" style={{ animation: 'champ-rise .5s ease-out both' }}>
+          <span className="h-px w-8 bg-amber-300/40" />
+          <Crown size={13} className="text-amber-300" />
+          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-200">{label}</span>
+          <Crown size={13} className="text-amber-300" />
+          <span className="h-px w-8 bg-amber-300/40" />
         </div>
 
-        {/* Runner-up */}
-        {runnerUp && (
-          <div className="flex items-center gap-2 text-amber-700 text-sm font-semibold">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 text-gray-600 text-[10px] font-black shrink-0">2</span>
-            <TeamAvatar name={runnerUp.name} logoUrl={runnerUp.logo_url} size={20} />
-            <span>{runnerUp.name}</span>
+        {/* Trophy medallion */}
+        <div className="flex justify-center mb-5" style={{ animation: 'champ-rise .6s ease-out both' }}>
+          <div className="relative">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-amber-200/40"
+              style={{ background: 'linear-gradient(145deg,#fcd34d,#f59e0b 60%,#d97706)' }}
+            >
+              <Trophy size={38} className="text-amber-900" />
+            </div>
+            <span className="absolute inset-0 rounded-2xl ring-2 ring-amber-300/30" style={{ animation: 'champ-glow 3s ease-in-out infinite' }} />
+          </div>
+        </div>
+
+        {/* Champion */}
+        <div className="flex flex-col items-center text-center gap-3" style={{ animation: 'champ-rise .7s ease-out both' }}>
+          <div className="flex items-center gap-3 max-w-full">
+            <TeamAvatar name={champion.name} logoUrl={champion.logo_url} size={44} />
+            <span className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight break-words">
+              {champion.name}
+            </span>
+          </div>
+
+          {tournamentName && (
+            <p className="text-sm text-emerald-200/80 font-medium">{tournamentName}</p>
+          )}
+
+          {/* Runner-up */}
+          {runnerUp && (
+            <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/8 border border-white/10 px-3.5 py-1.5 backdrop-blur-sm">
+              <Medal size={13} className="text-gray-300" />
+              <span className="text-[11px] font-bold uppercase tracking-wide text-gray-300">Финалист</span>
+              <TeamAvatar name={runnerUp.name} logoUrl={runnerUp.logo_url} size={18} />
+              <span className="text-sm font-semibold text-emerald-50">{runnerUp.name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Share row */}
+        {tournamentId && (
+          <div className="mt-7 flex flex-col items-center gap-3" style={{ animation: 'champ-rise .8s ease-out both' }}>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-200/60">
+              Поделиться достижением
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={nativeShare}
+                className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-sm font-black transition-colors shadow-md"
+              >
+                <Share2 size={15} /> Поделиться
+              </button>
+              <button
+                onClick={openTelegram}
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm"
+                title="Telegram"
+              >
+                <Send size={16} />
+              </button>
+              <button
+                onClick={openWhatsApp}
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm font-black text-xs"
+                title="WhatsApp"
+              >
+                WA
+              </button>
+              <button
+                onClick={copyLink}
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-50 flex items-center justify-center transition-colors backdrop-blur-sm"
+                title="Скопировать ссылку"
+              >
+                {copied ? <Check size={16} className="text-amber-300" /> : <Copy size={16} />}
+              </button>
+            </div>
           </div>
         )}
       </div>

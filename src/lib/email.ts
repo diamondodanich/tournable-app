@@ -5,14 +5,21 @@ import InviteEmail from '@/emails/InviteEmail'
 import SubscriptionExpiringEmail from '@/emails/SubscriptionExpiringEmail'
 import SubscriptionExpiredEmail from '@/emails/SubscriptionExpiredEmail'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy client — instantiated on first use so missing key doesn't break build
+let _resend: Resend | null = null
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 
-const FROM  = process.env.FROM_EMAIL    ?? 'Tournable <noreply@tournable.kz>'
+const FROM    = process.env.FROM_EMAIL        ?? 'Tournable <noreply@tournable.kz>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.vercel.app'
 
 // ── Welcome ───────────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(email: string, displayName?: string) {
-  if (!process.env.RESEND_API_KEY) return
+  const resend = getResend()
+  if (!resend) return
   try {
     const html = await render(WelcomeEmail({ displayName, appUrl: APP_URL }))
     await resend.emails.send({
@@ -33,7 +40,8 @@ export async function sendInviteEmail(
   inviteUrl: string,
   role: 'editor' | 'viewer',
 ) {
-  if (!process.env.RESEND_API_KEY) return
+  const resend = getResend()
+  if (!resend) return
   try {
     const html = await render(InviteEmail({ tournamentName, inviteUrl, role, appUrl: APP_URL }))
     const roleLabel = role === 'editor' ? 'редактора' : 'наблюдателя'
@@ -50,7 +58,8 @@ export async function sendInviteEmail(
 
 // ── Subscription expiring (3 days) ────────────────────────────────────────────
 export async function sendSubscriptionExpiringEmail(email: string, expiresAt: Date) {
-  if (!process.env.RESEND_API_KEY) return
+  const resend = getResend()
+  if (!resend) return
   try {
     const html = await render(SubscriptionExpiringEmail({ expiresAt, appUrl: APP_URL }))
     await resend.emails.send({
@@ -66,7 +75,8 @@ export async function sendSubscriptionExpiringEmail(email: string, expiresAt: Da
 
 // ── Subscription expired ──────────────────────────────────────────────────────
 export async function sendSubscriptionExpiredEmail(email: string) {
-  if (!process.env.RESEND_API_KEY) return
+  const resend = getResend()
+  if (!resend) return
   try {
     const html = await render(SubscriptionExpiredEmail({ appUrl: APP_URL }))
     await resend.emails.send({

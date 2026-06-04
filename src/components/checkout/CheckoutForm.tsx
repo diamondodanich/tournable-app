@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, Copy, Star, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Check, Copy, Star, MessageCircle, CheckCircle2, CreditCard, Loader2 } from 'lucide-react'
+import { initiatePayment } from '@/app/actions/payments'
 
 const MONTHLY_PRICE = 4990
 const PLANS = {
@@ -29,6 +30,11 @@ interface Props {
 export function CheckoutForm({ userEmail }: Props) {
   const [period, setPeriod] = useState<'monthly' | 'annual'>('monthly')
   const [copied, setCopied] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  function handlePay() {
+    startTransition(() => initiatePayment(period))
+  }
 
   const plan = PLANS[period]
 
@@ -145,68 +151,61 @@ export function CheckoutForm({ userEmail }: Props) {
           </div>
         </div>
 
-        {/* How to pay */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="font-black text-gray-900 mb-5">Как оплатить</h2>
+        {/* Payment button */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="font-black text-gray-900">Оплата</h2>
 
-          <ol className="space-y-4">
-            {/* Step 1 */}
-            <li className="flex gap-3">
-              <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white mt-0.5"
-                style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>1</div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 mb-1">Скопируйте сообщение</p>
-                <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-                  <p className="text-xs text-gray-600 flex-1 leading-relaxed break-all">{message}</p>
-                  <button
-                    onClick={handleCopy}
-                    className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
-                    title="Скопировать"
-                  >
-                    {copied
-                      ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      : <Copy className="w-4 h-4" />
-                    }
-                  </button>
-                </div>
-              </div>
-            </li>
-
-            {/* Step 2 */}
-            <li className="flex gap-3">
-              <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white mt-0.5"
-                style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>2</div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 mb-1">Напишите нам в WhatsApp</p>
-                <p className="text-xs text-gray-400 leading-relaxed">Вставьте скопированное сообщение — мы пришлём реквизиты для оплаты.</p>
-              </div>
-            </li>
-
-            {/* Step 3 */}
-            <li className="flex gap-3">
-              <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white mt-0.5"
-                style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>3</div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 mb-1">Активация аккаунта</p>
-                <p className="text-xs text-gray-400 leading-relaxed">После подтверждения оплаты активируем Про в течение нескольких часов.</p>
-              </div>
-            </li>
-          </ol>
-
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 flex items-center justify-center gap-2 w-full text-white font-black py-3.5 rounded-xl transition-opacity hover:opacity-90 text-sm shadow-lg"
+          {/* Primary: card payment */}
+          <button
+            onClick={handlePay}
+            disabled={isPending}
+            className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl transition-opacity hover:opacity-90 text-sm shadow-lg disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
           >
-            <MessageCircle className="w-4 h-4" />
-            Написать в WhatsApp
-          </a>
+            {isPending
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <CreditCard className="w-4 h-4" />
+            }
+            {isPending ? 'Перенаправляем…' : 'Оплатить картой'}
+          </button>
 
-          <p className="text-center text-[11px] text-gray-400 mt-3">
-            Оплата принимается через Kaspi Pay и банковские карты
+          <p className="text-center text-[11px] text-gray-400">
+            Visa · Mastercard · Kaspi Pay — защищённый платёж FreedomPay
           </p>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-[11px] text-gray-400 shrink-0">или</span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          {/* Fallback: WhatsApp */}
+          <div>
+            <p className="text-xs text-gray-500 font-semibold mb-2">Оплата через WhatsApp</p>
+            <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2 mb-3">
+              <p className="text-xs text-gray-600 flex-1 leading-relaxed break-all">{message}</p>
+              <button
+                onClick={handleCopy}
+                className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
+                title="Скопировать"
+              >
+                {copied
+                  ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  : <Copy className="w-4 h-4" />
+                }
+              </button>
+            </div>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full text-gray-700 font-bold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Написать в WhatsApp
+            </a>
+          </div>
         </div>
 
       </div>

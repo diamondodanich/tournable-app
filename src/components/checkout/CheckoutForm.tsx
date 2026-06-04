@@ -31,9 +31,17 @@ export function CheckoutForm({ userEmail }: Props) {
   const [period, setPeriod] = useState<'monthly' | 'annual'>('monthly')
   const [copied, setCopied] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [payError, setPayError] = useState<string | null>(null)
 
   function handlePay() {
-    startTransition(() => initiatePayment(period))
+    setPayError(null)
+    startTransition(async () => {
+      const result = await initiatePayment(period)
+      // If result is returned (not redirected), it's an error
+      if (result && 'error' in result) {
+        setPayError(result.error)
+      }
+    })
   }
 
   const plan = PLANS[period]
@@ -154,6 +162,13 @@ export function CheckoutForm({ userEmail }: Props) {
         {/* Payment button */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
           <h2 className="font-black text-gray-900">Оплата</h2>
+
+          {/* Error */}
+          {payError && (
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+              {payError}
+            </div>
+          )}
 
           {/* Primary: card payment */}
           <button

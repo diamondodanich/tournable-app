@@ -78,20 +78,34 @@ export async function createPayment(
   params.pg_sig = buildSignature('purchase', params)
 
   const body = new URLSearchParams(params).toString()
-  const res  = await fetch(API_ENDPOINT, {
+  const res = await fetch(API_ENDPOINT, {
     method:  'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
   })
 
+  const rawText = await res.text()
+  console.log('[FreedomPay] status:', res.status, 'body:', rawText.slice(0, 500))
+
   if (!res.ok) {
-    throw new Error(`FreedomPay API error: ${res.status}`)
+    throw new Error(`FreedomPay API HTTP ${res.status}: ${rawText.slice(0, 200)}`)
   }
 
-  const data = await res.json() as Record<string, string>
+  let data: Record<string, string>
+  try {
+    data = JSON.parse(rawText)
+  } catch {
+    throw new Error(`FreedomPay: не удалось разобрать ответ: ${rawText.slice(0, 200)}`)
+  }
 
   if (data.pg_status !== 'ok') {
-    throw new Error(`FreedomPay: ${data.pg_error_description ?? data.pg_status}`)
+    throw new Error(
+      `FreedomPay: ${data.pg_error_description ?? data.pg_error_code ?? data.pg_status}`,
+    )
+  }
+
+  if (!data.pg_redirect_url) {
+    throw new Error('FreedomPay: ответ не содержит pg_redirect_url')
   }
 
   return {

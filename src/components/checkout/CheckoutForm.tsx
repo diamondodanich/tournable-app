@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Check, Copy, Star, MessageCircle, CheckCircle2, CreditCard, Loader2 } from 'lucide-react'
-import { initiatePayment } from '@/app/actions/payments'
+import { getPaymentFormParams } from '@/app/actions/payments'
 
 const MONTHLY_PRICE = 4990
 const PLANS = {
@@ -36,11 +36,31 @@ export function CheckoutForm({ userEmail }: Props) {
   function handlePay() {
     setPayError(null)
     startTransition(async () => {
-      const result = await initiatePayment(period)
-      // If result is returned (not redirected), it's an error
-      if (result && 'error' in result) {
+      const result = await getPaymentFormParams(period)
+
+      if ('error' in result) {
         setPayError(result.error)
+        return
       }
+
+      // Create a hidden form and submit it directly from the browser.
+      // FreedomPay's API blocks Vercel server IPs via Cloudflare,
+      // so the browser must POST directly to the gateway.
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = result.endpoint
+      form.style.display = 'none'
+
+      Object.entries(result.params).forEach(([key, value]) => {
+        const input = document.createElement('input')
+        input.type  = 'hidden'
+        input.name  = key
+        input.value = value
+        form.appendChild(input)
+      })
+
+      document.body.appendChild(form)
+      form.submit()
     })
   }
 

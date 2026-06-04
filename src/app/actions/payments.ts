@@ -2,24 +2,24 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { createPayment, type PlanPeriod } from '@/lib/freedompay'
+import { buildPaymentFormParams, type PlanPeriod, GATEWAY_URL } from '@/lib/freedompay'
 
-export async function initiatePayment(period: PlanPeriod): Promise<{ error: string } | never> {
+// Returns signed params for client-side form POST.
+// FreedomPay's API sits behind Cloudflare and blocks Vercel server IPs,
+// so we never call it server-side — the browser POSTs directly instead.
+export async function getPaymentFormParams(
+  period: PlanPeriod,
+): Promise<{ params: Record<string, string>; endpoint: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/checkout')
 
-  // Keep redirect() OUTSIDE try/catch — Next.js redirect throws internally
-  // and must not be caught, otherwise navigation is silently swallowed.
-  let redirectUrl: string
   try {
-    const result = await createPayment(user.id, period)
-    redirectUrl = result.redirectUrl
+    const params = buildPaymentFormParams(user.id, period)
+    return { params, endpoint: GATEWAY_URL }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Ошибка платёжного сервиса'
-    console.error('[initiatePayment]', err)
+    const msg = err instanceof Error ? err.message : 'Ошибка формирования платежа'
+    console.error('[getPaymentFormParams]', err)
     return { error: msg }
   }
-
-  redirect(redirectUrl)
 }

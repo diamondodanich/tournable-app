@@ -55,7 +55,7 @@ export default function TermsPage() {
           <Section title="3. Регистрация и аккаунт">
             <p>3.1. Для использования основных функций Сервиса необходима регистрация аккаунта с указанием действующего email-адреса и создания пароля.</p>
             <p>3.2. Пользователь несёт полную ответственность за сохранность учётных данных (email и пароля) и за все действия, совершённые под его аккаунтом.</p>
-            <p>3.3. При обнаружении несанкционированного доступа к аккаунту Пользователь обязан незамедлительно уведомить Оператора по адресу tournable_webapp@gmail.com.</p>
+            <p>3.3. При обнаружении несанкционированного доступа к аккаунту Пользователь обязан незамедлительно уведомить Оператора по адресу tournable.webapp@gmail.com.</p>
             <p>3.4. Запрещается создавать несколько аккаунтов с целью обхода ограничений бесплатного тарифного плана.</p>
             <p>3.5. Пользователь должен быть не моложе 16 лет либо действовать с согласия родителей или законных представителей.</p>
           </Section>
@@ -104,7 +104,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="9. Приостановка и удаление аккаунта">
-            <p>9.1. Пользователь вправе удалить свой аккаунт в любое время, обратившись в поддержку по email tournable_webapp@gmail.com.</p>
+            <p>9.1. Пользователь вправе удалить свой аккаунт в любое время, обратившись в поддержку по email tournable.webapp@gmail.com.</p>
             <p>9.2. Оператор вправе приостановить или удалить аккаунт Пользователя в случае:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Нарушения условий настоящего Соглашения</li>
@@ -126,7 +126,7 @@ export default function TermsPage() {
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Оператор: ИП Асқар Данияр Тахирұлы (ИИН 030830501207)</li>
               <li>Адрес: Республика Казахстан, г. Астана, район Алматы, ул. Кайрата Рыскулбекова, д. 29А</li>
-              <li>Email: <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 hover:underline">tournable_webapp@gmail.com</a></li>
+              <li>Email: <a href="mailto:tournable.webapp@gmail.com" className="text-emerald-600 hover:underline">tournable.webapp@gmail.com</a></li>
               <li>WhatsApp: <a href="https://wa.me/message/YHLE2IFII4MSJ1" className="text-emerald-600 hover:underline">+7 (706) 409-20-21</a></li>
             </ul>
           </Section>

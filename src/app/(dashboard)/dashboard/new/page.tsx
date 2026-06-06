@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
 import { getUserPlanAndAdmin } from '@/app/actions/billing'
@@ -311,29 +311,45 @@ function AvatarPicker({ dataUrl, name, size, onPick, onRemove }: {
 // ─── StepBar ─────────────────────────────────────────────────────────────────
 function StepBar({ step, labels, accent }: { step: number; labels: readonly string[]; accent: string }) {
   return (
-    <div className="flex items-center mb-8">
-      {labels.map((label, i) => {
-        const done = step > i + 1
-        const current = step === i + 1
-        return (
-          <div key={i} className="flex items-center">
-            <div className="flex flex-col items-center gap-1">
+    <div className="mb-8">
+      {/* circles + connectors — single row, perfectly centred */}
+      <div className="flex items-center">
+        {labels.map((_, i) => {
+          const done = step > i + 1
+          const current = step === i + 1
+          return (
+            <Fragment key={i}>
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all ${done || current ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 transition-all ${done || current ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
                 style={done || current
                   ? { background: accent, boxShadow: current ? `0 0 0 4px ${accent}22` : undefined }
                   : undefined}
               >
                 {done ? <Check size={14} /> : i + 1}
               </div>
-              <span className="text-xs font-bold hidden sm:block" style={current ? { color: accent } : { color: '#9ca3af' }}>{label}</span>
-            </div>
-            {i < labels.length - 1 && (
-              <div className="h-0.5 w-10 sm:w-16 mx-1 mb-4 sm:mb-0 transition-colors" style={{ background: done ? accent : '#e5e7eb' }} />
-            )}
-          </div>
-        )
-      })}
+              {i < labels.length - 1 && (
+                <div className="flex-1 h-0.5 mx-1 transition-colors" style={{ background: done ? accent : '#e5e7eb' }} />
+              )}
+            </Fragment>
+          )
+        })}
+      </div>
+      {/* labels — separate row, visible sm+ only */}
+      <div className="hidden sm:flex mt-2">
+        {labels.map((label, i) => {
+          const current = step === i + 1
+          return (
+            <Fragment key={i}>
+              <div className="w-8 flex justify-center">
+                <span className="text-xs font-bold whitespace-nowrap" style={current ? { color: accent } : { color: '#9ca3af' }}>
+                  {label}
+                </span>
+              </div>
+              {i < labels.length - 1 && <div className="flex-1 mx-1" />}
+            </Fragment>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -635,22 +651,24 @@ export default function NewTournamentPage() {
                       setSportSheet(cat.id)
                     }}
                     style={active ? { borderColor: cat.theme.primary, background: cat.theme.light } : undefined}
-                    className={`relative flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
                       active ? '' : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90' : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-xs shadow-sm"
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white shadow-sm"
                       style={{ background: cat.theme.gradient }}>
-                      {cat.abbr}
+                      <cat.icon size={18} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold leading-tight" style={active ? { color: cat.theme.primary } : undefined}>{cat.label[lang]}</p>
-                      <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">{chosen ? chosen.label[lang] : cat.tagline[lang]}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-sm font-bold leading-tight" style={active ? { color: cat.theme.primary } : undefined}>{cat.label[lang]}</p>
+                        {locked && (
+                          <span className="shrink-0 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
+                            <Lock size={8} /> PRO
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-snug line-clamp-2 mt-0.5">{chosen ? chosen.label[lang] : cat.tagline[lang]}</p>
                     </div>
-                    {locked && (
-                      <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
-                        <Lock size={8} /> PRO
-                      </span>
-                    )}
                   </button>
                 )
               })}
@@ -682,7 +700,7 @@ export default function NewTournamentPage() {
                       setSheetFormat(value)   // open details bottom-sheet
                     }}
                     style={active ? { borderColor: theme.primary, background: theme.light } : undefined}
-                    className={`relative flex items-start gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all ${
+                    className={`flex items-start gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all ${
                       active ? ''
                       : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
                       : 'border-gray-200 bg-white hover:border-gray-300'
@@ -691,10 +709,17 @@ export default function NewTournamentPage() {
                       style={active ? { background: theme.primary } : undefined}>
                       <Icon size={17} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold leading-tight" style={active ? { color: theme.primary } : undefined}>
-                        <span className={active ? '' : locked ? 'text-gray-400' : 'text-gray-800'}>{fmtLabel(value)}</span>
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-sm font-bold leading-tight" style={active ? { color: theme.primary } : undefined}>
+                          <span className={active ? '' : locked ? 'text-gray-400' : 'text-gray-800'}>{fmtLabel(value)}</span>
+                        </p>
+                        {locked && (
+                          <span className="shrink-0 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
+                            <Lock size={8} /> PRO
+                          </span>
+                        )}
+                      </div>
                       {recommended && !locked && (
                         <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                           style={{ background: theme.light, color: theme.primary }}>
@@ -702,11 +727,6 @@ export default function NewTournamentPage() {
                         </span>
                       )}
                     </div>
-                    {locked && (
-                      <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
-                        <Lock size={8} /> PRO
-                      </span>
-                    )}
                   </button>
                 )
               })}
@@ -828,8 +848,8 @@ export default function NewTournamentPage() {
 
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm text-white font-black" style={{ background: cat.theme.gradient }}>
-                      {cat.abbr}
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm text-white" style={{ background: cat.theme.gradient }}>
+                      <cat.icon size={22} />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: cat.theme.primary }}>{tx.sportLbl}</p>

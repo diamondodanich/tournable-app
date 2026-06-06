@@ -1,22 +1,24 @@
 'use server'
 
+import { unstable_noStore as noStore } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 export type Plan = 'free' | 'pro'
 
 // ── Читает план текущего пользователя ────────────────────────────────────────
 export async function getUserPlan(): Promise<Plan> {
+  noStore()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return 'free'
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (!data) return 'free'
+  if (error || !data) return 'free'
   if (data.plan === 'pro') {
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }
@@ -25,17 +27,18 @@ export async function getUserPlan(): Promise<Plan> {
 
 // ── Читает план + admin-статус текущего пользователя ─────────────────────────
 export async function getUserPlanAndAdmin(): Promise<{ plan: Plan; isAdmin: boolean }> {
+  noStore()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { plan: 'free', isAdmin: false }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at, is_admin')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (!data) return { plan: 'free', isAdmin: false }
+  if (error || !data) return { plan: 'free', isAdmin: false }
 
   const isAdmin = data.is_admin === true
   let plan: Plan = 'free'
@@ -46,9 +49,8 @@ export async function getUserPlanAndAdmin(): Promise<{ plan: Plan; isAdmin: bool
 }
 
 // ── Читает план ВЛАДЕЛЬЦА турнира ─────────────────────────────────────────────
-// Используется в server actions для Live/Fixture — редактор работает
-// в рамках плана владельца, а не своего собственного.
 export async function getOwnerPlan(tournamentId: string): Promise<Plan> {
+  noStore()
   const supabase = await createClient()
 
   const { data: tournament } = await supabase
@@ -59,13 +61,13 @@ export async function getOwnerPlan(tournamentId: string): Promise<Plan> {
 
   if (!tournament) return 'free'
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at')
     .eq('id', tournament.user_id)
     .maybeSingle()
 
-  if (!data) return 'free'
+  if (error || !data) return 'free'
   if (data.plan === 'pro') {
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }
@@ -73,12 +75,11 @@ export async function getOwnerPlan(tournamentId: string): Promise<Plan> {
 }
 
 // ── Активирует Pro-тариф для пользователя ─────────────────────────────────────
-// Вызывается из webhook-обработчиков платёжных систем (Kaspi, CloudPayments).
-// Не экспортируется как публичный server action — только для внутреннего использования.
 export async function activatePro(
   userId: string,
   expiresAt: Date | null,
 ): Promise<{ error?: string }> {
+  noStore()
   const supabase = await createClient()
 
   const { error } = await supabase

@@ -6,7 +6,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ElementType } from 'react'
-import { Goal, CircleDot, Volleyball, Swords, HelpCircle } from 'lucide-react'
+import { Volleyball, HelpCircle } from 'lucide-react'
+import { SoccerBall, BasketballBall, HockeyPuck } from '@/components/icons/sport-icons'
 
 export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
 export type Lang = 'ru' | 'kz' | 'en'
@@ -64,7 +65,7 @@ const ALL_FORMATS: Format[] = ['round_robin', 'playoff', 'groups_playoff', 'leag
 // ── Categories ───────────────────────────────────────────────────────────────
 export const SPORT_CATEGORIES: SportCategory[] = [
   {
-    id: 'football', abbr: 'F', icon: Goal, proOnly: false, theme: THEME.green,
+    id: 'football', abbr: 'F', icon: SoccerBall, proOnly: false, theme: THEME.green,
     label:   { ru: 'Футбол',  kz: 'Футбол',  en: 'Football' },
     tagline: { ru: 'Классика, мини-футбол и киберфутбол', kz: 'Классика, мини-футбол және киберфутбол', en: 'Classic, futsal & e-football' },
     subtypes: [
@@ -95,7 +96,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'basketball', abbr: 'B', icon: CircleDot, proOnly: true, theme: THEME.orange,
+    id: 'basketball', abbr: 'B', icon: BasketballBall, proOnly: true, theme: THEME.orange,
     label:   { ru: 'Баскетбол', kz: 'Баскетбол', en: 'Basketball' },
     tagline: { ru: '5×5, стритбол 3×3 и кибербаскетбол', kz: '5×5, стритбол 3×3 және кибербаскетбол', en: '5v5, streetball 3v3 & e-ball' },
     subtypes: [
@@ -151,7 +152,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'hockey', abbr: 'H', icon: Swords, proOnly: true, theme: THEME.cyan,
+    id: 'hockey', abbr: 'H', icon: HockeyPuck, proOnly: true, theme: THEME.cyan,
     label:   { ru: 'Хоккей', kz: 'Хоккей', en: 'Hockey' },
     tagline: { ru: 'Хоккей с шайбой', kz: 'Шайбалы хоккей', en: 'Ice hockey' },
     subtypes: [

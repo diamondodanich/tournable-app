@@ -700,33 +700,34 @@ export default function NewTournamentPage() {
                       setSheetFormat(value)   // open details bottom-sheet
                     }}
                     style={active ? { borderColor: theme.primary, background: theme.light } : undefined}
-                    className={`flex items-start gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all ${
+                    className={`p-3.5 rounded-xl border-2 text-left transition-all ${
                       active ? ''
                       : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? '' : locked ? 'bg-gray-200' : 'bg-gray-100'}`}
-                      style={active ? { background: theme.primary } : undefined}>
-                      <Icon size={17} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-1">
-                        <p className="text-sm font-bold leading-tight" style={active ? { color: theme.primary } : undefined}>
-                          <span className={active ? '' : locked ? 'text-gray-400' : 'text-gray-800'}>{fmtLabel(value)}</span>
-                        </p>
-                        {locked && (
-                          <span className="shrink-0 flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
-                            <Lock size={8} /> PRO
-                          </span>
-                        )}
+                    {/* icon row */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? '' : locked ? 'bg-gray-200' : 'bg-gray-100'}`}
+                        style={active ? { background: theme.primary } : undefined}>
+                        <Icon size={17} className={active ? 'text-white' : locked ? 'text-gray-400' : 'text-gray-500'} />
                       </div>
+                      {locked && (
+                        <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                          <Lock size={8} /> PRO
+                        </span>
+                      )}
                       {recommended && !locked && (
-                        <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                        <span className="flex items-center text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                           style={{ background: theme.light, color: theme.primary }}>
                           Рекомендуется
                         </span>
                       )}
                     </div>
+                    {/* name */}
+                    <p className="text-sm font-bold leading-tight"
+                      style={active ? { color: theme.primary } : undefined}>
+                      <span className={locked ? 'text-gray-400' : ''}>{fmtLabel(value)}</span>
+                    </p>
                   </button>
                 )
               })}

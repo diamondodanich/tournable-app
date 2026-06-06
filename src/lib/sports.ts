@@ -5,6 +5,9 @@
 // `subtype.value` is what gets stored in tournaments.sport (text column).
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ElementType } from 'react'
+import { Goal, CircleDot, Volleyball, Swords, HelpCircle } from 'lucide-react'
+
 export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
 export type Lang = 'ru' | 'kz' | 'en'
 
@@ -40,6 +43,7 @@ export interface SportCategory {
   label: Record<Lang, string>
   tagline: Record<Lang, string>
   abbr: string
+  icon: ElementType                  // Lucide icon component
   proOnly: boolean                   // football is free; the rest are Pro
   theme: SportTheme
   subtypes: SportSubtype[]
@@ -60,7 +64,7 @@ const ALL_FORMATS: Format[] = ['round_robin', 'playoff', 'groups_playoff', 'leag
 // ── Categories ───────────────────────────────────────────────────────────────
 export const SPORT_CATEGORIES: SportCategory[] = [
   {
-    id: 'football', abbr: 'F', proOnly: false, theme: THEME.green,
+    id: 'football', abbr: 'F', icon: Goal, proOnly: false, theme: THEME.green,
     label:   { ru: 'Футбол',  kz: 'Футбол',  en: 'Football' },
     tagline: { ru: 'Классика, мини-футбол и киберфутбол', kz: 'Классика, мини-футбол және киберфутбол', en: 'Classic, futsal & e-football' },
     subtypes: [
@@ -91,7 +95,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'basketball', abbr: 'B', proOnly: true, theme: THEME.orange,
+    id: 'basketball', abbr: 'B', icon: CircleDot, proOnly: true, theme: THEME.orange,
     label:   { ru: 'Баскетбол', kz: 'Баскетбол', en: 'Basketball' },
     tagline: { ru: '5×5, стритбол 3×3 и кибербаскетбол', kz: '5×5, стритбол 3×3 және кибербаскетбол', en: '5v5, streetball 3v3 & e-ball' },
     subtypes: [
@@ -122,7 +126,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'volleyball', abbr: 'V', proOnly: true, theme: THEME.blue,
+    id: 'volleyball', abbr: 'V', icon: Volleyball, proOnly: true, theme: THEME.blue,
     label:   { ru: 'Волейбол', kz: 'Волейбол', en: 'Volleyball' },
     tagline: { ru: 'Классический и пляжный', kz: 'Классикалық және жағажай', en: 'Indoor & beach' },
     subtypes: [
@@ -147,7 +151,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'hockey', abbr: 'H', proOnly: true, theme: THEME.cyan,
+    id: 'hockey', abbr: 'H', icon: Swords, proOnly: true, theme: THEME.cyan,
     label:   { ru: 'Хоккей', kz: 'Хоккей', en: 'Hockey' },
     tagline: { ru: 'Хоккей с шайбой', kz: 'Шайбалы хоккей', en: 'Ice hockey' },
     subtypes: [
@@ -162,7 +166,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'other', abbr: '•', proOnly: true, theme: THEME.gray,
+    id: 'other', abbr: '•', icon: HelpCircle, proOnly: true, theme: THEME.gray,
     label:   { ru: 'Другое', kz: 'Басқа', en: 'Other' },
     tagline: { ru: 'Свой вид спорта и правила', kz: 'Өз спорт түрі мен ережелер', en: 'Custom sport & rules' },
     subtypes: [

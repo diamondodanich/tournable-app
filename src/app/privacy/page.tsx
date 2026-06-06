@@ -110,7 +110,7 @@ export default function PrivacyPage() {
               <li><strong>Ограничение обработки</strong> — потребовать приостановки обработки в определённых случаях</li>
               <li><strong>Отзыв согласия</strong> — отозвать согласие на обработку данных в любое время</li>
             </ul>
-            <p>Для реализации прав направьте запрос на email: <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 hover:underline">tournable_webapp@gmail.com</a>. Мы ответим в течение 10 рабочих дней.</p>
+            <p>Для реализации прав направьте запрос на email: <a href="mailto:tournable.webapp@gmail.com" className="text-emerald-600 hover:underline">tournable.webapp@gmail.com</a>. Мы ответим в течение 10 рабочих дней.</p>
           </Section>
 
           <Section title="8. Файлы cookies">
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Оператор: ИП Асқар Данияр Тахирұлы (ИИН 030830501207)</li>
               <li>Адрес: Республика Казахстан, г. Астана, район Алматы, ул. Кайрата Рыскулбекова, д. 29А</li>
-              <li>Email: <a href="mailto:tournable_webapp@gmail.com" className="text-emerald-600 hover:underline">tournable_webapp@gmail.com</a></li>
+              <li>Email: <a href="mailto:tournable.webapp@gmail.com" className="text-emerald-600 hover:underline">tournable.webapp@gmail.com</a></li>
               <li>WhatsApp: <a href="https://wa.me/message/YHLE2IFII4MSJ1" className="text-emerald-600 hover:underline">+7 (706) 409-20-21</a></li>
             </ul>
           </Section>

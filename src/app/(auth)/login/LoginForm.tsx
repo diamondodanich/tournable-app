@@ -92,7 +92,7 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-sm font-semibold text-gray-700">{tx.password}</Label>
                 <a
-                  href={`mailto:tournable_webapp@gmail.com?subject=${encodeURIComponent('Сброс пароля')}`}
+                  href={`mailto:tournable.webapp@gmail.com?subject=${encodeURIComponent('Сброс пароля')}`}
                   className="text-xs text-emerald-600 hover:underline font-medium"
                 >
                   {tx.forgotPassword}

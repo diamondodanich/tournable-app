@@ -661,9 +661,9 @@ export default function NewTournamentPage() {
                     }`}>
                     {/* icon + PRO badge stacked vertically */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm"
+                      <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center text-white shadow-sm p-1.5"
                         style={{ background: cat.theme.gradient }}>
-                        <cat.icon size={18} />
+                        <cat.icon size={18} className="w-full h-full" />
                       </div>
                       {locked && (
                         <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full whitespace-nowrap">
@@ -848,8 +848,8 @@ export default function NewTournamentPage() {
 
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm text-white" style={{ background: cat.theme.gradient }}>
-                      <cat.icon size={22} />
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm text-white p-2" style={{ background: cat.theme.gradient }}>
+                      <cat.icon size={22} className="w-full h-full" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: cat.theme.primary }}>{tx.sportLbl}</p>

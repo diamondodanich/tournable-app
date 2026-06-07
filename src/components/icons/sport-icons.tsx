@@ -1,4 +1,7 @@
 // Custom sport ball SVG icons — filled, currentColor
+// These are complex filled SVGs designed to fill their container via CSS.
+// Pass `className` with w-*/h-* Tailwind classes to size them;
+// the `size` prop is kept for Lucide API compatibility but ignored in favour of className.
 
 interface IconProps {
   size?: number
@@ -6,10 +9,10 @@ interface IconProps {
 }
 
 // Soccer ball — realistic hexagonal pattern (svgrepo.com)
-export function SoccerBall({ size = 24, className }: IconProps) {
+export function SoccerBall({ className = 'w-full h-full' }: IconProps) {
   return (
     <svg
-      width={size} height={size} viewBox="0 0 122.88 122.88"
+      viewBox="0 0 122.88 122.88"
       fill="currentColor" xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
@@ -30,10 +33,10 @@ export function SoccerBall({ size = 24, className }: IconProps) {
 }
 
 // Basketball ball — realistic curved panel pattern (svgrepo.com)
-export function BasketballBall({ size = 24, className }: IconProps) {
+export function BasketballBall({ className = 'w-full h-full' }: IconProps) {
   return (
     <svg
-      width={size} height={size} viewBox="0 0 77.832 77.832"
+      viewBox="0 0 77.832 77.832"
       fill="currentColor" xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
@@ -72,7 +75,7 @@ export function BasketballBall({ size = 24, className }: IconProps) {
 }
 
 // Hockey puck: flat 3D cylinder viewed from slight angle
-export function HockeyPuck({ size = 24, className }: IconProps) {
+export function HockeyPuck({ size = 24, className = '' }: IconProps) {
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24"

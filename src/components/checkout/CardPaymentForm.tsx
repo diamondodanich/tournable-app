@@ -62,10 +62,41 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
   const [isPending, setIsPending] = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [rawError, setRawError]   = useState<string | null>(null)
+  const [netLog, setNetLog]       = useState<string | null>(null)
   const [step, setStep]           = useState<Step>('form')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // Intercept XHR to capture SDK's actual HTTP request/response
+    const OrigXHR = window.XMLHttpRequest
+    function PatchedXHR(this: XMLHttpRequest) {
+      const xhr = new OrigXHR()
+      let reqUrl = ''
+      let reqBody = ''
+      const origOpen = xhr.open.bind(xhr)
+      const origSend = xhr.send.bind(xhr)
+      xhr.open = function(method: string, url: string, ...rest: unknown[]) {
+        reqUrl = `${method} ${url}`
+        return (origOpen as (...a: unknown[]) => void)(method, url, ...rest)
+      }
+      xhr.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
+        reqBody = typeof body === 'string' ? body : JSON.stringify(body)
+        xhr.addEventListener('loadend', () => {
+          if (reqUrl.includes('freedompay')) {
+            setNetLog(
+              `ENDPOINT: ${reqUrl}\n\nREQUEST BODY:\n${reqBody}\n\nRESPONSE (${xhr.status}):\n${xhr.responseText}`
+            )
+          }
+        })
+        return origSend(body)
+      }
+      Object.setPrototypeOf(xhr, OrigXHR.prototype)
+      return xhr
+    }
+    PatchedXHR.prototype = OrigXHR.prototype
+    ;(window as unknown as Record<string, unknown>).XMLHttpRequest = PatchedXHR
+
     const script = document.createElement('script')
     script.src = SDK_URL
     script.onload = () => {
@@ -78,7 +109,10 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
     }
     script.onerror = () => setSdkError(true)
     document.head.appendChild(script)
-    return () => { script.remove() }
+    return () => {
+      script.remove()
+      ;(window as unknown as Record<string, unknown>).XMLHttpRequest = OrigXHR
+    }
   }, [])
 
   const canPay =
@@ -235,9 +269,15 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
               {error}
             </div>
           )}
-          {rawError && (
+          {netLog && (
+            <details open className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <summary className="text-xs font-bold text-gray-500 cursor-pointer">HTTP лог (скопировать для менеджера)</summary>
+              <pre className="text-[10px] text-gray-600 mt-2 whitespace-pre-wrap break-all select-all">{netLog}</pre>
+            </details>
+          )}
+          {rawError && !netLog && (
             <details className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <summary className="text-xs font-bold text-gray-500 cursor-pointer">Лог ошибки (для техподдержки)</summary>
+              <summary className="text-xs font-bold text-gray-500 cursor-pointer">Лог ошибки SDK</summary>
               <pre className="text-[10px] text-gray-600 mt-2 whitespace-pre-wrap break-all select-all">{rawError}</pre>
             </details>
           )}

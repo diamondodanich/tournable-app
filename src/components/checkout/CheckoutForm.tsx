@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Check, Copy, Star, MessageCircle, CheckCircle2, CreditCard, Loader2 } from 'lucide-react'
-import { getPaymentFormParams } from '@/app/actions/payments'
+import { useState } from 'react'
+import { Check, Copy, Star, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { CardPaymentForm } from './CardPaymentForm'
 
 const MONTHLY_PRICE = 4990
 const PLANS = {
-  monthly: { label: 'Месяц', price: MONTHLY_PRICE,            suffix: '/ месяц', save: null },
-  annual:  { label: 'Год',   price: 44990,                    suffix: '/ год',   save: 'Скидка −25%' },
+  monthly: { label: 'Месяц', price: MONTHLY_PRICE, suffix: '/ месяц', save: null },
+  annual:  { label: 'Год',   price: 44990,          suffix: '/ год',   save: 'Скидка −25%' },
 }
-// Реальная скидка: 4990 × 12 − 44990 = 14890 ₸
 const ANNUAL_DISCOUNT = MONTHLY_PRICE * 12 - PLANS.annual.price
 
 const FEATURES = [
@@ -30,39 +29,6 @@ interface Props {
 export function CheckoutForm({ userEmail }: Props) {
   const [period, setPeriod] = useState<'monthly' | 'annual'>('monthly')
   const [copied, setCopied] = useState(false)
-  const [isPending, startTransition] = useTransition()
-  const [payError, setPayError] = useState<string | null>(null)
-
-  function handlePay() {
-    setPayError(null)
-    startTransition(async () => {
-      const result = await getPaymentFormParams(period)
-
-      if ('error' in result) {
-        setPayError(result.error)
-        return
-      }
-
-      // Create a hidden form and submit it directly from the browser.
-      // FreedomPay's API blocks Vercel server IPs via Cloudflare,
-      // so the browser must POST directly to the gateway.
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = result.endpoint
-      form.style.display = 'none'
-
-      Object.entries(result.params).forEach(([key, value]) => {
-        const input = document.createElement('input')
-        input.type  = 'hidden'
-        input.name  = key
-        input.value = value
-        form.appendChild(input)
-      })
-
-      document.body.appendChild(form)
-      form.submit()
-    })
-  }
 
   const plan = PLANS[period]
 
@@ -87,7 +53,6 @@ export function CheckoutForm({ userEmail }: Props) {
 
       {/* Left — plan selector + features */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Gradient top */}
         <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#047857,#10b981)' }} />
 
         <div className="p-6">
@@ -118,8 +83,10 @@ export function CheckoutForm({ userEmail }: Props) {
 
           {/* Plan name + price */}
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
+            >
               <Star className="w-3.5 h-3.5 text-white" fill="currentColor" />
             </div>
             <span className="font-black text-lg text-gray-900">Про</span>
@@ -150,7 +117,7 @@ export function CheckoutForm({ userEmail }: Props) {
         </div>
       </div>
 
-      {/* Right — payment instructions */}
+      {/* Right — order summary + payment */}
       <div className="space-y-4">
 
         {/* Order summary */}
@@ -179,68 +146,41 @@ export function CheckoutForm({ userEmail }: Props) {
           </div>
         </div>
 
-        {/* Payment button */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-black text-gray-900">Оплата</h2>
+        {/* Card payment */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-black text-gray-900 mb-4">Оплата картой</h2>
+          <CardPaymentForm period={period} amount={plan.price} userEmail={userEmail} />
+        </div>
 
-          {/* Error */}
-          {payError && (
-            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-              {payError}
-            </div>
-          )}
-
-          {/* Primary: card payment */}
-          <button
-            onClick={handlePay}
-            disabled={isPending}
-            className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl transition-opacity hover:opacity-90 text-sm shadow-lg disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
-          >
-            {isPending
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <CreditCard className="w-4 h-4" />
-            }
-            {isPending ? 'Перенаправляем…' : 'Оплатить картой'}
-          </button>
-
-          <p className="text-center text-[11px] text-gray-400">
-            Visa · Mastercard · Kaspi Pay — защищённый платёж FreedomPay
-          </p>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
+        {/* WhatsApp fallback */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[11px] text-gray-400 shrink-0">или</span>
+            <span className="text-[11px] text-gray-400 shrink-0">или оплатите через WhatsApp</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
-
-          {/* Fallback: WhatsApp */}
-          <div>
-            <p className="text-xs text-gray-500 font-semibold mb-2">Оплата через WhatsApp</p>
-            <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2 mb-3">
-              <p className="text-xs text-gray-600 flex-1 leading-relaxed break-all">{message}</p>
-              <button
-                onClick={handleCopy}
-                className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
-                title="Скопировать"
-              >
-                {copied
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  : <Copy className="w-4 h-4" />
-                }
-              </button>
-            </div>
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full text-gray-700 font-bold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+          <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2 mb-3">
+            <p className="text-xs text-gray-600 flex-1 leading-relaxed break-all">{message}</p>
+            <button
+              onClick={handleCopy}
+              className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
+              title="Скопировать"
             >
-              <MessageCircle className="w-4 h-4" />
-              Написать в WhatsApp
-            </a>
+              {copied
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                : <Copy className="w-4 h-4" />
+              }
+            </button>
           </div>
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full text-gray-700 font-bold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Написать в WhatsApp
+          </a>
         </div>
 
       </div>

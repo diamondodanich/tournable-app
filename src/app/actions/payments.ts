@@ -2,24 +2,26 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { buildPaymentFormParams, type PlanPeriod, GATEWAY_URL } from '@/lib/freedompay'
+import { PRICES, type PlanPeriod } from '@/lib/freedompay'
 
-// Returns signed params for client-side form POST.
-// FreedomPay's API sits behind Cloudflare and blocks Vercel server IPs,
-// so we never call it server-side — the browser POSTs directly instead.
-export async function getPaymentFormParams(
+export async function getPaymentOrderParams(
   period: PlanPeriod,
-): Promise<{ params: Record<string, string>; endpoint: string } | { error: string }> {
+): Promise<{ orderId: string; userId: string; amount: number; description: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/checkout')
 
   try {
-    const params = buildPaymentFormParams(user.id, period)
-    return { params, endpoint: GATEWAY_URL }
+    const orderId = `t_${user.id.replace(/-/g, '').slice(0, 16)}_${Date.now()}`
+    return {
+      orderId,
+      userId:      user.id,
+      amount:      PRICES[period].amount,
+      description: `Tournable Pro — ${period === 'monthly' ? 'Месяц' : 'Год'}`,
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Ошибка формирования платежа'
-    console.error('[getPaymentFormParams]', err)
+    console.error('[getPaymentOrderParams]', err)
     return { error: msg }
   }
 }

@@ -61,6 +61,7 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
 
   const [isPending, setIsPending] = useState(false)
   const [error, setError]         = useState<string | null>(null)
+  const [rawError, setRawError]   = useState<string | null>(null)
   const [step, setStep]           = useState<Step>('form')
 
   useEffect(() => {
@@ -134,8 +135,9 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         setStep('form')
       }
     } catch (err: unknown) {
-      console.error('[FreedomPay] full error object:', JSON.stringify(err, null, 2))
-      console.error('[FreedomPay] raw error:', err)
+      const raw = JSON.stringify(err, Object.getOwnPropertyNames(err as object), 2)
+      console.error('[FreedomPay] full error:', raw)
+      setRawError(raw)
       const msg =
         (err as { response?: { error_message?: string } })?.response?.error_message ??
         (err instanceof Error ? err.message : 'Ошибка при оплате')
@@ -232,6 +234,12 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
             <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
               {error}
             </div>
+          )}
+          {rawError && (
+            <details className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <summary className="text-xs font-bold text-gray-500 cursor-pointer">Лог ошибки (для техподдержки)</summary>
+              <pre className="text-[10px] text-gray-600 mt-2 whitespace-pre-wrap break-all select-all">{rawError}</pre>
+            </details>
           )}
 
           {/* Pay button */}

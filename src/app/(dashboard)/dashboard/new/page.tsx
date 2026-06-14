@@ -977,10 +977,10 @@ export default function NewTournamentPage() {
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { setError(null); setStep(1) }} className="flex-1 h-11">
+            <Button variant="outline" onClick={() => { setError(null); setStep(1) }} className="flex-1 h-11 whitespace-nowrap">
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
-            <Button onClick={goToStep3} className="sport-btn flex-1 h-11 text-white font-bold">
+            <Button onClick={goToStep3} className="sport-btn flex-1 h-11 text-white font-bold whitespace-nowrap">
               {tx.next} <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
@@ -1149,10 +1149,10 @@ export default function NewTournamentPage() {
           )}
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { setError(null); setStep(2) }} className="flex-1 h-11">
+            <Button variant="outline" onClick={() => { setError(null); setStep(2) }} className="flex-1 h-11 whitespace-nowrap">
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
-            <Button onClick={goToStep4} className="sport-btn flex-1 h-11 text-white font-bold">
+            <Button onClick={goToStep4} className="sport-btn flex-1 h-11 text-white font-bold whitespace-nowrap">
               {tx.next} <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
@@ -1229,11 +1229,11 @@ export default function NewTournamentPage() {
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { setError(null); setStep(3) }} className="flex-1 h-11">
+            <Button variant="outline" onClick={() => { setError(null); setStep(3) }} className="flex-1 h-11 whitespace-nowrap">
               <ArrowLeft size={15} className="mr-1.5" /> {tx.back2}
             </Button>
             <Button onClick={handleCreate} disabled={loading}
-              className="sport-btn flex-1 h-11 text-white font-bold">
+              className="sport-btn flex-1 h-11 text-white font-bold whitespace-nowrap">
               {loading
                 ? <Loader2 size={15} className="mr-1.5 animate-spin" />
                 : <Zap size={15} className="mr-1.5" />}

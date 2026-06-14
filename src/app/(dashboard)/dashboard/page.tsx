@@ -6,6 +6,8 @@ import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar } from 'lucide-re
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 
+export const dynamic = 'force-dynamic'
+
 type Lang = 'ru' | 'kz' | 'en'
 
 // ─── Translations ─────────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/dashboard/new"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap shrink-0"
         >
           <Plus size={15} /> {tx.newTournament}
         </Link>

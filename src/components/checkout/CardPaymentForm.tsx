@@ -134,6 +134,8 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         setStep('form')
       }
     } catch (err: unknown) {
+      console.error('[FreedomPay] full error object:', JSON.stringify(err, null, 2))
+      console.error('[FreedomPay] raw error:', err)
       const msg =
         (err as { response?: { error_message?: string } })?.response?.error_message ??
         (err instanceof Error ? err.message : 'Ошибка при оплате')

@@ -105,7 +105,6 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
           currency:      'KZT',
           description:   order.description,
           auto_clearing: 1,
-          test:          1,
           options: {
             custom_params: { user_id: order.userId, plan_period: period },
             user: { email: userEmail ?? '' },

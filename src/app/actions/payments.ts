@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PRICES, type PlanPeriod } from '@/lib/freedompay'
+import { sendProActivatedEmail } from '@/lib/email'
 
 export async function getPaymentOrderParams(
   period: PlanPeriod,
@@ -59,6 +60,12 @@ export async function activateProAfterPayment(
   }).then(({ error }) => {
     if (error) console.warn('[activateProAfterPayment] subscription record skipped:', error.message)
   })
+
+  // Best-effort email — no RESEND_API_KEY → silent no-op
+  if (user.email) {
+    sendProActivatedEmail(user.email, period, PRICES[period].amount, expiresAt)
+      .catch(() => {})
+  }
 
   console.log(`[activateProAfterPayment] Pro activated for ${user.id} until ${expiresAt.toISOString()}`)
   return { ok: true }

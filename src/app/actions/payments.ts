@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { PRICES, type PlanPeriod } from '@/lib/freedompay'
 
@@ -27,7 +26,8 @@ export async function getPaymentOrderParams(
   }
 }
 
-// Called client-side after SDK returns payment_status === 'success'
+// Called client-side after SDK returns payment_status === 'success'.
+// Uses user session — profiles RLS allows owner to update their own row.
 export async function activateProAfterPayment(
   period: PlanPeriod,
   paymentId: string,
@@ -36,34 +36,28 @@ export async function activateProAfterPayment(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
 
-  const url        = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  if (!url || !serviceKey) return { error: 'Конфигурация сервера' }
-
-  const admin = createAdminClient(url, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
-
   const months    = PRICES[period].months
   const expiresAt = new Date()
   expiresAt.setMonth(expiresAt.getMonth() + months)
 
-  const { error: profErr } = await admin.from('profiles').upsert(
+  const { error: profErr } = await supabase.from('profiles').upsert(
     { id: user.id, plan: 'pro', plan_expires_at: expiresAt.toISOString(), updated_at: new Date().toISOString() },
     { onConflict: 'id' },
   )
   if (profErr) {
     console.error('[activateProAfterPayment] profile upsert:', profErr)
-    return { error: 'Не удалось активировать подписку' }
+    return { error: profErr.message }
   }
 
-  await admin.from('subscriptions').insert({
-    user_id:     user.id,
-    plan:        'pro',
-    expires_at:  expiresAt.toISOString(),
-    amount_kzt:  PRICES[period].amount,
-    source:      'freedompay',
-    external_id: paymentId || null,
+  // Best-effort payment record; may fail if RLS/constraints block it
+  await supabase.rpc('record_freedompay_subscription', {
+    p_user_id:    user.id,
+    p_plan:       'pro',
+    p_expires_at: expiresAt.toISOString(),
+    p_amount_kzt: PRICES[period].amount,
+    p_payment_id: paymentId || null,
+  }).then(({ error }) => {
+    if (error) console.warn('[activateProAfterPayment] subscription record skipped:', error.message)
   })
 
   console.log(`[activateProAfterPayment] Pro activated for ${user.id} until ${expiresAt.toISOString()}`)

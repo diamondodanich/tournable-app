@@ -39,7 +39,7 @@ interface Props {
   userEmail?: string
 }
 
-type Step = 'form' | '3ds' | 'success' | 'error'
+type Step = 'form' | '3ds'
 
 function formatCardNumber(raw: string) {
   return raw.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
@@ -61,41 +61,10 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
 
   const [isPending, setIsPending] = useState(false)
   const [error, setError]         = useState<string | null>(null)
-  const [rawError, setRawError]   = useState<string | null>(null)
-  const [netLog, setNetLog]       = useState<string | null>(null)
   const [step, setStep]           = useState<Step>('form')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-
-    // Intercept XHR to capture SDK's actual HTTP request/response
-    const OrigXHR = window.XMLHttpRequest
-    function PatchedXHR(this: XMLHttpRequest) {
-      const xhr = new OrigXHR()
-      let reqUrl = ''
-      let reqBody = ''
-      const origOpen = xhr.open.bind(xhr)
-      const origSend = xhr.send.bind(xhr)
-      xhr.open = function(method: string, url: string, ...rest: unknown[]) {
-        reqUrl = `${method} ${url}`
-        return (origOpen as (...a: unknown[]) => void)(method, url, ...rest)
-      }
-      xhr.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
-        reqBody = typeof body === 'string' ? body : JSON.stringify(body)
-        xhr.addEventListener('loadend', () => {
-          if (reqUrl.includes('freedompay')) {
-            setNetLog(
-              `ENDPOINT: ${reqUrl}\n\nREQUEST BODY:\n${reqBody}\n\nRESPONSE (${xhr.status}):\n${xhr.responseText}`
-            )
-          }
-        })
-        return origSend(body)
-      }
-      Object.setPrototypeOf(xhr, OrigXHR.prototype)
-      return xhr
-    }
-    PatchedXHR.prototype = OrigXHR.prototype
-    ;(window as unknown as Record<string, unknown>).XMLHttpRequest = PatchedXHR
 
     const script = document.createElement('script')
     script.src = SDK_URL
@@ -109,10 +78,7 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
     }
     script.onerror = () => setSdkError(true)
     document.head.appendChild(script)
-    return () => {
-      script.remove()
-      ;(window as unknown as Record<string, unknown>).XMLHttpRequest = OrigXHR
-    }
+    return () => { script.remove() }
   }, [])
 
   const canPay =
@@ -162,14 +128,11 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         result = await window.FreedomPaySDK.confirmInIframe(result, 'fp-3ds-container')
       }
 
-      setNetLog(prev => (prev ?? '') + `\nSDK result: ${JSON.stringify(result)}`)
-
       if (result.payment_status === 'success') {
-        setNetLog(prev => (prev ?? '') + '\nActivating Pro...')
         const activation = await activateProAfterPayment(period, result.payment_id ?? '')
-        setNetLog(prev => (prev ?? '') + `\nActivation result: ${JSON.stringify(activation)}`)
         if ('error' in activation) {
           setError(`Оплата прошла, но Pro не активировался: ${activation.error}`)
+          setStep('form')
           return
         }
         window.location.href = '/checkout/success'
@@ -178,9 +141,6 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         setStep('form')
       }
     } catch (err: unknown) {
-      const raw = JSON.stringify(err, Object.getOwnPropertyNames(err as object), 2)
-      console.error('[FreedomPay] full error:', raw)
-      setRawError(raw)
       const msg =
         (err as { response?: { error_message?: string } })?.response?.error_message ??
         (err instanceof Error ? err.message : 'Ошибка при оплате')
@@ -272,26 +232,12 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
-          {netLog && (
-            <details open className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <summary className="text-xs font-bold text-gray-500 cursor-pointer">HTTP лог (скопировать для менеджера)</summary>
-              <pre className="text-[10px] text-gray-600 mt-2 whitespace-pre-wrap break-all select-all">{netLog}</pre>
-            </details>
-          )}
-          {rawError && !netLog && (
-            <details className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <summary className="text-xs font-bold text-gray-500 cursor-pointer">Лог ошибки SDK</summary>
-              <pre className="text-[10px] text-gray-600 mt-2 whitespace-pre-wrap break-all select-all">{rawError}</pre>
-            </details>
-          )}
 
-          {/* Pay button */}
           <button
             onClick={handlePay}
             disabled={!canPay}
@@ -305,7 +251,6 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
             {isPending ? 'Обработка...' : `Оплатить ${amount.toLocaleString('ru-RU')} ₸`}
           </button>
 
-          {/* Trust line */}
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
             <ShieldCheck className="w-3 h-3" />
             <span>Защищено FreedomPay · PCI DSS · 3D Secure</span>
@@ -313,7 +258,6 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         </>
       )}
 
-      {/* 3DS iframe */}
       {step === '3ds' && (
         <div className="rounded-xl overflow-hidden border border-gray-200">
           <div className="bg-gray-50 px-4 py-2 flex items-center gap-2 border-b border-gray-100">

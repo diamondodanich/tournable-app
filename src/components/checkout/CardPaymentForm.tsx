@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
-import { getPaymentOrderParams } from '@/app/actions/payments'
+import { getPaymentOrderParams, activateProAfterPayment } from '@/app/actions/payments'
 import type { PlanPeriod } from '@/lib/freedompay'
 
 const WIDGET_TOKEN = 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
@@ -163,6 +163,7 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
       }
 
       if (result.payment_status === 'success') {
+        await activateProAfterPayment(period, result.payment_id ?? '')
         window.location.href = '/checkout/success'
       } else {
         setError('Платёж отклонён. Проверьте данные карты и попробуйте снова.')

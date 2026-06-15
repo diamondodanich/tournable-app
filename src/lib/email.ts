@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { render } from '@react-email/render'
 import WelcomeEmail from '@/emails/WelcomeEmail'
 import InviteEmail from '@/emails/InviteEmail'
+import ProActivatedEmail from '@/emails/ProActivatedEmail'
 import SubscriptionExpiringEmail from '@/emails/SubscriptionExpiringEmail'
 import SubscriptionExpiredEmail from '@/emails/SubscriptionExpiredEmail'
 
@@ -53,6 +54,28 @@ export async function sendInviteEmail(
     })
   } catch (e) {
     console.error('[email] invite failed:', e)
+  }
+}
+
+// ── Pro activated ─────────────────────────────────────────────────────────────
+export async function sendProActivatedEmail(
+  email: string,
+  period: 'monthly' | 'annual',
+  amount: number,
+  expiresAt: Date,
+) {
+  const resend = getResend()
+  if (!resend) return
+  try {
+    const html = await render(ProActivatedEmail({ email, period, amount, expiresAt, appUrl: APP_URL }))
+    await resend.emails.send({
+      from:    FROM,
+      to:      email,
+      subject: 'Tournable Pro активирован',
+      html,
+    })
+  } catch (e) {
+    console.error('[email] pro-activated failed:', e)
   }
 }
 

@@ -162,11 +162,19 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
         result = await window.FreedomPaySDK.confirmInIframe(result, 'fp-3ds-container')
       }
 
+      setNetLog(prev => (prev ?? '') + `\nSDK result: ${JSON.stringify(result)}`)
+
       if (result.payment_status === 'success') {
-        await activateProAfterPayment(period, result.payment_id ?? '')
+        setNetLog(prev => (prev ?? '') + '\nActivating Pro...')
+        const activation = await activateProAfterPayment(period, result.payment_id ?? '')
+        setNetLog(prev => (prev ?? '') + `\nActivation result: ${JSON.stringify(activation)}`)
+        if ('error' in activation) {
+          setError(`Оплата прошла, но Pro не активировался: ${activation.error}`)
+          return
+        }
         window.location.href = '/checkout/success'
       } else {
-        setError('Платёж отклонён. Проверьте данные карты и попробуйте снова.')
+        setError(`Платёж не прошёл. Статус: ${result.payment_status}`)
         setStep('form')
       }
     } catch (err: unknown) {

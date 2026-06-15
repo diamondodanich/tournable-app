@@ -5,16 +5,16 @@ import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
 import { getPaymentOrderParams } from '@/app/actions/payments'
 import type { PlanPeriod } from '@/lib/freedompay'
 
-const WIDGET_TOKEN = process.env.NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN ?? ''
+const WIDGET_TOKEN = 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
 const SDK_URL = 'https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js'
 const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwK4PMP3KqzgjLZ+b6V/3
-aDxCQ6rqsAEu/4vxjV3abTgT8e/2vQ/+o7Sh9zAd2O7JfeCFAIX6sZuA3rzNLWXJ
-beLJC2YCcrYwNF0x9mZVNUmLWAncZh5EY6jkReuHaEa2DLbagwzdir4l/KS50RD3
-xoUZEI8eORRgvhOLphuVDNsgoO32CvdkYL0LYMUpKXyV7biefy9SfXaknM/gvtFW
-UacHPlG+P0tdfr3d8jmXJky5ur8kuwOe3BdM1tAcelHL9NWWdRXkrkT8jFqB/8XE
-rTKy74vrHQvvng2Qxb8a0iwY4hGizlLysl9Fg9Zhjmc9R0qaxTDbaBd3AX1icIMn
-xwIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj04TlTFEhwJDaXO6NoNr
+/7h72RAeGChRkBPvgTTOSxGmHTpEC9MwtiyE/Qk7lBhyj9DwT2JsmiP1Se4m+8lG
+dxdqUNwrEo/6wbLdps1C44LZafkjrMXfqz4m8k3ShNbBWGuaEqB36XNYijPyEUzX
+dVzEt99gTRnp27wrpxmGJY/rRY/H+u2rQxph0qLxByCtDTG2LjyVG9Inmmmp1E0K
++79m2JyPoSLLax2ebga/jUioR9ARnWIhq7hJz4WkxADtnd4Fgsl8oABzYtDT9+cd
+/5I4oNPamRdiQawL8+hte7pcuKhm8xRd2NvNMV57W8XkGd+CHj5XyQYm7AiNg8Um
+vwIDAQAB
 -----END PUBLIC KEY-----`
 
 declare global {

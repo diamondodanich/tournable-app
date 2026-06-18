@@ -15,7 +15,7 @@ function getResend(): Resend | null {
 }
 
 const FROM    = process.env.FROM_EMAIL        ?? 'Tournable <noreply@tournable.kz>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
 
 // ── Welcome ───────────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(email: string, displayName?: string) {

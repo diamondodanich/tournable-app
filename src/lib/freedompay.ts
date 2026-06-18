@@ -3,7 +3,7 @@ import crypto from 'crypto'
 // ── Constants ─────────────────────────────────────────────────────────────────
 export const MERCHANT_ID = process.env.FREEDOMPAY_MERCHANT_ID ?? ''
 export const SECRET_KEY  = process.env.FREEDOMPAY_SECRET_KEY  ?? ''
-export const APP_URL     = process.env.NEXT_PUBLIC_APP_URL    ?? 'https://tournable-app.vercel.app'
+export const APP_URL     = process.env.NEXT_PUBLIC_APP_URL    ?? 'https://www.tournable.app'
 
 // FreedomPay gateway — browser POSTs here directly (Cloudflare blocks server-side calls)
 export const GATEWAY_URL = 'https://api.freedompay.kz/v2/payment/purchase'

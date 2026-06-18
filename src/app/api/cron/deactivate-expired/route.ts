@@ -1,75 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import {
-  sendSubscriptionExpiringEmail,
-  sendSubscriptionExpiredEmail,
-} from '@/lib/email'
+import { createClient } from '@supabase/supabase-js'
+import { sendSubscriptionExpiringEmail, sendSubscriptionExpiredEmail } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
-// Runs daily via Vercel Cron (see vercel.json)
-// 1. Sends 3-day warning to users whose subscription expires in exactly 3 days
-// 2. Downgrades users whose subscription has expired to free plan
+// Runs daily at 06:00 UTC via Vercel Cron (vercel.json)
+// 1. Sends 3-day warning emails
+// 2. Downgrades expired Pro accounts to free via DB function
 export async function GET(req: NextRequest) {
-  // Validate cron secret
   const auth = req.headers.get('authorization')
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
+  const url        = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anonKey    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  // Use service role if available, otherwise anon (RPC function handles auth via SECURITY DEFINER)
+  const supabase = createClient(url, serviceKey ?? anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
   const now = new Date()
+  let warned = 0
+  let deactivated = 0
 
   // ── 1. 3-day expiry warning ───────────────────────────────────────────────
-  const warningStart = new Date(now)
-  warningStart.setDate(warningStart.getDate() + 3)
-  warningStart.setHours(0, 0, 0, 0)
+  const warningDay = new Date(now)
+  warningDay.setDate(warningDay.getDate() + 3)
+  warningDay.setHours(0, 0, 0, 0)
+  const warningDayEnd = new Date(warningDay)
+  warningDayEnd.setHours(23, 59, 59, 999)
 
-  const warningEnd = new Date(warningStart)
-  warningEnd.setHours(23, 59, 59, 999)
-
-  const { data: expiringRows } = await supabase
-    .from('subscriptions')
-    .select('user_id, expires_at')
+  const { data: expiringProfiles } = await supabase
+    .from('profiles')
+    .select('id, plan_expires_at')
     .eq('plan', 'pro')
-    .gte('expires_at', warningStart.toISOString())
-    .lte('expires_at', warningEnd.toISOString())
+    .gte('plan_expires_at', warningDay.toISOString())
+    .lte('plan_expires_at', warningDayEnd.toISOString())
 
-  let warned = 0
-  for (const row of expiringRows ?? []) {
-    const { data: { user } } = await supabase.auth.admin.getUserById(row.user_id)
+  for (const profile of expiringProfiles ?? []) {
+    if (!serviceKey) break // email sending needs auth.admin
+    const { data: { user } } = await supabase.auth.admin.getUserById(profile.id)
     if (user?.email) {
-      await sendSubscriptionExpiringEmail(user.email, new Date(row.expires_at))
+      await sendSubscriptionExpiringEmail(user.email, new Date(profile.plan_expires_at))
       warned++
     }
   }
 
   // ── 2. Deactivate expired subscriptions ──────────────────────────────────
-  const { data: expiredRows } = await supabase
-    .from('subscriptions')
-    .select('user_id')
-    .eq('plan', 'pro')
-    .lte('expires_at', now.toISOString())
+  // Uses SECURITY DEFINER RPC so it works without service role key too
+  const { data: expiredResult, error: rpcError } = await supabase
+    .rpc('deactivate_expired_subscriptions')
 
-  let deactivated = 0
-  for (const row of expiredRows ?? []) {
-    // Update user metadata plan to 'free'
-    await supabase.auth.admin.updateUserById(row.user_id, {
-      app_metadata: { plan: 'free' },
-    })
+  if (rpcError) {
+    console.error('[cron] deactivate_expired_subscriptions RPC error:', rpcError.message)
+  } else {
+    deactivated = (expiredResult as { deactivated: number } | null)?.deactivated ?? 0
+  }
 
-    // Send expired email
-    const { data: { user } } = await supabase.auth.admin.getUserById(row.user_id)
-    if (user?.email) {
-      await sendSubscriptionExpiredEmail(user.email)
-      deactivated++
+  // Send "expired" emails if service key available
+  if (serviceKey && deactivated > 0) {
+    const { data: justExpired } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('plan', 'free')
+      .lte('updated_at', now.toISOString())
+      .gte('updated_at', new Date(now.getTime() - 60_000).toISOString())
+
+    for (const profile of justExpired ?? []) {
+      const { data: { user } } = await supabase.auth.admin.getUserById(profile.id)
+      if (user?.email) await sendSubscriptionExpiredEmail(user.email)
     }
   }
 
-  return NextResponse.json({
-    ok: true,
-    warned,
-    deactivated,
-    ts: now.toISOString(),
-  })
+  return NextResponse.json({ ok: true, warned, deactivated, ts: now.toISOString() })
 }

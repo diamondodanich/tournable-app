@@ -180,51 +180,55 @@ export default async function AccountPage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-start gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl font-black text-gray-900">Про</span>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wide"
-                    style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>
-                    Активный план
-                  </span>
+            <div>
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl font-black text-gray-900">Про</span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wide"
+                      style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}>
+                      Активный план
+                    </span>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {[
+                      'Бесконечные турниры',
+                      'До 64 команд в турнире',
+                      'Live-табло в реальном времени',
+                      'До 3 соредакторов',
+                      'Круговой, плей-офф и групповой форматы',
+                    ].map(item => (
+                      <li key={item} className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  {proExpiresAt && (
+                    <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3 shrink-0" />
+                      Действует до: {proExpiresAt}
+                    </p>
+                  )}
+                  {!proExpiresAt && (
+                    <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
+                      <Infinity className="w-3 h-3 shrink-0" />
+                      Бессрочная подписка
+                    </p>
+                  )}
                 </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  {[
-                    'Бесконечные турниры',
-                    'До 64 команд в турнире',
-                    'Live-табло в реальном времени',
-                    'До 3 соредакторов',
-                    'Круговой, плей-офф и групповой форматы',
-                  ].map(item => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                {proExpiresAt && (
-                  <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 shrink-0" />
-                    Действует до: {proExpiresAt}
-                  </p>
-                )}
-                {!proExpiresAt && (
-                  <p className="mt-4 text-xs text-gray-400 flex items-center gap-1.5">
-                    <Infinity className="w-3 h-3 shrink-0" />
-                    Бессрочная подписка
-                  </p>
-                )}
+                <div className="shrink-0 w-full sm:w-auto">
+                  <Link
+                    href="/checkout"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors whitespace-nowrap"
+                    style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Продлить подписку
+                  </Link>
+                </div>
               </div>
-              <div className="shrink-0 w-full sm:w-auto space-y-3">
-                <Link
-                  href="/checkout"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors"
-                  style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Продлить
-                </Link>
+              <div className="mt-5 pt-4 border-t border-gray-100">
                 <CancelSubscriptionButton />
               </div>
             </div>

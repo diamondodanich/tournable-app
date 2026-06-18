@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
-import { getUserPlan } from '@/app/actions/billing'
+import { getUserPlan, getPaymentHistory } from '@/app/actions/billing'
 import ChangePasswordForm from './ChangePasswordForm'
+import CancelSubscriptionButton from './CancelSubscriptionButton'
 import SignOutButton from '@/components/account/SignOutButton'
 import DeleteAccountButton from '@/components/account/DeleteAccountButton'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
-  Mail, Calendar, Trophy, Zap, Infinity, Trash2
+  Mail, Calendar, Trophy, Zap, Infinity, Trash2, RefreshCw, Clock,
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -15,7 +16,7 @@ export default async function AccountPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ count: tournamentCount }, plan, { data: profileData }] = await Promise.all([
+  const [{ count: tournamentCount }, plan, { data: profileData }, payments] = await Promise.all([
     supabase
       .from('tournaments')
       .select('*', { count: 'exact', head: true })
@@ -26,6 +27,7 @@ export default async function AccountPage() {
       .select('plan_expires_at')
       .eq('id', user!.id)
       .maybeSingle(),
+    getPaymentHistory(),
   ])
 
   const initials = user!.email?.slice(0, 2).toUpperCase() ?? '??'
@@ -214,19 +216,51 @@ export default async function AccountPage() {
                   </p>
                 )}
               </div>
-              <div className="shrink-0 w-full sm:w-auto">
+              <div className="shrink-0 w-full sm:w-auto space-y-3">
                 <Link
-                  href="https://wa.me/message/YHLE2IFII4MSJ1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  href="/checkout"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors"
+                  style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
                 >
-                  Связаться с поддержкой
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Продлить
                 </Link>
+                <CancelSubscriptionButton />
               </div>
             </div>
           )}
         </div>
+
+        {/* ── Payment history ───────────────────────────────────────── */}
+        {payments.length > 0 && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="font-black text-lg text-gray-900 mb-5 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-600" />
+              История платежей
+            </h2>
+            <div className="space-y-2">
+              {payments.map(p => {
+                const date = new Date(p.started_at).toLocaleDateString('ru-RU', {
+                  day: 'numeric', month: 'long', year: 'numeric',
+                })
+                const expires = p.expires_at
+                  ? new Date(p.expires_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : null
+                return (
+                  <div key={p.id} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-gray-900">Tournable Pro</div>
+                      <div className="text-xs text-gray-400">{date}{expires ? ` — до ${expires}` : ''}</div>
+                    </div>
+                    <div className="shrink-0 text-sm font-black text-gray-900">
+                      {p.amount_kzt ? `${p.amount_kzt.toLocaleString('ru-RU')} ₸` : '—'}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Security card ─────────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">

@@ -97,3 +97,43 @@ export async function activatePro(
   if (error) return { error: error.message }
   return {}
 }
+
+// ── Отменяет Pro (сразу переводит на free) ────────────────────────────────────
+export async function cancelSubscription(): Promise<{ error?: string }> {
+  noStore()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ plan: 'free', plan_expires_at: null, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── История платежей текущего пользователя ────────────────────────────────────
+export async function getPaymentHistory(): Promise<{
+  id: string
+  plan: string
+  amount_kzt: number | null
+  source: string
+  started_at: string
+  expires_at: string | null
+}[]> {
+  noStore()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('id, plan, amount_kzt, source, started_at, expires_at')
+    .eq('user_id', user.id)
+    .order('started_at', { ascending: false })
+    .limit(20)
+
+  return data ?? []
+}

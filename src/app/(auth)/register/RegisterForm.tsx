@@ -23,6 +23,10 @@ const T = {
     loginHref: '/login',
     mismatch: 'Пароли не совпадают',
     tooShort: 'Пароль должен быть не менее 6 символов',
+    consent: 'Нажимая «Создать аккаунт», вы принимаете',
+    consentTerms: 'Пользовательское соглашение',
+    consentAnd: 'и',
+    consentPrivacy: 'Политику конфиденциальности',
   },
   kz: {
     tagline: 'Кәсіби турнирлер — телефоныңызда',
@@ -35,6 +39,10 @@ const T = {
     loginHref: '/login?lang=kz',
     mismatch: 'Құпия сөздер сәйкес келмейді',
     tooShort: 'Құпия сөз кемінде 6 таңбадан тұруы керек',
+    consent: '«Аккаунт жасау» батырмасын басу арқылы сіз қабылдайсыз',
+    consentTerms: 'Пайдаланушы келісімін',
+    consentAnd: 'және',
+    consentPrivacy: 'Құпиялылық саясатын',
   },
   en: {
     tagline: 'Professional tournaments — at your fingertips',
@@ -47,6 +55,10 @@ const T = {
     loginHref: '/login?lang=en',
     mismatch: 'Passwords do not match',
     tooShort: 'Password must be at least 6 characters',
+    consent: 'By clicking "Create account" you agree to our',
+    consentTerms: 'Terms of Service',
+    consentAnd: 'and',
+    consentPrivacy: 'Privacy Policy',
   },
 } as const
 
@@ -116,6 +128,13 @@ export default function RegisterForm({ lang }: { lang: Lang }) {
               style={{ background: 'linear-gradient(90deg,#047857,#059669)' }}>
               {loading ? tx.btnLoading : tx.btn}
             </Button>
+
+            <p className="text-center text-xs text-gray-400 leading-relaxed">
+              {tx.consent}{' '}
+              <Link href="/terms" className="text-emerald-600 hover:underline">{tx.consentTerms}</Link>
+              {' '}{tx.consentAnd}{' '}
+              <Link href="/privacy" className="text-emerald-600 hover:underline">{tx.consentPrivacy}</Link>
+            </p>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">

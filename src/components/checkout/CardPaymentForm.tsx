@@ -255,6 +255,19 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
             <ShieldCheck className="w-3 h-3" />
             <span>Защищено FreedomPay · PCI DSS · 3D Secure</span>
           </div>
+
+          {/* Payment system logos — required by FreedomPay */}
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <svg width="44" height="14" viewBox="0 0 44 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Visa">
+              <rect width="44" height="14" rx="2" fill="#1A1F71"/>
+              <text x="22" y="10.5" fill="white" fontFamily="Arial, sans-serif" fontSize="9" fontStyle="italic" fontWeight="bold" textAnchor="middle">VISA</text>
+            </svg>
+            <svg width="34" height="22" viewBox="0 0 34 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mastercard">
+              <circle cx="12" cy="11" r="10" fill="#EB001B"/>
+              <circle cx="22" cy="11" r="10" fill="#F79E1B"/>
+              <path d="M17 3.27a10 10 0 0 1 0 15.46A10 10 0 0 1 17 3.27z" fill="#FF5F00"/>
+            </svg>
+          </div>
         </>
       )}
 

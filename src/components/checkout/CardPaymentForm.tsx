@@ -238,6 +238,11 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
             </div>
           )}
 
+          <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+            Нажимая «Оплатить», вы подтверждаете согласие с{' '}
+            <a href="/terms" className="text-emerald-500 hover:underline">условиями оферты</a>
+          </p>
+
           <button
             onClick={handlePay}
             disabled={!canPay}

@@ -28,6 +28,7 @@ export type Team = {
   tournament_id: string
   name: string
   logo_url: string | null
+  group_name: string | null
   created_at: string
 }
 

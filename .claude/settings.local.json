@@ -96,7 +96,9 @@
       "Bash(bash \"C:/Users/user/Documents/tournable-next/.claude/scripts/auto-deploy.sh\")",
       "Bash(echo \"exit: $?\")",
       "Bash(node -e \"const s = require\\('C:/Users/user/.claude/settings.json'\\); console.log\\(s.hooks.Stop[0].hooks[0].command, '|', s.hooks.Stop[0].hooks[0].asyncRewake\\)\")",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);a.forEach\\(x=>console.log\\(x.id,x.environment,x.created_at,x.sha?.slice\\(0,7\\)\\)\\)}\\)\")",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);console.log\\(a[0]?.state,a[0]?.description?.slice\\(0,120\\)\\)}\\)\")"
     ]
   }
 }

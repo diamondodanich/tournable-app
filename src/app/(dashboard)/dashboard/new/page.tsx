@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
 import { getUserPlanAndAdmin } from '@/app/actions/billing'
-import { uploadTournamentLogo, uploadTeamLogo } from '@/app/actions/logos'
+import { uploadTournamentLogo, uploadTeamLogo, uploadTournamentCover, setTournamentCoverTheme } from '@/app/actions/logos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,6 +14,8 @@ import {
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, type SportTheme } from '@/lib/sports'
+import TournamentCoverPicker from '@/components/tournament/TournamentCoverPicker'
+import { getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -443,6 +445,7 @@ export default function NewTournamentPage() {
 
   // Step 3
   const [tournamentLogo, setTournamentLogo] = useState<string | null>(null)
+  const [coverValue, setCoverValue] = useState<string | null>(null)
   const [matchPeriods, setMatchPeriods]     = useState(2)
   const [extraTime, setExtraTime]           = useState(false)
   const [durationMins, setDurationMins]     = useState(45)
@@ -595,6 +598,13 @@ export default function NewTournamentPage() {
 
     const uploads: Promise<unknown>[] = []
     if (tournamentLogo) uploads.push(uploadTournamentLogo(tournamentId, tournamentLogo))
+    if (coverValue) {
+      if (isCoverThemeUrl(coverValue)) {
+        uploads.push(setTournamentCoverTheme(tournamentId, coverValue.slice(6)))
+      } else {
+        uploads.push(uploadTournamentCover(tournamentId, coverValue))
+      }
+    }
 
     orderedNames.map((n, i) => ({ name: n.trim(), origIdx: i }))
       .filter(({ name }) => !!name)
@@ -1086,6 +1096,27 @@ export default function NewTournamentPage() {
                 onPick={setTournamentLogo} onRemove={() => setTournamentLogo(null)} />
               <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-line">{tx.logoHint}</p>
             </div>
+          </div>
+
+          {/* Cover / banner */}
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-gray-700">Обложка турнира</p>
+            {coverValue && (
+              <div className="rounded-xl overflow-hidden h-20">
+                {(() => {
+                  const style = getCoverStyle(coverValue)
+                  if (style) return <div className="w-full h-full" style={style} />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  return <img src={coverValue} alt="" className="w-full h-full object-cover" />
+                })()}
+              </div>
+            )}
+            <TournamentCoverPicker
+              sport={sport}
+              currentCoverUrl={coverValue}
+              onChange={setCoverValue}
+            />
+            <p className="text-xs text-gray-400">Баннер в шапке страницы турнира — необязательно</p>
           </div>
 
           <div className="space-y-2">

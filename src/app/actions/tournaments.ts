@@ -246,20 +246,24 @@ function buildGroupsFixtures(
     groups[groupIdx].push(id)
   })
 
+  // Pre-compute rounds per group so we can iterate ri (round-within-group) first.
+  // This puts all groups' round-1 matches in matchday 1, round-2 in matchday 2, etc.
+  const groupRounds = groups
+    .map(g => (g.length >= 2 ? generateRoundRobin(g) : []))
+  const maxRounds = Math.max(...groupRounds.map(r => r.length), 0)
+
   const fixtures = []
   let matchday = 0
-  for (let g = 0; g < groups.length; g++) {
-    const groupTeams = groups[g]
-    if (groupTeams.length < 2) continue
-    const baseRounds = generateRoundRobin(groupTeams)
-    for (let leg = 0; leg < legs; leg++) {
-      for (let ri = 0; ri < baseRounds.length; ri++) {
-        matchday++
+  for (let leg = 0; leg < legs; leg++) {
+    for (let ri = 0; ri < maxRounds; ri++) {
+      matchday++
+      for (let g = 0; g < groups.length; g++) {
+        const baseRounds = groupRounds[g]
+        if (ri >= baseRounds.length) continue
         for (const [homeId, awayId] of baseRounds[ri]) {
           if (awayId === null) {
             fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
           } else {
-            // Flip home/away for second leg
             const [h, a] = leg % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
             fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
           }

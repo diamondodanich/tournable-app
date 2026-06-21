@@ -486,15 +486,33 @@ export default function FixturesTab({ tournament, teams, fixtures, isPro = false
   const played = fixtures.filter(f => !f.is_bye && f.played).length
   const total  = fixtures.filter(f => !f.is_bye).length
 
+  // Sort: live first, then played (newest first), then unplayed (ascending).
+  // This puts the most recently completed match at the top after finishing a live game.
+  const sortedMatchdays = Object.entries(byMatchday).sort(([mdA, mxsA], [mdB, mxsB]) => {
+    const aLive = mxsA.some(f => f.status === 'live')
+    const bLive = mxsB.some(f => f.status === 'live')
+    if (aLive !== bLive) return aLive ? -1 : 1
+    const aPlayed = mxsA.some(f => f.played && !f.is_bye)
+    const bPlayed = mxsB.some(f => f.played && !f.is_bye)
+    if (aPlayed && bPlayed) return +mdB - +mdA  // most recent played first
+    if (!aPlayed && !bPlayed) return +mdA - +mdB // upcoming: ascending
+    return aPlayed ? -1 : 1                       // played before unplayed
+  })
+
+  // Show "Круг X из Y" only for formats where it's meaningful
+  const showCycleLabel = tournament.format === 'round_robin' || tournament.format === 'league_playoff' || !tournament.format
+
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-500">Сыграно {played} из {total} матчей</p>
-      {Object.entries(byMatchday).sort(([a], [b]) => +a - +b).map(([md, mxs]) => (
+      {sortedMatchdays.map(([md, mxs]) => (
         <div key={md}>
           <div className="flex items-center gap-3 mb-3">
             <span className="font-black text-emerald-600 text-lg">Тур {md}</span>
             <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Круг {mxs[0].round} из {tournament.num_rounds}</span>
+            {showCycleLabel && (
+              <span className="text-xs text-gray-400 uppercase tracking-wide">Круг {mxs[0].round} из {tournament.num_rounds}</span>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} isPro={isPro} />)}

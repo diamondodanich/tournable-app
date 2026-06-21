@@ -192,13 +192,40 @@ export default function LiveBoard({
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [game?.timer_running, game?.accumulated_secs, game?.started_at, isOwner, totalDurationSecs])
 
-  // ── beforeunload ──────────────────────────────────────────────────────────
+  // ── beforeunload — only while match is in progress ────────────────────────
   useEffect(() => {
-    if (!game || !isOwner) return
+    if (!game || !isOwner || isFinished) return
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
-  }, [game, isOwner])
+  }, [game, isOwner, isFinished])
+
+  // ── Auto-navigate after finish ─────────────────────────────────────────────
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [closingIn, setClosingIn] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isFinished) return
+    let secs = 3
+    setClosingIn(secs)
+    const tick = setInterval(() => {
+      secs--
+      setClosingIn(secs > 0 ? secs : null)
+    }, 1000)
+    autoCloseTimerRef.current = setTimeout(() => {
+      clearInterval(tick)
+      if (window.opener && !window.opener.closed) {
+        window.opener.location.reload()
+        window.close()
+      } else {
+        router.push(`/dashboard/tournament/${tournament.id}`)
+      }
+    }, 3000)
+    return () => {
+      clearInterval(tick)
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+    }
+  }, [isFinished]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DB helper ─────────────────────────────────────────────────────────────
   const patchGame = useCallback(async (patch: Partial<LiveGame>) => {
@@ -483,7 +510,7 @@ export default function LiveBoard({
           </div>
           <Button
             onClick={() => {
-              // If this tab was opened by window.open(), close it and let the opener refresh
+              if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
               if (window.opener && !window.opener.closed) {
                 window.opener.location.reload()
                 window.close()
@@ -493,7 +520,7 @@ export default function LiveBoard({
             }}
             className="bg-emerald-600 hover:bg-emerald-700 px-8"
           >
-            Вернуться к турниру
+            {closingIn !== null ? `Закрываем через ${closingIn}…` : 'Вернуться к турниру'}
           </Button>
         </div>
       </div>

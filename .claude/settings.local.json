@@ -89,7 +89,23 @@
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const arr=JSON.parse\\(d\\); arr.forEach\\(x=>console.log\\(x.id, x.sha.slice\\(0,7\\), x.environment, x.created_at\\)\\)\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const s=JSON.parse\\(d\\);console.log\\('state:',s[0]?.state,'desc:',s[0]?.description?.slice\\(0,200\\)\\)}\\)\")",
       "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Анкета-заявка ТСП FreedomPay .docx\" -t plain)",
-      "WebFetch(domain:docs.freedompay.kz)"
+      "WebFetch(domain:docs.freedompay.kz)",
+      "WebSearch",
+      "WebFetch(domain:freedompay.kz)",
+      "WebFetch(domain:freedompay.uz)",
+      "WebFetch(domain:cdn.freedompay.kz)",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(npx vercel *)",
+      "Bash(vercel env *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel deployments *)",
+      "Bash(vercel list *)",
+      "Bash(vercel deploy *)",
+      "Bash(vercel --confirm)",
+      "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Анкета-заявка ТСП FreedomPay  \\(2\\).docx\" -t plain)",
+      "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Инструкция по подключению ИП \\(2\\).docx\" -t plain)",
+      "WebFetch(domain:developers.cloudpayments.ru)"
     ]
   }
 }

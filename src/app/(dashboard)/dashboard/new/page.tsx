@@ -383,6 +383,10 @@ export default function NewTournamentPage() {
     getUserPlanAndAdmin().then(({ plan }) => setIsPro(plan === 'pro'))
   }, [])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
+
   // Step 1
   const [name, setName]           = useState('')
   const [sport, setSport]         = useState<string>('football')
@@ -584,10 +588,11 @@ export default function NewTournamentPage() {
         if (logoDataUrl && teamId) uploads.push(uploadTeamLogo(teamId, tournamentId, logoDataUrl))
       })
 
-    // Navigate immediately — the tournament, teams and schedule are already created.
-    // Logo uploads continue in the background; the tournament page revalidates and
-    // shows each logo as its upload finishes (no need to block the redirect on them).
-    if (uploads.length > 0) Promise.all(uploads).catch(() => {})
+    // Await logo uploads before navigating so the tournament page shows logos on first load.
+    // Uploads are fast (small images); errors are silently ignored — tournament already exists.
+    if (uploads.length > 0) {
+      try { await Promise.all(uploads) } catch {}
+    }
     router.push(`/dashboard/tournament/${tournamentId}`)
   }
 

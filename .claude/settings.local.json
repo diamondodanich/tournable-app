@@ -94,7 +94,9 @@
       "Skill(update-config:*)",
       "Bash(bash -c 'cd \"C:/Users/user/Documents/tournable-next/.claude/worktrees/infallible-pike-660017\" && git status --porcelain 2>&1 | head -5 && echo \"exit: $?\"')",
       "Bash(bash \"C:/Users/user/Documents/tournable-next/.claude/scripts/auto-deploy.sh\")",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(node -e \"const s = require\\('C:/Users/user/.claude/settings.json'\\); console.log\\(s.hooks.Stop[0].hooks[0].command, '|', s.hooks.Stop[0].hooks[0].asyncRewake\\)\")",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

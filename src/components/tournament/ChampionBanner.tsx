@@ -5,14 +5,16 @@ import { Trophy, Crown, Medal, Share2, Copy, Check, Send, X } from 'lucide-react
 import TeamAvatar from './TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
 import type { Team } from '@/types'
+import { tx, type Lang } from '@/lib/i18n'
 
 export default function ChampionBanner({
   champion,
   runnerUp,
-  label = 'Чемпион турнира',
+  label,
   tournamentName,
   tournamentId,
   sport,
+  lang = 'ru',
 }: {
   champion: Team
   runnerUp?: Team | null
@@ -20,14 +22,17 @@ export default function ChampionBanner({
   tournamentName?: string
   tournamentId?: string
   sport?: string
+  lang?: Lang
 }) {
+  const T = tx[lang]
+  const resolvedLabel = label ?? T.tournamentWinner
   const theme = getSportTheme(sport)
   const [dismissed, setDismissed] = useState(false)
   const [copied, setCopied]       = useState(false)
 
   if (dismissed) return null
 
-  const shareText = `${champion.name} — ${label.toLowerCase()}${tournamentName ? ` «${tournamentName}»` : ''}`
+  const shareText = `${champion.name} — ${resolvedLabel.toLowerCase()}${tournamentName ? ` «${tournamentName}»` : ''}`
 
   // Origin is only known in the browser — resolve the public URL lazily at click time.
   function getShareUrl() {
@@ -111,7 +116,7 @@ export default function ChampionBanner({
         <div className="flex items-center justify-center gap-2 mb-5" style={{ animation: 'champ-rise .5s ease-out both' }}>
           <span className="h-px w-8 bg-amber-300/40" />
           <Crown size={13} className="text-amber-300" />
-          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-200">{label}</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-200">{resolvedLabel}</span>
           <Crown size={13} className="text-amber-300" />
           <span className="h-px w-8 bg-amber-300/40" />
         </div>
@@ -146,7 +151,7 @@ export default function ChampionBanner({
           {runnerUp && (
             <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/8 border border-white/10 px-3.5 py-1.5 backdrop-blur-sm">
               <Medal size={13} className="text-gray-300" />
-              <span className="text-[11px] font-bold uppercase tracking-wide text-gray-300">Финалист</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-gray-300">{T.runnerUp}</span>
               <TeamAvatar name={runnerUp.name} logoUrl={runnerUp.logo_url} size={18} />
               <span className="text-sm font-semibold text-white/90">{runnerUp.name}</span>
             </div>
@@ -157,14 +162,14 @@ export default function ChampionBanner({
         {tournamentId && (
           <div className="mt-7 flex flex-col items-center gap-3" style={{ animation: 'champ-rise .8s ease-out both' }}>
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/50">
-              Поделиться достижением
+              {T.shareAchievement}
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={nativeShare}
                 className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-sm font-black transition-colors shadow-md"
               >
-                <Share2 size={15} /> Поделиться
+                <Share2 size={15} /> {T.share}
               </button>
               <button
                 onClick={openTelegram}

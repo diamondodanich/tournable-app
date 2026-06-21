@@ -4,21 +4,26 @@ import { Team, Fixture, Tournament } from '@/types'
 import StandingsTable from './StandingsTable'
 import ExportButtons from './ExportButtons'
 import { BarChart2 } from 'lucide-react'
+import { tx, type Lang } from '@/lib/i18n'
 
 export default function GroupStandingsTab({
   teams,
   fixtures,
   tournament,
+  lang = 'ru',
 }: {
   teams: Team[]
   fixtures: Fixture[]
   tournament: Tournament
+  lang?: Lang
 }) {
+  const T = tx[lang]
+
   if (teams.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
         <BarChart2 className="mx-auto mb-3 text-gray-300" size={40} />
-        <p className="font-bold text-gray-600">Группы ещё не сформированы</p>
+        <p className="font-bold text-gray-600">{T.groupsNotFormed}</p>
       </div>
     )
   }
@@ -33,7 +38,7 @@ export default function GroupStandingsTab({
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
         <BarChart2 className="mx-auto mb-3 text-gray-300" size={40} />
-        <p className="font-bold text-gray-600">Группы пока не распределены</p>
+        <p className="font-bold text-gray-600">{T.groupsNotDistributed}</p>
       </div>
     )
   }
@@ -66,9 +71,9 @@ export default function GroupStandingsTab({
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
                   <span className="text-xs font-black text-emerald-700">{groupName}</span>
                 </div>
-                <h3 className="font-black text-gray-900">Группа {groupName}</h3>
+                <h3 className="font-black text-gray-900">{T.groupLabel(groupName)}</h3>
                 <span className="text-xs text-gray-400 font-medium">
-                  · {groupTeams.length} команд
+                  {T.teamsCount(groupTeams.length)}
                 </span>
               </div>
               <ExportButtons elementId={exportId} fileName={`${slug}-group-${groupName.toLowerCase()}`} />
@@ -83,6 +88,7 @@ export default function GroupStandingsTab({
                   pointsDraw={tournament.points_draw}
                   pointsLoss={tournament.points_loss}
                   playoffZone={teamsAdvancePerGroup}
+                  lang={lang}
                 />
               </div>
             </div>

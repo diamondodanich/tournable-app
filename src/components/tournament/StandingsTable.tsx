@@ -1,6 +1,7 @@
 import { Team, Fixture, StandingRow } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import TeamAvatar from './TeamAvatar'
+import { tx, type Lang } from '@/lib/i18n'
 
 type PointsConfig = { win?: number; draw?: number; loss?: number }
 
@@ -42,20 +43,21 @@ export function computeStandings(teams: Team[], fixtures: Fixture[], pts: Points
 }
 
 const FORM_COLORS = { W: 'bg-emerald-500', D: 'bg-amber-500', L: 'bg-red-500' }
-const FORM_LABELS = { W: 'В', D: 'Н', L: 'П' }
 
 export default function StandingsTable({
   teams, fixtures, pointsWin, pointsDraw, pointsLoss,
-  playoffZone,
+  playoffZone, lang = 'ru',
 }: {
   teams: Team[]
   fixtures: Fixture[]
   pointsWin?: number
   pointsDraw?: number
   pointsLoss?: number
-  /** Количество команд, выходящих в плей-офф (показывает разделительную линию) */
   playoffZone?: number
+  lang?: Lang
 }) {
+  const T = tx[lang]
+  const FORM_LABELS = { W: T.formW, D: T.formD, L: T.formL }
   const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss })
 
   return (
@@ -63,24 +65,24 @@ export default function StandingsTable({
       {playoffZone && playoffZone > 0 && (
         <div className="flex items-center gap-2 px-3 pt-2 pb-1">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Плей-офф</span>
-          <span className="text-[11px] text-gray-400">— топ {playoffZone} команд</span>
+          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">{T.playoffZoneLabel}</span>
+          <span className="text-[11px] text-gray-400">{T.playoffZoneTop(playoffZone)}</span>
         </div>
       )}
       <Table>
         <TableHeader>
           <TableRow className="bg-emerald-50">
             <TableHead className="w-10 text-center text-emerald-700">#</TableHead>
-            <TableHead className="text-emerald-700">Команда</TableHead>
-            <TableHead className="text-center text-emerald-700 w-10">И</TableHead>
-            <TableHead className="text-center text-emerald-700 w-10">В</TableHead>
-            <TableHead className="text-center text-emerald-700 w-10">Н</TableHead>
-            <TableHead className="text-center text-emerald-700 w-10">П</TableHead>
-            <TableHead className="text-center text-emerald-700">Форма</TableHead>
-            <TableHead className="text-center text-emerald-700 w-12">ЗМ</TableHead>
-            <TableHead className="text-center text-emerald-700 w-12">ПМ</TableHead>
-            <TableHead className="text-center text-emerald-700 w-12">РМ</TableHead>
-            <TableHead className="text-center text-emerald-700 w-12 font-black">О</TableHead>
+            <TableHead className="text-emerald-700">{T.colTeam}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">{T.colPlayed}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">{T.colWon}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">{T.colDrawn}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-10">{T.colLost}</TableHead>
+            <TableHead className="text-center text-emerald-700">{T.colForm}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">{T.colGF}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">{T.colGA}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12">{T.colGD}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-12 font-black">{T.colPts}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -5,22 +5,9 @@ import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Goal, Handshake, RectangleVertical } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
+import { tx, type Lang } from '@/lib/i18n'
 
 type Filter = 'goal' | 'assist' | 'yellow_card' | 'red_card'
-
-const FILTERS: {
-  value: Filter
-  label: string       // full label, e.g. "Ассисты"
-  short: string       // table column header, e.g. "Голы"
-  color: string       // active pill bg
-  icon: React.ElementType
-  iconColor: string   // empty-state icon container accent
-}[] = [
-  { value: 'goal',        label: 'Бомбардиры', short: 'Голы',    color: 'bg-emerald-600 text-white', icon: Goal,              iconColor: 'bg-emerald-100 text-emerald-600' },
-  { value: 'assist',      label: 'Ассистенты', short: 'Ассисты', color: 'bg-blue-600 text-white',    icon: Handshake,         iconColor: 'bg-blue-100 text-blue-600' },
-  { value: 'yellow_card', label: 'Жёлтые',     short: 'ЖК',      color: 'bg-amber-500 text-white',   icon: RectangleVertical, iconColor: 'bg-amber-100 text-amber-600' },
-  { value: 'red_card',    label: 'Красные',    short: 'КК',      color: 'bg-red-600 text-white',     icon: RectangleVertical, iconColor: 'bg-red-100 text-red-600' },
-]
 
 function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
   const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; count: number }>()
@@ -44,7 +31,21 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="text-gray-400 text-sm font-bold">{rank + 1}</span>
 }
 
-export default function StatsTab({ teams, events }: { teams: Team[]; events: MatchEvent[] }) {
+export default function StatsTab({ teams, events, lang = 'ru' }: { teams: Team[]; events: MatchEvent[]; lang?: Lang }) {
+  const T = tx[lang]
+  const FILTERS: {
+    value: Filter
+    label: string
+    short: string
+    color: string
+    icon: React.ElementType
+    iconColor: string
+  }[] = [
+    { value: 'goal',        label: T.statTopScorers, short: T.statGoalsCol,   color: 'bg-emerald-600 text-white', icon: Goal,              iconColor: 'bg-emerald-100 text-emerald-600' },
+    { value: 'assist',      label: T.statAssists,    short: T.statAssistsCol, color: 'bg-blue-600 text-white',    icon: Handshake,         iconColor: 'bg-blue-100 text-blue-600' },
+    { value: 'yellow_card', label: T.statYellowCards, short: T.statYCCol,     color: 'bg-amber-500 text-white',   icon: RectangleVertical, iconColor: 'bg-amber-100 text-amber-600' },
+    { value: 'red_card',    label: T.statRedCards,   short: T.statRCCol,      color: 'bg-red-600 text-white',     icon: RectangleVertical, iconColor: 'bg-red-100 text-red-600' },
+  ]
   const [filter, setFilter] = useState<Filter>('goal')
   const list = buildLeaderboard(teams, events, filter)
   const active = FILTERS.find(f => f.value === filter)!
@@ -77,8 +78,8 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${active.iconColor}`}>
             <ActiveIcon size={26} />
           </div>
-          <p className="font-bold text-gray-600">{active.label} — пока пусто</p>
-          <p className="text-sm text-gray-400 mt-1">Указывайте события при вводе результатов</p>
+          <p className="font-bold text-gray-600">{T.statEmpty(active.label)}</p>
+          <p className="text-sm text-gray-400 mt-1">{T.statHint}</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
@@ -86,8 +87,8 @@ export default function StatsTab({ teams, events }: { teams: Team[]; events: Mat
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="w-14 text-center text-gray-500">#</TableHead>
-                <TableHead className="text-gray-700">Игрок</TableHead>
-                <TableHead className="text-gray-700">Команда</TableHead>
+                <TableHead className="text-gray-700">{T.colPlayer}</TableHead>
+                <TableHead className="text-gray-700">{T.colTeam}</TableHead>
                 <TableHead className="text-center text-gray-700 w-16">{active.short}</TableHead>
               </TableRow>
             </TableHeader>

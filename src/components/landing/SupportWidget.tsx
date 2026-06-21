@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { X, ArrowRight, ChevronRight } from 'lucide-react'
+import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { X, ArrowRight, ChevronRight, Send } from 'lucide-react'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -13,113 +13,403 @@ function IconWhatsApp({ className }: { className?: string }) {
   )
 }
 
-const FAQ: Record<Lang, { q: string; a: string }[]> = {
+// ── FAQ database ─────────────────────────────────────────────────────────────
+
+type FaqItem = {
+  q: string
+  tags: string[]
+  steps: string[]
+}
+
+const FAQ: Record<Lang, FaqItem[]> = {
   ru: [
     {
       q: 'Как создать турнир?',
-      a: 'Нажмите «Новый турнир», выберите формат (Круговой, Плей-офф, Группы+Плей-офф или Лига+Плей-офф), добавьте команды — расписание готово автоматически. Ровно 30 секунд.',
+      tags: ['создать', 'создание', 'турнир', 'новый', 'начать', 'запустить', 'основать'],
+      steps: [
+        '1. Нажмите «Новый турнир» на главной панели.',
+        '2. Выберите формат: Круговой, Плей-офф, Групповой+Плей-офф или Лига+Плей-офф.',
+        '3. Введите названия команд и загрузите логотипы по желанию.',
+        '4. Настройте очки, длительность матча и другие параметры.',
+        '5. Нажмите «Создать турнир» — расписание готово автоматически.',
+      ],
     },
     {
-      q: 'Какие форматы поддерживаются?',
-      a: 'Четыре формата: Круговой, Плей-офф, Группы+Плей-офф (как ЧМ) и Лига+Плей-офф (как новая Лига чемпионов). Очки, длительность матча и другие параметры полностью настраиваются.',
+      q: 'Как вести счёт в реальном времени (Live)?',
+      tags: ['live', 'лайв', 'счёт', 'результат', 'реальное', 'время', 'онлайн', 'трансляция', 'начать матч'],
+      steps: [
+        '1. Откройте турнир и перейдите на вкладку «Матчи».',
+        '2. Найдите нужный матч и нажмите «Начать матч».',
+        '3. Откроется Live-табло — вносите голы, ассисты и карточки.',
+        '4. После матча нажмите «Завершить» → «Сохранить и завершить».',
+        '5. Табло автоматически закроется через 3 секунды и обновит турнир.',
+      ],
     },
     {
-      q: 'Как вести счёт в реальном времени?',
-      a: 'Войдите в турнир → выберите матч → нажмите «Начать». Вносите голы, ассисты и карточки с телефона. Участники видят всё в реальном времени по публичной ссылке — без приложений и регистрации.',
+      q: 'Как завершить матч в Live-режиме?',
+      tags: ['завершить', 'закрыть', 'конец', 'финиш', 'live', 'лайв', 'матч'],
+      steps: [
+        '1. На Live-табло нажмите кнопку «Завершить» внизу экрана.',
+        '2. Подтвердите: «Сохранить и завершить».',
+        '3. Результат сохраняется автоматически.',
+        '4. Страница закроется через 3 секунды и вернёт вас в турнир.',
+        '5. Завершённый матч будет показан первым в разделе «Матчи».',
+      ],
+    },
+    {
+      q: 'Как посмотреть групповые таблицы?',
+      tags: ['группы', 'групп', 'таблица', 'standings', 'групповой', 'этап', 'просмотр'],
+      steps: [
+        '1. Откройте турнир формата «Групповой + Плей-офф».',
+        '2. Перейдите на вкладку «Группы».',
+        '3. Вы увидите отдельные таблицы для каждой группы.',
+        '4. Зелёная линия показывает зону выхода в плей-офф.',
+      ],
+    },
+    {
+      q: 'Как поменять язык интерфейса?',
+      tags: ['язык', 'language', 'перевод', 'русский', 'казахский', 'английский', 'поменять', 'изменить'],
+      steps: [
+        '1. Найдите переключатель языка в верхней панели (RU / KZ / EN).',
+        '2. Нажмите нужный язык — страница обновится мгновенно.',
+        '3. Все тексты внутри турниров тоже обновятся.',
+        '4. Выбор сохраняется в вашем браузере автоматически.',
+      ],
     },
     {
       q: 'Можно ли пригласить помощника?',
-      a: 'Да. В разделе «Поделиться» нажмите «Пригласить редактора», скопируйте ссылку и отправьте. До 3 соредакторов вводят результаты одновременно.',
-    },
-    {
-      q: 'Какие тарифы?',
-      a: 'Бесплатный: до 3 турниров, до 16 команд. Про (4 990 ₸/мес или 44 990 ₸/год): безлимитные турниры, до 64 команд, Live-табло, приоритетная поддержка 24/7.',
+      tags: ['пригласить', 'помощник', 'редактор', 'совместный', 'соредактор', 'поделиться', 'доступ'],
+      steps: [
+        '1. Откройте турнир и нажмите «Поделиться».',
+        '2. Выберите «Пригласить редактора».',
+        '3. Скопируйте ссылку и отправьте коллеге.',
+        '4. До 3 соредакторов могут вводить результаты одновременно.',
+      ],
     },
     {
       q: 'Как поделиться турниром с участниками?',
-      a: 'В турнире нажмите «Поделиться» и скопируйте публичную ссылку. Участники открывают её в любом браузере и видят таблицу, расписание и статистику. Без регистрации.',
+      tags: ['поделиться', 'ссылка', 'участники', 'публичная', 'просмотр', 'зрители'],
+      steps: [
+        '1. Откройте турнир и нажмите «Поделиться» в шапке.',
+        '2. Скопируйте публичную ссылку.',
+        '3. Участники открывают её в любом браузере — без регистрации.',
+        '4. Они видят таблицы, расписание и статистику в реальном времени.',
+      ],
+    },
+    {
+      q: 'Какие тарифы и цены?',
+      tags: ['тариф', 'цена', 'стоимость', 'про', 'бесплатный', 'оплата', 'подписка', 'купить', '4990', 'деньги'],
+      steps: [
+        'Бесплатный план: до 3 турниров, до 16 команд, базовые функции.',
+        'Pro — 4 990 ₸/мес или 44 990 ₸/год (выгоднее на 25%).',
+        'Pro включает: безлимитные турниры, до 64 команд.',
+        'Pro включает: Live-табло, приоритетную поддержку 24/7.',
+        'Pro включает: экспорт PDF, расширенная статистика.',
+      ],
+    },
+    {
+      q: 'Как экспортировать таблицу или отчёт?',
+      tags: ['экспорт', 'скачать', 'pdf', 'png', 'отчёт', 'таблица', 'изображение'],
+      steps: [
+        '1. Откройте нужную вкладку (Таблица, Статистика, Группы и т.д.).',
+        '2. Нажмите иконку PNG или PDF рядом с таблицей.',
+        '3. Для полного отчёта турнира — кнопка «Скачать отчёт» (Pro).',
+      ],
+    },
+    {
+      q: 'Что означают иконки событий в матче?',
+      tags: ['иконки', 'событие', 'мяч', 'гол', 'ассист', 'карточка', 'обозначение', 'значки'],
+      steps: [
+        'Мяч (зелёный) — гол.',
+        'Мяч (красный) — автогол.',
+        'Буква «А» (синяя) — ассист.',
+        'Жёлтый прямоугольник — жёлтая карточка.',
+        'Красный прямоугольник — красная карточка.',
+      ],
+    },
+    {
+      q: 'Какие форматы турниров поддерживаются?',
+      tags: ['формат', 'круговой', 'плей-офф', 'групповой', 'лига', 'тип', 'виды'],
+      steps: [
+        'Круговой — все играют друг с другом (1 или 2 круга).',
+        'Плей-офф — прямое выбывание, сетка.',
+        'Групповой + Плей-офф — как на Чемпионате мира.',
+        'Лига + Плей-офф — как новая Лига чемпионов УЕФА.',
+      ],
+    },
+    {
+      q: 'Как расположены туры (matchdays)?',
+      tags: ['тур', 'матчдей', 'расписание', 'порядок', 'расставлены', 'matchday'],
+      steps: [
+        '1. Тур = игровой день, где все команды сыграли по одному матчу.',
+        '2. Последний сыгранный тур показывается первым.',
+        '3. Live-матч всегда наверху списка.',
+        '4. В «Групповой + Плей-офф» каждый тур содержит матчи из всех групп.',
+      ],
     },
   ],
   kz: [
     {
       q: 'Турнирді қалай жасауға болады?',
-      a: '«Жаңа турнир» батырмасын басыңыз, формат таңдаңыз (Дөңгелек, Плей-офф, Топтар+Плей-офф немесе Лига+Плей-офф), командаларды қосыңыз — кесте автоматты дайын. Дәл 30 секунд.',
-    },
-    {
-      q: 'Қандай форматтар қолдалады?',
-      a: 'Төрт формат: Дөңгелек, Плей-офф, Топтар+Плей-офф (ЧА сияқты) және Лига+Плей-офф (жаңа Чемпиондар лигасы сияқты). Ұпайлар, матч уақыты және басқа параметрлер толық теңшеледі.',
+      tags: ['жасау', 'турнир', 'жаңа', 'бастау', 'создать'],
+      steps: [
+        '1. Бас панелде «Жаңа турнир» батырмасын басыңыз.',
+        '2. Формат таңдаңыз: Дөңгелек, Плей-офф, Топтар+Плей-офф немесе Лига+Плей-офф.',
+        '3. Команда атауларын енгізіп, логотиптер жүктеңіз.',
+        '4. Ұпайларды, матч ұзақтығын және басқа параметрлерді реттеңіз.',
+        '5. «Турнир жасау» батырмасын басыңыз — кесте автоматты дайын.',
+      ],
     },
     {
       q: 'Нақты уақытта есеп қалай жүргізіледі?',
-      a: 'Турнирге кіріңіз → матч таңдаңыз → «Бастау» батырмасын басыңыз. Телефоннан голдарды, ассисттерді және карточкаларды енгізіңіз. Қатысушылар барлығын нақты уақытта жалпыға ортақ сілтеме арқылы тіркелусіз көреді.',
+      tags: ['live', 'лайв', 'есеп', 'нәтиже', 'онлайн', 'трансляция'],
+      steps: [
+        '1. Турнирді ашып, «Матчтар» қойындысына өтіңіз.',
+        '2. Матчты тауып, «Матчты бастау» батырмасын басыңыз.',
+        '3. Live-тақта ашылады — голдарды, ассисттерді, карточкаларды енгізіңіз.',
+        '4. Матч аяқталған соң «Аяқтау» → «Сақтап аяқтау».',
+        '5. Тақта 3 секундтан соң өздігінен жабылады.',
+      ],
     },
     {
-      q: 'Көмекші шақыруға бола ма?',
-      a: 'Иә. «Бөлісу» бөлімінде «Редакторды шақыру» батырмасын басыңыз, сілтемені көшіріп жіберіңіз. 3 соредакторға дейін нәтижелерді бір уақытта енгізе алады.',
+      q: 'Топтық кестелерді қалай қарауға болады?',
+      tags: ['топтар', 'кесте', 'топтық', 'кезең', 'группы'],
+      steps: [
+        '1. «Топтық кезең + Плей-офф» форматындағы турнирді ашыңыз.',
+        '2. «Топтар» қойындысына өтіңіз.',
+        '3. Әр топ үшін жеке кестелер көрсетіледі.',
+        '4. Жасыл сызық плей-офф аймағын белгілейді.',
+      ],
     },
     {
-      q: 'Тарифтер қандай?',
-      a: 'Тегін: 3 турнирге дейін, 16 командаға дейін. Про (4 990 ₸/ай немесе 44 990 ₸/жыл): шексіз турнирлер, 64 командаға дейін, Live-тақта, басым қолдау 24/7.',
+      q: 'Тілді қалай ауыстыруға болады?',
+      tags: ['тіл', 'язык', 'аудару', 'ауыстыру', 'ру', 'қаз', 'ен'],
+      steps: [
+        '1. Жоғарғы панелде тіл ауыстырғышты тауып алыңыз (RU / KZ / EN).',
+        '2. Қажетті тілді басыңыз — бет бірден жаңарады.',
+        '3. Барлық мәтіндер жаңа тілде көрсетіледі.',
+      ],
+    },
+    {
+      q: 'Тарифтер мен бағалар қандай?',
+      tags: ['тариф', 'баға', 'про', 'тегін', 'төлем', 'жазылым', '4990'],
+      steps: [
+        'Тегін: 3 турнирге дейін, 16 командаға дейін.',
+        'Pro — 4 990 ₸/ай немесе 44 990 ₸/жыл.',
+        'Pro: шексіз турнирлер, 64 командаға дейін.',
+        'Pro: Live-тақта, басым қолдау 24/7.',
+        'Pro: PDF экспорт, кеңейтілген статистика.',
+      ],
     },
     {
       q: 'Турнирді қатысушылармен қалай бөлісуге болады?',
-      a: 'Турнирде «Бөлісу» батырмасын басып, жалпыға ортақ сілтемені көшіріңіз. Қатысушылар кез келген браузерде ашады — кестені, кестені және статистиканы тіркелусіз көреді.',
+      tags: ['бөлісу', 'сілтеме', 'қатысушылар', 'жалпыға', 'шақыру'],
+      steps: [
+        '1. Турнирді ашып, тақырыптағы «Бөлісу» батырмасын басыңыз.',
+        '2. Жалпыға ортақ сілтемені көшіріңіз.',
+        '3. Қатысушылар кез келген браузерде тіркелусіз ашады.',
+        '4. Олар кестелерді, кестені және статистиканы нақты уақытта көреді.',
+      ],
+    },
+    {
+      q: 'Турнир форматтары қандай?',
+      tags: ['формат', 'дөңгелек', 'плей-офф', 'топтар', 'лига', 'тип'],
+      steps: [
+        'Дөңгелек — барлығы бір-бірімен ойнайды (1 немесе 2 айналым).',
+        'Плей-офф — тікелей жеңілген шығады.',
+        'Топтар + Плей-офф — Әлем чемпионаты сияқты.',
+        'Лига + Плей-офф — жаңа УЕФА Чемпиондар лигасы сияқты.',
+      ],
+    },
+    {
+      q: 'Оқиға белгішелері не білдіреді?',
+      tags: ['белгіше', 'оқиға', 'доп', 'гол', 'ассист', 'карточка'],
+      steps: [
+        'Жасыл доп — гол.',
+        'Қызыл доп — өз қақпасына гол.',
+        '«А» әрпі (көк) — ассист.',
+        'Сары тіктөртбұрыш — сары карточка.',
+        'Қызыл тіктөртбұрыш — қызыл карточка.',
+      ],
     },
   ],
   en: [
     {
       q: 'How do I create a tournament?',
-      a: 'Click "New Tournament", choose a format (Round-robin, Playoff, Groups+Playoff or League+Playoff), add teams — the schedule is ready automatically. Exactly 30 seconds.',
+      tags: ['create', 'tournament', 'new', 'start', 'setup', 'begin'],
+      steps: [
+        '1. Click "New Tournament" on the dashboard.',
+        '2. Choose a format: Round-robin, Playoff, Groups+Playoff or League+Playoff.',
+        '3. Enter team names and upload logos if you like.',
+        '4. Configure points, match duration and other settings.',
+        '5. Click "Create Tournament" — the schedule is generated automatically.',
+      ],
     },
     {
-      q: 'Which formats are supported?',
-      a: 'Four formats: Round-robin, Playoff, Groups+Playoff (like the World Cup) and League+Playoff (like the new Champions League). Points, match duration and other settings are fully customizable.',
+      q: 'How do I track scores in real time (Live)?',
+      tags: ['live', 'score', 'result', 'real', 'time', 'online', 'stream'],
+      steps: [
+        '1. Open the tournament and go to the "Matches" tab.',
+        '2. Find the match and click "Start match".',
+        '3. The Live board opens — enter goals, assists and cards.',
+        '4. When done, click "Finish" → "Save and finish".',
+        '5. The board auto-closes after 3 seconds and refreshes the tournament.',
+      ],
     },
     {
-      q: 'How do I track scores in real time?',
-      a: 'Open the tournament → select a match → tap "Start". Enter goals, assists and cards from your phone. Participants see everything live via a public link — no app, no sign-up.',
+      q: 'How do I finish a Live match?',
+      tags: ['finish', 'end', 'close', 'complete', 'live', 'match'],
+      steps: [
+        '1. On the Live board, tap "Finish" at the bottom.',
+        '2. Confirm with "Save and finish".',
+        '3. The result is saved automatically.',
+        '4. The page closes after 3 seconds and returns you to the tournament.',
+        '5. The finished match appears first in the Matches tab.',
+      ],
+    },
+    {
+      q: 'How do I view group standings?',
+      tags: ['groups', 'group', 'standings', 'table', 'stage', 'view'],
+      steps: [
+        '1. Open a tournament with "Group Stage + Playoff" format.',
+        '2. Go to the "Groups" tab.',
+        '3. You will see separate standings for each group.',
+        '4. The green line marks the playoff qualification zone.',
+      ],
+    },
+    {
+      q: 'How do I switch the language?',
+      tags: ['language', 'switch', 'ru', 'kz', 'en', 'translate', 'change'],
+      steps: [
+        '1. Find the language switcher in the top navigation bar (RU / KZ / EN).',
+        '2. Click your preferred language — the page updates instantly.',
+        '3. All tournament text updates too.',
+        '4. Your choice is saved automatically in your browser.',
+      ],
     },
     {
       q: 'Can I invite a helper?',
-      a: 'Yes. In the "Share" section tap "Invite Editor", copy the link and send it. Up to 3 co-editors can enter results at the same time.',
-    },
-    {
-      q: 'What are the plans?',
-      a: 'Free: up to 3 tournaments, up to 16 teams. Pro (4,990 ₸/mo or 44,990 ₸/yr): unlimited tournaments, up to 64 teams, live scoreboard, priority support 24/7.',
+      tags: ['invite', 'helper', 'editor', 'co-editor', 'share', 'access', 'collaborate'],
+      steps: [
+        '1. Open the tournament and click "Share".',
+        '2. Select "Invite Editor".',
+        '3. Copy the link and send it to your colleague.',
+        '4. Up to 3 co-editors can enter results at the same time.',
+      ],
     },
     {
       q: 'How do I share a tournament with participants?',
-      a: 'In the tournament tap "Share" and copy the public link. Participants open it in any browser and see standings, schedule and stats — no sign-up required.',
+      tags: ['share', 'link', 'participants', 'public', 'viewers', 'spectators'],
+      steps: [
+        '1. Open the tournament and tap "Share" in the header.',
+        '2. Copy the public link.',
+        '3. Participants open it in any browser — no account needed.',
+        '4. They see standings, schedule and stats in real time.',
+      ],
+    },
+    {
+      q: 'What are the plans and pricing?',
+      tags: ['plan', 'price', 'cost', 'pro', 'free', 'payment', 'subscription', '4990'],
+      steps: [
+        'Free plan: up to 3 tournaments, up to 16 teams.',
+        'Pro — 4,990 ₸/month or 44,990 ₸/year (save 25%).',
+        'Pro includes: unlimited tournaments, up to 64 teams.',
+        'Pro includes: Live scoreboard, priority support 24/7.',
+        'Pro includes: PDF export, advanced statistics.',
+      ],
+    },
+    {
+      q: 'What do the match event icons mean?',
+      tags: ['icon', 'icons', 'event', 'ball', 'goal', 'assist', 'card', 'symbols'],
+      steps: [
+        'Green ball — goal.',
+        'Red ball — own goal.',
+        'Letter "A" (blue) — assist.',
+        'Yellow rectangle — yellow card.',
+        'Red rectangle — red card.',
+      ],
+    },
+    {
+      q: 'Which tournament formats are supported?',
+      tags: ['format', 'type', 'round-robin', 'playoff', 'groups', 'league'],
+      steps: [
+        'Round-robin — everyone plays each other (1 or 2 legs).',
+        'Playoff — single elimination bracket.',
+        'Groups + Playoff — like the FIFA World Cup.',
+        'League + Playoff — like the new UEFA Champions League.',
+      ],
     },
   ],
 }
 
-const UI: Record<Lang, { greeting: string; header: string; online: string; faqTitle: string; wa: string }> = {
+// ── Keyword matching ──────────────────────────────────────────────────────────
+
+function matchFaq(query: string, items: FaqItem[]): FaqItem | null {
+  const words = query.toLowerCase().split(/[\s,.!?]+/).filter(w => w.length > 2)
+  if (words.length === 0) return null
+
+  let best = 0
+  let bestItem: FaqItem | null = null
+
+  for (const item of items) {
+    const haystack = [
+      ...item.tags,
+      item.q.toLowerCase(),
+      ...item.steps.map(s => s.toLowerCase()),
+    ].join(' ')
+
+    const score = words.reduce((acc, w) => acc + (haystack.includes(w) ? 1 : 0), 0)
+    if (score > best) {
+      best = score
+      bestItem = item
+    }
+  }
+
+  return best > 0 ? bestItem : null
+}
+
+// ── UI strings ────────────────────────────────────────────────────────────────
+
+const UI: Record<Lang, {
+  greeting: string; header: string; online: string; faqTitle: string; wa: string
+  inputPlaceholder: string; notFound: string
+}> = {
   ru: {
-    greeting: 'Привет! Помогу разобраться с Tournable — быстро и без лишних слов. Выберите вопрос ниже или напишите напрямую в WhatsApp.',
+    greeting: 'Привет! Помогу разобраться с Tournable. Выберите вопрос ниже или напишите свой.',
     header: 'Поддержка Tournable',
     online: 'Онлайн — отвечаем быстро',
     faqTitle: 'Частые вопросы',
     wa: 'Написать в WhatsApp',
+    inputPlaceholder: 'Задайте вопрос…',
+    notFound: 'Не нашёл ответа на этот вопрос. Напишите нам в WhatsApp — ответим быстро.',
   },
   kz: {
-    greeting: 'Сәлем! Tournable-мен тез және анық танысуға көмектесемін. Төменнен сұрақ таңдаңыз немесе WhatsApp-қа жазыңыз.',
+    greeting: 'Сәлем! Tournable-мен жұмыс істеуге көмектесемін. Төменнен сұрақ таңдаңыз немесе өзіңіздікін жазыңыз.',
     header: 'Tournable қолдауы',
     online: 'Онлайн — тез жауап береміз',
     faqTitle: 'Жиі сұрақтар',
     wa: 'WhatsApp-қа жазу',
+    inputPlaceholder: 'Сұрақ қою…',
+    notFound: 'Бұл сұраққа жауап таппадым. Бізге WhatsApp-та жазыңыз.',
   },
   en: {
-    greeting: 'Hey! Happy to help you get started with Tournable. Pick a question below or reach us directly on WhatsApp.',
+    greeting: 'Hey! Happy to help with Tournable. Pick a question below or type your own.',
     header: 'Tournable Support',
     online: 'Online — fast response',
     faqTitle: 'FAQ',
     wa: 'Message on WhatsApp',
+    inputPlaceholder: 'Ask a question…',
+    notFound: "Couldn't find an answer. Write to us on WhatsApp — we reply fast.",
   },
 }
 
-type Msg = { text: string; isBot: boolean }
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Msg = { text?: string; steps?: string[]; isBot: boolean }
+
 const WA_URL = 'https://wa.me/message/YHLE2IFII4MSJ1'
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
   const faq = FAQ[lang]
@@ -128,35 +418,58 @@ export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Msg[]>([{ text: ui.greeting, isBot: true }])
   const [answered, setAnswered] = useState<Set<number>>(new Set())
+  const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Reset chat when lang changes
   useEffect(() => {
     setMessages([{ text: UI[lang].greeting, isBot: true }])
     setAnswered(new Set())
+    setInput('')
   }, [lang])
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (open) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      if (input === '') setTimeout(() => inputRef.current?.focus(), 100)
+    }
   }, [messages, open])
 
-  function handleFaq(idx: number) {
+  function sendFaq(idx: number) {
     if (answered.has(idx)) return
     const item = faq[idx]
     setMessages(prev => [
       ...prev,
       { text: item.q, isBot: false },
-      { text: item.a, isBot: true },
+      { steps: item.steps, isBot: true },
     ])
     setAnswered(prev => new Set(prev).add(idx))
   }
 
+  function sendQuery() {
+    const query = input.trim()
+    if (!query) return
+    setInput('')
+    const found = matchFaq(query, faq)
+    setMessages(prev => [
+      ...prev,
+      { text: query, isBot: false },
+      found
+        ? { steps: found.steps, isBot: true }
+        : { text: ui.notFound, isBot: true },
+    ])
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') sendQuery()
+  }
+
   return (
     <>
-      {/* Panel */}
+      {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 sm:right-6 z-[100] w-[calc(100vw-2rem)] sm:w-[360px] max-h-[540px] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+          className="fixed bottom-20 right-4 sm:right-6 z-[100] w-[calc(100vw-2rem)] sm:w-[360px] max-h-[560px] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
           style={{ background: '#fff', border: '1px solid #e5e7eb' }}
         >
           {/* Header */}
@@ -182,45 +495,75 @@ export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 min-h-0">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                     msg.isBot
                       ? 'bg-white border border-gray-100 text-gray-700 shadow-sm'
                       : 'text-white font-medium'
                   }`}
                   style={!msg.isBot ? { background: 'linear-gradient(135deg,#047857,#059669)' } : {}}
                 >
-                  {msg.text}
+                  {msg.steps ? (
+                    <ol className="space-y-1.5 list-none m-0 p-0">
+                      {msg.steps.map((step, si) => (
+                        <li key={si} className="text-sm text-gray-700 leading-snug">{step}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
               </div>
             ))}
             <div ref={bottomRef} />
           </div>
 
+          {/* Text input */}
+          <div className="shrink-0 px-3 pt-2.5 pb-2 border-t border-gray-100 bg-white">
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={ui.inputPlaceholder}
+                className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-400 focus:bg-white transition-all placeholder:text-gray-400"
+              />
+              <button
+                onClick={sendQuery}
+                disabled={!input.trim()}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
+                style={{ background: 'linear-gradient(135deg,#047857,#059669)' }}
+              >
+                <Send size={15} className="text-white" />
+              </button>
+            </div>
+          </div>
+
           {/* FAQ quick replies */}
           <div className="p-3 border-t border-gray-100 bg-white shrink-0">
             <p className="text-[10px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{ui.faqTitle}</p>
-            <div className="space-y-1.5 max-h-[130px] overflow-y-auto">
+            <div className="space-y-1.5 max-h-[110px] overflow-y-auto">
               {faq.map((item, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleFaq(idx)}
+                  onClick={() => sendFaq(idx)}
                   className={`w-full text-left text-xs px-3 py-2 rounded-xl border transition-all flex items-center justify-between gap-2 ${
                     answered.has(idx)
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                       : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-emerald-300 hover:bg-emerald-50'
                   }`}
                 >
-                  <span>{item.q}</span>
+                  <span className="truncate">{item.q}</span>
                   <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
                 </button>
               ))}
             </div>
 
-            {/* WA CTA */}
+            {/* WhatsApp CTA */}
             <a
               href={WA_URL}
               target="_blank"
@@ -236,7 +579,7 @@ export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
         </div>
       )}
 
-      {/* FAB button */}
+      {/* FAB */}
       <button
         onClick={() => setOpen(o => !o)}
         className="fixed bottom-4 right-4 sm:right-6 z-[100] w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
@@ -249,7 +592,7 @@ export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
         }
       </button>
 
-      {/* Pulse ring when closed */}
+      {/* Pulse ring */}
       {!open && (
         <span
           className="fixed bottom-4 right-4 sm:right-6 z-[99] w-14 h-14 rounded-full animate-ping opacity-20 pointer-events-none"

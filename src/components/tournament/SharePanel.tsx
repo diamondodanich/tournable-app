@@ -9,18 +9,21 @@ import {
   Eye, Pencil, ChevronLeft, Clock, UserX, Mail, Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
   tournamentId: string
   tournamentName: string
   publicUrl: string
   members: TournamentMember[]
+  lang?: Lang
 }
 
 type Mode = null | 'view' | 'edit'
 
 // ─────────────────────────────────────────────────────────────
-export default function SharePanel({ tournamentId, tournamentName, publicUrl, members: initial }: Props) {
+export default function SharePanel({ tournamentId, tournamentName, publicUrl, members: initial, lang = 'ru' }: Props) {
+  const T = tx[lang]
   const [open, setOpen]             = useState(false)
   const [mode, setMode]             = useState<Mode>(null)
   const [copiedId, setCopiedId]     = useState<string | null>(null)
@@ -123,9 +126,9 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
             </button>
           )}
           <p className="text-sm font-black text-gray-900 flex-1">
-            {mode === null   ? 'Поделиться'     :
-             mode === 'view' ? 'Ссылка для просмотра' :
-                               'Ссылка для редактора'}
+            {mode === null   ? T.sharePanelTitle  :
+             mode === 'view' ? T.shareViewLink :
+                               T.shareEditLink}
           </p>
           <button
             onClick={handleClose}
@@ -149,8 +152,8 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                   <Eye size={16} className="text-gray-500 group-hover:text-emerald-700 transition-colors" />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-gray-800">Просмотр</p>
-                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">Только чтение, без регистрации</p>
+                  <p className="text-xs font-black text-gray-800">{T.shareViewMode}</p>
+                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{T.shareViewDesc}</p>
                 </div>
               </button>
 
@@ -163,8 +166,8 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                   <Pencil size={16} className="text-gray-500 group-hover:text-violet-700 transition-colors" />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-gray-800">Редактирование</p>
-                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">Ввод результатов, нужна регистрация</p>
+                  <p className="text-xs font-black text-gray-800">{T.shareEditMode}</p>
+                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{T.shareEditDesc}</p>
                 </div>
               </button>
             </div>
@@ -172,13 +175,13 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
             {/* Members section */}
             {members.length > 0 && (
               <div className="space-y-2.5">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Доступ</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{T.shareAccess}</p>
 
                 {/* Accepted editors */}
                 {acceptedEditors.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wide">
-                      Редакторы · {acceptedEditors.length}
+                      {T.shareEditors} · {acceptedEditors.length}
                     </p>
                     {acceptedEditors.map(m => (
                       <MemberRow key={m.id} member={m} onRemove={handleRemove} />
@@ -190,7 +193,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                 {acceptedViewers.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">
-                      Зрители · {acceptedViewers.length}
+                      {T.shareViewers} · {acceptedViewers.length}
                     </p>
                     {acceptedViewers.map(m => (
                       <MemberRow key={m.id} member={m} onRemove={handleRemove} />
@@ -202,7 +205,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                 {pendingCount > 0 && (
                   <div className="flex items-center gap-2 text-[10px] text-gray-400 bg-gray-50 rounded-xl px-3 py-2">
                     <Clock size={11} className="shrink-0" />
-                    {pendingCount} {pendingCount === 1 ? 'ссылка ожидает' : pendingCount < 5 ? 'ссылки ожидают' : 'ссылок ожидают'} подтверждения
+                    {T.sharePending(pendingCount)}
                   </div>
                 )}
               </div>
@@ -225,19 +228,19 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
               className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors"
             >
               {copiedId === 'view-copy'
-                ? <><Check size={15} /> Скопировано</>
-                : <><Copy size={15} /> Скопировать ссылку</>
+                ? <><Check size={15} /> {T.shareCopied}</>
+                : <><Copy size={15} /> {T.shareCopyLink}</>
               }
             </button>
             <button
               onClick={() => handleShare(publicUrl)}
               className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-bold transition-colors"
             >
-              <Share2 size={15} /> Поделиться
+              <Share2 size={15} /> {T.shareBtn}
             </button>
 
             <p className="text-[10px] text-gray-400 text-center leading-relaxed">
-              Не требует регистрации · Только просмотр
+              {T.shareViewOnly}
             </p>
           </div>
         )}
@@ -248,7 +251,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
             {creating ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-400">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-violet-600 rounded-full animate-spin" />
-                Генерируем ссылку…
+                {T.shareGenerating}
               </div>
             ) : inviteUrl ? (
               <>
@@ -266,25 +269,25 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                   className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors"
                 >
                   {copiedId === 'edit-copy'
-                    ? <><Check size={15} /> Скопировано</>
-                    : <><Copy size={15} /> Скопировать ссылку</>
+                    ? <><Check size={15} /> {T.shareCopied}</>
+                    : <><Copy size={15} /> {T.shareCopyLink}</>
                   }
                 </button>
                 <button
                   onClick={() => handleShare(inviteUrl)}
                   className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-bold transition-colors"
                 >
-                  <Share2 size={15} /> Поделиться
+                  <Share2 size={15} /> {T.shareBtn}
                 </button>
 
                 <p className="text-[10px] text-gray-400 text-center leading-relaxed">
-                  Одноразовая ссылка · Нужна регистрация
+                  {T.shareOnce}
                 </p>
 
                 {/* Email invite */}
                 <div className="border-t border-gray-100 pt-3 space-y-2">
                   <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1.5">
-                    <Mail size={11} /> Или пригласить по email
+                    <Mail size={11} /> {T.shareEmailHint}
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -301,7 +304,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       className="h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1 shrink-0"
                     >
                       <Send size={11} />
-                      {sendingEmail ? '…' : 'Послать'}
+                      {sendingEmail ? '…' : T.shareEmailSend}
                     </button>
                   </div>
                 </div>
@@ -311,7 +314,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                   onClick={selectEditMode}
                   className="w-full text-center text-[11px] text-violet-600 hover:text-violet-700 font-semibold py-1 transition-colors"
                 >
-                  + Создать ещё одну ссылку
+                  {T.shareNewLink}
                 </button>
               </>
             ) : null}
@@ -370,7 +373,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
         onClick={handleOpen}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all shadow-sm"
       >
-        <Share2 size={13} /> Поделиться
+        <Share2 size={13} /> {T.shareBtn}
       </button>
 
       {mounted && createPortal(portalContent, document.body)}

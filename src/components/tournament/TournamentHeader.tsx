@@ -87,6 +87,7 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
             tournamentName={tournament.name}
             publicUrl={publicUrl}
             members={members}
+            lang={lang}
           />
 
           {isOwner && !confirming && (

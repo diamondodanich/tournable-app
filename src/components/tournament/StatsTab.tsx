@@ -3,11 +3,30 @@
 import { useState } from 'react'
 import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Goal, Handshake, RectangleVertical } from 'lucide-react'
+import { Handshake, RectangleVertical } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 import { tx, type Lang } from '@/lib/i18n'
+import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 
 type Filter = 'goal' | 'assist' | 'yellow_card' | 'red_card'
+
+const FOOTBALL_SPORTS = new Set(['football', 'futsal', 'efootball'])
+const BASKETBALL_SPORTS = new Set(['basketball', 'streetball', 'ebasketball'])
+
+function GoalIcon({ size, className, sport }: { size: number; className?: string; sport?: string }) {
+  const s = sport ?? ''
+  const ball = BASKETBALL_SPORTS.has(s)
+    ? <BasketballBall className="w-full h-full" />
+    : <SoccerBall className="w-full h-full" />
+  return (
+    <div
+      style={{ width: size, height: size, flexShrink: 0 }}
+      className={`inline-flex items-center justify-center ${className ?? ''}`}
+    >
+      {ball}
+    </div>
+  )
+}
 
 function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
   const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; count: number }>()
@@ -31,32 +50,65 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="text-gray-400 text-sm font-bold">{rank + 1}</span>
 }
 
-export default function StatsTab({ teams, events, lang = 'ru' }: { teams: Team[]; events: MatchEvent[]; lang?: Lang }) {
+export default function StatsTab({
+  teams, events, lang = 'ru', sport,
+}: {
+  teams: Team[]
+  events: MatchEvent[]
+  lang?: Lang
+  sport?: string
+}) {
   const T = tx[lang]
   const FILTERS: {
     value: Filter
     label: string
     short: string
     color: string
-    icon: React.ElementType
     iconColor: string
+    renderIcon: (size: number, className?: string) => React.ReactNode
   }[] = [
-    { value: 'goal',        label: T.statTopScorers, short: T.statGoalsCol,   color: 'bg-emerald-600 text-white', icon: Goal,              iconColor: 'bg-emerald-100 text-emerald-600' },
-    { value: 'assist',      label: T.statAssists,    short: T.statAssistsCol, color: 'bg-blue-600 text-white',    icon: Handshake,         iconColor: 'bg-blue-100 text-blue-600' },
-    { value: 'yellow_card', label: T.statYellowCards, short: T.statYCCol,     color: 'bg-amber-500 text-white',   icon: RectangleVertical, iconColor: 'bg-amber-100 text-amber-600' },
-    { value: 'red_card',    label: T.statRedCards,   short: T.statRCCol,      color: 'bg-red-600 text-white',     icon: RectangleVertical, iconColor: 'bg-red-100 text-red-600' },
+    {
+      value: 'goal',
+      label: T.statTopScorers,
+      short: T.statGoalsCol,
+      color: 'bg-emerald-600 text-white',
+      iconColor: 'bg-emerald-100 text-emerald-600',
+      renderIcon: (size, cls) => <GoalIcon size={size} className={cls} sport={sport} />,
+    },
+    {
+      value: 'assist',
+      label: T.statAssists,
+      short: T.statAssistsCol,
+      color: 'bg-blue-600 text-white',
+      iconColor: 'bg-blue-100 text-blue-600',
+      renderIcon: (size, cls) => <Handshake size={size} className={cls} />,
+    },
+    {
+      value: 'yellow_card',
+      label: T.statYellowCards,
+      short: T.statYCCol,
+      color: 'bg-amber-500 text-white',
+      iconColor: 'bg-amber-100 text-amber-600',
+      renderIcon: (size, cls) => <RectangleVertical size={size} className={cls} />,
+    },
+    {
+      value: 'red_card',
+      label: T.statRedCards,
+      short: T.statRCCol,
+      color: 'bg-red-600 text-white',
+      iconColor: 'bg-red-100 text-red-600',
+      renderIcon: (size, cls) => <RectangleVertical size={size} className={cls} />,
+    },
   ]
+
   const [filter, setFilter] = useState<Filter>('goal')
   const list = buildLeaderboard(teams, events, filter)
   const active = FILTERS.find(f => f.value === filter)!
-
-  const ActiveIcon = active.icon
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
         {FILTERS.map(f => {
-          const Icon = f.icon
           const isActive = filter === f.value
           return (
             <button
@@ -66,7 +118,7 @@ export default function StatsTab({ teams, events, lang = 'ru' }: { teams: Team[]
                 isActive ? f.color : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <Icon size={15} className="shrink-0" />
+              {f.renderIcon(15, 'shrink-0')}
               <span>{f.label}</span>
             </button>
           )
@@ -76,7 +128,7 @@ export default function StatsTab({ teams, events, lang = 'ru' }: { teams: Team[]
       {list.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${active.iconColor}`}>
-            <ActiveIcon size={26} />
+            {active.renderIcon(26)}
           </div>
           <p className="font-bold text-gray-600">{T.statEmpty(active.label)}</p>
           <p className="text-sm text-gray-400 mt-1">{T.statHint}</p>

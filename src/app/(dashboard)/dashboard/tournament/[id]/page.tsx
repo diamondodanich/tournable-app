@@ -474,7 +474,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {/* Export button — below tab bar, aligned right */}
         {tournament.generated && (
           <div className="flex justify-end">
-            <ExportReportButton fileName={`${slug}-report`} isPro={isPro} />
+            <ExportReportButton fileName={`${slug}-report`} isPro={isPro} lang={lang} />
           </div>
         )}
 
@@ -510,7 +510,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           </TabsContent>
         )}
         <TabsContent value="stats" className="mt-0 pt-5">
-          <StatsTab teams={t} events={allEvents} lang={lang} />
+          <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} />
         </TabsContent>
       </Tabs>
     </div>

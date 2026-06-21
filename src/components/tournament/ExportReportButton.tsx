@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button'
 import { FileDown, Lock } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
+import { tx, type Lang } from '@/lib/i18n'
 
-export default function ExportReportButton({ fileName, isPro = false }: {
+export default function ExportReportButton({ fileName, isPro = false, lang = 'ru' }: {
   fileName: string
   isPro?: boolean
+  lang?: Lang
 }) {
+  const T = tx[lang]
   const [loading, setLoading] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
@@ -55,7 +58,7 @@ export default function ExportReportButton({ fileName, isPro = false }: {
         className={`gap-2 ${isPro ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200'}`}
       >
         {isPro ? <FileDown size={15} /> : <Lock size={14} />}
-        {loading ? 'Формируем PDF…' : isPro ? 'Скачать полный отчёт PDF' : 'Отчёт PDF — Pro'}
+        {loading ? T.exportPdfLoading : isPro ? T.exportPdf : T.exportPdfPro}
       </Button>
     </>
   )

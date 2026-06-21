@@ -89,7 +89,12 @@
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const arr=JSON.parse\\(d\\); arr.forEach\\(x=>console.log\\(x.id, x.sha.slice\\(0,7\\), x.environment, x.created_at\\)\\)\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const s=JSON.parse\\(d\\);console.log\\('state:',s[0]?.state,'desc:',s[0]?.description?.slice\\(0,200\\)\\)}\\)\")",
       "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Анкета-заявка ТСП FreedomPay .docx\" -t plain)",
-      "WebFetch(domain:docs.freedompay.kz)"
+      "WebFetch(domain:docs.freedompay.kz)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(bash -c 'cd \"C:/Users/user/Documents/tournable-next/.claude/worktrees/infallible-pike-660017\" && git status --porcelain 2>&1 | head -5 && echo \"exit: $?\"')",
+      "Bash(bash \"C:/Users/user/Documents/tournable-next/.claude/scripts/auto-deploy.sh\")",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

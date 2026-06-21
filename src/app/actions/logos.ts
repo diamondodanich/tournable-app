@@ -62,3 +62,42 @@ export async function removeTournamentLogo(tournamentId: string) {
   await supabase.from('tournaments').update({ logo_url: null }).eq('id', tournamentId)
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }
+
+export async function uploadTournamentCover(tournamentId: string, base64: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const blob = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+  if (blob.length > 5_242_880) return { error: 'Файл слишком большой (макс. 5 МБ)' }
+
+  const path = `covers/${tournamentId}.webp`
+  const { error: uploadError } = await supabase.storage.from('logos').upload(path, blob, {
+    contentType: 'image/webp',
+    upsert: true,
+  })
+  if (uploadError) return { error: uploadError.message }
+
+  const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
+  const url = `${publicUrl}?v=${Date.now()}`
+  await supabase.from('tournaments').update({ cover_url: url }).eq('id', tournamentId)
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return { url }
+}
+
+export async function removeTournamentCover(tournamentId: string) {
+  const supabase = await createClient()
+  const path = `covers/${tournamentId}.webp`
+  await supabase.storage.from('logos').remove([path])
+  await supabase.from('tournaments').update({ cover_url: null }).eq('id', tournamentId)
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+}
+
+export async function setTournamentCoverTheme(tournamentId: string, themeId: string | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+  const value = themeId ? `theme:${themeId}` : null
+  await supabase.from('tournaments').update({ cover_url: value }).eq('id', tournamentId)
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+}

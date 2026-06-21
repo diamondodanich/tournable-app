@@ -9,6 +9,7 @@ import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
 import { tx, type Lang } from '@/lib/i18n'
+import TournamentCoverBanner from './TournamentCoverBanner'
 
 interface Props {
   tournament: Tournament
@@ -48,10 +49,15 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
   })()
 
   return (
-    <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+    <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm">
 
-      {/* Sport-coloured top accent */}
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: theme.gradient }} />
+      {/* Cover banner or sport-coloured accent */}
+      {tournament.cover_url
+        ? <TournamentCoverBanner coverUrl={tournament.cover_url} className="h-24 sm:h-36 w-full" />
+        : <div className="absolute inset-x-0 top-0 h-1" style={{ background: theme.gradient }} />
+      }
+
+      <div className="px-5 py-4">
 
       {/* Back link — prominent */}
       <Link
@@ -120,6 +126,7 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

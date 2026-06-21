@@ -6,10 +6,12 @@ import { addTeam, removeTeam, generateSchedule, renameTournament, updateTourname
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2 } from 'lucide-react'
+import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
+import TournamentCoverPicker from './TournamentCoverPicker'
+import TournamentCoverBanner from './TournamentCoverBanner'
 
 const FORMAT_LABEL: Record<string, string> = {
   round_robin:    'Круговой',
@@ -156,6 +158,30 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Cover card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <LayoutTemplate size={16} /> Обложка турнира
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {tournament.cover_url && (
+            <div className="rounded-xl overflow-hidden h-28 sm:h-36">
+              <TournamentCoverBanner coverUrl={tournament.cover_url} className="h-28 sm:h-36 w-full" />
+            </div>
+          )}
+          <TournamentCoverPicker
+            sport={tournament.sport}
+            currentCoverUrl={tournament.cover_url}
+            tournamentId={tournament.id}
+          />
+          {!tournament.cover_url && (
+            <p className="text-xs text-gray-400">Обложка отображается в шапке страницы турнира</p>
+          )}
         </CardContent>
       </Card>
 

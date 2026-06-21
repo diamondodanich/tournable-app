@@ -399,10 +399,6 @@ export default function NewTournamentPage() {
     getUserPlanAndAdmin().then(({ plan }) => setIsPro(plan === 'pro'))
   }, [])
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [step])
-
   // Step 1
   const [name, setName]           = useState('')
   const [sport, setSport]         = useState<string>('football')
@@ -458,6 +454,10 @@ export default function NewTournamentPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
   const [planLimit, setPlanLimit] = useState<'tournament' | 'team' | null>(null)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
 
   // ── Derived sport config + colour theme ──────────────────────────────────────
   const subtype = getSubtype(sport)

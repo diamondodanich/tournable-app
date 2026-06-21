@@ -7,7 +7,7 @@ import SetupTab from '@/components/tournament/SetupTab'
 import TournamentHeader from '@/components/tournament/TournamentHeader'
 import StandingsTable from '@/components/tournament/StandingsTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
-import { Settings2, CalendarDays, BarChart2, Users, Trophy } from 'lucide-react'
+import { Settings2, CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
 import { getSportTheme } from '@/lib/sports'
@@ -24,10 +24,11 @@ function TabSkeleton() {
 }
 
 // ── Lazy-loaded heavy client components ───────────────────────────────────
-const FixturesTab       = dynamic(() => import('@/components/tournament/FixturesTab'),   { loading: () => <TabSkeleton /> })
-const StandingsTab      = dynamic(() => import('@/components/tournament/StandingsTab'),  { loading: () => <TabSkeleton /> })
-const PlayoffTab        = dynamic(() => import('@/components/tournament/PlayoffTab'),    { loading: () => <TabSkeleton /> })
-const StatsTab          = dynamic(() => import('@/components/tournament/StatsTab'),      { loading: () => <TabSkeleton /> })
+const FixturesTab        = dynamic(() => import('@/components/tournament/FixturesTab'),        { loading: () => <TabSkeleton /> })
+const StandingsTab       = dynamic(() => import('@/components/tournament/StandingsTab'),       { loading: () => <TabSkeleton /> })
+const GroupStandingsTab  = dynamic(() => import('@/components/tournament/GroupStandingsTab'),  { loading: () => <TabSkeleton /> })
+const PlayoffTab         = dynamic(() => import('@/components/tournament/PlayoffTab'),         { loading: () => <TabSkeleton /> })
+const StatsTab           = dynamic(() => import('@/components/tournament/StatsTab'),           { loading: () => <TabSkeleton /> })
 const ExportReportButton = dynamic(() => import('@/components/tournament/ExportReportButton'), {
   loading: () => <div className="h-8 w-44 bg-gray-100 rounded-lg animate-pulse" />,
 })
@@ -146,11 +147,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
   const fmt = tournament.format ?? 'round_robin'
-  const showFixturesTab  = fmt !== 'playoff'                                          // round_robin, groups_playoff, league_playoff
-  const showStandingsTab = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format  // unified standings table
-  const showPlayoffTab   = fmt !== 'round_robin'                                      // playoff, groups_playoff, league_playoff
-  // Label for fixtures tab varies by format
-  const fixturesTabLabel = fmt === 'groups_playoff' ? 'Групповой этап' : fmt === 'league_playoff' ? 'Этап лиги' : 'Матчи'
+  const showFixturesTab       = fmt !== 'playoff'                                         // round_robin, groups_playoff, league_playoff
+  const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format
+  const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
+  const showPlayoffTab        = fmt !== 'round_robin'                                    // playoff, groups_playoff, league_playoff
+  const fixturesTabLabel = fmt === 'league_playoff' ? 'Этап лиги' : 'Матчи'
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
@@ -189,6 +190,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const defaultTab = tournament.generated
     ? (fmt === 'playoff' ? 'playoff' : 'fixtures')
     : 'setup'
+  // For groups_playoff: also include group-standings in generated state (covered by 'fixtures' default)
 
   // ── Champion detection ────────────────────────────────────────────────────
   let champion: Team | null = null
@@ -414,6 +416,16 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   </TabsTrigger>
                 )}
 
+                {showGroupStandingsTab && (
+                  <TabsTrigger value="group-standings"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
+                      text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
+                    <Layers size={13} className="shrink-0" />
+                    <span>Группы</span>
+                  </TabsTrigger>
+                )}
+
                 {showStandingsTab && (
                   <TabsTrigger value="standings"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
@@ -467,6 +479,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
             <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} />
+          </TabsContent>
+        )}
+        {showGroupStandingsTab && (
+          <TabsContent value="group-standings" className="mt-0 pt-5">
+            <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} />
           </TabsContent>
         )}
         {showStandingsTab && (

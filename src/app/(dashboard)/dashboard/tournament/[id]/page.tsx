@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getOwnerPlan } from '@/app/actions/billing'
 import dynamic from 'next/dynamic'
@@ -11,6 +12,7 @@ import { Settings2, CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucid
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
 import { getSportTheme } from '@/lib/sports'
+import { tx, getLang } from '@/lib/i18n'
 
 // ── Tab skeleton — shown while lazy JS chunk is loading ───────────────────
 function TabSkeleton() {
@@ -127,6 +129,9 @@ const SECTION = (n: number, title: string, color: string) => ({
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  const cookieStore = await cookies()
+  const lang = getLang(cookieStore.get('lang')?.value)
+  const T = tx[lang]
 
   const [{ data: { user } }, plan] = await Promise.all([
     supabase.auth.getUser(),
@@ -151,7 +156,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
   const showPlayoffTab        = fmt !== 'round_robin'                                    // playoff, groups_playoff, league_playoff
-  const fixturesTabLabel = fmt === 'league_playoff' ? 'Этап лиги' : 'Матчи'
+  const fixturesTabLabel = fmt === 'league_playoff' ? T.tabLeagueStage : T.tabFixtures
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
@@ -249,7 +254,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
-      <TournamentHeader tournament={tournament} isOwner={isOwner} members={members} />
+      <TournamentHeader tournament={tournament} isOwner={isOwner} members={members} lang={lang} />
 
       {/* Hidden off-screen container for full PDF export */}
       <div
@@ -375,10 +380,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         <ChampionBanner
           champion={champion}
           runnerUp={runnerUp}
-          label={isRoundRobin ? 'Победитель турнира' : 'Чемпион плей-офф'}
+          label={isRoundRobin ? T.tournamentWinner : T.playoffChampion}
           tournamentName={tournament.name}
           tournamentId={tournament.id}
           sport={tournament.sport}
+          lang={lang}
         />
       )}
 
@@ -398,7 +404,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                     text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                     data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                   <Settings2 size={13} className="shrink-0" />
-                  <span>Настройка</span>
+                  <span>{T.tabSetup}</span>
                 </TabsTrigger>
 
                 {showFixturesTab && (
@@ -422,7 +428,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                       data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <Layers size={13} className="shrink-0" />
-                    <span>Группы</span>
+                    <span>{T.tabGroups}</span>
                   </TabsTrigger>
                 )}
 
@@ -432,7 +438,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                       data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <BarChart2 size={13} className="shrink-0" />
-                    <span>Таблица</span>
+                    <span>{T.tabStandings}</span>
                   </TabsTrigger>
                 )}
 
@@ -442,7 +448,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                       data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <Trophy size={13} className="shrink-0" />
-                    <span>Сетка</span>
+                    <span>{T.tabBracket}</span>
                     {pm.filter((m: any) => m.winner_id !== null).length > 0 && (
                       <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                         {pm.filter((m: any) => m.winner_id !== null).length}/{pm.length}
@@ -456,7 +462,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                     text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                     data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                   <Users size={13} className="shrink-0" />
-                  <span>Статистика</span>
+                  <span>{T.tabStats}</span>
                 </TabsTrigger>
 
               </TabsList>
@@ -478,17 +484,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
-            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} />
+            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} lang={lang} />
           </TabsContent>
         )}
         {showGroupStandingsTab && (
           <TabsContent value="group-standings" className="mt-0 pt-5">
-            <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} />
+            <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} lang={lang} />
           </TabsContent>
         )}
         {showStandingsTab && (
           <TabsContent value="standings" className="mt-0 pt-5">
-            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} />
+            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} />
           </TabsContent>
         )}
         {showPlayoffTab && (
@@ -499,11 +505,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               matches={pm}
               livePlayoffMatchId={liveGame?.playoff_match_id ?? null}
               isPro={isPro}
+              lang={lang}
             />
           </TabsContent>
         )}
         <TabsContent value="stats" className="mt-0 pt-5">
-          <StatsTab teams={t} events={allEvents} />
+          <StatsTab teams={t} events={allEvents} lang={lang} />
         </TabsContent>
       </Tabs>
     </div>

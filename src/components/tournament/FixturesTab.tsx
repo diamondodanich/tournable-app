@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
+import { SoccerBallIcon } from '@/components/ui/SportIcon'
+import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 
 type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
 type ActionType = 'goal' | 'yellow_card' | 'red_card'
@@ -32,8 +34,8 @@ function teamById(teams: Team[], id: string | null) {
 }
 
 function EvtIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 align-middle shrink-0" />
-  if (type === 'own_goal')    return <span className="text-xs text-red-500">↩</span>
+  if (type === 'goal')        return <SoccerBallIcon size={12} className="text-emerald-500 align-middle shrink-0" />
+  if (type === 'own_goal')    return <SoccerBallIcon size={12} className="text-red-500 align-middle shrink-0" />
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
@@ -63,13 +65,14 @@ interface InlineFormProps {
   form: FormState
   setForm: React.Dispatch<React.SetStateAction<FormState | null>>
   onConfirm: () => void
+  T: TournamentTx
 }
 
-function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
+function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
   const isGoal = form.actionType === 'goal'
-  const submitLabel = form.isOwnGoal ? '↩ АГ'
-    : isGoal ? 'Гол'
-    : form.actionType === 'yellow_card' ? 'ЖК' : 'КК'
+  const submitLabel = form.isOwnGoal ? T.pillOG
+    : isGoal ? T.pillGoal
+    : form.actionType === 'yellow_card' ? T.pillYC : T.pillRC
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
     : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -81,9 +84,9 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
       {/* Type pills */}
       <div className="flex gap-1">
         {([
-          { v: 'goal'        as const, l: 'Гол' },
-          { v: 'yellow_card' as const, l: 'ЖК' },
-          { v: 'red_card'    as const, l: 'КК' },
+          { v: 'goal'        as const, l: T.pillGoal },
+          { v: 'yellow_card' as const, l: T.pillYC },
+          { v: 'red_card'    as const, l: T.pillRC },
         ]).map(opt => (
           <button key={opt.v}
             onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
@@ -101,7 +104,7 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
             <input type="checkbox" checked={form.isOwnGoal}
               onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
               className="accent-red-500 w-3 h-3" />
-            <span className="text-xs text-gray-500">↩</span>
+            <span className="text-xs text-gray-500">{T.pillOG}</span>
           </label>
         )}
       </div>
@@ -112,7 +115,7 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoal ? 'Автор гола' : 'Игрок'}
+        placeholder={isGoal ? T.scorerPlaceholder : T.playerPlaceholder}
         className="h-7 text-xs bg-white w-full"
       />
 
@@ -122,7 +125,7 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
           value={form.assister}
           onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
           onKeyDown={e => e.key === 'Enter' && onConfirm()}
-          placeholder="Ассистент (опц.)"
+          placeholder={T.assisterPlaceholder}
           className="h-7 text-xs bg-white w-full"
         />
       )}
@@ -132,7 +135,7 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
         <Input
           value={form.minute}
           onChange={e => setForm(f => f ? { ...f, minute: e.target.value } : f)}
-          placeholder="мин." type="number" min={1} max={120}
+          placeholder={T.minutePlaceholder} type="number" min={1} max={120}
           className="h-7 text-xs bg-white w-14 shrink-0"
         />
         <button onClick={onConfirm} disabled={!form.player.trim()}
@@ -150,7 +153,13 @@ function InlineForm({ form, setForm, onConfirm }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture; teams: Team[]; tournamentId: string; isPro: boolean }) {
+function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
+  fixture: Fixture
+  teams: Team[]
+  tournamentId: string
+  isPro: boolean
+  T: TournamentTx
+}) {
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
   const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
   const [events, setEvents] = useState<EventEntry[]>(
@@ -173,7 +182,6 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
 
-  // Score computed from tracked goals (same approach as PlayoffTab)
   const hasGoals = events.some(e => e.type === 'goal' || e.type === 'own_goal')
   const cHome = events.filter(e =>
     (e.teamId === fixture.home_team_id && e.type === 'goal') ||
@@ -219,7 +227,6 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
   }
 
   async function handleSave() {
-    // Use computed score if goals are tracked, otherwise use manual inputs
     const hs  = hasGoals ? cHome : parseInt(homeScore)
     const as_ = hasGoals ? cAway : parseInt(awayScore)
     if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
@@ -238,8 +245,8 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
   if (fixture.is_bye) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 opacity-60">
-        <Badge variant="secondary" className="mb-2 text-xs">ПРОПУСК</Badge>
-        <p className="text-sm text-gray-500">{homeTeam?.name ?? awayTeam?.name} — отдыхает</p>
+        <Badge variant="secondary" className="mb-2 text-xs">{T.byeLabel}</Badge>
+        <p className="text-sm text-gray-500">{homeTeam?.name ?? awayTeam?.name} — {T.byeResting}</p>
       </div>
     )
   }
@@ -254,10 +261,10 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
     return (
       <div className="bg-gradient-to-b from-emerald-50/60 to-white border border-emerald-200 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>
+          <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>
           <button onClick={() => setIsEditing(true)}
             className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full transition-colors">
-            <Pencil size={11} /> Изменить
+            <Pencil size={11} /> {T.btnEdit}
           </button>
         </div>
         <div className="flex items-center justify-between gap-3 mb-2">
@@ -320,15 +327,15 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
-          {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>}
-          {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />LIVE</Badge>}
-          {status === 'scheduled'&& <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>}
+          {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>}
+          {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />{T.statusLive}</Badge>}
+          {status === 'scheduled'&& <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>}
         </div>
         <div className="flex items-center gap-2">
           {status === 'live' && (
             <Link href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`} target="_blank"
               className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors">
-              <Radio size={11} /> Табло
+              <Radio size={11} /> {T.btnLiveBoard}
             </Link>
           )}
           {status === 'scheduled' && (
@@ -339,19 +346,19 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
                   : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
               }`}>
               {isPro ? <Play size={11} /> : <Lock size={11} />}
-              {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
+              {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
             </button>
           )}
           {status === 'finished' && isEditing && (
             <button onClick={() => setIsEditing(false)}
               className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors">
-              ← Просмотр
+              {T.btnViewResult}
             </button>
           )}
         </div>
       </div>
 
-      {/* Score row — computed from goals when tracked, else manual inputs */}
+      {/* Score row */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={24} />
@@ -380,7 +387,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
         </div>
       </div>
 
-      {/* Events columns — min-w-0 + overflow-hidden keeps card width stable */}
+      {/* Events columns */}
       <div className="border-t border-dashed border-gray-200 pt-2 mb-3">
         <div className="grid grid-cols-2 gap-x-3">
 
@@ -404,7 +411,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
               className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
                 form?.teamId === fixture.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
               }`}>
-              <Plus size={10} /> Событие
+              <Plus size={10} /> {T.addEvent}
             </button>
           </div>
 
@@ -428,22 +435,22 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
               className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
                 form?.teamId === fixture.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
               }`}>
-              Событие <Plus size={10} />
+              {T.addEvent} <Plus size={10} />
             </button>
           </div>
 
         </div>
 
-        {/* Full-width add-event form — spans the whole card so inputs never widen it */}
+        {/* Full-width add-event form */}
         {form && (
           <div className="mt-2">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Событие для</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{T.eventFor}</span>
               <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
                 {form.teamId === fixture.home_team_id ? homeTeam?.name : awayTeam?.name}
               </span>
             </div>
-            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} />
+            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} />
           </div>
         )}
       </div>
@@ -453,7 +460,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
           {saving
             ? <Loader2 size={13} className="mr-1.5 animate-spin" />
             : <Check size={13} className="mr-1.5" />}
-          {saving ? 'Сохраняем…' : 'Сохранить результат'}
+          {saving ? T.saving : T.btnSaveResult}
         </Button>
       </div>
     </div>
@@ -462,17 +469,20 @@ function FixtureCard({ fixture, teams, tournamentId, isPro }: { fixture: Fixture
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures, isPro = false }: {
+export default function FixturesTab({ tournament, teams, fixtures, isPro = false, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
   isPro?: boolean
+  lang?: Lang
 }) {
+  const T = tx[lang]
+
   if (!tournament.generated || fixtures.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-        <p className="font-bold text-gray-600 mb-1">Матчей пока нет</p>
-        <p className="text-sm text-gray-400">Добавьте команды и сгенерируйте расписание</p>
+        <p className="font-bold text-gray-600 mb-1">{T.noMatches}</p>
+        <p className="text-sm text-gray-400">{T.noMatchesHint}</p>
       </div>
     )
   }
@@ -486,36 +496,35 @@ export default function FixturesTab({ tournament, teams, fixtures, isPro = false
   const played = fixtures.filter(f => !f.is_bye && f.played).length
   const total  = fixtures.filter(f => !f.is_bye).length
 
-  // Sort: live first, then played (newest first), then unplayed (ascending).
-  // This puts the most recently completed match at the top after finishing a live game.
   const sortedMatchdays = Object.entries(byMatchday).sort(([mdA, mxsA], [mdB, mxsB]) => {
     const aLive = mxsA.some(f => f.status === 'live')
     const bLive = mxsB.some(f => f.status === 'live')
     if (aLive !== bLive) return aLive ? -1 : 1
     const aPlayed = mxsA.some(f => f.played && !f.is_bye)
     const bPlayed = mxsB.some(f => f.played && !f.is_bye)
-    if (aPlayed && bPlayed) return +mdB - +mdA  // most recent played first
-    if (!aPlayed && !bPlayed) return +mdA - +mdB // upcoming: ascending
-    return aPlayed ? -1 : 1                       // played before unplayed
+    if (aPlayed && bPlayed) return +mdB - +mdA
+    if (!aPlayed && !bPlayed) return +mdA - +mdB
+    return aPlayed ? -1 : 1
   })
 
-  // Show "Круг X из Y" only for formats where it's meaningful
   const showCycleLabel = tournament.format === 'round_robin' || tournament.format === 'league_playoff' || !tournament.format
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-500">Сыграно {played} из {total} матчей</p>
+      <p className="text-sm text-gray-500">{T.matchesProgress(played, total)}</p>
       {sortedMatchdays.map(([md, mxs]) => (
         <div key={md}>
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-black text-emerald-600 text-lg">Тур {md}</span>
+            <span className="font-black text-emerald-600 text-lg">{T.roundLabel(+md)}</span>
             <div className="flex-1 h-px bg-gray-100" />
             {showCycleLabel && (
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Круг {mxs[0].round} из {tournament.num_rounds}</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wide">
+                {T.cycleLabel(mxs[0].round, tournament.num_rounds)}
+              </span>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} isPro={isPro} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} isPro={isPro} T={T} />)}
           </div>
         </div>
       ))}

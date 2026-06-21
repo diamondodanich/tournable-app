@@ -12,6 +12,8 @@ import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
+import { SoccerBallIcon } from '@/components/ui/SportIcon'
+import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -23,12 +25,15 @@ type PlayoffFormState = {
   player: string; assister: string; minute: string; isOwnGoal: boolean
 }
 
-const ROUND_LABELS: Record<number, string> = {
-  1: 'Финал',
-  2: 'Полуфинал',
-  4: 'Четвертьфинал',
-  8: '1/8 финала',
-  16: '1/16 финала',
+function getRoundLabel(ro: number, T: TournamentTx): string {
+  const map: Record<number, string> = {
+    1: T.roundFinal,
+    2: T.roundSemi,
+    4: T.roundQuarter,
+    8: T.roundR16,
+    16: T.roundR32,
+  }
+  return map[ro] ?? T.roundN(ro)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -38,8 +43,8 @@ function teamById(teams: Team[], id: string | null) {
 }
 
 function EventIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-  if (type === 'own_goal')    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400 shrink-0" />
+  if (type === 'goal')        return <SoccerBallIcon size={12} className="text-emerald-500 align-middle shrink-0" />
+  if (type === 'own_goal')    return <SoccerBallIcon size={12} className="text-red-400 align-middle shrink-0" />
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
@@ -538,13 +543,15 @@ function seedLabel(seedIndex: number, format: string, groupsCount: number): stri
 
 // ── PlayoffTab ────────────────────────────────────────────────────────────
 
-export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatchId, isPro = false }: {
+export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatchId, isPro = false, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   matches: PlayoffMatch[]
   livePlayoffMatchId?: string | null
   isPro?: boolean
+  lang?: Lang
 }) {
+  const T = tx[lang]
   const [generating, setGenerating] = useState(false)
   const fmt = tournament.format ?? 'playoff'
 
@@ -584,12 +591,12 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
           <Trophy size={28} className="text-amber-500" />
         </div>
-        <p className="font-bold text-gray-700 text-lg mb-2">Сетка плей-офф</p>
-        <p className="text-sm text-gray-400 mb-6">Добавьте команды и сгенерируйте сетку</p>
+        <p className="font-bold text-gray-700 text-lg mb-2">{T.roundFinal}</p>
+        <p className="text-sm text-gray-400 mb-6">{T.noMatchesHint}</p>
         {fmt === 'playoff' && (
           <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
             {generating && <Loader2 size={14} className="mr-2 animate-spin" />}
-            {generating ? 'Генерируем…' : 'Создать сетку'}
+            {generating ? '…' : T.generateBracket}
           </Button>
         )}
       </div>
@@ -642,21 +649,19 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
           </div>
           <div>
             <p className="text-sm font-bold text-amber-800">
-              {fmt === 'league_playoff' ? 'Ожидаем завершения Этапа лиги' : 'Ожидаем завершения Группового этапа'}
+              {fmt === 'league_playoff' ? T.awaitingLeagueStage : T.awaitingGroupStage}
             </p>
             <p className="text-xs text-amber-600 mt-0.5">
-              {fmt === 'league_playoff'
-                ? 'Участники плей-офф определятся по итогам турнирной таблицы'
-                : 'Участники плей-офф определятся по итогам групповых матчей'}
+              {fmt === 'league_playoff' ? T.awaitingLeagueDetail : T.awaitingGroupDetail}
             </p>
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">{`Сыграно ${played} из ${total} матчей`}</p>
+          <p className="text-sm text-gray-500">{T.matchesProgress(played, total)}</p>
           {fmt === 'playoff' && (
             <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating} className="gap-2 text-xs">
-              <RefreshCw size={12} /> {generating ? '…' : 'Пересоздать'}
+              <RefreshCw size={12} /> {generating ? '…' : T.regenerate}
             </Button>
           )}
         </div>
@@ -668,7 +673,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
           {rounds.map(ro => (
             <div key={ro} className="flex flex-col gap-4">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-400 text-center">
-                {ROUND_LABELS[ro] ?? `Раунд ${ro}`}
+                {getRoundLabel(ro, T)}
               </p>
               <div className="flex flex-col gap-4 justify-around flex-1">
                 {matches
@@ -709,7 +714,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
             canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
-          Ещё <ChevronRight size={13} />
+          {T.scrollMore} <ChevronRight size={13} />
         </button>
       </div>
     </div>

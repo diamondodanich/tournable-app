@@ -99,7 +99,23 @@
       "Bash(echo \"exit=$?\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);a.forEach\\(x=>console.log\\(x.id,x.environment,x.created_at,x.sha?.slice\\(0,7\\)\\)\\)}\\)\")",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);console.log\\(a[0]?.state,a[0]?.description?.slice\\(0,120\\)\\)}\\)\")",
-      "WebFetch(domain:goodgame.ru)"
+      "WebFetch(domain:goodgame.ru)",
+      "WebSearch",
+      "WebFetch(domain:freedompay.kz)",
+      "WebFetch(domain:freedompay.uz)",
+      "WebFetch(domain:cdn.freedompay.kz)",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(npx vercel *)",
+      "Bash(vercel env *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel deployments *)",
+      "Bash(vercel list *)",
+      "Bash(vercel deploy *)",
+      "Bash(vercel --confirm)",
+      "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Анкета-заявка ТСП FreedomPay  \\(2\\).docx\" -t plain)",
+      "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Инструкция по подключению ИП \\(2\\).docx\" -t plain)",
+      "WebFetch(domain:developers.cloudpayments.ru)"
     ]
   }
 }

@@ -1,4 +1,5 @@
 @AGENTS.md
+@CLAUDE_CONTEXT.md
 
 # Project Rules
 

@@ -61,15 +61,12 @@ export async function activateProAfterPayment(
     if (error) console.warn('[activateProAfterPayment] subscription record skipped:', error.message)
   })
 
-<<<<<<< HEAD
   // Best-effort email — no RESEND_API_KEY → silent no-op
   if (user.email) {
     sendProActivatedEmail(user.email, period, PRICES[period].amount, expiresAt)
       .catch(() => {})
   }
 
-=======
->>>>>>> origin/temp-qa-push
   console.log(`[activateProAfterPayment] Pro activated for ${user.id} until ${expiresAt.toISOString()}`)
   return { ok: true }
 }

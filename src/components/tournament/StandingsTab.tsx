@@ -1,5 +1,5 @@
 import { Team, Fixture, Tournament } from '@/types'
-import { BarChart2 } from 'lucide-react'
+import { BarChart2, Trophy } from 'lucide-react'
 import ExportButtons from './ExportButtons'
 import StandingsTable from './StandingsTable'
 import { tx, type Lang } from '@/lib/i18n'
@@ -26,8 +26,20 @@ export default function StandingsTab({
 
   const slug = tournamentName.toLowerCase().replace(/\s+/g, '-')
 
+  const leagueAdvance = tournament?.format === 'league_playoff' && tournament.teams_advance
+    ? tournament.teams_advance
+    : null
+
   return (
     <div className="space-y-3">
+      {leagueAdvance && (
+        <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+          <Trophy size={13} className="text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold text-emerald-700">
+            Топ <strong>{leagueAdvance}</strong> {leagueAdvance === 1 ? 'команда выходит' : leagueAdvance <= 4 ? 'команды выходят' : 'команд выходят'} в плей-офф
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-500 font-medium">{T.standingsTitle}</span>
         <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} />

@@ -79,8 +79,8 @@ export default async function LivePage({
           isOwner={isOwner || isEditor}
           defaultHomeId={defaultHomeId}
           defaultAwayId={defaultAwayId}
-          defaultFixtureId={fixtureId}
-          defaultPlayoffMatchId={playoffMatchId}
+          defaultFixtureId={activeFixtureId}
+          defaultPlayoffMatchId={activePlayoffId}
         />
       </main>
     </div>

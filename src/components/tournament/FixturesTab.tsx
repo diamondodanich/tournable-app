@@ -223,8 +223,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
     setStatus('live')
     const result = await startFixture(fixture.id, tournamentId, fixture.home_team_id ?? undefined, fixture.away_team_id ?? undefined)
     setStarting(false)
-    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`); return }
-    window.open(`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`, '_blank')
+    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
   }
 
   async function handleSave() {
@@ -372,7 +371,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
           {status === 'live' && (
             <Link href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`} target="_blank"
               className="flex items-center gap-2 text-sm font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors shadow-sm">
-              <Radio size={12} className="animate-pulse" /> Live-табло
+              <Radio size={12} /> Live-табло
             </Link>
           )}
           {status === 'finished' && isEditing && (

@@ -3,7 +3,7 @@
 import { Team, Fixture, Tournament } from '@/types'
 import StandingsTable from './StandingsTable'
 import ExportButtons from './ExportButtons'
-import { BarChart2 } from 'lucide-react'
+import { BarChart2, Trophy } from 'lucide-react'
 import { tx, type Lang } from '@/lib/i18n'
 
 export default function GroupStandingsTab({
@@ -48,6 +48,14 @@ export default function GroupStandingsTab({
 
   return (
     <div className="space-y-6">
+      {teamsAdvancePerGroup > 0 && (
+        <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+          <Trophy size={13} className="text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold text-emerald-700">
+            Из каждой группы выходят <strong>{teamsAdvancePerGroup}</strong> {teamsAdvancePerGroup === 1 ? 'команда' : teamsAdvancePerGroup <= 4 ? 'команды' : 'команд'}
+          </span>
+        </div>
+      )}
       {groupNames.map(groupName => {
         const groupTeams = teams.filter(t => t.group_name === groupName)
         const groupTeamIds = new Set(groupTeams.map(t => t.id))

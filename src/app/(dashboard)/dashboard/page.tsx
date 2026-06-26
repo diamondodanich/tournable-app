@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar } from 'lucide-react'
+import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 
@@ -96,6 +96,18 @@ export default async function DashboardPage() {
     .eq('user_id', user!.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+
+  // Invited tournaments (editor/viewer role)
+  const { data: memberRows } = await supabase
+    .from('tournament_members')
+    .select('tournament_id, role, tournaments(*, teams(count))')
+    .eq('user_id', user!.id)
+    .eq('status', 'accepted')
+
+  const invitedIds = new Set((tournaments ?? []).map((t: TournamentWithCount) => t.id))
+  const invitedTournaments = (memberRows ?? [])
+    .filter((m: any) => m.tournaments && !invitedIds.has(m.tournament_id) && !m.tournaments.deleted_at)
+    .map((m: any) => ({ ...m.tournaments, _role: m.role as string })) as (TournamentWithCount & { _role: string })[]
 
   const list = (tournaments ?? []) as TournamentWithCount[]
 
@@ -198,6 +210,49 @@ export default async function DashboardPage() {
               <Plus size={15} /> {tx.newTournament}
             </div>
           </Link>
+        </div>
+      )}
+
+      {invitedTournaments.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <UserCheck size={16} className="text-indigo-500" />
+            <h2 className="text-base font-black text-gray-700">Приглашённые турниры</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {invitedTournaments.map((t) => {
+              const teamCount = t.teams?.[0]?.count ?? 0
+              const isActive = t.generated
+              return (
+                <Link key={t.id} href={`/dashboard/tournament/${t.id}`}>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all p-5 h-full flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <TeamAvatar name={t.name} logoUrl={t.logo_url} size={40} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
+                          <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                            {t._role === 'editor' ? 'Редактор' : 'Наблюдатель'}
+                          </span>
+                        </div>
+                        <span className={`text-xs font-medium mt-0.5 inline-block ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {isActive ? tx.active : tx.setup}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
+                      {teamCount > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users size={11} /> {tx.teams(teamCount)}
+                        </span>
+                      )}
+                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

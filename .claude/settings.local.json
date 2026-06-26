@@ -115,7 +115,23 @@
       "Bash(vercel --confirm)",
       "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Анкета-заявка ТСП FreedomPay  \\(2\\).docx\" -t plain)",
       "Bash(pandoc \"C:\\\\Users\\\\user\\\\Downloads\\\\Инструкция по подключению ИП \\(2\\).docx\" -t plain)",
-      "WebFetch(domain:developers.cloudpayments.ru)"
+      "WebFetch(domain:developers.cloudpayments.ru)",
+      "PowerShell(git config --global user.name \"diamondodanich\")",
+      "PowerShell(git config --global user.email \"ilgeriustaz@gmail.com\")",
+      "PowerShell(git config --global credential.helper manager)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); Set-Location \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; node --version; npm --version)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); Set-Location \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; npm install 2>&1 | Select-Object -Last 20)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); Set-Location \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; git log --oneline -5 2>&1; Write-Host \"---\"; git remote -v 2>&1; Write-Host \"---\"; git status 2>&1)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "WebFetch(domain:tournable-app.vercel.app)",
+      "Bash(cd /tmp)",
+      "WebFetch(domain:tiptoppay.kz)",
+      "Bash(find /c/Users/user -name \"*.docx\" 2>/dev/null | grep -i -E \"бизнес|business|tournable|модель|model|описание\" | head -20)",
+      "PowerShell(node \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\tournable_bizmodel.js\")",
+      "Bash(find \"/c/Program Files/nodejs\" -name \"node.exe\" 2>/dev/null; find \"/c/Users/user\" -name \"node.exe\" -maxdepth 6 2>/dev/null | head -5)",
+      "Bash(\"/c/Program Files/nodejs/npm.cmd\" install docx)",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" tournable_bizmodel.js)"
     ]
   }
 }

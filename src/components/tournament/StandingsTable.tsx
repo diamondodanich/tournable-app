@@ -62,13 +62,6 @@ export default function StandingsTable({
 
   return (
     <div>
-      {playoffZone && playoffZone > 0 && (
-        <div className="flex items-center gap-2 px-3 pt-2 pb-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">{T.playoffZoneLabel}</span>
-          <span className="text-[11px] text-gray-400">{T.playoffZoneTop(playoffZone)}</span>
-        </div>
-      )}
       <Table>
         <TableHeader>
           <TableRow className="bg-emerald-50">

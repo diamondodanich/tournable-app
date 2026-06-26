@@ -142,13 +142,15 @@ Additional (in Vercel, not needed locally for basic dev):
 - CardPaymentForm.tsx: consent text on payment
 - No auto-renewal: after expiry, cron immediately sets plan to Free
 
-## Pending Tasks (as of 2026-06-23)
-1. FreedomPay production: подписать анкету → получить выписку → отправить 5 документов → боевой token (7–10 дней)
-2. CloudPayments: ждать ответа по заявке → интегрировать рекуррент
-3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
-4. Домен: купить tournable.kz → подключить к Vercel
-5. ИП: зарегистрировать на eGov.kz
-6. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
+## Pending Tasks (as of 2026-06-25)
+1. TipTop Pay: заполнить анкету → уточнить сумму сбора (6 000 или 20 000 ₸) → оплатить → интегрировать платёжный шлюз + онлайн-кассу (ОФД) + рекуррентные платежи
+2. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
+3. Домен: купить tournable.kz → подключить к Vercel
+4. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
+
+## Завершено
+- ИП зарегистрировано на eGov.kz: "Tournable.app", ИИН 030830501207
+- FreedomPay: заменён на TipTop Pay (рекуррент доступен сразу)
 
 ## SupportWidget
 - `src/components/landing/SupportWidget.tsx`

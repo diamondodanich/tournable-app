@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import StandingsTab from '@/components/tournament/StandingsTab'
+import GroupStandingsTab from '@/components/tournament/GroupStandingsTab'
 import StatsTab from '@/components/tournament/StatsTab'
 import PublicFixturesTab from '@/components/tournament/PublicFixturesTab'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
@@ -171,11 +172,18 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         {/* ── ROUND-ROBIN: standings + fixtures + stats ── */}
         {fmt === 'round_robin' && (
           <Tabs defaultValue="standings">
-            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
-              <TabsTrigger value="standings">Таблица</TabsTrigger>
-              <TabsTrigger value="fixtures">Матчи</TabsTrigger>
-              <TabsTrigger value="stats">Статистика</TabsTrigger>
-            </TabsList>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm mb-6">
+              <div className="overflow-x-auto scrollbar-hide px-2 py-2">
+                <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
+                  {[['standings','Таблица'],['fixtures','Матчи'],['stats','Статистика']].map(([v,l]) => (
+                    <TabsTrigger key={v} value={v}
+                      className="inline-flex items-center h-9 px-4 rounded-xl text-sm font-bold whitespace-nowrap text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      {l}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </div>
             <TabsContent value="standings">
               <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
@@ -191,12 +199,18 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         {/* ── LEAGUE+PLAYOFF: standings + fixtures + playoff + stats ── */}
         {fmt === 'league_playoff' && (
           <Tabs defaultValue="standings">
-            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
-              <TabsTrigger value="standings">Таблица</TabsTrigger>
-              <TabsTrigger value="fixtures">Матчи</TabsTrigger>
-              <TabsTrigger value="playoff">Плей-офф</TabsTrigger>
-              <TabsTrigger value="stats">Статистика</TabsTrigger>
-            </TabsList>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm mb-6">
+              <div className="overflow-x-auto scrollbar-hide px-2 py-2">
+                <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
+                  {[['standings','Таблица'],['fixtures','Матчи'],['playoff','Плей-офф'],['stats','Статистика']].map(([v,l]) => (
+                    <TabsTrigger key={v} value={v}
+                      className="inline-flex items-center h-9 px-4 rounded-xl text-sm font-bold whitespace-nowrap text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      {l}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </div>
             <TabsContent value="standings">
               <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
@@ -215,30 +229,21 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         {/* ── GROUPS + PLAYOFF: group stage standings + fixtures + playoff + stats ── */}
         {fmt === 'groups_playoff' && (
           <Tabs defaultValue="groups">
-            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
-              <TabsTrigger value="groups">Группы</TabsTrigger>
-              <TabsTrigger value="fixtures">Матчи</TabsTrigger>
-              <TabsTrigger value="playoff">Плей-офф</TabsTrigger>
-              <TabsTrigger value="stats">Статистика</TabsTrigger>
-            </TabsList>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm mb-6">
+              <div className="overflow-x-auto scrollbar-hide px-2 py-2">
+                <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
+                  {[['groups','Группы'],['fixtures','Матчи'],['playoff','Плей-офф'],['stats','Статистика']].map(([v,l]) => (
+                    <TabsTrigger key={v} value={v}
+                      className="inline-flex items-center h-9 px-4 rounded-xl text-sm font-bold whitespace-nowrap text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      {l}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </div>
             <TabsContent value="groups">
               {showGroupStandings ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {groups.map(groupName => {
-                    const groupTeams = (teams ?? []).filter((t: any) => t.group_name === groupName)
-                    const groupFixtures = (fixtures ?? []).filter((f: any) =>
-                      groupTeams.some((t: any) => t.id === f.home_team_id || t.id === f.away_team_id)
-                    )
-                    return (
-                      <div key={groupName} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                        <div className="px-4 py-3 bg-emerald-600">
-                          <p className="font-black text-white text-sm">Группа {groupName}</p>
-                        </div>
-                        <StandingsTab teams={groupTeams} fixtures={groupFixtures} tournamentName="" />
-                      </div>
-                    )
-                  })}
-                </div>
+                <GroupStandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournament={tournament} />
               ) : (
                 <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                   <p className="font-bold text-gray-500">Групповой этап начнётся после старта турнира</p>
@@ -260,10 +265,18 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         {/* ── PLAYOFF: full bracket view ── */}
         {fmt === 'playoff' && (
           <Tabs defaultValue="playoff">
-            <TabsList className="mb-6 bg-white/70 border border-emerald-100 backdrop-blur-sm">
-              <TabsTrigger value="playoff">Сетка</TabsTrigger>
-              <TabsTrigger value="stats">Статистика</TabsTrigger>
-            </TabsList>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm mb-6">
+              <div className="overflow-x-auto scrollbar-hide px-2 py-2">
+                <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
+                  {[['playoff','Сетка'],['stats','Статистика']].map(([v,l]) => (
+                    <TabsTrigger key={v} value={v}
+                      className="inline-flex items-center h-9 px-4 rounded-xl text-sm font-bold whitespace-nowrap text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-md">
+                      {l}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+            </div>
             <TabsContent value="playoff">
               <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />
             </TabsContent>

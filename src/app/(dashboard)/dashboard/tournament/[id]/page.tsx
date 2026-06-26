@@ -480,7 +480,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
         {/* Tab content */}
         <TabsContent value="setup" className="mt-0 pt-5">
-          <SetupTab tournament={tournament} teams={t} />
+          <SetupTab tournament={tournament} teams={t} members={isOwner ? members : []} />
         </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">

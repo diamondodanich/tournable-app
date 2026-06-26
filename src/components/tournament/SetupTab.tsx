@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Tournament, Team } from '@/types'
+import { Tournament, Team, TournamentMember } from '@/types'
 import { addTeam, removeTeam, generateSchedule, renameTournament, updateTournamentSettings } from '@/app/actions/tournaments'
+import { removeMember } from '@/app/actions/members'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate } from 'lucide-react'
+import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate, UserCog, UserX, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
@@ -20,10 +21,17 @@ const FORMAT_LABEL: Record<string, string> = {
   league_playoff: 'Лига + Плей-офф',
 }
 
-export default function SetupTab({ tournament, teams }: { tournament: Tournament; teams: Team[] }) {
+export default function SetupTab({
+  tournament, teams, members: initialMembers = [],
+}: {
+  tournament: Tournament
+  teams: Team[]
+  members?: TournamentMember[]
+}) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [members, setMembers] = useState<TournamentMember[]>(initialMembers)
 
   // Tournament name edit state
   const [editingName, setEditingName] = useState(false)
@@ -337,6 +345,56 @@ export default function SetupTab({ tournament, teams }: { tournament: Tournament
           {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
         </Button>
       )}
+
+      {/* Editors block — always show for owners */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserCog size={16} /> Доступ к турниру
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {members.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Нет активных редакторов или наблюдателей. Добавьте участников через кнопку «Поделиться».
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {members.map(m => (
+                <div key={m.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    {m.status === 'accepted' ? (
+                      <p className="text-sm font-medium text-gray-800">
+                        {m.role === 'editor' ? 'Редактор' : 'Наблюдатель'}
+                        <span className="ml-2 text-xs text-gray-400 font-mono">
+                          #{m.user_id?.slice(-8) ?? '—'}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 flex items-center gap-1.5">
+                        <Clock size={12} />
+                        Ожидает принятия
+                        <span className="text-xs">({m.role === 'editor' ? 'редактор' : 'наблюдатель'})</span>
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setMembers(prev => prev.filter(x => x.id !== m.id))
+                      await removeMember(m.id, tournament.id)
+                      toast.success('Доступ отозван')
+                    }}
+                    className="text-gray-300 hover:text-red-500 transition-colors"
+                    title="Отозвать доступ"
+                  >
+                    <UserX size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

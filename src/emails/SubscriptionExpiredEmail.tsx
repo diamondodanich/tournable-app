@@ -50,7 +50,7 @@ export default function SubscriptionExpiredEmail({ appUrl }: Props) {
 
           <Text style={footer}>
             Есть вопросы? Напишите нам на{' '}
-            <a href="mailto:hello@tournable.kz" style={link}>hello@tournable.kz</a>.
+            <a href="mailto:hello@tournable.app" style={link}>hello@tournable.app</a>.
           </Text>
         </Container>
       </Body>

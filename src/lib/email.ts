@@ -14,7 +14,7 @@ function getResend(): Resend | null {
   return _resend
 }
 
-const FROM    = process.env.FROM_EMAIL        ?? 'Tournable <noreply@tournable.kz>'
+const FROM    = process.env.FROM_EMAIL        ?? 'Tournable <noreply@tournable.app>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
 
 // ── Welcome ───────────────────────────────────────────────────────────────────

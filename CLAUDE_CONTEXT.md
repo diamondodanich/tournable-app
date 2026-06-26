@@ -7,7 +7,7 @@ This file is auto-loaded via CLAUDE.md. It gives Claude full project context on 
 ## Stack & Deployment
 Next.js 15 (App Router) + Supabase + TypeScript + Tailwind CSS. Deployed on Vercel.
 GitHub repo: **diamondodanich/tournable-app** — main branch → auto-deploy via Vercel.
-Live URL: **https://tournable-app.vercel.app**
+Live URL: **https://tournable.app**
 
 shadcn/ui uses **base-ui variant** — NEVER use `asChild` on Button/DropdownMenuItem.
 Auth middleware: `src/proxy.ts` (not middleware.ts), export named `proxy`.
@@ -132,7 +132,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 
 Additional (in Vercel, not needed locally for basic dev):
 - SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET, RESEND_API_KEY, FROM_EMAIL
-- NEXT_PUBLIC_APP_URL=https://tournable-app.vercel.app
+- NEXT_PUBLIC_APP_URL=https://tournable.app
 - FREEDOMPAY_MERCHANT_ID=586535, FREEDOMPAY_SECRET_KEY, FREEDOMPAY_WIDGET_TOKEN (pending)
 
 ## Legal Pages

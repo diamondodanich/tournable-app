@@ -58,7 +58,7 @@ export default function ProActivatedEmail({ email, expiresAt, appUrl, period, am
 
           <Text style={footer}>
             Вы получили это письмо, потому что оформили подписку на{' '}
-            <a href={appUrl} style={link}>tournable.kz</a>.
+            <a href={appUrl} style={link}>tournable.app</a>.
             По вопросам — напишите в WhatsApp: +7 706 409-20-21.
           </Text>
 

@@ -64,7 +64,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
               Автоматическое удаление пока не настроено на сервере. Отправьте запрос — мы удалим аккаунт вручную в течение 24 часов.
             </div>
             <a
-              href={`mailto:tournable.webapp@gmail.com?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${email}`)}`}
+              href={`mailto:hello@tournable.app?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${email}`)}`}
               className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors"
             >
               <Trash2 size={15} /> Отправить запрос на удаление

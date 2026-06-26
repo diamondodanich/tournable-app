@@ -62,7 +62,7 @@ export default function WelcomeEmail({ displayName, appUrl }: Props) {
 
           <Text style={footer}>
             Вы получили это письмо, потому что зарегистрировались на{' '}
-            <a href={appUrl} style={link}>tournable.kz</a>.
+            <a href={appUrl} style={link}>tournable.app</a>.
             Если это были не вы — просто проигнорируйте письмо.
           </Text>
         </Container>

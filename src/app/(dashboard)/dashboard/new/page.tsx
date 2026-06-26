@@ -930,6 +930,7 @@ export default function NewTournamentPage() {
           <div className="space-y-2">
             {teamNames.map((val, i) => (
               <div key={i} className="flex items-center gap-2">
+                <span className="w-6 text-center text-xs font-black text-gray-400 shrink-0 select-none">{i + 1}</span>
                 <AvatarPicker dataUrl={teamLogos[i]} name={val || tx.teamPh(i)} size={36}
                   onPick={dataUrl => setTeamLogo(i, dataUrl)} onRemove={() => setTeamLogo(i, null)} />
                 <Input ref={i === teamNames.length - 1 ? lastInputRef : undefined}

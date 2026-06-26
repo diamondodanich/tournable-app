@@ -61,6 +61,21 @@ export async function changePassword(formData: FormData) {
   return { success: true, wasSet: !hadPassword }
 }
 
+// ── Password reset (forgot password flow) ────────────────────────────────────
+export async function requestPasswordReset(formData: FormData) {
+  const email = (formData.get('email') as string | null)?.trim() ?? ''
+  if (!email) return { error: 'Введите email' }
+
+  const supabase = await createClient()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
+  })
+  // Always return success to prevent email enumeration
+  if (error) console.error('[auth] resetPasswordForEmail:', error.message)
+  return { ok: true }
+}
+
 // ── Self-service account deletion ────────────────────────────────────────────
 // Hard-deletes the auth user via the admin API; FK cascades remove the profile,
 // tournaments, teams, fixtures, memberships and subscriptions. Irreversible.

@@ -133,7 +133,9 @@ export default function LiveBoard({
           return
         }
         const g = payload.new as LiveGame
-        if (!isOwner) {
+        // Non-owners always sync; owners/editors sync only when they have no game yet
+        // (i.e. they opened the live page before the match was started by another device)
+        if (!isOwner || gameRef.current === null) {
           setGame(g)
           if (!g.timer_running) setDisplaySecs(g.accumulated_secs)
         }

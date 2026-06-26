@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tournament, Team, Fixture } from '@/types'
 import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import { SoccerBallIcon } from '@/components/ui/SportIcon'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
+import { createClient } from '@/lib/supabase/client'
 
 type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
 type ActionType = 'goal' | 'yellow_card' | 'red_card'
@@ -242,7 +243,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
     else { toast.success('Результат сохранён'); setIsEditing(false) }
   }
 
-  if (fixture.is_bye) {
+  if (fixture.is_bye || !fixture.home_team_id || !fixture.away_team_id) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 opacity-60">
         <Badge variant="secondary" className="mb-2 text-xs">{T.byeLabel}</Badge>
@@ -314,7 +315,44 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
     )
   }
 
-  // ── Edit / Scheduled / Live ───────────────────────────────────────────────
+  // ── Scheduled — show only big "Начать матч" button ──────────────────────────
+
+  if (status === 'scheduled') {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        {showUpgrade && (
+          <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
+        )}
+        <div className="flex items-center justify-between mb-4">
+          <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 min-w-0">
+            <TeamAvatar name={homeTeam?.name ?? ''} logoUrl={homeTeam?.logo_url} size={28} />
+            <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2">{homeTeam?.name}</span>
+          </div>
+          <span className="font-black text-xl text-gray-300 font-mono shrink-0 px-1">—</span>
+          <div className="flex items-center gap-2 justify-end min-w-0">
+            <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2 text-right">{awayTeam?.name}</span>
+            <TeamAvatar name={awayTeam?.name ?? ''} logoUrl={awayTeam?.logo_url} size={28} />
+          </div>
+        </div>
+        <button
+          onClick={handleStart}
+          disabled={starting}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${
+            isPro
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+          }`}>
+          {starting ? <Loader2 size={15} className="animate-spin" /> : isPro ? <Play size={15} /> : <Lock size={15} />}
+          {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
+        </button>
+      </div>
+    )
+  }
+
+  // ── Edit / Live ───────────────────────────────────────────────────────────
 
   const homeRows = buildRows(fixture.home_team_id ?? '', events)
   const awayRows = buildRows(fixture.away_team_id ?? '', events)
@@ -329,25 +367,13 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
         <div>
           {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>}
           {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />{T.statusLive}</Badge>}
-          {status === 'scheduled'&& <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>}
         </div>
         <div className="flex items-center gap-2">
           {status === 'live' && (
             <Link href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`} target="_blank"
-              className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors">
-              <Radio size={11} /> {T.btnLiveBoard}
+              className="flex items-center gap-2 text-sm font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors shadow-sm">
+              <Radio size={12} className="animate-pulse" /> Live-табло
             </Link>
-          )}
-          {status === 'scheduled' && (
-            <button onClick={handleStart} disabled={starting || !fixture.home_team_id || !fixture.away_team_id}
-              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                isPro
-                  ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
-                  : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
-              }`}>
-              {isPro ? <Play size={11} /> : <Lock size={11} />}
-              {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
-            </button>
           )}
           {status === 'finished' && isEditing && (
             <button onClick={() => setIsEditing(false)}
@@ -469,7 +495,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures, isPro = false, lang = 'ru' }: {
+export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
@@ -477,6 +503,23 @@ export default function FixturesTab({ tournament, teams, fixtures, isPro = false
   lang?: Lang
 }) {
   const T = tx[lang]
+  const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
+
+  // Realtime sync: update fixtures when another user saves results
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`fixtures_${tournament.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'fixtures',
+        filter: `tournament_id=eq.${tournament.id}`,
+      }, payload => {
+        const updated = payload.new as Fixture
+        setFixtures(prev => prev.map(f => f.id === updated.id ? { ...f, ...updated } : f))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [tournament.id])
 
   if (!tournament.generated || fixtures.length === 0) {
     return (

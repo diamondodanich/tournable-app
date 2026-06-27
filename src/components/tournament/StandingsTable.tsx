@@ -61,8 +61,8 @@ export default function StandingsTable({
   const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss })
 
   return (
-    <div>
-      <Table>
+    <div className="overflow-x-auto">
+      <Table className="min-w-max">
         <TableHeader>
           <TableRow className="bg-emerald-50">
             <TableHead className="w-10 text-center text-emerald-700">#</TableHead>
@@ -75,18 +75,19 @@ export default function StandingsTable({
             <TableHead className="text-center text-emerald-700 w-12">{T.colGF}</TableHead>
             <TableHead className="text-center text-emerald-700 w-12">{T.colGA}</TableHead>
             <TableHead className="text-center text-emerald-700 w-12">{T.colGD}</TableHead>
-            <TableHead className="text-center text-emerald-700 w-12 font-black">{T.colPts}</TableHead>
+            <TableHead className="text-center text-emerald-700 w-14 font-black sticky right-0 bg-emerald-50 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]">{T.colPts}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((r, i) => {
             const isLastInZone = playoffZone && i === playoffZone - 1
             const isInZone     = playoffZone && i < playoffZone
+            const rowBg        = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <TableRow
                 key={r.teamId}
                 className={[
-                  i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50',
+                  rowBg,
                   isInZone ? 'border-l-2 border-l-emerald-400' : '',
                   isLastInZone ? 'border-b-2 border-b-emerald-300' : '',
                 ].join(' ')}
@@ -122,7 +123,7 @@ export default function StandingsTable({
                 <TableCell className={`text-center font-mono text-sm font-bold ${r.GD > 0 ? 'text-emerald-600' : r.GD < 0 ? 'text-red-500' : ''}`}>
                   {r.GD > 0 ? `+${r.GD}` : r.GD}
                 </TableCell>
-                <TableCell className="text-center font-black text-emerald-700 text-base">{r.Pts}</TableCell>
+                <TableCell className={`text-center font-black text-emerald-700 text-base sticky right-0 ${rowBg} shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]`}>{r.Pts}</TableCell>
               </TableRow>
             )
           })}

@@ -27,11 +27,12 @@ const TAB_CLASS = `inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs 
   data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-sm`
 
 export default function SetupTab({
-  tournament, teams, members: initialMembers = [],
+  tournament, teams, members: initialMembers = [], isOwner = false,
 }: {
   tournament: Tournament
   teams: Team[]
   members?: TournamentMember[]
+  isOwner?: boolean
 }) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -131,25 +132,29 @@ export default function SetupTab({
 
   return (
     <Tabs defaultValue="general" className="max-w-2xl">
-      <TabsList className="flex h-auto gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-auto mb-4">
-        <TabsTrigger value="general" className={TAB_CLASS}>
-          <Settings2 size={12} /> Общее
-        </TabsTrigger>
-        <TabsTrigger value="rules" className={TAB_CLASS}>
-          <Sliders size={12} /> Правила
-        </TabsTrigger>
-        <TabsTrigger value="teams" className={TAB_CLASS}>
-          <Users size={12} /> Команды ({teams.length})
-        </TabsTrigger>
-        <TabsTrigger value="access" className={TAB_CLASS}>
-          <UserCog size={12} /> Доступ
-          {members.length > 0 && (
-            <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
-              {members.length}
-            </span>
+      <div className="overflow-x-auto mb-4 -mx-1 px-1 pb-1">
+        <TabsList className="flex h-auto gap-1 bg-gray-100 p-1 rounded-xl w-max">
+          <TabsTrigger value="general" className={TAB_CLASS}>
+            <Settings2 size={12} /> Общее
+          </TabsTrigger>
+          <TabsTrigger value="rules" className={TAB_CLASS}>
+            <Sliders size={12} /> Правила
+          </TabsTrigger>
+          <TabsTrigger value="teams" className={TAB_CLASS}>
+            <Users size={12} /> Команды ({teams.length})
+          </TabsTrigger>
+          {isOwner && (
+            <TabsTrigger value="access" className={TAB_CLASS}>
+              <UserCog size={12} /> Доступ
+              {members.length > 0 && (
+                <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                  {members.length}
+                </span>
+              )}
+            </TabsTrigger>
           )}
-        </TabsTrigger>
-      </TabsList>
+        </TabsList>
+      </div>
 
       {/* Общее */}
       <TabsContent value="general" className="space-y-4 mt-0">

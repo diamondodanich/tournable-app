@@ -88,13 +88,15 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <SharePanel
-            tournamentId={tournament.id}
-            tournamentName={tournament.name}
-            publicUrl={publicUrl}
-            members={members}
-            lang={lang}
-          />
+          {isOwner && (
+            <SharePanel
+              tournamentId={tournament.id}
+              tournamentName={tournament.name}
+              publicUrl={publicUrl}
+              members={members}
+              lang={lang}
+            />
+          )}
 
           {isOwner && !confirming && (
             <button

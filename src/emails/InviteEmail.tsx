@@ -12,6 +12,7 @@ const T = {
     editorLabel: 'редактора', viewerLabel: 'наблюдателя',
     editorDesc: 'Вы сможете вводить результаты матчей и управлять расписанием.',
     viewerDesc: 'Вы сможете просматривать таблицу, результаты и статистику в реальном времени.',
+    rolePrefix: 'Вы получили роль', roleSuffix: '.',
     btnAccept: 'Принять приглашение',
     linkHint: 'Кнопка не работает? Скопируйте ссылку вручную:',
     footer: (url: string) => `Если вы не ожидали этого письма — просто проигнорируйте его. Ссылка одноразовая и потребует входа в аккаунт Tournable (${url}).`,
@@ -22,6 +23,7 @@ const T = {
     editorLabel: 'редактор', viewerLabel: 'бақылаушы',
     editorDesc: 'Матч нәтижелерін енгізіп, кестені басқара аласыз.',
     viewerDesc: 'Кестені, нәтижелер мен статистиканы нақты уақытта қарай аласыз.',
+    rolePrefix: 'Берілген рөл:', roleSuffix: '',
     btnAccept: 'Шақыруды қабылдау',
     linkHint: 'Батырма жұмыс істемей ме? Сілтемені қолмен көшіріңіз:',
     footer: (url: string) => `Бұл хатты күтпеген болсаңыз — жай елемеңіз. Сілтеме бір реттік және Tournable аккаунтына кіруді талап етеді (${url}).`,
@@ -32,6 +34,7 @@ const T = {
     editorLabel: 'editor', viewerLabel: 'viewer',
     editorDesc: 'You will be able to enter match results and manage the schedule.',
     viewerDesc: 'You will be able to view standings, results and statistics in real time.',
+    rolePrefix: 'Your role:', roleSuffix: '',
     btnAccept: 'Accept invitation',
     linkHint: "Button not working? Copy the link manually:",
     footer: (url: string) => `If you didn't expect this email, just ignore it. The link is one-time use and requires a Tournable account (${url}).`,
@@ -73,7 +76,7 @@ export default function InviteEmail({ tournamentName, inviteUrl, role, appUrl, l
             </Section>
 
             <Text style={paragraph}>
-              Вы получили роль <strong>{roleLabel}</strong>. {roleDesc}
+              {tx.rolePrefix} <strong>{roleLabel}</strong>{tx.roleSuffix} {roleDesc}
             </Text>
 
             <Section style={{ textAlign: 'center', margin: '32px 0' }}>

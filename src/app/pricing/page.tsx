@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Check, X, Zap, Trophy, Star, ArrowRight } from 'lucide-react'
+import { Check, X, Zap, Trophy, Star, ArrowRight, Building2 } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -31,6 +31,16 @@ const PRO_FEATURES = [
   { text: 'Live-табло в реальном времени', included: true },
   { text: 'До 3 соредакторов', included: true },
   { text: 'Приоритетная поддержка', included: true },
+]
+
+const ENTERPRISE_FEATURES = [
+  { text: 'Всё из тарифа Про', included: true },
+  { text: 'Постоянные лиги с сезонами', included: true },
+  { text: 'Публичные страницы лиги', included: true },
+  { text: 'Профили команд и игроков', included: true },
+  { text: 'Составы и история сезонов', included: true },
+  { text: 'Таблица бомбардиров по сезонам', included: true },
+  { text: 'Выделенная поддержка', included: true },
 ]
 
 const FAQ = [
@@ -98,7 +108,7 @@ export default function PricingPage() {
 
         {/* ── Plans ──────────────────────────────────────────────────────────── */}
         <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
 
             {/* Free */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 flex flex-col">
@@ -176,6 +186,42 @@ export default function PricingPage() {
                 className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 rounded-xl transition-colors text-sm shadow-md"
               >
                 Перейти на Про
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-white rounded-2xl border-2 border-purple-200 shadow-sm p-8 flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-700" />
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="font-black text-lg text-gray-900">Enterprise</span>
+                </div>
+                <div className="flex items-end gap-1 mb-2">
+                  <span className="text-3xl font-black text-gray-900">По запросу</span>
+                </div>
+                <p className="text-sm text-gray-400">Для федераций и лиг</p>
+              </div>
+
+              <ul className="space-y-3 flex-1 mb-8">
+                {ENTERPRISE_FEATURES.map(f => (
+                  <li key={f.text} className="flex items-start gap-2.5 text-sm">
+                    <Check className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{f.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="https://wa.me/message/YHLE2IFII4MSJ1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl transition-colors text-sm"
+              >
+                Связаться с нами
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

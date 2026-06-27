@@ -76,6 +76,11 @@ const T = {
         items: ['Безлимитные турниры', 'До 64 команд в каждом', 'Live-табло в реальном времени', 'До 3 соредакторов', 'Все форматы: ЛЧ, ЧМ, кастомные', 'Приоритетная поддержка 24/7', 'Всё из бесплатного тарифа'],
         cta: 'Перейти на Про',
       },
+      enterprise: {
+        name: 'Enterprise', sub: 'Для федераций и лиг', price: 'По запросу',
+        items: ['Всё из тарифа Про', 'Постоянные лиги с сезонами', 'Публичные страницы лиги', 'Профили команд и игроков', 'Таблица бомбардиров по сезонам', 'Выделенная поддержка'],
+        cta: 'Связаться с нами',
+      },
       more: 'Нужно больше? ', moreLink: 'Напишите — решим.',
     },
     services: {
@@ -161,6 +166,11 @@ const T = {
         items: ['Шексіз турнирлер', 'Әр турнирде 64 командаға дейін', 'Нақты уақытта Live-тақта', '3 соредакторға дейін', 'Барлық форматтар: ЛЧ, ЧА, кастомды', 'Басым қолдау 24/7', 'Тегін тарифтің барлығы'],
         cta: 'Про-ға өту',
       },
+      enterprise: {
+        name: 'Enterprise', sub: 'Федерациялар мен лигалар үшін', price: 'Сұрау бойынша',
+        items: ['Про тарифінің барлығы', 'Маусымдары бар тұрақты лигалар', 'Лиганың жалпыға ортақ беттері', 'Команда мен ойыншылардың профильдері', 'Маусымдар бойынша бомбардирлер кестесі', 'Жеке қолдау'],
+        cta: 'Бізбен хабарласу',
+      },
       more: 'Көбірек керек пе? ', moreLink: 'Жазыңыз — шешеміз.',
     },
     services: {
@@ -245,6 +255,11 @@ const T = {
         sub: 'For organizers who mean business',
         items: ['Unlimited tournaments', 'Up to 64 teams each', 'Real-time live scoreboard', 'Up to 3 co-editors', 'All formats: UCL, World Cup, custom', 'Priority support 24/7', 'Everything in the free plan'],
         cta: 'Go Pro',
+      },
+      enterprise: {
+        name: 'Enterprise', sub: 'For federations & leagues', price: 'Contact us',
+        items: ['Everything in Pro', 'Permanent leagues with seasons', 'Public league pages', 'Team & player profiles', 'Season scorers leaderboard', 'Dedicated support'],
+        cta: 'Get in touch',
       },
       more: 'Need more? ', moreLink: 'Write to us — we\'ll sort it out.',
     },
@@ -598,12 +613,12 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             <p className="text-gray-400 text-base">{tx.pricing.sub}</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {/* Free */}
             <div className="bg-white border border-gray-200 rounded-3xl p-8 flex flex-col">
               <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-4">{tx.pricing.free.name}</div>
               <div className="mb-1">
-                <span className="text-6xl font-black text-gray-900 tracking-tight">{tx.pricing.free.price}</span>
+                <span className="text-5xl font-black text-gray-900 tracking-tight">{tx.pricing.free.price}</span>
               </div>
               <p className="text-sm text-gray-400 mb-8 mt-1">{tx.pricing.free.sub}</p>
               <ul className="space-y-3 mb-10 flex-1">
@@ -625,16 +640,13 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   {tx.pricing.pro.badge}
                 </span>
               </div>
-              <div className="relative rounded-3xl p-8 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
-              {/* Subtle pattern */}
+              <div className="relative rounded-3xl p-8 flex flex-col overflow-hidden h-full" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
               <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
               <div className="relative z-10 flex-1 flex flex-col">
                 <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-4">{tx.pricing.pro.name}</div>
-
-                {/* Price display */}
                 <div className="mb-2">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-5xl font-black text-white tracking-tight">{tx.pricing.pro.monthly}</span>
+                    <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.monthly}</span>
                     <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.monthlyPer}</span>
                   </div>
                 </div>
@@ -644,7 +656,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   <div className="h-px flex-1 bg-emerald-400/30" />
                 </div>
                 <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-3xl font-black text-white tracking-tight">{tx.pricing.pro.annualMonthly}</span>
+                  <span className="text-2xl font-black text-white tracking-tight">{tx.pricing.pro.annualMonthly}</span>
                   <span className="text-xs text-emerald-200">{tx.pricing.pro.monthlyPer}</span>
                   <span className="text-xs text-emerald-300 ml-1">({tx.pricing.pro.annual}{tx.pricing.pro.annualPer})</span>
                 </div>
@@ -653,7 +665,6 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.discount}</span>
                 </div>
                 <p className="text-sm text-emerald-200 mb-8">{tx.pricing.pro.sub}</p>
-
                 <ul className="space-y-2.5 mb-10 flex-1">
                   {tx.pricing.pro.items.map(f => (
                     <li key={f} className="flex items-start gap-2.5 text-sm">
@@ -662,12 +673,37 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                     </li>
                   ))}
                 </ul>
-
                 <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3.5 rounded-2xl transition-colors shadow-xl shadow-black/20">
                   {tx.pricing.pro.cta}
                 </Link>
               </div>
             </div>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-white border-2 border-purple-200 rounded-3xl p-8 flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }} />
+              <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-4">{tx.pricing.enterprise.name}</div>
+              <div className="mb-1">
+                <span className="text-3xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.price}</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-8 mt-1">{tx.pricing.enterprise.sub}</p>
+              <ul className="space-y-3 mb-10 flex-1">
+                {tx.pricing.enterprise.items.map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="https://wa.me/message/YHLE2IFII4MSJ1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center font-black py-3.5 rounded-2xl transition-colors text-white"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
+              >
+                {tx.pricing.enterprise.cta}
+              </a>
             </div>
           </div>
 

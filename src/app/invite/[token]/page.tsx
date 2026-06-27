@@ -55,9 +55,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/login?next=/invite/${token}`)
 
-  // Use admin to SELECT by token so RLS doesn't block
-  const admin = getAdmin()
-  const { data: member } = await admin
+  // SELECT with user session — RLS allows reading pending invites by token
+  const { data: member } = await supabase
     .from('tournament_members')
     .select('id, role, status, tournament_id, tournaments(name)')
     .eq('invite_token', token)

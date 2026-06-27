@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Users, Download, Video, Star, Menu, X } from 'lucide-react'
+import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Globe, Download, Video, Star, Menu, X } from 'lucide-react'
 import SupportWidget from './SupportWidget'
 import { setLangCookie } from '@/app/actions/lang'
 
@@ -16,11 +16,11 @@ const T = {
     label: 'RU',
     nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Мои турниры' },
     hero: {
-      badge: 'Любой спорт. Любой масштаб.',
-      h1: ['Живой счёт.', 'Статистика сама.', 'Турнир готов за 30 секунд.'],
-      sub: 'Пока другие шлют скрины в WhatsApp — ваши участники смотрят матч онлайн. Расписание, статистика, плей-офф — строятся сами. Вы просто ведёте игру.',
-      cta: 'Начать бесплатно', cta2: 'Как это работает',
-      proof: [['Бесплатно', 'навсегда'], ['Готово', 'за 30 секунд'], ['Без карты', 'при регистрации']],
+      badge: 'Для организаторов лиг и турниров',
+      h1: ['Счёт у всех — онлайн.', 'Статистика считается сама.', 'Турнир за 2 минуты.'],
+      sub: 'Создайте расписание, поделитесь ссылкой — и живая страница вашего турнира уже у каждого участника. Голы, таблица, плей-офф и бомбардиры считаются сами. Вы просто ведёте игру.',
+      cta: 'Создать турнир бесплатно', cta2: 'Как это работает',
+      proof: [['1 турнир бесплатно', 'все функции включены'], ['Готово', 'за 2 минуты'], ['Живая ссылка', 'без приложений']],
     },
     live: {
       badge: 'Live-табло',
@@ -52,7 +52,7 @@ const T = {
         { title: 'Живой счёт без приложений', desc: 'Голы с телефона — счёт у всех мгновенно. Больше никто не ждёт скрин из WhatsApp. Просто ссылка.' },
         { title: 'Статистика, которая не ждёт', desc: 'Очки, разница мячей, бомбардиры — обновляются сами после каждого матча. Всегда точно, всегда вовремя.' },
         { title: 'Плей-офф без головной боли', desc: 'Победители переходят дальше автоматически. До 64 команд — от 1/8 до финала.' },
-        { title: 'Команда редакторов', desc: 'До 3 соредакторов вводят результаты одновременно. Пригласить по ссылке — дело 5 секунд.' },
+        { title: 'Живая страница турнира', desc: 'Каждый турнир получает публичный URL. Поделитесь с командами до игры — все следят за таблицей и счётом онлайн без регистрации.' },
         { title: 'PDF и PNG в один клик', desc: 'Таблица, сетка, статистика — готовы для печати, соцсетей или чата. Красиво с первого раза.' },
       ],
       sportsLabel: 'Работает для любого командного спорта',
@@ -62,9 +62,9 @@ const T = {
       h2: 'Бесплатно.\nСерьёзно, навсегда.',
       sub: 'Ноль скрытых условий. Отмена в один клик.',
       free: {
-        name: 'Старт', price: '0 ₸', sub: 'Идеально, чтобы начать',
-        items: ['До 3 турниров', 'До 16 команд в каждом', 'Круговой и плей-офф', 'Публичная ссылка для участников', 'Голы, ассисты, карточки', 'Логотипы команд и турнира', 'Экспорт в PDF и PNG'],
-        cta: 'Создать турнир — бесплатно',
+        name: 'Старт', price: '0 ₸', sub: '1 активный турнир — все функции включены',
+        items: ['1 активный турнир', 'Без лимита по командам', 'Все форматы (круговой, плей-офф, группы)', 'Живая публичная страница турнира', 'Голы, ассисты, карточки, статистика', 'Логотипы команд и турнира', 'Экспорт в PDF и PNG'],
+        cta: 'Создать первый турнир — бесплатно',
       },
       pro: {
         name: 'Про', badge: 'Выбор организаторов',
@@ -106,11 +106,11 @@ const T = {
     label: 'KZ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Менің турнирларым' },
     hero: {
-      badge: 'Кез келген спорт. Кез келген деңгей.',
-      h1: ['Тірі есеп.', 'Статистика өздігінен.', 'Турнир — 30 секундта.'],
-      sub: 'Басқалар WhatsApp-та скриншот жіберіп жатқанда — сіздің қатысушыларыңыз есепті онлайн қарайды. Кесте, статистика, плей-офф — бәрі автоматты. Сіз тек турнирді өткізесіз.',
-      cta: 'Тегін бастау', cta2: 'Қалай жұмыс істейді',
-      proof: [['Тегін', 'мәңгі'], ['Дайын', '30 секундта'], ['Карта', 'қажет емес']],
+      badge: 'Лигалар мен турнирлер ұйымдастырушыларына',
+      h1: ['Есеп барлығында — онлайн.', 'Статистика өздігінен есептеледі.', 'Турнир — 2 минутта.'],
+      sub: 'Кесте жасаңыз, сілтемемен бөлісіңіз — және турниріңіздің тірі беті әрбір қатысушыда. Голдар, кесте, плей-офф және бомбардирлер өздігінен есептеледі. Сіз тек турнирді өткізесіз.',
+      cta: 'Турнирді тегін жасау', cta2: 'Қалай жұмыс істейді',
+      proof: [['1 турнир тегін', 'барлық мүмкіндіктер'], ['Дайын', '2 минутта'], ['Тірі сілтеме', 'қосымшасыз']],
     },
     live: {
       badge: 'Live-тақта',
@@ -142,7 +142,7 @@ const T = {
         { title: 'Қосымшасыз тірі есеп', desc: 'Телефоннан голдар — есеп барлығына лезде. Ешкім WhatsApp скриншотын күтпейді. Тек сілтеме.' },
         { title: 'Жаңарып тұратын статистика', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — әр матчтан кейін өздігінен жаңарады. Әрқашан дәл, әрқашан уақытында.' },
         { title: 'Бас ауыртпайтын плей-офф', desc: 'Жеңімпаздар автоматты алға өтеді. 64 командаға дейін — 1/8-ден финалға.' },
-        { title: 'Редакторлар тобы', desc: '3 соредакторға дейін нәтижелерді бір уақытта енгізе алады. Сілтемемен шақыру — 5 секунд мәселесі.' },
+        { title: 'Турнирдің тірі беті', desc: 'Әрбір турнир жалпыға ортақ URL алады. Матчқа дейін командаларға сілтемені жіберіңіз — барлығы тіркелмей кестені онлайн қарайды.' },
         { title: 'PDF және PNG бір шертумен', desc: 'Кесте, тор, статистика — басып шығаруға, әлеуметтік желілерге немесе чатқа дайын. Бірден сұлу шығады.' },
       ],
       sportsLabel: 'Кез келген командалық спорт үшін жұмыс істейді',
@@ -152,9 +152,9 @@ const T = {
       h2: 'Тегін.\nШынымен, мәңгі.',
       sub: 'Жасырын шарттар жоқ. Бір шертумен болдырмау.',
       free: {
-        name: 'Старт', price: '0 ₸', sub: 'Бастауға тамаша',
-        items: ['3 турнирге дейін', 'Әр турнирде 16 командаға дейін', 'Дөңгелек және плей-офф', 'Қатысушыларға жалпыға ортақ сілтеме', 'Голдар, ассисттер, карточкалар', 'Команда мен турнир логотиптері', 'PDF және PNG-ке экспорт'],
-        cta: 'Турнирді тегін жасау',
+        name: 'Старт', price: '0 ₸', sub: '1 белсенді турнир — барлық мүмкіндіктер',
+        items: ['1 белсенді турнир', 'Командалар саны шексіз', 'Барлық форматтар (дөңгелек, плей-офф, топтар)', 'Турнирдің тірі жалпыға ортақ беті', 'Голдар, ассисттер, карточкалар, статистика', 'Команда мен турнир логотиптері', 'PDF және PNG-ке экспорт'],
+        cta: 'Бірінші турнирді тегін жасау',
       },
       pro: {
         name: 'Про', badge: 'Ұйымдастырушылардың таңдауы',
@@ -196,11 +196,11 @@ const T = {
     label: 'EN',
     nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'My Tournaments' },
     hero: {
-      badge: 'Any sport. Any scale.',
-      h1: ['Live scoreboard.', 'Stats that update themselves.', 'Tournament ready in 30 seconds.'],
-      sub: 'While others send WhatsApp screenshots — your participants watch the match live. Schedule, stats, playoff — all automatic. You just run the game.',
-      cta: 'Start for free', cta2: 'See how it works',
-      proof: [['Free plan', 'forever'], ['Up and running', 'in 30 seconds'], ['No card', 'required']],
+      badge: 'For league & tournament organisers',
+      h1: ['Live scores for everyone.', 'Stats calculate themselves.', 'Tournament in 2 minutes.'],
+      sub: 'Build the schedule, share the link — and every participant instantly has a live tournament page. Goals, standings, playoff and top scorers update on their own. You just run the game.',
+      cta: 'Create a tournament — free', cta2: 'See how it works',
+      proof: [['1 tournament free', 'all features included'], ['Ready', 'in 2 minutes'], ['Live link', 'no app needed']],
     },
     live: {
       badge: 'Live scoreboard',
@@ -232,7 +232,7 @@ const T = {
         { title: 'Live scoreboard without apps', desc: 'Enter goals on your phone — everyone sees the update instantly. No more waiting for a WhatsApp screenshot. Just a link.' },
         { title: 'Stats that never wait', desc: 'Points, goal difference, top scorers — refreshed after every match. Always accurate. Always live.' },
         { title: 'Playoff without the headache', desc: 'Winners advance automatically. Up to 64 teams, from round of 16 to the final.' },
-        { title: 'A team of editors', desc: 'Up to 3 co-editors enter results at the same time. Invite by link — a 5-second job.' },
+        { title: 'Live tournament page', desc: 'Every tournament gets its own public URL. Share with teams before the game — everyone follows standings and live scores without signing up.' },
         { title: 'PDF & PNG in one click', desc: 'Standings, bracket, stats — ready for print, social media or chat. Looks sharp every time.' },
       ],
       sportsLabel: 'Works for any team sport',
@@ -242,9 +242,9 @@ const T = {
       h2: 'Free.\nNo, seriously. Forever.',
       sub: 'Zero hidden conditions. Cancel whenever you like.',
       free: {
-        name: 'Starter', price: '0 ₸', sub: 'Perfect to get started',
-        items: ['Up to 3 tournaments', 'Up to 16 teams each', 'Round-robin & playoff', 'Public link for participants', 'Goals, assists & cards', 'Team & tournament logos', 'PDF & PNG export'],
-        cta: 'Create a tournament — free',
+        name: 'Starter', price: '0 ₸', sub: '1 active tournament — all features included',
+        items: ['1 active tournament', 'No team limit', 'All formats (round-robin, playoff, groups)', 'Live public tournament page', 'Goals, assists, cards & stats', 'Team & tournament logos', 'PDF & PNG export'],
+        cta: 'Create your first tournament — free',
       },
       pro: {
         name: 'Pro', badge: 'Organizers\' choice',
@@ -304,7 +304,7 @@ function IconTikTok({ className }: { className?: string }) {
 }
 
 // ─── Feature icons map ────────────────────────────────────────────────────────
-const FEAT_ICONS = [Zap, BarChart3, Trophy, Share2, Users, Download]
+const FEAT_ICONS = [Zap, BarChart3, Trophy, Share2, Globe, Download]
 const FEAT_STYLES = [
   { bg: 'bg-emerald-500/15', icon: 'text-emerald-400', accent: 'bg-emerald-400' },
   { bg: 'bg-blue-500/15',    icon: 'text-blue-400',    accent: 'bg-blue-400' },
@@ -314,11 +314,46 @@ const FEAT_STYLES = [
   { bg: 'bg-cyan-500/15',    icon: 'text-cyan-400',    accent: 'bg-cyan-400' },
 ]
 
+// ─── How it works ─────────────────────────────────────────────────────────────
+const HOW_TO: Record<Lang, { tag: string; h2: string; sub: string; steps: { num: string; title: string; desc: string }[] }> = {
+  ru: {
+    tag: 'Три шага',
+    h2: 'Проще, чем кажется.',
+    sub: 'От идеи до живого турнира — за одну чашку кофе.',
+    steps: [
+      { num: '01', title: 'Создайте турнир', desc: 'Выберите вид спорта и формат. Добавьте команды — расписание всех матчей сгенерируется автоматически.' },
+      { num: '02', title: 'Поделитесь ссылкой', desc: 'Бросьте ссылку в чат до матча. Участники открывают живую страницу вашего турнира — без регистрации и приложений.' },
+      { num: '03', title: 'Вносите голы с телефона', desc: 'Счёт, карточки, бомбардиры — обновляются у всех мгновенно. Таблица и плей-офф считаются сами.' },
+    ],
+  },
+  kz: {
+    tag: 'Үш қадам',
+    h2: 'Ойлағаннан да оңай.',
+    sub: 'Идеядан тірі турнирге — бір шыны кофе уақытында.',
+    steps: [
+      { num: '01', title: 'Турнир жасаңыз', desc: 'Спорт түрі мен форматты таңдаңыз. Командаларды қосыңыз — матч кестесі автоматты жасалады.' },
+      { num: '02', title: 'Сілтемемен бөлісіңіз', desc: 'Матчқа дейін сілтемені чатқа тастаңыз. Қатысушылар тіркелмей-ақ турнирдің тірі бетін ашады.' },
+      { num: '03', title: 'Телефоннан голдарды енгізіңіз', desc: 'Есеп, карточкалар, бомбардирлер — барлығына лезде жаңарады. Кесте мен плей-офф өздігінен есептеледі.' },
+    ],
+  },
+  en: {
+    tag: 'Three steps',
+    h2: 'Simpler than you think.',
+    sub: 'From idea to live tournament — in the time it takes to make coffee.',
+    steps: [
+      { num: '01', title: 'Create your tournament', desc: 'Pick a sport and format. Add teams — the full match schedule generates automatically.' },
+      { num: '02', title: 'Share the link', desc: 'Drop the link in the group chat before kick-off. Participants open your live tournament page — no sign-up, no app.' },
+      { num: '03', title: 'Enter goals from your phone', desc: 'Scores, cards, top scorers — update for everyone instantly. Standings and playoff sort themselves out.' },
+    ],
+  },
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitials }: { isLoggedIn?: boolean; defaultLang?: Lang; userInitials?: string }) {
   const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
   const tx = T[lang]
+  const how = HOW_TO[lang]
 
   return (
     <div className="min-h-screen bg-white text-gray-900" style={{ fontFamily: 'Inter,sans-serif' }}>
@@ -442,13 +477,25 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <span className="text-emerald-600">{tx.hero.h1[2]}</span>
               </h1>
               <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-md">{tx.hero.sub}</p>
-              <div className="flex flex-wrap items-center gap-3 mb-10">
+              <div className="flex flex-wrap items-center gap-3 mb-6">
                 <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-100">
                   {tx.hero.cta} <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="#features" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 font-medium text-sm px-4 py-3.5 transition-colors">
+                <a href="#how" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 font-medium text-sm px-4 py-3.5 transition-colors">
                   {tx.hero.cta2} <ChevronRight className="w-4 h-4" />
                 </a>
+              </div>
+              {/* Proof chips */}
+              <div className="flex flex-wrap gap-x-5 gap-y-2.5">
+                {tx.hero.proof.map(([main, sub], i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">{main}</span>
+                    <span className="text-sm text-gray-400">{sub}</span>
+                  </div>
+                ))}
               </div>
             </div>
             {/* Real laptop photo */}
@@ -462,6 +509,34 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 priority
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ────────────────────────────────────────────────────── */}
+      <section id="how" className="py-20 lg:py-28 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-flex items-center gap-2 bg-emerald-100 rounded-full px-4 py-1.5 mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest">{how.tag}</span>
+            </span>
+            <h2 className="text-[2rem] sm:text-[2.6rem] font-black tracking-tight text-gray-900 mb-3" style={{ letterSpacing: '-.03em' }}>{how.h2}</h2>
+            <p className="text-gray-400 text-base max-w-md mx-auto">{how.sub}</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6 relative">
+            {/* Connector line — desktop */}
+            <div className="hidden sm:block absolute top-10 left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-px bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-200 pointer-events-none" />
+            {how.steps.map((step, i) => (
+              <div key={i} className="relative flex flex-col items-center text-center sm:items-start sm:text-left group">
+                {/* Number bubble */}
+                <div className="relative z-10 w-[52px] h-[52px] rounded-2xl bg-white border-2 border-emerald-200 flex items-center justify-center mb-5 shadow-sm group-hover:border-emerald-400 transition-colors">
+                  <span className="font-black text-[15px] text-emerald-600">{step.num}</span>
+                </div>
+                <h3 className="font-black text-lg text-gray-900 mb-2 leading-snug">{step.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

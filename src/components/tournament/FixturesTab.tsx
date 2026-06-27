@@ -10,7 +10,7 @@ import { Check, Plus, X, Radio, Play, Pencil, Lock, Loader2 } from 'lucide-react
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import Link from 'next/link'
 import { SoccerBallIcon } from '@/components/ui/SportIcon'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/client'
@@ -174,8 +174,6 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
   const [saving, setSaving]       = useState(false)
   const [starting, setStarting]   = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const [showLiveModal, setShowLiveModal] = useState(false)
-  const [liveSaved, setLiveSaved] = useState(false)
   const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
@@ -216,10 +214,6 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
   function removeRow(eventIdx: number, assistIdx?: number) {
     setEvents(prev => prev.filter((_, i) => i !== eventIdx && i !== assistIdx))
   }
-
-  useEffect(() => {
-    if (fixture.played && showLiveModal && !liveSaved) setLiveSaved(true)
-  }, [fixture.played, showLiveModal])
 
   async function handleStart() {
     if (!fixture.home_team_id || !fixture.away_team_id) return
@@ -483,11 +477,12 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
 
       <div className="flex items-center justify-between gap-2">
         {status === 'live' ? (
-          <button
-            onClick={() => { setLiveSaved(false); setShowLiveModal(true) }}
+          <Link
+            href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`}
+            target="_blank"
             className="flex items-center gap-2 text-sm font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors shadow-sm shrink-0">
             <Radio size={12} /> Live-табло
-          </button>
+          </Link>
         ) : <div />}
         <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">
           {saving
@@ -496,28 +491,6 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
           {saving ? T.saving : T.btnSaveResult}
         </Button>
       </div>
-
-      <Dialog open={showLiveModal} onOpenChange={open => { if (!open) { setShowLiveModal(false); setLiveSaved(false) } }}>
-        <DialogContent className="max-w-2xl w-full h-[90vh] p-0 overflow-hidden flex flex-col">
-          {liveSaved ? (
-            <div className="flex flex-col items-center justify-center flex-1 gap-4 p-8">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
-                <Check size={28} className="text-emerald-600" />
-              </div>
-              <p className="text-xl font-black text-gray-900">Матч завершён</p>
-              <Button onClick={() => { setShowLiveModal(false); setLiveSaved(false) }} className="bg-emerald-600 hover:bg-emerald-700 px-8">
-                Закрыть
-              </Button>
-            </div>
-          ) : (
-            <iframe
-              src={`/t/${tournamentId}/live?fixture=${fixture.id}&home=${fixture.home_team_id}&away=${fixture.away_team_id}`}
-              className="w-full flex-1 border-0"
-              title="Live-табло"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

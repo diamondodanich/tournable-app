@@ -92,7 +92,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
     const email = emailInput.trim()
     if (!email || !email.includes('@')) { toast.error('Введите корректный email'); return }
     setSendingEmail(true)
-    const res = await inviteByEmail(tournamentId, 'editor', email)
+    const res = await inviteByEmail(tournamentId, 'editor', email, lang)
     setSendingEmail(false)
     if (res?.error) { toast.error(res.error); return }
     toast.success(`Приглашение отправлено на ${email}`)

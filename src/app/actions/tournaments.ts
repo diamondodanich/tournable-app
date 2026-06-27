@@ -453,6 +453,8 @@ export async function startFixture(
   tournamentId: string,
   homeTeamId?: string,
   awayTeamId?: string,
+  initialHomeScore = 0,
+  initialAwayScore = 0,
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -475,8 +477,8 @@ export async function startFixture(
       tournament_id: tournamentId,
       home_team_id: homeTeamId,
       away_team_id: awayTeamId,
-      home_score: 0,
-      away_score: 0,
+      home_score: initialHomeScore,
+      away_score: initialAwayScore,
       period: '1',
       timer_running: false,
       accumulated_secs: 0,

@@ -1,36 +1,72 @@
 import {
-  Body, Button, Container, Head, Heading, Hr, Html,
+  Body, Button, Container, Head, Heading, Hr, Html, Img,
   Preview, Section, Text,
 } from '@react-email/components'
+
+type Lang = 'ru' | 'kz' | 'en'
+
+const T = {
+  ru: {
+    preview: (name: string) => `Вас приглашают в турнир «${name}»`,
+    heading: 'Вас приглашают в турнир',
+    editorLabel: 'редактора', viewerLabel: 'наблюдателя',
+    editorDesc: 'Вы сможете вводить результаты матчей и управлять расписанием.',
+    viewerDesc: 'Вы сможете просматривать таблицу, результаты и статистику в реальном времени.',
+    btnAccept: 'Принять приглашение',
+    linkHint: 'Кнопка не работает? Скопируйте ссылку вручную:',
+    footer: (url: string) => `Если вы не ожидали этого письма — просто проигнорируйте его. Ссылка одноразовая и потребует входа в аккаунт Tournable (${url}).`,
+  },
+  kz: {
+    preview: (name: string) => `«${name}» турниріне шақырылдыңыз`,
+    heading: 'Турнирге шақырылдыңыз',
+    editorLabel: 'редактор', viewerLabel: 'бақылаушы',
+    editorDesc: 'Матч нәтижелерін енгізіп, кестені басқара аласыз.',
+    viewerDesc: 'Кестені, нәтижелер мен статистиканы нақты уақытта қарай аласыз.',
+    btnAccept: 'Шақыруды қабылдау',
+    linkHint: 'Батырма жұмыс істемей ме? Сілтемені қолмен көшіріңіз:',
+    footer: (url: string) => `Бұл хатты күтпеген болсаңыз — жай елемеңіз. Сілтеме бір реттік және Tournable аккаунтына кіруді талап етеді (${url}).`,
+  },
+  en: {
+    preview: (name: string) => `You're invited to tournament "${name}"`,
+    heading: "You're invited to a tournament",
+    editorLabel: 'editor', viewerLabel: 'viewer',
+    editorDesc: 'You will be able to enter match results and manage the schedule.',
+    viewerDesc: 'You will be able to view standings, results and statistics in real time.',
+    btnAccept: 'Accept invitation',
+    linkHint: "Button not working? Copy the link manually:",
+    footer: (url: string) => `If you didn't expect this email, just ignore it. The link is one-time use and requires a Tournable account (${url}).`,
+  },
+} as const
 
 interface Props {
   tournamentName: string
   inviteUrl: string
   role: 'editor' | 'viewer'
   appUrl: string
+  lang?: Lang
 }
 
-export default function InviteEmail({ tournamentName, inviteUrl, role, appUrl }: Props) {
-  const roleLabel = role === 'editor' ? 'редактора' : 'наблюдателя'
-  const roleDesc  = role === 'editor'
-    ? 'Вы сможете вводить результаты матчей и управлять расписанием.'
-    : 'Вы сможете просматривать таблицу, результаты и статистику в реальном времени.'
+export default function InviteEmail({ tournamentName, inviteUrl, role, appUrl, lang = 'ru' }: Props) {
+  const tx = T[lang]
+  const roleLabel = role === 'editor' ? tx.editorLabel : tx.viewerLabel
+  const roleDesc  = role === 'editor' ? tx.editorDesc : tx.viewerDesc
 
   return (
-    <Html lang="ru">
+    <Html lang={lang}>
       <Head />
-      <Preview>Вас приглашают в турнир «{tournamentName}»</Preview>
+      <Preview>{tx.preview(tournamentName)}</Preview>
       <Body style={body}>
         <Container style={container}>
 
           {/* Logo */}
           <Section style={logoSection}>
+            <Img src={`${appUrl}/logo-green.png`} width={40} height={40} alt="Tournable" style={{ margin: '0 auto 8px' }} />
             <Text style={logoText}>TOURNABLE</Text>
           </Section>
 
           {/* Content */}
           <Section style={contentSection}>
-            <Heading style={h1}>Вас приглашают в турнир</Heading>
+            <Heading style={h1}>{tx.heading}</Heading>
 
             <Section style={tournamentBadge}>
               <Text style={tournamentBadgeText}>{tournamentName}</Text>
@@ -42,22 +78,18 @@ export default function InviteEmail({ tournamentName, inviteUrl, role, appUrl }:
 
             <Section style={{ textAlign: 'center', margin: '32px 0' }}>
               <Button href={inviteUrl} style={button}>
-                Принять приглашение
+                {tx.btnAccept}
               </Button>
             </Section>
 
-            <Text style={hint}>
-              Кнопка не работает? Скопируйте ссылку вручную:
-            </Text>
+            <Text style={hint}>{tx.linkHint}</Text>
             <Text style={linkBox}>{inviteUrl}</Text>
           </Section>
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Если вы не ожидали этого письма — просто проигнорируйте его.
-            Ссылка одноразовая и потребует входа в аккаунт{' '}
-            <a href={appUrl} style={link}>Tournable</a>.
+            {tx.footer(appUrl)}
           </Text>
         </Container>
       </Body>

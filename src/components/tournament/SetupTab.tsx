@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Tournament, Team, TournamentMember } from '@/types'
 import { addTeam, removeTeam, generateSchedule, renameTournament, updateTournamentSettings } from '@/app/actions/tournaments'
 import { removeMember } from '@/app/actions/members'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate, UserCog, UserX, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
 import TournamentCoverPicker from './TournamentCoverPicker'
 import TournamentCoverBanner from './TournamentCoverBanner'
+import { createClient } from '@/lib/supabase/client'
 
 const FORMAT_LABEL: Record<string, string> = {
   round_robin:    'Круговой',
@@ -20,6 +21,10 @@ const FORMAT_LABEL: Record<string, string> = {
   groups_playoff: 'Группы + Плей-офф',
   league_playoff: 'Лига + Плей-офф',
 }
+
+const TAB_CLASS = `inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold whitespace-nowrap
+  text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all
+  data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-sm`
 
 export default function SetupTab({
   tournament, teams, members: initialMembers = [],
@@ -33,19 +38,39 @@ export default function SetupTab({
   const [generating, setGenerating] = useState(false)
   const [members, setMembers] = useState<TournamentMember[]>(initialMembers)
 
-  // Tournament name edit state
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(tournament.name)
   const [savingName, setSavingName] = useState(false)
 
-  // Match rules state
-  const [matchPeriods, setMatchPeriods]       = useState(tournament.match_periods ?? 2)
-  const [extraTime, setExtraTime]             = useState(tournament.extra_time ?? false)
-  const [durationMins, setDurationMins]       = useState(tournament.match_duration_mins ?? 45)
-  const [pointsWin, setPointsWin]             = useState(tournament.points_win ?? 3)
-  const [pointsDraw, setPointsDraw]           = useState(tournament.points_draw ?? 1)
-  const [pointsLoss, setPointsLoss]           = useState(tournament.points_loss ?? 0)
-  const [savingSettings, setSavingSettings]   = useState(false)
+  const [matchPeriods, setMatchPeriods]     = useState(tournament.match_periods ?? 2)
+  const [extraTime, setExtraTime]           = useState(tournament.extra_time ?? false)
+  const [durationMins, setDurationMins]     = useState(tournament.match_duration_mins ?? 45)
+  const [pointsWin, setPointsWin]           = useState(tournament.points_win ?? 3)
+  const [pointsDraw, setPointsDraw]         = useState(tournament.points_draw ?? 1)
+  const [pointsLoss, setPointsLoss]         = useState(tournament.points_loss ?? 0)
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  // Realtime sync for members
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase.channel(`setup-members-${tournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournament_members',
+        filter: `tournament_id=eq.${tournament.id}`,
+      }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setMembers(prev => [...prev, payload.new as TournamentMember])
+        } else if (payload.eventType === 'UPDATE') {
+          setMembers(prev => prev.map(m => m.id === (payload.new as TournamentMember).id ? payload.new as TournamentMember : m))
+        } else if (payload.eventType === 'DELETE') {
+          setMembers(prev => prev.filter(m => m.id !== (payload.old as TournamentMember).id))
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [tournament.id])
 
   async function handleAddTeam(e: React.FormEvent) {
     e.preventDefault()
@@ -105,28 +130,39 @@ export default function SetupTab({
   }
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <Tabs defaultValue="general" className="max-w-2xl">
+      <TabsList className="flex h-auto gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-auto mb-4">
+        <TabsTrigger value="general" className={TAB_CLASS}>
+          <Settings2 size={12} /> Общее
+        </TabsTrigger>
+        <TabsTrigger value="rules" className={TAB_CLASS}>
+          <Sliders size={12} /> Правила
+        </TabsTrigger>
+        <TabsTrigger value="teams" className={TAB_CLASS}>
+          <Users size={12} /> Команды ({teams.length})
+        </TabsTrigger>
+        <TabsTrigger value="access" className={TAB_CLASS}>
+          <UserCog size={12} /> Доступ
+          {members.length > 0 && (
+            <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+              {members.length}
+            </span>
+          )}
+        </TabsTrigger>
+      </TabsList>
 
-      {/* Tournament settings card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings2 size={16} /> Настройки турнира
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Общее */}
+      <TabsContent value="general" className="space-y-4 mt-0">
+        {/* Name + logo */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5">
           <div className="flex items-start gap-4">
-            {/* Logo */}
             <TournamentLogoUpload
               tournamentId={tournament.id}
               tournamentName={tournament.name}
               logoUrl={tournament.logo_url}
               size={64}
             />
-
-            {/* Name + format */}
             <div className="flex-1 min-w-0 space-y-3">
-              {/* Editable name */}
               <div>
                 <p className="text-xs text-gray-400 mb-1">Название</p>
                 {editingName ? (
@@ -147,17 +183,12 @@ export default function SetupTab({
                     </Button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setEditingName(true)}
-                    className="flex items-center gap-2 group text-left"
-                  >
+                  <button onClick={() => setEditingName(true)} className="flex items-center gap-2 group text-left">
                     <span className="font-bold text-gray-900 text-base">{tournament.name}</span>
                     <Pencil size={13} className="text-gray-300 group-hover:text-emerald-600 transition-colors" />
                   </button>
                 )}
               </div>
-
-              {/* Format + rounds */}
               <div className="flex gap-4 text-sm text-gray-500">
                 <span><span className="font-medium text-gray-700">Формат:</span> {FORMAT_LABEL[tournament.format] ?? tournament.format}</span>
                 {tournament.format === 'round_robin' && (
@@ -166,17 +197,14 @@ export default function SetupTab({
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Cover card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <LayoutTemplate size={16} /> Обложка турнира
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        {/* Cover */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <LayoutTemplate size={15} className="text-gray-400" />
+            <p className="text-sm font-bold text-gray-700">Обложка турнира</p>
+          </div>
           {tournament.cover_url && (
             <div className="rounded-xl overflow-hidden h-28 sm:h-36">
               <TournamentCoverBanner coverUrl={tournament.cover_url} className="h-28 sm:h-36 w-full" />
@@ -190,18 +218,12 @@ export default function SetupTab({
           {!tournament.cover_url && (
             <p className="text-xs text-gray-400">Обложка отображается в шапке страницы турнира</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </TabsContent>
 
-      {/* Match rules card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sliders size={16} /> Правила матча
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-
+      {/* Правила */}
+      <TabsContent value="rules" className="mt-0">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-5">
           {/* Periods */}
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Таймы</p>
@@ -212,24 +234,23 @@ export default function SetupTab({
                     key={n}
                     onClick={() => setMatchPeriods(n)}
                     className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
-                      matchPeriods === n
-                        ? 'bg-white text-emerald-700 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-600'
+                      matchPeriods === n ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
                     {n} {n === 1 ? 'тайм' : 'тайма'}
                   </button>
                 ))}
               </div>
-
               <label className="flex items-center gap-2 cursor-pointer select-none ml-4">
                 <div
                   onClick={() => setExtraTime(v => !v)}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors cursor-pointer ${extraTime ? 'bg-emerald-600' : 'bg-gray-200'}`}
-                  style={{ height: 22 }}
+                  className={`relative rounded-full transition-colors cursor-pointer ${extraTime ? 'bg-emerald-600' : 'bg-gray-200'}`}
+                  style={{ width: 40, height: 22 }}
                 >
-                  <span className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${extraTime ? 'translate-x-4.5' : 'translate-x-0'}`}
-                    style={{ width: 18, height: 18, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }} />
+                  <span
+                    className="absolute top-0.5 bg-white rounded-full shadow transition-transform"
+                    style={{ width: 18, height: 18, left: 2, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }}
+                  />
                 </div>
                 <span className="text-sm text-gray-600">Доп. время</span>
               </label>
@@ -250,7 +271,7 @@ export default function SetupTab({
             </div>
           </div>
 
-          {/* Points system — round-robin only */}
+          {/* Points */}
           {tournament.format !== 'playoff' && (
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Система очков</p>
@@ -274,28 +295,16 @@ export default function SetupTab({
             </div>
           )}
 
-          <Button
-            onClick={handleSaveSettings}
-            disabled={savingSettings}
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            {savingSettings
-              ? <Loader2 size={13} className="mr-1.5 animate-spin" />
-              : <Check size={13} className="mr-1.5" />}
+          <Button onClick={handleSaveSettings} disabled={savingSettings} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+            {savingSettings ? <Loader2 size={13} className="mr-1.5 animate-spin" /> : <Check size={13} className="mr-1.5" />}
             {savingSettings ? 'Сохраняем…' : 'Сохранить настройки'}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </TabsContent>
 
-      {/* Teams card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users size={16} /> Команды ({teams.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Команды */}
+      <TabsContent value="teams" className="space-y-4 mt-0">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
           <form onSubmit={handleAddTeam} className="flex gap-2">
             <Input
               value={teamName}
@@ -331,31 +340,26 @@ export default function SetupTab({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {tournament.format === 'round_robin' && (
-        <Button
-          onClick={handleGenerate}
-          disabled={teams.length < 2 || generating}
-          className="bg-emerald-600 hover:bg-emerald-700 gap-2"
-          size="lg"
-        >
-          {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-          {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
-        </Button>
-      )}
+        {tournament.format === 'round_robin' && (
+          <Button
+            onClick={handleGenerate}
+            disabled={teams.length < 2 || generating}
+            className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+            size="lg"
+          >
+            {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+            {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
+          </Button>
+        )}
+      </TabsContent>
 
-      {/* Editors block — always show for owners */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserCog size={16} /> Доступ к турниру
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Доступ */}
+      <TabsContent value="access" className="mt-0">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5">
           {members.length === 0 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 py-2">
               Нет активных редакторов или наблюдателей. Добавьте участников через кнопку «Поделиться».
             </p>
           ) : (
@@ -393,8 +397,8 @@ export default function SetupTab({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </TabsContent>
+    </Tabs>
   )
 }

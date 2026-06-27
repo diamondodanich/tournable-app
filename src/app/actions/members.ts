@@ -61,6 +61,7 @@ export async function inviteByEmail(
   tournamentId: string,
   role: 'editor' | 'viewer',
   email: string,
+  lang: 'ru' | 'kz' | 'en' = 'ru',
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -85,7 +86,7 @@ export async function inviteByEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
   const inviteUrl = `${appUrl}/invite/${token}`
 
-  await sendInviteEmail(email, t.name, inviteUrl, role)
+  await sendInviteEmail(email, t.name, inviteUrl, role, lang)
 
   return { ok: true }
 }

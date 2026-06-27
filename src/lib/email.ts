@@ -40,16 +40,21 @@ export async function sendInviteEmail(
   tournamentName: string,
   inviteUrl: string,
   role: 'editor' | 'viewer',
+  lang: 'ru' | 'kz' | 'en' = 'ru',
 ) {
   const resend = getResend()
   if (!resend) return
   try {
-    const html = await render(InviteEmail({ tournamentName, inviteUrl, role, appUrl: APP_URL }))
-    const roleLabel = role === 'editor' ? 'редактора' : 'наблюдателя'
+    const html = await render(InviteEmail({ tournamentName, inviteUrl, role, appUrl: APP_URL, lang }))
+    const subjects = {
+      ru: `Вас приглашают в турнир «${tournamentName}»`,
+      kz: `«${tournamentName}» турниріне шақырылдыңыз`,
+      en: `You're invited to tournament "${tournamentName}"`,
+    }
     await resend.emails.send({
       from:    FROM,
       to:      toEmail,
-      subject: `Вас приглашают в турнир «${tournamentName}» — роль ${roleLabel}`,
+      subject: subjects[lang],
       html,
     })
   } catch (e) {

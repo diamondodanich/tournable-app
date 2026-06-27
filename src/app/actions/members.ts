@@ -49,9 +49,8 @@ export async function acceptInvite(token: string): Promise<{ ok?: true; tourname
     if (selectErr) return { error: `select_err: ${selectErr.code} ${selectErr.message}` }
     if (!member) return { error: 'invite_not_found' }
 
-    // Try UPDATE with admin client (bypasses RLS)
-    const admin = getAdmin()
-    const { error: updateErr } = await admin
+    // UPDATE with user session — requires RLS policy "authenticated_accept_invite" on tournament_members
+    const { error: updateErr } = await supabase
       .from('tournament_members')
       .update({ user_id: user.id, status: 'accepted' })
       .eq('id', member.id)

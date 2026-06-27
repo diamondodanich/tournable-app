@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
-import { finishLiveMatch } from '@/app/actions/live'
+import { finishLiveMatch, initLiveGame } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus } from 'lucide-react'
@@ -104,6 +104,7 @@ export default function LiveBoard({
   const [minute, setMinute]         = useState('')   // empty = use timer value
   const [isOwnGoal, setIsOwnGoal]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [playerSuggestions, setPlayerSuggestions] = useState<string[]>([])
 
   // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
@@ -236,24 +237,19 @@ export default function LiveBoard({
     if (error) toast.error(error.message)
   }, [tournament.id])
 
-  // ── Init match ────────────────────────────────────────────────────────────
+  // ── Init match (via server action — works for both owners and editors) ─────
   async function handleInit() {
     if (!homeId || !awayId || homeId === awayId) { toast.error('Выберите разные команды'); return }
     setIniting(true)
-    const { data, error } = await supabase
-      .from('live_games')
-      .upsert({
-        tournament_id: tournament.id,
-        home_team_id: homeId, away_team_id: awayId,
-        home_score: 0, away_score: 0,
-        period: '1', timer_running: false,
-        accumulated_secs: 0, started_at: null,
-        fixture_id: defaultFixtureId ?? null,
-        playoff_match_id: defaultPlayoffMatchId ?? null,
-      }, { onConflict: 'tournament_id' })
-      .select().single()
-    if (error) { toast.error(error.message); setIniting(false); return }
-    setGame(data as LiveGame)
+    const result = await initLiveGame(
+      tournament.id,
+      homeId,
+      awayId,
+      defaultFixtureId ?? null,
+      defaultPlayoffMatchId ?? null,
+    )
+    if (result.error) { toast.error(result.error); setIniting(false); return }
+    setGame(result.data as unknown as LiveGame)
     setDisplaySecs(0)
     setEvents([])
     setIniting(false)
@@ -477,10 +473,29 @@ export default function LiveBoard({
     setIsFinished(true)
   }
 
-  // ── Derived ───────────────────────────────────────────────────────────────
-
+  // ── Player autocomplete: fetch from league_teams by team name ─────────────
   const homeTeam = teams.find(t => t.id === (game?.home_team_id ?? homeId))
   const awayTeam = teams.find(t => t.id === (game?.away_team_id ?? awayId))
+
+  useEffect(() => {
+    const currentTeam = side === 'home' ? homeTeam : awayTeam
+    if (!currentTeam?.name) { setPlayerSuggestions([]); return }
+    let cancelled = false
+    supabase
+      .from('league_teams')
+      .select('players(name)')
+      .ilike('name', currentTeam.name)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return
+        const players = (data as any)?.players ?? []
+        setPlayerSuggestions(players.map((p: { name: string }) => p.name))
+      })
+    return () => { cancelled = true }
+  }, [side, homeTeam?.name, awayTeam?.name]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Derived ───────────────────────────────────────────────────────────────
   const currentPeriodLabel = PERIODS.find(p => p.value === game?.period)?.label ?? ''
 
   const homeEvents  = events.filter(e => e.team_id === game?.home_team_id)
@@ -929,6 +944,11 @@ export default function LiveBoard({
             </div>
 
             {/* Player inputs */}
+            {playerSuggestions.length > 0 && (
+              <datalist id="player-suggestions">
+                {playerSuggestions.map(name => <option key={name} value={name} />)}
+              </datalist>
+            )}
             {actionType === 'goal' ? (
               <div className="grid grid-cols-2 gap-2">
                 <Input
@@ -936,12 +956,14 @@ export default function LiveBoard({
                   onChange={e => setPlayer(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   placeholder="Автор гола"
+                  list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
                 />
                 <Input
                   value={assister}
                   onChange={e => setAssister(e.target.value)}
                   placeholder="Ассистент"
+                  list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
                 />
               </div>
@@ -951,6 +973,7 @@ export default function LiveBoard({
                 onChange={e => setPlayer(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                 placeholder="Игрок"
+                list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
                 className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
               />
             )}

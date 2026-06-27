@@ -15,6 +15,7 @@ type Lang = 'ru' | 'kz' | 'en'
 const T = {
   ru: {
     myTournaments: 'Мои турниры',
+    leagues: 'Лиги',
     features: 'Возможности',
     pricing: 'Тарифы',
     contact: 'Контакты',
@@ -23,6 +24,7 @@ const T = {
   },
   kz: {
     myTournaments: 'Менің турнирлерім',
+    leagues: 'Лигалар',
     features: 'Мүмкіндіктер',
     pricing: 'Тарифтер',
     contact: 'Байланыс',
@@ -31,6 +33,7 @@ const T = {
   },
   en: {
     myTournaments: 'My tournaments',
+    leagues: 'Leagues',
     features: 'Features',
     pricing: 'Pricing',
     contact: 'Contact',
@@ -50,6 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
   const isPro = plan === 'pro'
+  const isEnterprise = plan === 'enterprise'
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? '??'
   const emailShort = user.email?.split('@')[0] ?? ''
@@ -87,6 +91,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/dashboard" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
               {tx.myTournaments}
             </Link>
+            {isEnterprise && (
+              <Link href="/dashboard/leagues" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
+                {tx.leagues}
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-400/30 text-purple-200 leading-none">ENT</span>
+              </Link>
+            )}
             <Link href="/#features" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
               {tx.features}
             </Link>
@@ -119,11 +129,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="text-[10px] text-emerald-300 font-semibold">{tx.account}</span>
                   <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none ${
-                    isPro
-                      ? 'bg-amber-400 text-amber-900'
-                      : 'bg-white/20 text-emerald-100'
+                    isEnterprise
+                      ? 'bg-purple-400 text-purple-950'
+                      : isPro
+                        ? 'bg-amber-400 text-amber-900'
+                        : 'bg-white/20 text-emerald-100'
                   }`}>
-                    {isPro ? 'PRO' : 'FREE'}
+                    {isEnterprise ? 'ENT' : isPro ? 'PRO' : 'FREE'}
                   </span>
                 </div>
                 <span className="text-xs text-white font-bold max-w-[110px] truncate">{emailShort}</span>

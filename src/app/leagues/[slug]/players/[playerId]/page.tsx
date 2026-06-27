@@ -1,0 +1,120 @@
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import type { Metadata } from 'next'
+
+const POSITION_LABELS: Record<string, string> = {
+  goalkeeper: 'Вратарь', defender: 'Защитник',
+  midfielder: 'Полузащитник', forward: 'Нападающий', other: '—',
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; playerId: string }> }): Promise<Metadata> {
+  const supabase = await createClient()
+  const { playerId } = await params
+  const { data: p } = await supabase.from('players').select('name').eq('id', playerId).maybeSingle()
+  return { title: p?.name ?? 'Игрок' }
+}
+
+export default async function PlayerProfilePage({ params }: { params: Promise<{ slug: string; playerId: string }> }) {
+  const supabase = await createClient()
+  const { slug, playerId } = await params
+
+  const { data: player } = await supabase
+    .from('players')
+    .select('*, league_teams(id, name, slug, league_id, leagues(id, name, slug))')
+    .eq('id', playerId)
+    .maybeSingle()
+
+  if (!player) notFound()
+
+  const leagueTeam = (player as any).league_teams
+  const league = leagueTeam?.leagues
+
+  if (!league || league.slug !== slug) notFound()
+
+  // Fetch goals and assists from match_events (by player name)
+  const { data: events } = await supabase
+    .from('match_events')
+    .select('type, minute, player_name, fixtures(matchday, tournaments(name))')
+    .eq('player_name', player.name)
+    .eq('team_id', leagueTeam.id)
+    .order('created_at', { ascending: false })
+
+  const goals = (events ?? []).filter((e: any) => e.type === 'goal').length
+  const assists = (events ?? []).filter((e: any) => e.type === 'assist').length
+  const yellowCards = (events ?? []).filter((e: any) => e.type === 'yellow_card').length
+  const redCards = (events ?? []).filter((e: any) => e.type === 'red_card').length
+
+  return (
+    <div className="min-h-screen bg-[#0f0f11] text-white">
+      <div className="border-b border-white/10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          <Link href={`/leagues/${slug}/players`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">
+            ← Игроки {league.name}
+          </Link>
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center">
+              <span className="text-2xl font-black text-purple-300">
+                {player.number != null ? `#${player.number}` : player.name.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black">{player.name}</h1>
+              <div className="flex items-center gap-2 mt-1.5">
+                <Link href={`/leagues/${slug}/teams/${leagueTeam.slug}`} className="text-sm text-purple-400 hover:text-purple-300 font-medium">
+                  {leagueTeam.name}
+                </Link>
+                {player.position && player.position !== 'other' && (
+                  <span className="text-xs text-white/30">· {POSITION_LABELS[player.position]}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {[
+            { label: 'Голы', value: goals, color: 'text-emerald-400' },
+            { label: 'Передачи', value: assists, color: 'text-blue-400' },
+            { label: 'Жёлтые', value: yellowCards, color: 'text-yellow-400' },
+            { label: 'Красные', value: redCards, color: 'text-red-400' },
+          ].map(stat => (
+            <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+              <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+              <p className="text-xs text-white/40 mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent events */}
+        {(events ?? []).length > 0 && (
+          <div>
+            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">События</p>
+            <div className="space-y-1">
+              {(events as any[]).slice(0, 20).map((e, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 text-sm">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${
+                    e.type === 'goal' ? 'bg-emerald-900/60 text-emerald-400'
+                    : e.type === 'assist' ? 'bg-blue-900/60 text-blue-400'
+                    : e.type === 'yellow_card' ? 'bg-yellow-900/60 text-yellow-400'
+                    : 'bg-red-900/60 text-red-400'
+                  }`}>
+                    {e.type === 'goal' ? 'Гол' : e.type === 'assist' ? 'Пас' : e.type === 'yellow_card' ? 'ЖК' : 'КК'}
+                  </span>
+                  {e.minute != null && <span className="text-xs text-white/30 shrink-0">{e.minute}'</span>}
+                  <span className="flex-1 text-white/50 text-xs truncate">
+                    {e.fixtures?.tournaments?.name ?? ''}
+                    {e.fixtures?.matchday != null ? ` — тур ${e.fixtures.matchday}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

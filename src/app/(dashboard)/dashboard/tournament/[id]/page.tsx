@@ -117,6 +117,77 @@ function ExportBracket({ teams, matches }: {
   )
 }
 
+// Group standings for groups_playoff PDF export
+function ExportGroupStandings({ teams, fixtures, pointsWin = 3, pointsDraw = 1, pointsLoss = 0 }: {
+  teams: Team[]; fixtures: Fixture[]; pointsWin?: number; pointsDraw?: number; pointsLoss?: number
+}) {
+  const groupNames = [...new Set(teams.map(t => t.group_name).filter(Boolean))].sort() as string[]
+  if (groupNames.length === 0) return null
+
+  return (
+    <div>
+      {groupNames.map(gName => {
+        const groupTeams = teams.filter(t => t.group_name === gName)
+        const groupIds = new Set(groupTeams.map(t => t.id))
+        // Only group-stage fixtures (both teams in the same group)
+        const groupFixtures = fixtures.filter(f =>
+          !f.is_bye &&
+          f.home_team_id && f.away_team_id &&
+          groupIds.has(f.home_team_id) && groupIds.has(f.away_team_id)
+        )
+
+        const map = new Map<string, { name: string; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }>()
+        groupTeams.forEach(t => map.set(t.id, { name: t.name, GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0 }))
+
+        groupFixtures.filter(f => f.played && f.home_score != null && f.away_score != null).forEach(f => {
+          const home = map.get(f.home_team_id!); const away = map.get(f.away_team_id!)
+          const hs = f.home_score!, as = f.away_score!
+          if (home) { home.GP++; home.GF += hs; home.GA += as; home.GD += hs - as; if (hs > as) { home.W++; home.Pts += pointsWin } else if (hs === as) { home.D++; home.Pts += pointsDraw } else { home.L++; home.Pts += pointsLoss } }
+          if (away) { away.GP++; away.GF += as; away.GA += hs; away.GD += as - hs; if (as > hs) { away.W++; away.Pts += pointsWin } else if (as === hs) { away.D++; away.Pts += pointsDraw } else { away.L++; away.Pts += pointsLoss } }
+        })
+
+        const rows = [...map.values()].sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF)
+
+        return (
+          <div key={gName} style={{ marginBottom: '16px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              Группа {gName}
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '4px 6px', textAlign: 'left', color: '#6b7280', fontWeight: 600 }}>#</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'left', color: '#6b7280', fontWeight: 600 }}>Команда</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>И</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>В</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>Н</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>П</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>Мячи</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600 }}>О</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.name} style={{ borderTop: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '4px 6px', color: '#9ca3af', fontWeight: 700 }}>{i + 1}</td>
+                    <td style={{ padding: '4px 6px', fontWeight: 700, color: '#111827' }}>{r.name}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280' }}>{r.GP}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', color: '#059669', fontWeight: 700 }}>{r.W}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280' }}>{r.D}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', color: '#dc2626' }}>{r.L}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', color: '#6b7280' }}>{r.GF}:{r.GA}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 800, color: '#111827' }}>{r.Pts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const SECTION = (n: number, title: string, color: string) => ({
   marginBottom: '28px',
   header: {
@@ -332,41 +403,67 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           </>
         ) : (
           <>
-            {/* 1. Bracket */}
-            <div style={s1}>
-              <p style={{ ...s1.header, color: '#059669' }}>1. Результаты сетки</p>
-              <div style={{ ...s1.box, padding: '12px' }}>
+            {/* groups_playoff: show group stage standings BEFORE the bracket */}
+            {fmt === 'groups_playoff' && (
+              <div style={s1}>
+                <p style={{ ...s1.header, color: '#059669' }}>1. Групповой этап — таблицы</p>
+                <div style={{ ...s1.box, padding: '12px' }}>
+                  <ExportGroupStandings
+                    teams={t}
+                    fixtures={f}
+                    pointsWin={tournament.points_win}
+                    pointsDraw={tournament.points_draw}
+                    pointsLoss={tournament.points_loss}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bracket */}
+            <div style={s2}>
+              <p style={{ ...s2.header, color: '#059669' }}>
+                {fmt === 'groups_playoff' ? '2. Плей-офф — результаты сетки' : '1. Результаты сетки'}
+              </p>
+              <div style={{ ...s2.box, padding: '12px' }}>
                 <ExportBracket teams={t} matches={pm} />
               </div>
             </div>
 
-            {/* 2. Goals */}
+            {/* Goals */}
             <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>2. Бомбардиры</p>
+              <p style={{ ...s3.header, color: '#059669' }}>
+                {fmt === 'groups_playoff' ? '3. Бомбардиры' : '2. Бомбардиры'}
+              </p>
               <div style={s3.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="goal" label="Голы" accent="#059669" />
               </div>
             </div>
 
-            {/* 3. Assists */}
+            {/* Assists */}
             <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>3. Ассистенты</p>
+              <p style={{ ...s4.header, color: '#d97706' }}>
+                {fmt === 'groups_playoff' ? '4. Ассистенты' : '3. Ассистенты'}
+              </p>
               <div style={s4.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="assist" label="Ассисты" accent="#2563eb" />
               </div>
             </div>
 
-            {/* 4. Yellow cards */}
+            {/* Yellow cards */}
             <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>4. Жёлтые карточки</p>
+              <p style={{ ...s5.header, color: '#d97706' }}>
+                {fmt === 'groups_playoff' ? '5. Жёлтые карточки' : '4. Жёлтые карточки'}
+              </p>
               <div style={s5.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label="ЖК" accent="#d97706" />
               </div>
             </div>
 
-            {/* 5. Red cards */}
+            {/* Red cards */}
             <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s7.header, color: '#dc2626' }}>5. Красные карточки</p>
+              <p style={{ ...s7.header, color: '#dc2626' }}>
+                {fmt === 'groups_playoff' ? '6. Красные карточки' : '5. Красные карточки'}
+              </p>
               <div style={s7.box}>
                 <ExportStatsTable teams={t} events={allEvents} type="red_card" label="КК" accent="#dc2626" />
               </div>

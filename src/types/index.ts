@@ -63,6 +63,7 @@ export type MatchEvent = {
   playoff_match_id?: string | null
   team_id: string
   player_name: string
+  player_id?: string | null
   type: 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
   minute: number | null
   created_at: string
@@ -112,6 +113,55 @@ export type LiveGame = {
   timer_running: boolean
   accumulated_secs: number
   started_at: string | null
+  created_at: string
+}
+
+// ── League system ─────────────────────────────────────────────────────────────
+
+export type League = {
+  id: string
+  owner_id: string
+  name: string
+  slug: string
+  sport: string | null
+  logo_url: string | null
+  description: string | null
+  city: string | null
+  country: string
+  meta_title: string | null
+  meta_description: string | null
+  is_public: boolean
+  created_at: string
+}
+
+export type Season = {
+  id: string
+  league_id: string
+  tournament_id: string | null
+  name: string
+  status: 'active' | 'finished'
+  start_date: string | null
+  end_date: string | null
+  created_at: string
+}
+
+export type LeagueTeam = {
+  id: string
+  league_id: string
+  name: string
+  slug: string
+  logo_url: string | null
+  city: string | null
+  created_at: string
+}
+
+export type Player = {
+  id: string
+  league_team_id: string
+  name: string
+  number: number | null
+  position: 'goalkeeper' | 'defender' | 'midfielder' | 'forward' | 'other'
+  photo_url: string | null
   created_at: string
 }
 

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { generatePlayoffBracket } from '@/lib/tournament/playoff'
@@ -498,24 +499,42 @@ export async function startFixture(
   initialHomeScore = 0,
   initialAwayScore = 0,
 ): Promise<{ error?: string }> {
+  // Verify identity with user session
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
+
+  // Verify user is owner OR accepted editor
+  const { data: tournament } = await supabase.from('tournaments').select('user_id').eq('id', tournamentId).single()
+  if (!tournament) return { error: 'Турнир не найден' }
+
+  const isOwner = tournament.user_id === user.id
+  if (!isOwner) {
+    const { data: member } = await supabase
+      .from('tournament_members')
+      .select('role')
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', user.id)
+      .eq('status', 'accepted')
+      .eq('role', 'editor')
+      .maybeSingle()
+    if (!member) return { error: 'Нет доступа' }
+  }
 
   // Live-табло — только для тарифа Про (проверяем план владельца турнира)
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
   if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
+  // Use admin client to bypass RLS for write operations (editors have view-only RLS)
+  const admin = createAdminClient()
+
   // Mark fixture as live
-  const { error: fe } = await supabase
-    .from('fixtures')
-    .update({ status: 'live' })
-    .eq('id', fixtureId)
+  const { error: fe } = await admin.from('fixtures').update({ status: 'live' }).eq('id', fixtureId)
   if (fe) return { error: fe.message }
 
   // Pre-create the live_games record so the board opens immediately
   if (homeTeamId && awayTeamId) {
-    await supabase.from('live_games').upsert({
+    await admin.from('live_games').upsert({
       tournament_id: tournamentId,
       home_team_id: homeTeamId,
       away_team_id: awayTeamId,

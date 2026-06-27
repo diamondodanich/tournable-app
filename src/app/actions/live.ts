@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 // Проверяет план ВЛАДЕЛЬЦА турнира
@@ -59,8 +60,9 @@ export async function initLiveGame(
   tournamentId: string,
   homeTeamId: string,
   awayTeamId: string,
-  fixtureId?: string
-): Promise<{ error?: string }> {
+  fixtureId?: string | null,
+  playoffMatchId?: string | null,
+): Promise<{ data?: Record<string, unknown>; error?: string }> {
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
@@ -68,7 +70,9 @@ export async function initLiveGame(
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
   if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
-  const { error } = await supabase.from('live_games').upsert({
+  // Use admin client — editors can't upsert live_games directly due to RLS
+  const admin = createAdminClient()
+  const { data, error } = await admin.from('live_games').upsert({
     tournament_id: tournamentId,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
@@ -79,11 +83,12 @@ export async function initLiveGame(
     accumulated_secs: 0,
     started_at: null,
     fixture_id: fixtureId ?? null,
-  }, { onConflict: 'tournament_id' })
+    playoff_match_id: playoffMatchId ?? null,
+  }, { onConflict: 'tournament_id' }).select().single()
 
   if (error) return { error: error.message }
   revalidatePath(`/t/${tournamentId}/live`)
-  return {}
+  return { data: data as Record<string, unknown> }
 }
 
 export async function finishLiveMatch(
@@ -92,7 +97,9 @@ export async function finishLiveMatch(
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  const { data: liveGame, error: fetchError } = await supabase
+  const admin = createAdminClient()
+
+  const { data: liveGame, error: fetchError } = await admin
     .from('live_games')
     .select('*')
     .eq('tournament_id', tournamentId)
@@ -102,7 +109,7 @@ export async function finishLiveMatch(
 
   // Save results to fixture if linked (round-robin)
   if (liveGame.fixture_id) {
-    const { error } = await supabase.from('fixtures').update({
+    const { error } = await admin.from('fixtures').update({
       home_score: liveGame.home_score,
       away_score: liveGame.away_score,
       played: true,
@@ -117,7 +124,7 @@ export async function finishLiveMatch(
     const hs = liveGame.home_score
     const as_ = liveGame.away_score
     if (hs !== as_) {
-      const { data: pm } = await supabase
+      const { data: pm } = await admin
         .from('playoff_matches')
         .select('*')
         .eq('id', liveGame.playoff_match_id)
@@ -125,7 +132,7 @@ export async function finishLiveMatch(
 
       if (pm) {
         const winnerId = hs > as_ ? pm.home_team_id : pm.away_team_id
-        await supabase.from('playoff_matches').update({
+        await admin.from('playoff_matches').update({
           home_score: hs,
           away_score: as_,
           winner_id: winnerId,
@@ -133,14 +140,14 @@ export async function finishLiveMatch(
 
         if (pm.winner_to_match && winnerId) {
           const field = pm.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
-          await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
+          await admin.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
         }
       }
     }
   }
 
   // Delete live game record
-  await supabase.from('live_games').delete().eq('tournament_id', tournamentId)
+  await admin.from('live_games').delete().eq('tournament_id', tournamentId)
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   revalidatePath(`/t/${tournamentId}/live`)

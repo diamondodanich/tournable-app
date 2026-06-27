@@ -3,7 +3,15 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
-export type Plan = 'free' | 'pro'
+export type Plan = 'free' | 'pro' | 'enterprise'
+
+function resolvePlan(plan: string | null, expiresAt: string | null): Plan {
+  if (plan === 'enterprise') return 'enterprise'
+  if (plan === 'pro') {
+    if (!expiresAt || new Date(expiresAt) > new Date()) return 'pro'
+  }
+  return 'free'
+}
 
 // ── Читает план текущего пользователя ────────────────────────────────────────
 export async function getUserPlan(): Promise<Plan> {
@@ -19,10 +27,7 @@ export async function getUserPlan(): Promise<Plan> {
     .maybeSingle()
 
   if (error || !data) return 'free'
-  if (data.plan === 'pro') {
-    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
-  }
-  return 'free'
+  return resolvePlan(data.plan, data.plan_expires_at)
 }
 
 // ── Читает план + admin-статус текущего пользователя ─────────────────────────
@@ -41,10 +46,7 @@ export async function getUserPlanAndAdmin(): Promise<{ plan: Plan; isAdmin: bool
   if (error || !data) return { plan: 'free', isAdmin: false }
 
   const isAdmin = data.is_admin === true
-  let plan: Plan = 'free'
-  if (data.plan === 'pro') {
-    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) plan = 'pro'
-  }
+  const plan = resolvePlan(data.plan, data.plan_expires_at)
   return { plan, isAdmin }
 }
 
@@ -68,10 +70,30 @@ export async function getOwnerPlan(tournamentId: string): Promise<Plan> {
     .maybeSingle()
 
   if (error || !data) return 'free'
-  if (data.plan === 'pro') {
-    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
-  }
-  return 'free'
+  return resolvePlan(data.plan, data.plan_expires_at)
+}
+
+// ── Читает план ВЛАДЕЛЬЦА лиги ────────────────────────────────────────────────
+export async function getLeagueOwnerPlan(leagueId: string): Promise<Plan> {
+  noStore()
+  const supabase = await createClient()
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('owner_id')
+    .eq('id', leagueId)
+    .maybeSingle()
+
+  if (!league) return 'free'
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('plan, plan_expires_at')
+    .eq('id', league.owner_id)
+    .maybeSingle()
+
+  if (error || !data) return 'free'
+  return resolvePlan(data.plan, data.plan_expires_at)
 }
 
 // ── Активирует Pro-тариф для пользователя ─────────────────────────────────────

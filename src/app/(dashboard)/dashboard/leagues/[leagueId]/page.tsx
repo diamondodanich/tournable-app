@@ -1,0 +1,149 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect, notFound } from 'next/navigation'
+import { getUserPlan } from '@/app/actions/billing'
+import Link from 'next/link'
+import { ChevronLeft, ExternalLink, Globe } from 'lucide-react'
+import SeasonsTab from './SeasonsTab'
+import TeamsTab from './TeamsTab'
+import SquadsTab from './SquadsTab'
+import SettingsTab from './SettingsTab'
+import type { League, Season, LeagueTeam, Player } from '@/types'
+
+export const dynamic = 'force-dynamic'
+
+const SPORT_LABELS: Record<string, string> = {
+  football: 'Футбол', futsal: 'Футзал', efootball: 'Киберфутбол',
+  basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибербаскетбол',
+  volleyball: 'Волейбол', beach_volleyball: 'Пляжный волейбол',
+  hockey: 'Хоккей', other: 'Другое',
+}
+
+const TABS = [
+  { id: 'seasons',  label: 'Сезоны' },
+  { id: 'teams',    label: 'Команды' },
+  { id: 'squads',   label: 'Составы' },
+  { id: 'settings', label: 'Настройки' },
+]
+
+export default async function LeagueManagePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ leagueId: string }>
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const plan = await getUserPlan()
+  if (plan !== 'enterprise') redirect('/dashboard/leagues')
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { leagueId } = await params
+  const { tab: activeTab = 'seasons' } = await searchParams
+
+  const [
+    { data: leagueRaw },
+    { data: seasonsRaw },
+    { data: teamsRaw },
+    { data: tournamentsRaw },
+  ] = await Promise.all([
+    supabase.from('leagues').select('*').eq('id', leagueId).eq('owner_id', user.id).maybeSingle(),
+    supabase.from('seasons').select('*').eq('league_id', leagueId).order('created_at', { ascending: false }),
+    supabase.from('league_teams').select('*, players(*)').eq('league_id', leagueId).order('name'),
+    supabase.from('tournaments').select('id, name').eq('user_id', user.id).is('deleted_at', null).order('created_at', { ascending: false }),
+  ])
+
+  if (!leagueRaw) notFound()
+
+  const league = leagueRaw as League
+  const seasons = (seasonsRaw ?? []) as Season[]
+  const teamsWithPlayers = (teamsRaw ?? []) as (LeagueTeam & { players: Player[] })[]
+  const teams = teamsWithPlayers.map(({ players: _p, ...t }) => t) as LeagueTeam[]
+  const tournaments = (tournamentsRaw ?? []) as { id: string; name: string }[]
+
+  const activeTabId = TABS.some(t => t.id === activeTab) ? activeTab : 'seasons'
+
+  return (
+    <div>
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <Link href="/dashboard/leagues" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-4">
+          <ChevronLeft size={14} /> Все лиги
+        </Link>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <h1 className="text-2xl font-black text-gray-900">{league.name}</h1>
+              {league.sport && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                  {SPORT_LABELS[league.sport] ?? league.sport}
+                </span>
+              )}
+            </div>
+            {league.city && <p className="text-sm text-gray-400">{league.city}</p>}
+          </div>
+          {league.is_public && (
+            <a
+              href={`/leagues/${league.slug}`}
+              target="_blank"
+              className="flex items-center gap-1.5 text-sm text-purple-500 hover:text-purple-700 font-medium transition-colors shrink-0"
+            >
+              <Globe size={14} />
+              Публичная страница
+              <ExternalLink size={11} />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* ── Tabs ────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1 mb-6 border-b border-gray-100 pb-0">
+        {TABS.map(tab => (
+          <Link
+            key={tab.id}
+            href={`?tab=${tab.id}`}
+            className={`px-4 py-2.5 text-sm font-bold rounded-t-xl transition-colors -mb-px ${
+              activeTabId === tab.id
+                ? 'bg-white border border-gray-100 border-b-white text-purple-600'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {tab.label}
+            {tab.id === 'seasons' && seasons.length > 0 && (
+              <span className="ml-1.5 text-[10px] font-black bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">
+                {seasons.length}
+              </span>
+            )}
+            {tab.id === 'teams' && teams.length > 0 && (
+              <span className="ml-1.5 text-[10px] font-black bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">
+                {teams.length}
+              </span>
+            )}
+            {tab.id === 'squads' && teamsWithPlayers.reduce((s, t) => s + t.players.length, 0) > 0 && (
+              <span className="ml-1.5 text-[10px] font-black bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">
+                {teamsWithPlayers.reduce((s, t) => s + t.players.length, 0)}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Tab content ─────────────────────────────────────────────────── */}
+      <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100">
+        {activeTabId === 'seasons' && (
+          <SeasonsTab leagueId={leagueId} seasons={seasons} tournaments={tournaments} />
+        )}
+        {activeTabId === 'teams' && (
+          <TeamsTab leagueId={leagueId} teams={teams} />
+        )}
+        {activeTabId === 'squads' && (
+          <SquadsTab leagueId={leagueId} teams={teamsWithPlayers} />
+        )}
+        {activeTabId === 'settings' && (
+          <SettingsTab league={league} />
+        )}
+      </div>
+    </div>
+  )
+}

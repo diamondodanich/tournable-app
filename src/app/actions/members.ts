@@ -1,9 +1,16 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { sendInviteEmail } from '@/lib/email'
+
+function getAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  return createAdminClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+}
 
 export async function createInviteLink(tournamentId: string, role: 'editor' | 'viewer') {
   const supabase = await createClient()
@@ -30,7 +37,9 @@ export async function acceptInvite(token: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/login?next=/invite/${token}`)
 
-  const { data: member } = await supabase
+  // Use admin client to read by token (bypasses RLS — token itself is the auth)
+  const admin = getAdmin()
+  const { data: member } = await admin
     .from('tournament_members')
     .select('*')
     .eq('invite_token', token)
@@ -39,8 +48,9 @@ export async function acceptInvite(token: string) {
 
   if (!member) return { error: 'Приглашение недействительно или уже использовано' }
 
-  const { error } = await supabase.from('tournament_members').update({
-    user_id: user.id,
+  // Use admin client for UPDATE — RLS may block the invited user from updating the row
+  const { error } = await admin.from('tournament_members').update({
+    user_id: user!.id,
     status: 'accepted',
   }).eq('id', member.id)
 

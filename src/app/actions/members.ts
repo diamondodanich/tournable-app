@@ -33,34 +33,41 @@ export async function createInviteLink(tournamentId: string, role: 'editor' | 'v
 }
 
 export async function acceptInvite(token: string): Promise<{ ok?: true; tournamentId?: string; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'not_authed' }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'not_authed' }
 
-  // SELECT with user session (RLS allows pending invites to be read by token)
-  const { data: member } = await supabase
-    .from('tournament_members')
-    .select('id, tournament_id')
-    .eq('invite_token', token)
-    .eq('status', 'pending')
-    .single()
+    // SELECT with user session (RLS allows pending invites to be read by token)
+    const { data: member, error: selectErr } = await supabase
+      .from('tournament_members')
+      .select('id, tournament_id')
+      .eq('invite_token', token)
+      .eq('status', 'pending')
+      .single()
 
-  if (!member) return { error: 'Приглашение недействительно или уже использовано' }
+    if (selectErr) return { error: `select_err: ${selectErr.code} ${selectErr.message}` }
+    if (!member) return { error: 'invite_not_found' }
 
-  // UPDATE with admin client to bypass RLS
-  const admin = getAdmin()
-  const { error } = await admin
-    .from('tournament_members')
-    .update({ user_id: user.id, status: 'accepted' })
-    .eq('id', member.id)
+    // Try UPDATE with admin client (bypasses RLS)
+    const admin = getAdmin()
+    const { error: updateErr } = await admin
+      .from('tournament_members')
+      .update({ user_id: user.id, status: 'accepted' })
+      .eq('id', member.id)
 
-  if (error) {
-    console.error('[acceptInvite] update error:', error.code, error.message)
-    return { error: `update_failed: ${error.code} ${error.message}` }
+    if (updateErr) {
+      console.error('[acceptInvite] update error:', updateErr)
+      return { error: `update_err: ${updateErr.code} ${updateErr.message}` }
+    }
+
+    revalidatePath(`/dashboard/tournament/${member.tournament_id}`)
+    return { ok: true, tournamentId: member.tournament_id }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[acceptInvite] exception:', msg)
+    return { error: `exception: ${msg}` }
   }
-
-  revalidatePath(`/dashboard/tournament/${member.tournament_id}`)
-  return { ok: true, tournamentId: member.tournament_id }
 }
 
 export async function removeMember(memberId: string, tournamentId: string) {

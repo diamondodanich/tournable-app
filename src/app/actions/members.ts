@@ -55,8 +55,8 @@ export async function acceptInvite(token: string): Promise<{ ok?: true; tourname
     .eq('id', member.id)
 
   if (error) {
-    console.error('[acceptInvite] update error:', error)
-    return { error: 'Не удалось принять приглашение. Попробуйте позже.' }
+    console.error('[acceptInvite] update error:', error.code, error.message)
+    return { error: `update_failed: ${error.code} ${error.message}` }
   }
 
   revalidatePath(`/dashboard/tournament/${member.tournament_id}`)

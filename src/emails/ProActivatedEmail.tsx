@@ -1,6 +1,6 @@
 import {
   Body, Button, Container, Head, Heading, Hr, Html,
-  Preview, Section, Text,
+  Img, Preview, Section, Text,
 } from '@react-email/components'
 
 interface Props {
@@ -23,8 +23,19 @@ export default function ProActivatedEmail({ email, expiresAt, appUrl, period, am
         <Container style={container}>
 
           <Section style={header}>
+            <table align="center" cellPadding="0" cellSpacing="0" style={{ margin: '0 auto 8px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '5px 7px 3px', verticalAlign: 'middle' }}>
+                    <Img src={`${appUrl}/logo-green.png`} width={30} height={30} alt="Tournable" style={{ display: 'block' }} />
+                  </td>
+                  <td style={{ paddingLeft: '10px', verticalAlign: 'middle' }}>
+                    <span style={{ color: '#ffffff', fontSize: '18px', fontWeight: 900, letterSpacing: '-0.03em', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>TOURNABLE</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
             <Text style={headerBadge}>PRO</Text>
-            <Text style={headerTitle}>TOURNABLE</Text>
           </Section>
 
           <Section style={heroSection}>

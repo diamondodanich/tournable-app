@@ -63,8 +63,18 @@ export default function InviteEmail({ tournamentName, inviteUrl, role, appUrl, l
 
           {/* Logo */}
           <Section style={logoSection}>
-            <Img src={`${appUrl}/logo-green.png`} width={40} height={40} alt="Tournable" style={{ margin: '0 auto 8px' }} />
-            <Text style={logoText}>TOURNABLE</Text>
+            <table align="center" cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
+              <tbody>
+                <tr>
+                  <td style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '5px 7px 3px', verticalAlign: 'middle' }}>
+                    <Img src={`${appUrl}/logo-green.png`} width={30} height={30} alt="Tournable" style={{ display: 'block' }} />
+                  </td>
+                  <td style={{ paddingLeft: '10px', verticalAlign: 'middle' }}>
+                    <span style={{ color: '#ffffff', fontSize: '18px', fontWeight: 900, letterSpacing: '-0.03em', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>TOURNABLE</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </Section>
 
           {/* Content */}

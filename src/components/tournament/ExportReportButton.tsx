@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
-import { FileDown, Lock } from 'lucide-react'
+import { FileDown, Loader2 } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
-import UpgradePrompt from '@/components/billing/UpgradePrompt'
+import { toast } from 'sonner'
 import { tx, type Lang } from '@/lib/i18n'
 
 export default function ExportReportButton({ fileName, isPro = false, lang = 'ru' }: {
@@ -15,11 +15,8 @@ export default function ExportReportButton({ fileName, isPro = false, lang = 'ru
 }) {
   const T = tx[lang]
   const [loading, setLoading] = useState(false)
-  const [showUpgrade, setShowUpgrade] = useState(false)
 
   async function handleExport() {
-    if (!isPro) { setShowUpgrade(true); return }
-
     const el = document.getElementById('full-report-export') as HTMLElement | null
     if (!el) return
     setLoading(true)
@@ -40,26 +37,37 @@ export default function ExportReportButton({ fileName, isPro = false, lang = 'ru
 
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmW, mmH] })
       pdf.addImage(dataUrl, 'PNG', 0, 0, mmW, mmH)
+
+      if (!isPro) {
+        pdf.setFontSize(9)
+        pdf.setTextColor(180, 180, 180)
+        pdf.setFont('helvetica', 'italic')
+        pdf.text('tournable.app', mmW - 3, mmH - 3, { align: 'right' })
+      }
+
       pdf.save(`${fileName}.pdf`)
+
+      if (!isPro) {
+        toast.info('PDF скачан', {
+          description: 'Убрать водяной знак — подключите Pro',
+          action: { label: 'Pro', onClick: () => { window.location.href = '/pricing' } },
+          duration: 6000,
+        })
+      }
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <>
-      {showUpgrade && (
-        <UpgradePrompt featureName="Экспорт PDF" onClose={() => setShowUpgrade(false)} />
-      )}
-      <Button
-        onClick={handleExport}
-        disabled={loading}
-        size="sm"
-        className={`gap-2 ${isPro ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200'}`}
-      >
-        {isPro ? <FileDown size={15} /> : <Lock size={14} />}
-        {loading ? T.exportPdfLoading : isPro ? T.exportPdf : T.exportPdfPro}
-      </Button>
-    </>
+    <Button
+      onClick={handleExport}
+      disabled={loading}
+      size="sm"
+      className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+    >
+      {loading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={15} />}
+      {loading ? T.exportPdfLoading : T.exportPdf}
+    </Button>
   )
 }

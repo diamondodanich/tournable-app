@@ -14,11 +14,12 @@ import TournamentCoverBanner from './TournamentCoverBanner'
 interface Props {
   tournament: Tournament
   isOwner?: boolean
+  isPro?: boolean
   members?: TournamentMember[]
   lang?: Lang
 }
 
-export default function TournamentHeader({ tournament, isOwner = true, members = [], lang = 'ru' }: Props) {
+export default function TournamentHeader({ tournament, isOwner = true, isPro = false, members = [], lang = 'ru' }: Props) {
   const T = tx[lang]
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -89,13 +90,24 @@ export default function TournamentHeader({ tournament, isOwner = true, members =
 
         <div className="flex items-center gap-2 flex-wrap">
           {isOwner && (
-            <SharePanel
-              tournamentId={tournament.id}
-              tournamentName={tournament.name}
-              publicUrl={publicUrl}
-              members={members}
-              lang={lang}
-            />
+            <div className="flex flex-col items-start gap-1">
+              <SharePanel
+                tournamentId={tournament.id}
+                tournamentName={tournament.name}
+                publicUrl={publicUrl}
+                members={members}
+                isPro={isPro}
+                lang={lang}
+              />
+              {!isPro && (
+                <a
+                  href="/pricing"
+                  className="text-[10px] text-gray-400 hover:text-emerald-600 transition-colors leading-none px-0.5 whitespace-nowrap"
+                >
+                  Убрать бэдж Tournable с публичной страницы → Pro
+                </a>
+              )}
+            </div>
           )}
 
           {isOwner && !confirming && (

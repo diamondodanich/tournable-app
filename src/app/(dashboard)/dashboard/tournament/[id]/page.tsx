@@ -254,7 +254,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
-      <TournamentHeader tournament={tournament} isOwner={isOwner} members={members} lang={lang} />
+      <TournamentHeader tournament={tournament} isOwner={isOwner} isPro={isPro} members={members} lang={lang} />
 
       {/* Hidden off-screen container for full PDF export */}
       <div

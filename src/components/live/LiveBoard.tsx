@@ -399,6 +399,26 @@ export default function LiveBoard({
         toast.error(error.message)
       } else {
         feedback.card()
+        // One-time hint: share Live-табло (shown only on first event ever)
+        const HINT_KEY = 'live-share-hint-shown'
+        if (!localStorage.getItem(HINT_KEY)) {
+          localStorage.setItem(HINT_KEY, '1')
+          const shareUrl = `${window.location.origin}/t/${tournament.id}`
+          toast.info('Поделитесь Live-табло — участники смогут следить в реальном времени', {
+            action: {
+              label: 'Поделиться',
+              onClick: async () => {
+                if (navigator.share) {
+                  try { await navigator.share({ title: tournament.name, url: shareUrl }) } catch {}
+                } else {
+                  await navigator.clipboard.writeText(shareUrl)
+                  toast.success('Ссылка скопирована!')
+                }
+              },
+            },
+            duration: 10000,
+          })
+        }
       }
       if (data) {
         setEvents(prev => {

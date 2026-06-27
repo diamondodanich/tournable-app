@@ -16,13 +16,14 @@ interface Props {
   tournamentName: string
   publicUrl: string
   members: TournamentMember[]
+  isPro?: boolean
   lang?: Lang
 }
 
 type Mode = null | 'view' | 'edit'
 
 // ─────────────────────────────────────────────────────────────
-export default function SharePanel({ tournamentId, tournamentName, publicUrl, members: initial, lang = 'ru' }: Props) {
+export default function SharePanel({ tournamentId, tournamentName, publicUrl, members: initial, isPro = false, lang = 'ru' }: Props) {
   const T = tx[lang]
   const [open, setOpen]             = useState(false)
   const [mode, setMode]             = useState<Mode>(null)
@@ -296,17 +297,28 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       onChange={e => setEmailInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleEmailInvite()}
                       placeholder="email@example.com"
-                      className="flex-1 h-8 rounded-lg border border-gray-200 px-3 text-xs focus:outline-none focus:border-violet-400 min-w-0"
+                      disabled={!isPro}
+                      className={`flex-1 h-8 rounded-lg border px-3 text-xs focus:outline-none min-w-0 ${
+                        isPro
+                          ? 'border-gray-200 focus:border-violet-400'
+                          : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                      }`}
                     />
                     <button
                       onClick={handleEmailInvite}
-                      disabled={sendingEmail || !emailInput.trim()}
+                      disabled={sendingEmail || !emailInput.trim() || !isPro}
                       className="h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1 shrink-0"
                     >
                       <Send size={11} />
                       {sendingEmail ? '…' : T.shareEmailSend}
                     </button>
                   </div>
+                  {!isPro && (
+                    <p className="text-[11px] text-gray-400">
+                      Совместное редактирование доступно с{' '}
+                      <a href="/pricing" className="text-emerald-600 font-bold hover:underline">Pro</a>
+                    </p>
+                  )}
                 </div>
 
                 {/* Generate another */}

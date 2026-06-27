@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Handshake, RectangleVertical } from 'lucide-react'
+import { Handshake, RectangleVertical, Lock } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 import { tx, type Lang } from '@/lib/i18n'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
@@ -162,6 +163,38 @@ export default function StatsTab({
           </Table>
         </div>
       )}
+
+      {/* Enterprise preview — season player profiles */}
+      <div className="relative rounded-2xl overflow-hidden border border-gray-100 mt-2">
+        <div className="select-none pointer-events-none opacity-40 p-4 space-y-2.5" aria-hidden>
+          {[['А. Иванов', '18 матчей', '12 голов'], ['Б. Петров', '16 матчей', '9 голов'], ['В. Сидоров', '14 матчей', '7 голов']].map(([name, games, stat]) => (
+            <div key={name} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
+              <div className="flex-1">
+                <div className="h-3 bg-gray-200 rounded w-24 mb-1" />
+                <div className="h-2.5 bg-gray-100 rounded w-16" />
+              </div>
+              <div className="text-right">
+                <div className="h-3 bg-gray-200 rounded w-12 mb-1" />
+                <div className="h-2.5 bg-gray-100 rounded w-8 ml-auto" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[3px]">
+          <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center mb-3 shadow-lg">
+            <Lock size={18} className="text-white" />
+          </div>
+          <p className="text-sm font-black text-gray-900 mb-0.5">Полная статистика игроков по сезонам</p>
+          <p className="text-xs text-gray-400 mb-3">Enterprise</p>
+          <Link
+            href="/pricing#enterprise"
+            className="text-xs font-bold px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+          >
+            Узнать больше
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

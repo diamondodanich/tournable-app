@@ -4,27 +4,22 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Tournable',
     short_name: 'Tournable',
-    description: 'Управление спортивными турнирами',
+    description: 'Создавайте и управляйте турнирами онлайн',
     start_url: '/dashboard',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#ffffff',
+    background_color: '#0f0f11',
     theme_color: '#059669',
     icons: [
       {
-        src: '/apple-icon',
-        sizes: '500x500',
-        type: 'image/png',
-      },
-      {
         src: '/pwa-icon.png',
-        sizes: '500x500',
+        sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
         src: '/pwa-icon.png',
-        sizes: '500x500',
+        sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
       },

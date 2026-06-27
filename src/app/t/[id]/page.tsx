@@ -1,13 +1,34 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import StandingsTab from '@/components/tournament/StandingsTab'
 import GroupStandingsTab from '@/components/tournament/GroupStandingsTab'
 import StatsTab from '@/components/tournament/StatsTab'
 import PublicFixturesTab from '@/components/tournament/PublicFixturesTab'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
-import { Trophy } from 'lucide-react'
+import { Trophy, Plus } from 'lucide-react'
 import type { Metadata } from 'next'
+import { getOwnerPlan } from '@/app/actions/billing'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+async function getTournamentByIdOrSlug(supabase: Awaited<ReturnType<typeof createClient>>, idOrSlug: string) {
+  if (UUID_RE.test(idOrSlug)) {
+    const { data } = await supabase.from('tournaments').select('*').eq('id', idOrSlug).single()
+    return data
+  }
+  const { data } = await supabase.from('tournaments').select('*').eq('slug', idOrSlug).single()
+  return data
+}
+
+const SPORT_LABELS: Record<string, string> = {
+  football: 'Футбол', futsal: 'Мини-футбол', efootball: 'Киберфутбол',
+  basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибербаскетбол',
+  volleyball: 'Волейбол', beach_volleyball: 'Пляжный волейбол',
+  hockey: 'Хоккей', other: 'Другое',
+}
 
 // ── Inline public bracket (read-only, no actions) ─────────────────────────────
 const ROUND_LABELS: Record<number, string> = {
@@ -106,8 +127,27 @@ function PublicBracket({
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const supabase = await createClient()
-  const { data } = await supabase.from('tournaments').select('name').eq('id', id).single()
-  return { title: data ? `${data.name} — Tournable` : 'Tournable' }
+  const data = await getTournamentByIdOrSlug(supabase, id)
+  if (!data) return { title: 'Tournable' }
+
+  const sportLabel = data.sport ? (SPORT_LABELS[data.sport] ?? data.sport) : null
+  const description = sportLabel
+    ? `Турнир по ${sportLabel} — таблица, расписание, результаты на Tournable`
+    : 'Таблица, расписание и результаты матчей на Tournable'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
+
+  return {
+    title: `${data.name} — Tournable`,
+    description,
+    openGraph: {
+      title: data.name,
+      description,
+      type: 'website',
+      url: `${appUrl}/t/${data.slug ?? data.id}`,
+      siteName: 'Tournable',
+    },
+    twitter: { card: 'summary', title: data.name, description },
+  }
 }
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -121,16 +161,30 @@ export default async function PublicTournamentPage({ params }: { params: Promise
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', id).single()
+  const tournament = await getTournamentByIdOrSlug(supabase, id)
   if (!tournament) notFound()
 
-  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }] = await Promise.all([
-    supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
-    supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
-    supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', id).order('round_order').order('match_order'),
+  const cookieStore = await cookies()
+  const langRaw = cookieStore.get('lang')?.value ?? 'ru'
+
+  const BADGE_TOOLTIP: Record<string, string> = {
+    ru: 'Создайте свой турнир бесплатно',
+    kz: 'Өз жарысыңызды тегін жасаңыз',
+    en: 'Create your tournament for free',
+  }
+  const badgeTooltip = BADGE_TOOLTIP[langRaw] ?? BADGE_TOOLTIP.ru
+
+  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, ownerPlan] = await Promise.all([
+    supabase.from('teams').select('*').eq('tournament_id', tournament.id).order('created_at'),
+    supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', tournament.id).order('matchday'),
+    supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', tournament.id).order('round_order').order('match_order'),
+    getOwnerPlan(tournament.id),
   ])
 
+  const ownerIsPro = ownerPlan === 'pro'
+
   const fmt = tournament.format ?? 'round_robin'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allEvents = [
@@ -284,6 +338,36 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <StatsTab teams={teams ?? []} events={allEvents} />
             </TabsContent>
           </Tabs>
+        )}
+        {/* CTA for viewers */}
+        <div className="mt-10 bg-emerald-600 rounded-2xl p-6 text-center text-white">
+          <Trophy size={28} className="mx-auto mb-3 opacity-80" />
+          <p className="font-black text-lg mb-1">Организуй свой турнир бесплатно</p>
+          <p className="text-sm text-emerald-100 mb-5">Всё включено: расписание, таблица, Live-счёт</p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 font-bold px-6 py-2.5 rounded-xl shadow-md transition-colors text-sm"
+          >
+            <Plus size={15} /> Создать турнир
+          </Link>
+        </div>
+
+        {/* Powered by Tournable badge */}
+        {!ownerIsPro && (
+          <div className="mt-6 text-center pb-2">
+            <a
+              href={`${appUrl}?ref=tournament-badge`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={badgeTooltip}
+              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors font-medium"
+            >
+              <span className="w-4 h-4 rounded bg-emerald-600 inline-flex items-center justify-center shrink-0">
+                <Trophy size={9} className="text-white" />
+              </span>
+              Powered by Tournable
+            </a>
+          </div>
         )}
       </main>
     </div>

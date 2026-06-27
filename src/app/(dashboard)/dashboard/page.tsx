@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { getUserPlan } from '@/app/actions/billing'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck } from 'lucide-react'
+import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
+import NewTournamentButton from '@/components/tournament/NewTournamentButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,26 +92,39 @@ export default async function DashboardPage() {
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
 
-  const { data: tournaments } = await supabase
-    .from('tournaments')
-    .select('*, teams(count)')
-    .eq('user_id', user!.id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+  const [plan, { data: tournaments }, { data: memberRows }, { data: showcaseTournaments }] = await Promise.all([
+    getUserPlan(),
+    supabase
+      .from('tournaments')
+      .select('*, teams(count)')
+      .eq('user_id', user!.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('tournament_members')
+      .select('tournament_id, role, tournaments(*, teams(count))')
+      .eq('user_id', user!.id)
+      .eq('status', 'accepted'),
+    // Public tournaments for empty-state showcase (requires is_public column in DB)
+    supabase
+      .from('tournaments')
+      .select('id, name, logo_url, sport, slug, format')
+      .eq('is_public', true)
+      .is('deleted_at', null)
+      .neq('user_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(3),
+  ])
 
-  // Invited tournaments (editor/viewer role)
-  const { data: memberRows } = await supabase
-    .from('tournament_members')
-    .select('tournament_id, role, tournaments(*, teams(count))')
-    .eq('user_id', user!.id)
-    .eq('status', 'accepted')
-
+  const isPro = plan === 'pro'
   const invitedIds = new Set((tournaments ?? []).map((t: TournamentWithCount) => t.id))
   const invitedTournaments = (memberRows ?? [])
     .filter((m: any) => m.tournaments && !invitedIds.has(m.tournament_id) && !m.tournaments.deleted_at)
     .map((m: any) => ({ ...m.tournaments, _role: m.role as string })) as (TournamentWithCount & { _role: string })[]
 
   const list = (tournaments ?? []) as TournamentWithCount[]
+  // First active (generated) tournament — used by NewTournamentButton modal
+  const firstActive = list.find(t => t.generated) ?? list[0] ?? null
 
   return (
     <div>
@@ -118,12 +133,11 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-black text-gray-900">{tx.title}</h1>
           <p className="text-sm text-gray-400 mt-0.5">{tx.subtitle}</p>
         </div>
-        <Link
-          href="/dashboard/new"
-          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap shrink-0"
-        >
-          <Plus size={15} /> {tx.newTournament}
-        </Link>
+        <NewTournamentButton
+          isPro={isPro}
+          activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
+          label={tx.newTournament}
+        />
       </div>
 
       {list.length === 0 ? (
@@ -159,6 +173,30 @@ export default async function DashboardPage() {
               )
             })}
           </div>
+
+          {/* Live examples — public tournaments from DB */}
+          {(showcaseTournaments ?? []).length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Примеры турниров</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(showcaseTournaments ?? []).map((t: any) => (
+                  <Link
+                    key={t.id}
+                    href={`/t/${t.slug ?? t.id}`}
+                    target="_blank"
+                    className="bg-white/70 rounded-2xl border border-gray-100 hover:border-emerald-200 hover:shadow-sm transition-all p-4 flex items-center gap-3"
+                  >
+                    <TeamAvatar name={t.name} logoUrl={t.logo_url} size={36} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm truncate">{t.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t.sport ?? '—'}</p>
+                    </div>
+                    <ExternalLink size={13} className="text-gray-300 shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

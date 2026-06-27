@@ -195,6 +195,17 @@ export default function ChampionBanner({
             </div>
           </div>
         )}
+
+        {/* Season CTA */}
+        <div className="mt-5 pt-4 border-t border-white/10 text-center" style={{ animation: 'champ-rise .9s ease-out both' }}>
+          <p className="text-xs text-white/50 mb-2.5">Сохраните историю и запустите следующий сезон</p>
+          <a
+            href="/pricing#enterprise"
+            className="inline-flex items-center gap-1.5 h-8 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-xs font-bold transition-colors backdrop-blur-sm border border-white/10"
+          >
+            Создать лигу с сезонами → Enterprise
+          </a>
+        </div>
       </div>
     </div>
   )

@@ -20,6 +20,9 @@ export type Tournament = {
   // Sport (subtype value, e.g. 'football', 'basketball', 'efootball')
   sport: string | null
   cover_url: string | null
+  slug: string | null
+  is_public: boolean
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }

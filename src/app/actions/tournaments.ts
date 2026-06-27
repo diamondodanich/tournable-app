@@ -5,6 +5,26 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { generatePlayoffBracket } from '@/lib/tournament/playoff'
 
+// ─── Slug generation ──────────────────────────────────────────────────────────
+const CYRILLIC: Record<string, string> = {
+  а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',
+  к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',
+  х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',
+  ә:'a',ғ:'g',қ:'k',ң:'n',ө:'o',ұ:'u',ү:'u',һ:'h',і:'i',
+}
+
+function toSlug(name: string, id: string): string {
+  const base = name
+    .toLowerCase()
+    .split('')
+    .map(c => CYRILLIC[c] ?? c)
+    .join('')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50)
+  return `${base}-${id.slice(0, 6)}`
+}
+
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
 async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -81,7 +101,7 @@ export async function createTournamentWithSetup(
     supabase.from('tournaments').select('*', { count: 'exact', head: true }).eq('user_id', user.id).is('deleted_at', null),
   ])
 
-  if (plan === 'free' && (existingCount ?? 0) >= 3) {
+  if (plan === 'free' && (existingCount ?? 0) >= 1) {
     return { error: 'PLAN_LIMIT_TOURNAMENTS' }
   }
 
@@ -92,11 +112,16 @@ export async function createTournamentWithSetup(
   }
 
   // ── Create tournament ────────────────────────────────────────────────────
+  const newId = crypto.randomUUID()
+  const slug = toSlug(name.trim(), newId)
+
   const { data: t, error: tErr } = await supabase
     .from('tournaments')
     .insert({
+      id: newId,
       user_id: user.id,
       name: name.trim(),
+      slug,
       num_rounds: numRounds,
       format,
       match_periods:       settings?.matchPeriods      ?? 2,
@@ -328,6 +353,23 @@ export async function deleteTournament(id: string) {
     .eq('id', id)
   revalidatePath('/dashboard')
   redirect('/dashboard')
+}
+
+// Archive without redirect — used by NewTournamentButton modal to free the free-plan slot
+export async function archiveTournament(id: string): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard')
+  return { ok: true }
 }
 
 export async function addTeam(tournamentId: string, name: string) {

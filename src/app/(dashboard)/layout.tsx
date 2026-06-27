@@ -8,6 +8,7 @@ import { User } from 'lucide-react'
 import LangSwitcher from '@/components/dashboard/LangSwitcher'
 import SupportWidget from '@/components/landing/SupportWidget'
 import SignOutButton from '@/components/account/SignOutButton'
+import InstallPrompt from '@/components/InstallPrompt'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -141,6 +142,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── Support widget ────────────────────────────────────────────── */}
       <SupportWidget lang={lang} />
+
+      {/* ── PWA install prompt (mobile only) ─────────────────────────── */}
+      <InstallPrompt />
     </div>
   )
 }

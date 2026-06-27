@@ -32,32 +32,35 @@ export async function createInviteLink(tournamentId: string, role: 'editor' | 'v
   return { token }
 }
 
-export async function acceptInvite(token: string) {
+export async function acceptInvite(token: string): Promise<{ ok?: true; tournamentId?: string; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect(`/login?next=/invite/${token}`)
+  if (!user) return { error: 'not_authed' }
 
-  // Use admin client to read by token (bypasses RLS — token itself is the auth)
-  const admin = getAdmin()
-  const { data: member } = await admin
+  // SELECT with user session (RLS allows pending invites to be read by token)
+  const { data: member } = await supabase
     .from('tournament_members')
-    .select('*')
+    .select('id, tournament_id')
     .eq('invite_token', token)
     .eq('status', 'pending')
     .single()
 
   if (!member) return { error: 'Приглашение недействительно или уже использовано' }
 
-  // Use admin client for UPDATE — RLS may block the invited user from updating the row
-  const { error } = await admin.from('tournament_members').update({
-    user_id: user!.id,
-    status: 'accepted',
-  }).eq('id', member.id)
+  // UPDATE with admin client to bypass RLS
+  const admin = getAdmin()
+  const { error } = await admin
+    .from('tournament_members')
+    .update({ user_id: user.id, status: 'accepted' })
+    .eq('id', member.id)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[acceptInvite] update error:', error)
+    return { error: 'Не удалось принять приглашение. Попробуйте позже.' }
+  }
 
   revalidatePath(`/dashboard/tournament/${member.tournament_id}`)
-  redirect(`/dashboard/tournament/${member.tournament_id}`)
+  return { ok: true, tournamentId: member.tournament_id }
 }
 
 export async function removeMember(memberId: string, tournamentId: string) {

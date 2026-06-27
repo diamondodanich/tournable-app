@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy } from 'lucide-react'
+import AcceptButton from './AcceptButton'
 
 const T = {
   ru: {
@@ -39,12 +38,6 @@ const T = {
   },
 }
 
-function getAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  return createAdmin(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
-}
-
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const supabase = await createClient()
@@ -55,7 +48,6 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/login?next=/invite/${token}`)
 
-  // SELECT with user session — RLS allows reading pending invites by token
   const { data: member } = await supabase
     .from('tournament_members')
     .select('id, role, status, tournament_id, tournaments(name)')
@@ -81,28 +73,6 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const tournamentName = (member.tournaments as unknown as { name: string } | null)?.name ?? ''
   const roleLabel = member.role === 'editor' ? tx.editorRole : tx.viewerRole
 
-  async function handleAccept() {
-    'use server'
-    try {
-      const adm = getAdmin()
-      const { error } = await adm
-        .from('tournament_members')
-        .update({ user_id: user!.id, status: 'accepted' })
-        .eq('invite_token', token)
-        .eq('status', 'pending')
-
-      if (error) {
-        console.error('[invite] accept error:', error)
-        return
-      }
-    } catch (e) {
-      console.error('[invite] accept exception:', e)
-      return
-    }
-
-    redirect(`/dashboard/tournament/${member!.tournament_id}`)
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-white p-4">
       <Card className="max-w-sm w-full">
@@ -116,11 +86,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
           <p className="text-gray-700">
             {tx.body(tournamentName, roleLabel)}
           </p>
-          <form action={handleAccept}>
-            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
-              {tx.btnAccept}
-            </Button>
-          </form>
+          <AcceptButton token={token} label={tx.btnAccept} errorLabel={tx.error} />
         </CardContent>
       </Card>
     </div>

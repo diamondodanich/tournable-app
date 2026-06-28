@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteAccount } from '@/app/actions/auth'
 import { Trash2, X, Loader2, AlertTriangle } from 'lucide-react'
 
-const CONFIRM_WORD = 'УДАЛИТЬ'
+const CONFIRM_WORD = 'РЈР”РђР›РРўР¬'
 
 export default function DeleteAccountButton({ email }: { email: string }) {
   const router = useRouter()
@@ -52,28 +52,28 @@ export default function DeleteAccountButton({ email }: { email: string }) {
         <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
           <AlertTriangle className="w-6 h-6 text-red-500" />
         </div>
-        <h3 className="text-lg font-black text-gray-900 mb-1">Удалить аккаунт навсегда?</h3>
+        <h3 className="text-lg font-black text-gray-900 mb-1">РЈРґР°Р»РёС‚СЊ Р°РєРєР°СѓРЅС‚ РЅР°РІСЃРµРіРґР°?</h3>
         <p className="text-sm text-gray-500 leading-relaxed mb-5">
-          Это действие необратимо. Будут безвозвратно удалены аккаунт <span className="font-semibold text-gray-700 break-all">{email}</span>,
-          все турниры, команды, расписания и статистика. Восстановить данные будет невозможно.
+          Р­С‚Рѕ РґРµР№СЃС‚РІРёРµ РЅРµРѕР±СЂР°С‚РёРјРѕ. Р‘СѓРґСѓС‚ Р±РµР·РІРѕР·РІСЂР°С‚РЅРѕ СѓРґР°Р»РµРЅС‹ Р°РєРєР°СѓРЅС‚ <span className="font-semibold text-gray-700 break-all">{email}</span>,
+          РІСЃРµ С‚СѓСЂРЅРёСЂС‹, РєРѕРјР°РЅРґС‹, СЂР°СЃРїРёСЃР°РЅРёСЏ Рё СЃС‚Р°С‚РёСЃС‚РёРєР°. Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РґР°РЅРЅС‹Рµ Р±СѓРґРµС‚ РЅРµРІРѕР·РјРѕР¶РЅРѕ.
         </p>
 
         {notConfigured ? (
           <div className="space-y-4">
             <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-700">
-              Автоматическое удаление пока не настроено на сервере. Отправьте запрос — мы удалим аккаунт вручную в течение 24 часов.
+              РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ СѓРґР°Р»РµРЅРёРµ РїРѕРєР° РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕ РЅР° СЃРµСЂРІРµСЂРµ. РћС‚РїСЂР°РІСЊС‚Рµ Р·Р°РїСЂРѕСЃ вЂ” РјС‹ СѓРґР°Р»РёРј Р°РєРєР°СѓРЅС‚ РІСЂСѓС‡РЅСѓСЋ РІ С‚РµС‡РµРЅРёРµ 24 С‡Р°СЃРѕРІ.
             </div>
             <a
-              href={`mailto:hello@tournable.app?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${email}`)}`}
+              href={`mailto:info@tournable.app?subject=${encodeURIComponent('Р—Р°РїСЂРѕСЃ РЅР° СѓРґР°Р»РµРЅРёРµ Р°РєРєР°СѓРЅС‚Р°')}&body=${encodeURIComponent(`РџСЂРѕС€Сѓ СѓРґР°Р»РёС‚СЊ РјРѕР№ Р°РєРєР°СѓРЅС‚.\n\nEmail: ${email}`)}`}
               className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors"
             >
-              <Trash2 size={15} /> Отправить запрос на удаление
+              <Trash2 size={15} /> РћС‚РїСЂР°РІРёС‚СЊ Р·Р°РїСЂРѕСЃ РЅР° СѓРґР°Р»РµРЅРёРµ
             </a>
           </div>
         ) : (
           <>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Введите <span className="font-black text-red-600">{CONFIRM_WORD}</span>, чтобы подтвердить
+              Р’РІРµРґРёС‚Рµ <span className="font-black text-red-600">{CONFIRM_WORD}</span>, С‡С‚РѕР±С‹ РїРѕРґС‚РІРµСЂРґРёС‚СЊ
             </label>
             <input
               value={value}
@@ -96,7 +96,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
                 disabled={loading}
                 className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                Отмена
+                РћС‚РјРµРЅР°
               </button>
               <button
                 onClick={handleDelete}
@@ -104,7 +104,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
                 className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors disabled:opacity-40 disabled:hover:bg-red-500 inline-flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                {loading ? 'Удаляем…' : 'Удалить навсегда'}
+                {loading ? 'РЈРґР°Р»СЏРµРјвЂ¦' : 'РЈРґР°Р»РёС‚СЊ РЅР°РІСЃРµРіРґР°'}
               </button>
             </div>
           </>
@@ -121,7 +121,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
         className="inline-flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 font-bold px-5 py-3 rounded-xl transition-colors text-sm border border-red-100"
       >
         <Trash2 className="w-4 h-4" />
-        Удалить аккаунт
+        РЈРґР°Р»РёС‚СЊ Р°РєРєР°СѓРЅС‚
       </button>
       {modal}
     </>

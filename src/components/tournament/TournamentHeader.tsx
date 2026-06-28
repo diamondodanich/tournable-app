@@ -1,10 +1,8 @@
 'use client'
 
 import { Tournament, TournamentMember } from '@/types'
-import { deleteTournament } from '@/app/actions/tournaments'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
 import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
@@ -21,8 +19,6 @@ interface Props {
 
 export default function TournamentHeader({ tournament, isOwner = true, isPro = false, members = [], lang = 'ru' }: Props) {
   const T = tx[lang]
-  const [confirming, setConfirming] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const theme = getSportTheme(tournament.sport)
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/t/${tournament.id}`
@@ -110,35 +106,6 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
             </div>
           )}
 
-          {isOwner && !confirming && (
-            <button
-              onClick={() => setConfirming(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 text-xs font-bold transition-all"
-            >
-              <Trash2 size={13} /> {T.btnDelete}
-            </button>
-          )}
-
-          {isOwner && confirming && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              <span className="text-xs text-red-600 font-semibold">{T.deleteTournamentQ}</span>
-              <form action={deleteTournament.bind(null, tournament.id)} onSubmit={() => setDeleting(true)}>
-                <button
-                  type="submit"
-                  disabled={deleting}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
-                >
-                  {deleting ? '…' : T.yes}
-                </button>
-              </form>
-              <button
-                onClick={() => setConfirming(false)}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-white text-gray-600 transition-colors"
-              >
-                {T.cancel}
-              </button>
-            </div>
-          )}
         </div>
       </div>
       </div>

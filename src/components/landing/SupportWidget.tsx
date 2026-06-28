@@ -352,20 +352,25 @@ function matchFaq(query: string, items: FaqItem[]): FaqItem | null {
   let bestItem: FaqItem | null = null
 
   for (const item of items) {
-    const haystack = [
-      ...item.tags,
-      item.q.toLowerCase(),
-      ...item.steps.map(s => s.toLowerCase()),
-    ].join(' ')
+    // Tags count double, question title counts single — steps are excluded to avoid false positives
+    const tagHaystack  = item.tags.join(' ')
+    const titleHaystack = item.q.toLowerCase()
 
-    const score = words.reduce((acc, w) => acc + (haystack.includes(w) ? 1 : 0), 0)
+    const score = words.reduce((acc, w) => {
+      const inTag   = tagHaystack.includes(w) ? 2 : 0
+      const inTitle = titleHaystack.includes(w) ? 1 : 0
+      return acc + inTag + inTitle
+    }, 0)
+
     if (score > best) {
       best = score
       bestItem = item
     }
   }
 
-  return best > 0 ? bestItem : null
+  // Require at least one word hit; for single-word queries require score ≥ 2 (tag match)
+  const minScore = words.length === 1 ? 2 : 1
+  return best >= minScore ? bestItem : null
 }
 
 // ── UI strings ────────────────────────────────────────────────────────────────

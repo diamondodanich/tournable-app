@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { Tournament, Team, TournamentMember } from '@/types'
 import { addTeam, removeTeam, generateSchedule, renameTournament, updateTournamentSettings } from '@/app/actions/tournaments'
 import { removeMember } from '@/app/actions/members'
+import { deleteTournament } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate, UserCog, UserX, Clock } from 'lucide-react'
+import { X, Zap, Users, Settings2, Check, Pencil, Sliders, Loader2, LayoutTemplate, UserCog, UserX, Clock, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
@@ -131,6 +132,7 @@ export default function SetupTab({
   }
 
   return (
+    <>
     <Tabs defaultValue="general" className="max-w-2xl">
       <div className="overflow-x-auto mb-4 -mx-1 px-1 pb-1">
         <TabsList className="flex h-auto gap-1 bg-gray-100 p-1 rounded-xl w-max">
@@ -420,5 +422,54 @@ export default function SetupTab({
         </div>
       </TabsContent>
     </Tabs>
+
+    {/* Danger zone */}
+    {isOwner && (
+      <DangerZone tournamentId={tournament.id} tournamentName={tournament.name} />
+    )}
+    </>
+  )
+}
+
+function DangerZone({ tournamentId, tournamentName }: { tournamentId: string; tournamentName: string }) {
+  const [open, setOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  return (
+    <div className="mt-6 border border-red-100 rounded-2xl p-4 bg-red-50/40">
+      <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">Опасная зона</p>
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 text-sm font-semibold text-red-500 hover:text-red-700 transition-colors"
+        >
+          <Trash2 size={14} />
+          Удалить турнир
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-red-700 font-medium">
+            «{tournamentName}» будет удалён безвозвратно — все команды, матчи и статистика исчезнут.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Отмена
+            </button>
+            <form action={deleteTournament.bind(null, tournamentId)} onSubmit={() => setDeleting(true)}>
+              <button
+                type="submit"
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Удаляем…' : 'Да, удалить'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

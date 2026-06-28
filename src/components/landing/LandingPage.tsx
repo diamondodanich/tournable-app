@@ -24,13 +24,13 @@ const T = {
     },
     live: {
       badge: 'Live-табло',
-      h2: ['Весь матч — в реальном', 'времени. По ссылке.'],
-      sub: 'Бросьте ссылку в чат до матча. Вносите голы с телефона — счёт, карточки и таймер у всех мгновенно. Никаких скачиваний. Никакой регистрации.',
+      h2: ['Живой счёт —', 'на любом экране.'],
+      sub: 'Запустите Live-режим до матча — счёт, голы и карточки мгновенно появляются на экране у каждого зрителя. Проецируйте на телевизор или большой экран. Без приложений, без регистрации, без задержки.',
       items: [
-        'Таймер: накопленное время, пауза, дополнительное время',
-        'Голы и ассисты — с именем игрока и точной минутой',
-        'Жёлтые и красные карточки в хронологии матча',
-        'Один URL — и вся команда следит за игрой в реальном времени',
+        'Таймер в реальном времени — накопленное время, пауза, дополнительное',
+        'Голы и ассисты мгновенно появляются у всех зрителей',
+        'Полноэкранный режим — проецируйте на телевизор или LED-экран',
+        'Достаточно одной ссылки — команды и болельщики следят без регистрации',
       ],
     },
     stats: {
@@ -59,12 +59,33 @@ const T = {
       sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Бадминтон'],
     },
     pricing: {
-      h2: 'Бесплатно.\nСерьёзно, навсегда.',
-      sub: 'Ноль скрытых условий. Отмена в один клик.',
+      h2: 'Выберите свой формат.',
+      sub: 'Начните бесплатно. Масштабируйтесь без ограничений.',
+      freeFeatures: [
+        'Все форматы турниров',
+        'Автоматизированная статистика',
+        'Публичная страница турнира',
+        'Отчёты в PDF и PNG',
+        'LIVE-режим с табло',
+      ],
+      proFeatures: [
+        'Активных турниров — без лимита',
+        'Команд — без лимита',
+        'Отчёты без водяного знака',
+        'Приглашение соредакторов (до 3)',
+        'Приоритетная поддержка',
+      ],
+      enterpriseFeatures: [
+        'Постоянные лиги с сезонами',
+        'Подробная статистика и аналитика',
+        'Профили команд и игроков',
+        'Составы к матчам',
+        'SEO-страницы для лиги и команд',
+      ],
       free: {
-        name: 'Старт', price: '0 ₸', sub: '1 активный турнир — все функции включены',
-        items: ['1 активный турнир', 'Без лимита по командам', 'Все форматы (круговой, плей-офф, группы)', 'Живая публичная страница турнира', 'Голы, ассисты, карточки, статистика', 'Логотипы команд и турнира', 'Экспорт в PDF и PNG'],
-        cta: 'Создать первый турнир — бесплатно',
+        name: 'Старт', price: '0 ₸',
+        limit: '1 турнир · до 16 команд',
+        cta: 'Начать бесплатно',
       },
       pro: {
         name: 'Про', badge: 'Выбор организаторов',
@@ -72,14 +93,14 @@ const T = {
         annual: '44 990 ₸', annualPer: '/ год',
         annualMonthly: '3 749 ₸', discount: 'Скидка 25% при оплате за год',
         saving: 'Экономия 14 890 ₸',
-        sub: 'Для тех, кто организует серьёзно',
-        items: ['Безлимитные турниры', 'До 64 команд в каждом', 'Live-табло в реальном времени', 'До 3 соредакторов', 'Все форматы: ЛЧ, ЧМ, кастомные', 'Приоритетная поддержка 24/7', 'Всё из бесплатного тарифа'],
+        includeLabel: 'Всё из тарифа Старт',
         cta: 'Перейти на Про',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'Для федераций и лиг', price: 'По запросу',
-        items: ['Всё из тарифа Про', 'Постоянные лиги с сезонами', 'Публичные страницы лиги', 'Профили команд и игроков', 'Таблица бомбардиров по сезонам', 'Выделенная поддержка'],
-        cta: 'Связаться с нами',
+        name: 'Enterprise', sub: 'Для федераций и лиг',
+        price: 'от 39 990 ₸/мес',
+        includeLabel: 'Всё из тарифа Про',
+        cta: 'Написать в WhatsApp',
       },
       more: 'Нужно больше? ', moreLink: 'Напишите — решим.',
     },
@@ -114,13 +135,13 @@ const T = {
     },
     live: {
       badge: 'Live-тақта',
-      h2: ['Бүкіл матч — нақты', 'уақытта. Сілтеме бойынша.'],
-      sub: 'Матчқа дейін чатқа сілтемені лақтырыңыз. Телефоннан голдарды енгізіңіз — есеп, карточкалар және таймер барлығына лезде жетеді. Жүктеусіз. Тіркелусіз.',
+      h2: ['Тірі есеп —', 'кез келген экранда.'],
+      sub: 'Live-режимді матчқа дейін іске қосыңыз — есеп, голдар мен карточкалар барлық тамашалаушылардың экранында лезде пайда болады. Теледидарға немесе экранға проекциялаңыз. Қосымшасыз, тіркелусіз, кешіктірусіз.',
       items: [
-        'Таймер: жинақталған уақыт, үзіліс, қосымша уақыт',
-        'Голдар мен ассисттер — ойыншының аты және нақты минутамен',
-        'Сары және қызыл карточкалар матч хронологиясында',
-        'Бір URL — және бүкіл команда ойынды нақты уақытта бақылайды',
+        'Нақты уақытта таймер — жинақталған уақыт, үзіліс, қосымша уақыт',
+        'Голдар мен ассисттер барлық тамашалаушыларға лезде жетеді',
+        'Толық экран режимі — теледидарда немесе LED-экранда проекциялаңыз',
+        'Бір сілтеме жеткілікті — тіркелмей қарай алады',
       ],
     },
     stats: {
@@ -149,12 +170,33 @@ const T = {
       sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тенисі', 'Бадминтон'],
     },
     pricing: {
-      h2: 'Тегін.\nШынымен, мәңгі.',
-      sub: 'Жасырын шарттар жоқ. Бір шертумен болдырмау.',
+      h2: 'Өз форматыңызды таңдаңыз.',
+      sub: 'Тегін бастаңыз. Шектеусіз масштабтаңыз.',
+      freeFeatures: [
+        'Барлық турнир форматтары',
+        'Автоматтандырылған статистика',
+        'Турнирдің жалпыға ортақ беті',
+        'PDF және PNG есептері',
+        'LIVE-режим тақтасы',
+      ],
+      proFeatures: [
+        'Белсенді турнирлер — шексіз',
+        'Командалар — шексіз',
+        'Су белгісіз есептер',
+        'Соредакторларды шақыру (3-ке дейін)',
+        'Басым қолдау',
+      ],
+      enterpriseFeatures: [
+        'Маусымдары бар тұрақты лигалар',
+        'Толық статистика және аналитика',
+        'Команда мен ойыншы профильдері',
+        'Матчқа арналған құрамдар',
+        'Лига мен командаларға арналған SEO-беттер',
+      ],
       free: {
-        name: 'Старт', price: '0 ₸', sub: '1 белсенді турнир — барлық мүмкіндіктер',
-        items: ['1 белсенді турнир', 'Командалар саны шексіз', 'Барлық форматтар (дөңгелек, плей-офф, топтар)', 'Турнирдің тірі жалпыға ортақ беті', 'Голдар, ассисттер, карточкалар, статистика', 'Команда мен турнир логотиптері', 'PDF және PNG-ке экспорт'],
-        cta: 'Бірінші турнирді тегін жасау',
+        name: 'Старт', price: '0 ₸',
+        limit: '1 турнир · 16 командаға дейін',
+        cta: 'Тегін бастау',
       },
       pro: {
         name: 'Про', badge: 'Ұйымдастырушылардың таңдауы',
@@ -162,14 +204,14 @@ const T = {
         annual: '44 990 ₸', annualPer: '/ жыл',
         annualMonthly: '3 749 ₸', discount: 'Жылдық төлемде −25% жеңілдік',
         saving: '14 890 ₸ үнемдеу',
-        sub: 'Байыпты ұйымдастырушыларға арналған',
-        items: ['Шексіз турнирлер', 'Әр турнирде 64 командаға дейін', 'Нақты уақытта Live-тақта', '3 соредакторға дейін', 'Барлық форматтар: ЛЧ, ЧА, кастомды', 'Басым қолдау 24/7', 'Тегін тарифтің барлығы'],
+        includeLabel: 'Старт тарифінің барлығы',
         cta: 'Про-ға өту',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'Федерациялар мен лигалар үшін', price: 'Сұрау бойынша',
-        items: ['Про тарифінің барлығы', 'Маусымдары бар тұрақты лигалар', 'Лиганың жалпыға ортақ беттері', 'Команда мен ойыншылардың профильдері', 'Маусымдар бойынша бомбардирлер кестесі', 'Жеке қолдау'],
-        cta: 'Бізбен хабарласу',
+        name: 'Enterprise', sub: 'Федерациялар мен лигалар үшін',
+        price: '39 990 ₸/айдан бастап',
+        includeLabel: 'Про тарифінің барлығы',
+        cta: 'WhatsApp-қа жазу',
       },
       more: 'Көбірек керек пе? ', moreLink: 'Жазыңыз — шешеміз.',
     },
@@ -204,13 +246,13 @@ const T = {
     },
     live: {
       badge: 'Live scoreboard',
-      h2: ['The whole match.', 'In real time. By link.'],
-      sub: 'Drop the link in the group chat before kick-off. Enter goals from your phone — scores, cards and the timer appear instantly for everyone. No download. No sign-up.',
+      h2: ['Live scores —', 'on every screen.'],
+      sub: 'Start Live mode before the match — scores, goals and cards appear instantly on every spectator\'s screen. Project onto a TV or big screen. No app, no sign-up, no delay.',
       items: [
-        'Match timer with accumulated time, pause and extra time',
-        'Goals and assists — with player name and exact minute',
-        'Yellow and red cards in the full match timeline',
-        'One URL — the whole team follows live without lifting a finger',
+        'Real-time match timer — running time, pause, extra time',
+        'Goals and assists appear instantly for all spectators',
+        'Full-screen mode — project onto a TV or LED display',
+        'One link is enough — teams and fans follow without signing up',
       ],
     },
     stats: {
@@ -239,12 +281,33 @@ const T = {
       sports: ['Football', 'Futsal', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Badminton'],
     },
     pricing: {
-      h2: 'Free.\nNo, seriously. Forever.',
-      sub: 'Zero hidden conditions. Cancel whenever you like.',
+      h2: 'Choose your format.',
+      sub: 'Start free. Scale without limits.',
+      freeFeatures: [
+        'All tournament formats',
+        'Automated statistics',
+        'Public tournament page',
+        'PDF and PNG reports',
+        'LIVE scoreboard',
+      ],
+      proFeatures: [
+        'Unlimited active tournaments',
+        'Unlimited teams',
+        'Reports without watermark',
+        'Co-editors (up to 3)',
+        'Priority support',
+      ],
+      enterpriseFeatures: [
+        'Permanent leagues with seasons',
+        'Detailed statistics & analytics',
+        'Team and player profiles',
+        'Match lineups',
+        'SEO pages for leagues & teams',
+      ],
       free: {
-        name: 'Starter', price: '0 ₸', sub: '1 active tournament — all features included',
-        items: ['1 active tournament', 'No team limit', 'All formats (round-robin, playoff, groups)', 'Live public tournament page', 'Goals, assists, cards & stats', 'Team & tournament logos', 'PDF & PNG export'],
-        cta: 'Create your first tournament — free',
+        name: 'Starter', price: '0 ₸',
+        limit: '1 tournament · up to 16 teams',
+        cta: 'Start free',
       },
       pro: {
         name: 'Pro', badge: 'Organizers\' choice',
@@ -252,14 +315,14 @@ const T = {
         annual: '44,990 ₸', annualPer: '/ yr',
         annualMonthly: '3,749 ₸', discount: 'Save 25% with annual billing',
         saving: 'Save 14,890 ₸',
-        sub: 'For organizers who mean business',
-        items: ['Unlimited tournaments', 'Up to 64 teams each', 'Real-time live scoreboard', 'Up to 3 co-editors', 'All formats: UCL, World Cup, custom', 'Priority support 24/7', 'Everything in the free plan'],
+        includeLabel: 'Everything in Starter',
         cta: 'Go Pro',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'For federations & leagues', price: 'Contact us',
-        items: ['Everything in Pro', 'Permanent leagues with seasons', 'Public league pages', 'Team & player profiles', 'Season scorers leaderboard', 'Dedicated support'],
-        cta: 'Get in touch',
+        name: 'Enterprise', sub: 'For federations & leagues',
+        price: 'from 39,990 ₸/mo',
+        includeLabel: 'Everything in Pro',
+        cta: 'Message on WhatsApp',
       },
       more: 'Need more? ', moreLink: 'Write to us — we\'ll sort it out.',
     },
@@ -314,36 +377,36 @@ const FEAT_STYLES = [
   { bg: 'bg-cyan-500/15',    icon: 'text-cyan-400',    accent: 'bg-cyan-400' },
 ]
 
-// ─── How it works ─────────────────────────────────────────────────────────────
-const HOW_TO: Record<Lang, { tag: string; h2: string; sub: string; steps: { num: string; title: string; desc: string }[] }> = {
+// ─── Audience cases ───────────────────────────────────────────────────────────
+const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { tag: string; title: string; desc: string; cta: string; href: string }[] }> = {
   ru: {
-    tag: 'Три шага',
-    h2: 'Проще, чем кажется.',
-    sub: 'От идеи до живого турнира — за одну чашку кофе.',
-    steps: [
-      { num: '01', title: 'Создайте турнир', desc: 'Выберите вид спорта и формат. Добавьте команды — расписание всех матчей сгенерируется автоматически.' },
-      { num: '02', title: 'Поделитесь ссылкой', desc: 'Бросьте ссылку в чат до матча. Участники открывают живую страницу вашего турнира — без регистрации и приложений.' },
-      { num: '03', title: 'Вносите голы с телефона', desc: 'Счёт, карточки, бомбардиры — обновляются у всех мгновенно. Таблица и плей-офф считаются сами.' },
+    tag: 'Для кого',
+    h2: 'Tournable — для каждого, кто организует.',
+    sub: 'Любитель, клуб или федерация — платформа подстраивается под вас.',
+    cases: [
+      { tag: 'Любительские турниры', title: 'Организуешь турнир среди друзей, команд района или офиса?', desc: 'Создай расписание за 2 минуты, поделись ссылкой в чат — участники сами следят за таблицей и счётом. Без Excel, без скринов из WhatsApp.', cta: 'Начать бесплатно', href: '/register' },
+      { tag: 'Спортивные клубы', title: 'Ведёшь регулярные соревнования внутри клуба?', desc: 'Несколько турниров одновременно, несколько редакторов, PDF-отчёт в один клик. История матчей всегда под рукой.', cta: 'Попробовать Pro', href: '/register?plan=pro' },
+      { tag: 'Федерации и лиги', title: 'Проводишь городской чемпионат или официальную лигу?', desc: 'Постоянная лига с архивом сезонов, профилями команд и игроков, публичным SEO-сайтом — как у профессиональных лиг. Без технической команды.', cta: 'Enterprise — от 39 990 ₸', href: '#contact' },
     ],
   },
   kz: {
-    tag: 'Үш қадам',
-    h2: 'Ойлағаннан да оңай.',
-    sub: 'Идеядан тірі турнирге — бір шыны кофе уақытында.',
-    steps: [
-      { num: '01', title: 'Турнир жасаңыз', desc: 'Спорт түрі мен форматты таңдаңыз. Командаларды қосыңыз — матч кестесі автоматты жасалады.' },
-      { num: '02', title: 'Сілтемемен бөлісіңіз', desc: 'Матчқа дейін сілтемені чатқа тастаңыз. Қатысушылар тіркелмей-ақ турнирдің тірі бетін ашады.' },
-      { num: '03', title: 'Телефоннан голдарды енгізіңіз', desc: 'Есеп, карточкалар, бомбардирлер — барлығына лезде жаңарады. Кесте мен плей-офф өздігінен есептеледі.' },
+    tag: 'Кім үшін',
+    h2: 'Tournable — ұйымдастырушы үшін.',
+    sub: 'Хобби, клуб немесе федерация — платформа сізге бейімделеді.',
+    cases: [
+      { tag: 'Хобби турнирлер', title: 'Достар арасында немесе аудандағы командалар турнирін ұйымдастырасың ба?', desc: 'Кестені 2 минутта жасаңыз, чатқа сілтемені жіберіңіз — қатысушылар кестені және есепті өздері қадағалайды. Excel жоқ, WhatsApp скриншоты жоқ.', cta: 'Тегін бастау', href: '/register' },
+      { tag: 'Спорт клубтары', title: 'Клуб ішінде жүйелі жарыстар өткізесің бе?', desc: 'Бірнеше турнир бір уақытта, бірнеше редактор, PDF-есеп бір шертумен. Матч тарихы әрқашан қолда.', cta: 'Pro-ды қолданып көру', href: '/register?plan=pro' },
+      { tag: 'Федерациялар мен лигалар', title: 'Қалалық чемпионат немесе ресми лига өткізесің бе?', desc: 'Маусымдары бар тұрақты лига, команда мен ойыншы профильдері, жалпыға ортақ SEO-сайт — кәсіби лигалар сияқты. Техникалық команда жоқ.', cta: 'Enterprise — 39 990 ₸-дан', href: '#contact' },
     ],
   },
   en: {
-    tag: 'Three steps',
-    h2: 'Simpler than you think.',
-    sub: 'From idea to live tournament — in the time it takes to make coffee.',
-    steps: [
-      { num: '01', title: 'Create your tournament', desc: 'Pick a sport and format. Add teams — the full match schedule generates automatically.' },
-      { num: '02', title: 'Share the link', desc: 'Drop the link in the group chat before kick-off. Participants open your live tournament page — no sign-up, no app.' },
-      { num: '03', title: 'Enter goals from your phone', desc: 'Scores, cards, top scorers — update for everyone instantly. Standings and playoff sort themselves out.' },
+    tag: 'Who it\'s for',
+    h2: 'Tournable is for everyone who organises.',
+    sub: 'Amateur, club or federation — the platform adapts to you.',
+    cases: [
+      { tag: 'Amateur tournaments', title: 'Organising a tournament with friends, your neighbourhood or the office?', desc: 'Build the schedule in 2 minutes, share the link — participants track standings and scores themselves. No Excel, no WhatsApp screenshots.', cta: 'Start free', href: '/register' },
+      { tag: 'Sports clubs', title: 'Running regular competitions within your club?', desc: 'Multiple tournaments at once, multiple editors, PDF report in one click. Match history always at hand.', cta: 'Try Pro', href: '/register?plan=pro' },
+      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, public SEO site — like professional leagues. No technical team needed.', cta: 'Enterprise — from 39,990 ₸', href: '#contact' },
     ],
   },
 }
@@ -353,7 +416,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
   const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
   const tx = T[lang]
-  const how = HOW_TO[lang]
+  const audience = AUDIENCE[lang]
 
   return (
     <div className="min-h-screen bg-white text-gray-900" style={{ fontFamily: 'Inter,sans-serif' }}>
@@ -471,7 +534,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                 {tx.hero.badge}
               </div>
-              <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-[3.2rem] font-black leading-[1.08] tracking-tight text-gray-900 mb-5" style={{ letterSpacing: '-.03em' }}>
+              <h1 className="text-[1.7rem] sm:text-[2.1rem] lg:text-[2.5rem] font-black leading-[1.08] tracking-tight text-gray-900 mb-5" style={{ letterSpacing: '-.03em' }}>
                 {tx.hero.h1[0]}<br />
                 {tx.hero.h1[1]}<br />
                 <span className="text-emerald-600">{tx.hero.h1[2]}</span>
@@ -484,18 +547,6 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <a href="#how" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 font-medium text-sm px-4 py-3.5 transition-colors">
                   {tx.hero.cta2} <ChevronRight className="w-4 h-4" />
                 </a>
-              </div>
-              {/* Proof chips */}
-              <div className="flex flex-wrap gap-x-5 gap-y-2.5">
-                {tx.hero.proof.map(([main, sub], i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                      <Check className="w-3 h-3 text-emerald-600" />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-800">{main}</span>
-                    <span className="text-sm text-gray-400">{sub}</span>
-                  </div>
-                ))}
               </div>
             </div>
             {/* Real laptop photo */}
@@ -513,28 +564,29 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
         </div>
       </section>
 
-      {/* ── How it works ────────────────────────────────────────────────────── */}
+      {/* ── Audience Cases ──────────────────────────────────────────────────── */}
       <section id="how" className="py-20 lg:py-28 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="inline-flex items-center gap-2 bg-emerald-100 rounded-full px-4 py-1.5 mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest">{how.tag}</span>
+              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest">{audience.tag}</span>
             </span>
-            <h2 className="text-[2rem] sm:text-[2.6rem] font-black tracking-tight text-gray-900 mb-3" style={{ letterSpacing: '-.03em' }}>{how.h2}</h2>
-            <p className="text-gray-400 text-base max-w-md mx-auto">{how.sub}</p>
+            <h2 className="text-[2rem] sm:text-[2.6rem] font-black tracking-tight text-gray-900 mb-3" style={{ letterSpacing: '-.03em' }}>{audience.h2}</h2>
+            <p className="text-gray-400 text-base max-w-lg mx-auto">{audience.sub}</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6 relative">
-            {/* Connector line — desktop */}
-            <div className="hidden sm:block absolute top-10 left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-px bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-200 pointer-events-none" />
-            {how.steps.map((step, i) => (
-              <div key={i} className="relative flex flex-col items-center text-center sm:items-start sm:text-left group">
-                {/* Number bubble */}
-                <div className="relative z-10 w-[52px] h-[52px] rounded-2xl bg-white border-2 border-emerald-200 flex items-center justify-center mb-5 shadow-sm group-hover:border-emerald-400 transition-colors">
-                  <span className="font-black text-[15px] text-emerald-600">{step.num}</span>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {audience.cases.map((c, i) => (
+              <div key={i} className="bg-white border border-gray-100 rounded-2xl p-7 flex flex-col group hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center mb-5 shrink-0">
+                  <span className="text-[11px] font-black text-emerald-600">{String(i + 1).padStart(2, '0')}</span>
                 </div>
-                <h3 className="font-black text-lg text-gray-900 mb-2 leading-snug">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">{c.tag}</div>
+                <h3 className="font-black text-[17px] text-gray-900 leading-snug mb-3">{c.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1 mb-6">{c.desc}</p>
+                <a href={c.href} className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
+                  {c.cta} <ArrowRight className="w-3.5 h-3.5" />
+                </a>
               </div>
             ))}
           </div>
@@ -682,89 +734,110 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
 
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
       <section id="pricing" className="bg-gray-50 py-24 lg:py-28">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
-            <h2 className="text-[2rem] sm:text-[2.4rem] font-black tracking-tight mb-4 whitespace-pre-line" style={{ letterSpacing: '-.03em' }}>{tx.pricing.h2}</h2>
+            <h2 className="text-[2rem] sm:text-[2.4rem] font-black tracking-tight mb-3" style={{ letterSpacing: '-.03em' }}>{tx.pricing.h2}</h2>
             <p className="text-gray-400 text-base">{tx.pricing.sub}</p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* Free */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-8 flex flex-col">
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-4">{tx.pricing.free.name}</div>
-              <div className="mb-1">
+          <div className="grid sm:grid-cols-3 gap-5 items-start">
+            {/* ── Free ── */}
+            <div className="bg-white border border-gray-200 rounded-3xl p-7 flex flex-col">
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-3">{tx.pricing.free.name}</div>
+              <div className="mb-2">
                 <span className="text-5xl font-black text-gray-900 tracking-tight">{tx.pricing.free.price}</span>
               </div>
-              <p className="text-sm text-gray-400 mb-8 mt-1">{tx.pricing.free.sub}</p>
-              <ul className="space-y-3 mb-10 flex-1">
-                {tx.pricing.free.items.map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+              <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5 mb-7 self-start">{tx.pricing.free.limit}</span>
+              {/* Active */}
+              <ul className="space-y-2.5 mb-3">
+                {tx.pricing.freeFeatures.map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />{f}
                   </li>
                 ))}
               </ul>
+              {/* Locked (Pro only) */}
+              <div className="border-t border-gray-100 pt-3 mb-8 space-y-2">
+                {tx.pricing.proFeatures.map(f => (
+                  <div key={f} className="flex items-start gap-2.5 text-sm text-gray-300">
+                    <Check className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />{f}
+                  </div>
+                ))}
+              </div>
               <Link href="/register" className="block text-center bg-gray-900 hover:bg-gray-700 text-white font-bold py-3.5 rounded-2xl transition-colors">
                 {tx.pricing.free.cta}
               </Link>
             </div>
 
-            {/* Pro */}
+            {/* ── Pro ── */}
             <div className="relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
                 <span className="bg-emerald-950 text-emerald-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
                   {tx.pricing.pro.badge}
                 </span>
               </div>
-              <div className="relative rounded-3xl p-8 flex flex-col overflow-hidden h-full" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
-              <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-              <div className="relative z-10 flex-1 flex flex-col">
-                <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-4">{tx.pricing.pro.name}</div>
-                <div className="mb-2">
-                  <div className="flex items-baseline gap-1.5">
+              <div className="relative rounded-3xl p-7 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
+                <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                <div className="relative z-10 flex flex-col">
+                  <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-3">{tx.pricing.pro.name}</div>
+                  <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.monthly}</span>
                     <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.monthlyPer}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-px flex-1 bg-emerald-400/30" />
-                  <span className="text-xs text-emerald-300 font-medium whitespace-nowrap">{lang === 'en' ? 'or' : lang === 'kz' ? 'немесе' : 'или'}</span>
-                  <div className="h-px flex-1 bg-emerald-400/30" />
-                </div>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-2xl font-black text-white tracking-tight">{tx.pricing.pro.annualMonthly}</span>
-                  <span className="text-xs text-emerald-200">{tx.pricing.pro.monthlyPer}</span>
-                  <span className="text-xs text-emerald-300 ml-1">({tx.pricing.pro.annual}{tx.pricing.pro.annualPer})</span>
-                </div>
-                <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1.5 mb-3">
-                  <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
-                  <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.discount}</span>
-                </div>
-                <p className="text-sm text-emerald-200 mb-8">{tx.pricing.pro.sub}</p>
-                <ul className="space-y-2.5 mb-10 flex-1">
-                  {tx.pricing.pro.items.map(f => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm">
-                      <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
-                      <span className="text-emerald-50">{f}</span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-px flex-1 bg-emerald-400/30" />
+                    <span className="text-xs text-emerald-300 font-medium whitespace-nowrap">{lang === 'en' ? 'or' : lang === 'kz' ? 'немесе' : 'или'}</span>
+                    <div className="h-px flex-1 bg-emerald-400/30" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mb-2">
+                    <span className="text-2xl font-black text-white tracking-tight">{tx.pricing.pro.annualMonthly}</span>
+                    <span className="text-xs text-emerald-200">{tx.pricing.pro.monthlyPer}</span>
+                    <span className="text-xs text-emerald-300 ml-1">({tx.pricing.pro.annual}{tx.pricing.pro.annualPer})</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1.5 mb-5">
+                    <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
+                    <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.discount}</span>
+                  </div>
+                  {/* Active: include label + pro features */}
+                  <ul className="space-y-2.5 mb-3">
+                    <li className="flex items-start gap-2.5 text-sm font-semibold text-emerald-200">
+                      <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />{tx.pricing.pro.includeLabel}
                     </li>
-                  ))}
-                </ul>
-                <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3.5 rounded-2xl transition-colors shadow-xl shadow-black/20">
-                  {tx.pricing.pro.cta}
-                </Link>
+                    {tx.pricing.proFeatures.map(f => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm">
+                        <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+                        <span className="text-emerald-50">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* Locked (Enterprise) */}
+                  <div className="border-t border-emerald-400/20 pt-3 mb-8 space-y-2">
+                    {tx.pricing.enterpriseFeatures.map(f => (
+                      <div key={f} className="flex items-start gap-2.5 text-sm text-emerald-300/35">
+                        <Check className="w-4 h-4 text-emerald-300/25 mt-0.5 shrink-0" />{f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3.5 rounded-2xl transition-colors shadow-xl shadow-black/20">
+                    {tx.pricing.pro.cta}
+                  </Link>
+                </div>
               </div>
-            </div>
             </div>
 
-            {/* Enterprise */}
-            <div className="bg-white border-2 border-purple-200 rounded-3xl p-8 flex flex-col relative overflow-hidden">
+            {/* ── Enterprise ── */}
+            <div className="bg-white border-2 border-purple-200 rounded-3xl p-7 flex flex-col relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }} />
-              <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-4">{tx.pricing.enterprise.name}</div>
+              <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-3">{tx.pricing.enterprise.name}</div>
               <div className="mb-1">
-                <span className="text-3xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.price}</span>
+                <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.price}</span>
               </div>
-              <p className="text-sm text-gray-400 mb-8 mt-1">{tx.pricing.enterprise.sub}</p>
-              <ul className="space-y-3 mb-10 flex-1">
-                {tx.pricing.enterprise.items.map(f => (
+              <p className="text-sm text-gray-400 mb-6 mt-1">{tx.pricing.enterprise.sub}</p>
+              <ul className="space-y-2.5 mb-8 flex-1">
+                <li className="flex items-start gap-2.5 text-sm font-semibold text-gray-700">
+                  <Check className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />{tx.pricing.enterprise.includeLabel}
+                </li>
+                {tx.pricing.enterpriseFeatures.map(f => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
                     <Check className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />{f}
                   </li>

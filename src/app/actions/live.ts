@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro'> {
@@ -67,9 +66,7 @@ export async function initLiveGame(
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
   if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
-  // Prefer admin client (bypasses RLS for editors); fall back to user session for owners
-  const db = createAdminClient() ?? supabase
-  const { data, error } = await db.from('live_games').upsert({
+  const { data, error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
@@ -94,8 +91,7 @@ export async function patchLiveGame(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
-  const db = createAdminClient() ?? supabase
-  const { error } = await db.from('live_games').update(patch).eq('tournament_id', tournamentId)
+  const { error } = await supabase.from('live_games').update(patch).eq('tournament_id', tournamentId)
   if (error) return { error: error.message }
   return {}
 }
@@ -106,9 +102,7 @@ export async function finishLiveMatch(
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  const db = createAdminClient() ?? supabase
-
-  const { data: liveGame, error: fetchError } = await db
+  const { data: liveGame, error: fetchError } = await supabase
     .from('live_games')
     .select('*')
     .eq('tournament_id', tournamentId)
@@ -117,7 +111,7 @@ export async function finishLiveMatch(
   if (fetchError || !liveGame) return { error: 'Матч не найден' }
 
   if (liveGame.fixture_id) {
-    const { error } = await db.from('fixtures').update({
+    const { error } = await supabase.from('fixtures').update({
       home_score: liveGame.home_score,
       away_score: liveGame.away_score,
       played: true,
@@ -131,7 +125,7 @@ export async function finishLiveMatch(
     const hs = liveGame.home_score
     const as_ = liveGame.away_score
     if (hs !== as_) {
-      const { data: pm } = await db
+      const { data: pm } = await supabase
         .from('playoff_matches')
         .select('*')
         .eq('id', liveGame.playoff_match_id)
@@ -139,7 +133,7 @@ export async function finishLiveMatch(
 
       if (pm) {
         const winnerId = hs > as_ ? pm.home_team_id : pm.away_team_id
-        await db.from('playoff_matches').update({
+        await supabase.from('playoff_matches').update({
           home_score: hs,
           away_score: as_,
           winner_id: winnerId,
@@ -147,13 +141,13 @@ export async function finishLiveMatch(
 
         if (pm.winner_to_match && winnerId) {
           const field = pm.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
-          await db.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
+          await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
         }
       }
     }
   }
 
-  await db.from('live_games').delete().eq('tournament_id', tournamentId)
+  await supabase.from('live_games').delete().eq('tournament_id', tournamentId)
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   revalidatePath(`/t/${tournamentId}/live`)

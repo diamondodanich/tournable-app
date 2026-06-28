@@ -138,7 +138,10 @@
       "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/seasons/[year]\")",
       "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/matches/[matchId]\")",
       "Bash(grep -v \"^[0-9]*:.*//\\\\|text\\\\|title\\\\|sub\\\\|badge\\\\|item\\\\|name\\\\|monthly\\\\|annual\\\\|saving\\\\|discount\\\\|nav\\\\|link\\\\|features\\\\|services\\\\|contact\\\\|start\\\\|login\\\\|dash\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")",
+      "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_07_29.png\" \"C:/Users/user/Documents/tournable-next/public/screens/hero-desktop.png\" -Force)",
+      "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_18_47.png\" \"C:/Users/user/Documents/tournable-next/public/screens/hero-mobile.png\" -Force)",
+      "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_26_36.png\" \"C:/Users/user/Documents/tournable-next/public/screens/led.png\" -Force)"
     ]
   }
 }

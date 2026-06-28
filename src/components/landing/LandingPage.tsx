@@ -61,48 +61,45 @@ const T = {
     pricing: {
       h2: 'Выберите свой формат.',
       sub: 'Начните бесплатно. Масштабируйтесь без ограничений.',
-      freeFeatures: [
-        'Все форматы турниров',
-        'Автоматизированная статистика',
-        'Публичная страница турнира',
-        'Отчёты в PDF и PNG',
-        'LIVE-режим с табло',
-      ],
-      proFeatures: [
-        'Активных турниров — без лимита',
-        'Команд — без лимита',
-        'Отчёты без водяного знака',
-        'Приглашение соредакторов (до 3)',
-        'Приоритетная поддержка',
-      ],
-      enterpriseFeatures: [
-        'Постоянные лиги с сезонами',
-        'Подробная статистика и аналитика',
-        'Профили команд и игроков',
-        'Составы к матчам',
-        'SEO-страницы для лиги и команд',
+      tabs: { monthly: 'Ежемесячно', annual: 'Ежегодно' },
+      annualBadge: '−25%',
+      features: [
+        { label: 'Все форматы турниров', free: true, pro: true, enterprise: true },
+        { label: 'Автоматизированная статистика', free: true, pro: true, enterprise: true },
+        { label: 'Публичная страница турнира', free: true, pro: true, enterprise: true },
+        { label: 'Отчёты в PDF и PNG', free: true, pro: true, enterprise: true },
+        { label: 'LIVE-режим с табло', free: true, pro: true, enterprise: true },
+        { label: 'Активных турниров — без лимита', free: false, pro: true, enterprise: true },
+        { label: 'Команд — без лимита', free: false, pro: true, enterprise: true },
+        { label: 'Отчёты без водяного знака', free: false, pro: true, enterprise: true },
+        { label: 'Соредакторы (до 3)', free: false, pro: true, enterprise: true },
+        { label: 'Приоритетная поддержка', free: false, pro: true, enterprise: true },
+        { label: 'Постоянные лиги с сезонами', free: false, pro: false, enterprise: true },
+        { label: 'Аналитика и статистика', free: false, pro: false, enterprise: true },
+        { label: 'Профили команд и игроков', free: false, pro: false, enterprise: true },
+        { label: 'Составы к матчам', free: false, pro: false, enterprise: true },
+        { label: 'SEO-страницы для лиги', free: false, pro: false, enterprise: true },
       ],
       free: {
-        name: 'Старт', price: '0 ₸',
+        name: 'Старт',
+        priceMonthly: '0 ₸',
         limit: '1 турнир · до 16 команд',
         cta: 'Начать бесплатно',
       },
       pro: {
         name: 'Про', badge: 'Выбор организаторов',
-        monthly: '4 990 ₸', monthlyPer: '/ мес',
-        annual: '44 990 ₸', annualPer: '/ год',
-        annualMonthly: '3 749 ₸', discount: 'Скидка 25% при оплате за год',
-        saving: 'Экономия 14 890 ₸',
-        includeLabel: 'Всё из тарифа Старт',
+        priceMonthly: '4 990 ₸', perMonthly: '/ мес',
+        priceAnnual: '44 990 ₸', perAnnual: '/ год',
+        priceAnnualMonthly: '3 749 ₸', savingAnnual: 'Экономия 14 890 ₸',
         cta: 'Перейти на Про',
       },
       enterprise: {
         name: 'Enterprise', sub: 'Для федераций и лиг',
-        price: 'от 39 990 ₸/мес',
-        includeLabel: 'Всё из тарифа Про',
-        cta: 'Написать в WhatsApp',
+        priceMonthly: 'от 39 990 ₸', perMonthly: '/ мес',
+        priceAnnual: '349 990 ₸', perAnnual: '/ год',
+        priceAnnualMonthly: 'от 29 166 ₸', savingAnnual: 'Скидка 25%',
+        cta: 'Подключить Enterprise',
       },
-      more: 'Нужно больше? ', moreLink: 'Напишите — решим.',
     },
     services: {
       h2: 'Мы берём на себя всё',
@@ -172,48 +169,45 @@ const T = {
     pricing: {
       h2: 'Өз форматыңызды таңдаңыз.',
       sub: 'Тегін бастаңыз. Шектеусіз масштабтаңыз.',
-      freeFeatures: [
-        'Барлық турнир форматтары',
-        'Автоматтандырылған статистика',
-        'Турнирдің жалпыға ортақ беті',
-        'PDF және PNG есептері',
-        'LIVE-режим тақтасы',
-      ],
-      proFeatures: [
-        'Белсенді турнирлер — шексіз',
-        'Командалар — шексіз',
-        'Су белгісіз есептер',
-        'Соредакторларды шақыру (3-ке дейін)',
-        'Басым қолдау',
-      ],
-      enterpriseFeatures: [
-        'Маусымдары бар тұрақты лигалар',
-        'Толық статистика және аналитика',
-        'Команда мен ойыншы профильдері',
-        'Матчқа арналған құрамдар',
-        'Лига мен командаларға арналған SEO-беттер',
+      tabs: { monthly: 'Ай сайын', annual: 'Жыл сайын' },
+      annualBadge: '−25%',
+      features: [
+        { label: 'Барлық турнир форматтары', free: true, pro: true, enterprise: true },
+        { label: 'Автоматтандырылған статистика', free: true, pro: true, enterprise: true },
+        { label: 'Турнирдің жалпыға ортақ беті', free: true, pro: true, enterprise: true },
+        { label: 'PDF және PNG есептері', free: true, pro: true, enterprise: true },
+        { label: 'LIVE-режим тақтасы', free: true, pro: true, enterprise: true },
+        { label: 'Белсенді турнирлер — шексіз', free: false, pro: true, enterprise: true },
+        { label: 'Командалар — шексіз', free: false, pro: true, enterprise: true },
+        { label: 'Су белгісіз есептер', free: false, pro: true, enterprise: true },
+        { label: 'Соредакторлар (3-ке дейін)', free: false, pro: true, enterprise: true },
+        { label: 'Басым қолдау', free: false, pro: true, enterprise: true },
+        { label: 'Маусымдары бар тұрақты лигалар', free: false, pro: false, enterprise: true },
+        { label: 'Аналитика және статистика', free: false, pro: false, enterprise: true },
+        { label: 'Команда мен ойыншы профильдері', free: false, pro: false, enterprise: true },
+        { label: 'Матчқа арналған құрамдар', free: false, pro: false, enterprise: true },
+        { label: 'Лигаға арналған SEO-беттер', free: false, pro: false, enterprise: true },
       ],
       free: {
-        name: 'Старт', price: '0 ₸',
+        name: 'Старт',
+        priceMonthly: '0 ₸',
         limit: '1 турнир · 16 командаға дейін',
         cta: 'Тегін бастау',
       },
       pro: {
         name: 'Про', badge: 'Ұйымдастырушылардың таңдауы',
-        monthly: '4 990 ₸', monthlyPer: '/ ай',
-        annual: '44 990 ₸', annualPer: '/ жыл',
-        annualMonthly: '3 749 ₸', discount: 'Жылдық төлемде −25% жеңілдік',
-        saving: '14 890 ₸ үнемдеу',
-        includeLabel: 'Старт тарифінің барлығы',
+        priceMonthly: '4 990 ₸', perMonthly: '/ ай',
+        priceAnnual: '44 990 ₸', perAnnual: '/ жыл',
+        priceAnnualMonthly: '3 749 ₸', savingAnnual: '14 890 ₸ үнемдеу',
         cta: 'Про-ға өту',
       },
       enterprise: {
         name: 'Enterprise', sub: 'Федерациялар мен лигалар үшін',
-        price: '39 990 ₸/айдан бастап',
-        includeLabel: 'Про тарифінің барлығы',
-        cta: 'WhatsApp-қа жазу',
+        priceMonthly: '39 990 ₸-дан', perMonthly: '/ ай',
+        priceAnnual: '349 990 ₸', perAnnual: '/ жыл',
+        priceAnnualMonthly: '29 166 ₸-дан', savingAnnual: '25% жеңілдік',
+        cta: 'Enterprise-ке қосылу',
       },
-      more: 'Көбірек керек пе? ', moreLink: 'Жазыңыз — шешеміз.',
     },
     services: {
       h2: 'Барлығын біз аламыз',
@@ -283,48 +277,45 @@ const T = {
     pricing: {
       h2: 'Choose your format.',
       sub: 'Start free. Scale without limits.',
-      freeFeatures: [
-        'All tournament formats',
-        'Automated statistics',
-        'Public tournament page',
-        'PDF and PNG reports',
-        'LIVE scoreboard',
-      ],
-      proFeatures: [
-        'Unlimited active tournaments',
-        'Unlimited teams',
-        'Reports without watermark',
-        'Co-editors (up to 3)',
-        'Priority support',
-      ],
-      enterpriseFeatures: [
-        'Permanent leagues with seasons',
-        'Detailed statistics & analytics',
-        'Team and player profiles',
-        'Match lineups',
-        'SEO pages for leagues & teams',
+      tabs: { monthly: 'Monthly', annual: 'Annual' },
+      annualBadge: '−25%',
+      features: [
+        { label: 'All tournament formats', free: true, pro: true, enterprise: true },
+        { label: 'Automated statistics', free: true, pro: true, enterprise: true },
+        { label: 'Public tournament page', free: true, pro: true, enterprise: true },
+        { label: 'PDF and PNG reports', free: true, pro: true, enterprise: true },
+        { label: 'LIVE scoreboard', free: true, pro: true, enterprise: true },
+        { label: 'Unlimited active tournaments', free: false, pro: true, enterprise: true },
+        { label: 'Unlimited teams', free: false, pro: true, enterprise: true },
+        { label: 'Reports without watermark', free: false, pro: true, enterprise: true },
+        { label: 'Co-editors (up to 3)', free: false, pro: true, enterprise: true },
+        { label: 'Priority support', free: false, pro: true, enterprise: true },
+        { label: 'Permanent leagues with seasons', free: false, pro: false, enterprise: true },
+        { label: 'Analytics & statistics', free: false, pro: false, enterprise: true },
+        { label: 'Team and player profiles', free: false, pro: false, enterprise: true },
+        { label: 'Match lineups', free: false, pro: false, enterprise: true },
+        { label: 'SEO pages for leagues', free: false, pro: false, enterprise: true },
       ],
       free: {
-        name: 'Starter', price: '0 ₸',
+        name: 'Starter',
+        priceMonthly: '0 ₸',
         limit: '1 tournament · up to 16 teams',
         cta: 'Start free',
       },
       pro: {
         name: 'Pro', badge: 'Organizers\' choice',
-        monthly: '4,990 ₸', monthlyPer: '/ mo',
-        annual: '44,990 ₸', annualPer: '/ yr',
-        annualMonthly: '3,749 ₸', discount: 'Save 25% with annual billing',
-        saving: 'Save 14,890 ₸',
-        includeLabel: 'Everything in Starter',
+        priceMonthly: '4,990 ₸', perMonthly: '/ mo',
+        priceAnnual: '44,990 ₸', perAnnual: '/ yr',
+        priceAnnualMonthly: '3,749 ₸', savingAnnual: 'Save 14,890 ₸',
         cta: 'Go Pro',
       },
       enterprise: {
         name: 'Enterprise', sub: 'For federations & leagues',
-        price: 'from 39,990 ₸/mo',
-        includeLabel: 'Everything in Pro',
-        cta: 'Message on WhatsApp',
+        priceMonthly: 'from 39,990 ₸', perMonthly: '/ mo',
+        priceAnnual: '349,990 ₸', perAnnual: '/ yr',
+        priceAnnualMonthly: 'from 29,166 ₸', savingAnnual: 'Save 25%',
+        cta: 'Get Enterprise',
       },
-      more: 'Need more? ', moreLink: 'Write to us — we\'ll sort it out.',
     },
     services: {
       h2: 'We handle everything',
@@ -415,6 +406,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
 export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitials }: { isLoggedIn?: boolean; defaultLang?: Lang; userInitials?: string }) {
   const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const tx = T[lang]
   const audience = AUDIENCE[lang]
 
@@ -524,16 +516,16 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[#0a2218] min-h-[500px] lg:min-h-[600px]">
+      <section className="relative overflow-hidden bg-[#0a2218] min-h-[680px] lg:min-h-[600px]">
         {/* Desktop background */}
         <Image src="/screens/hero-desktop.png" alt="" fill sizes="100vw"
-          className="object-cover object-center hidden lg:block" priority />
+          className="object-contain object-right hidden lg:block" priority />
         {/* Mobile background */}
         <Image src="/screens/hero-mobile.png" alt="" fill sizes="100vw"
           className="object-cover object-center block lg:hidden" priority />
         {/* Gradient overlay — ensures text legibility on left (desktop) / top (mobile) */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a2218]/85 via-[#0a2218]/40 to-transparent hidden lg:block pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a2218]/80 via-[#0a2218]/30 to-transparent block lg:hidden pointer-events-none" />
+        <div className="absolute inset-0 block lg:hidden pointer-events-none" style={{ background: 'linear-gradient(to bottom, #0a2218 0%, #0a2218 55%, rgba(10,34,24,0.7) 75%, transparent 100%)' }} />
         {/* Content */}
         <div className="relative pt-14 pb-20 lg:pt-20 lg:pb-32">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -732,89 +724,103 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
       <section id="pricing" className="bg-gray-50 py-24 lg:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-14">
+          <div className="text-center mb-10">
             <h2 className="text-[2rem] sm:text-[2.4rem] font-black tracking-tight mb-3" style={{ letterSpacing: '-.03em' }}>{tx.pricing.h2}</h2>
             <p className="text-gray-400 text-base">{tx.pricing.sub}</p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-5 items-start">
+          {/* Billing tabs */}
+          <div className="flex justify-center mb-10">
+            <div className="flex bg-white border border-gray-200 rounded-2xl p-1 gap-1 shadow-sm">
+              {(['monthly', 'annual'] as const).map(b => (
+                <button
+                  key={b}
+                  onClick={() => setBilling(b)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${billing === b ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  {tx.pricing.tabs[b]}
+                  {b === 'annual' && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full transition-colors ${billing === 'annual' ? 'bg-emerald-400/20 text-emerald-300' : 'bg-emerald-100 text-emerald-600'}`}>{tx.pricing.annualBadge}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-5 items-stretch">
+
             {/* ── Free ── */}
             <div className="bg-white border border-gray-200 rounded-3xl p-7 flex flex-col">
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-3">{tx.pricing.free.name}</div>
-              <div className="mb-2">
-                <span className="text-5xl font-black text-gray-900 tracking-tight">{tx.pricing.free.price}</span>
+              {/* Price area */}
+              <div className="h-52 flex flex-col">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-4">{tx.pricing.free.name}</div>
+                <div className="mb-3">
+                  <span className="text-5xl font-black text-gray-900 tracking-tight">0 ₸</span>
+                </div>
+                <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5 self-start mt-auto">{tx.pricing.free.limit}</span>
               </div>
-              <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5 mb-7 self-start">{tx.pricing.free.limit}</span>
-              {/* Active */}
-              <ul className="space-y-2.5 mb-3">
-                {tx.pricing.freeFeatures.map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700">
-                    <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />{f}
+              {/* Features */}
+              <ul className="space-y-2.5 flex-1 mb-7 mt-6">
+                {tx.pricing.features.map(f => (
+                  <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.free ? 'text-gray-700' : 'text-gray-300'}`}>
+                    {f.free
+                      ? <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                      : <X className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />}
+                    {f.label}
                   </li>
                 ))}
               </ul>
-              {/* Locked (Pro only) */}
-              <div className="border-t border-gray-100 pt-3 mb-8 space-y-2">
-                {tx.pricing.proFeatures.map(f => (
-                  <div key={f} className="flex items-start gap-2.5 text-sm text-gray-300">
-                    <Check className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />{f}
-                  </div>
-                ))}
-              </div>
               <Link href="/register" className="block text-center bg-gray-900 hover:bg-gray-700 text-white font-bold py-3.5 rounded-2xl transition-colors">
                 {tx.pricing.free.cta}
               </Link>
             </div>
 
             {/* ── Pro ── */}
-            <div className="relative">
+            <div className="relative flex flex-col">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
                 <span className="bg-emerald-950 text-emerald-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
                   {tx.pricing.pro.badge}
                 </span>
               </div>
-              <div className="relative rounded-3xl p-7 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
+              <div className="relative rounded-3xl p-7 flex flex-col flex-1 overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
                 <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                <div className="relative z-10 flex flex-col">
-                  <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-3">{tx.pricing.pro.name}</div>
-                  <div className="flex items-baseline gap-1.5 mb-1">
-                    <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.monthly}</span>
-                    <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.monthlyPer}</span>
+                <div className="relative z-10 flex flex-col flex-1">
+                  {/* Price area */}
+                  <div className="h-52 flex flex-col">
+                    <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-4">{tx.pricing.pro.name}</div>
+                    {billing === 'monthly' ? (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceMonthly}</span>
+                        <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perMonthly}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-1.5 mb-1">
+                          <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceAnnual}</span>
+                          <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perAnnual}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1 mb-3">
+                          <span className="text-lg font-bold text-emerald-200">{tx.pricing.pro.priceAnnualMonthly}</span>
+                          <span className="text-xs text-emerald-300">{tx.pricing.pro.perMonthly}</span>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1.5 mt-auto">
+                          <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
+                          <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.savingAnnual}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="h-px flex-1 bg-emerald-400/30" />
-                    <span className="text-xs text-emerald-300 font-medium whitespace-nowrap">{lang === 'en' ? 'or' : lang === 'kz' ? 'немесе' : 'или'}</span>
-                    <div className="h-px flex-1 bg-emerald-400/30" />
-                  </div>
-                  <div className="flex items-baseline gap-1.5 mb-2">
-                    <span className="text-2xl font-black text-white tracking-tight">{tx.pricing.pro.annualMonthly}</span>
-                    <span className="text-xs text-emerald-200">{tx.pricing.pro.monthlyPer}</span>
-                    <span className="text-xs text-emerald-300 ml-1">({tx.pricing.pro.annual}{tx.pricing.pro.annualPer})</span>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1.5 mb-5">
-                    <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
-                    <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.discount}</span>
-                  </div>
-                  {/* Active: include label + pro features */}
-                  <ul className="space-y-2.5 mb-3">
-                    <li className="flex items-start gap-2.5 text-sm font-semibold text-emerald-200">
-                      <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />{tx.pricing.pro.includeLabel}
-                    </li>
-                    {tx.pricing.proFeatures.map(f => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm">
-                        <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
-                        <span className="text-emerald-50">{f}</span>
+                  {/* Features */}
+                  <ul className="space-y-2.5 flex-1 mb-7 mt-6">
+                    {tx.pricing.features.map(f => (
+                      <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.pro ? 'text-emerald-50' : 'text-emerald-300/35'}`}>
+                        {f.pro
+                          ? <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+                          : <X className="w-4 h-4 text-emerald-300/25 mt-0.5 shrink-0" />}
+                        {f.label}
                       </li>
                     ))}
                   </ul>
-                  {/* Locked (Enterprise) */}
-                  <div className="border-t border-emerald-400/20 pt-3 mb-8 space-y-2">
-                    {tx.pricing.enterpriseFeatures.map(f => (
-                      <div key={f} className="flex items-start gap-2.5 text-sm text-emerald-300/35">
-                        <Check className="w-4 h-4 text-emerald-300/25 mt-0.5 shrink-0" />{f}
-                      </div>
-                    ))}
-                  </div>
                   <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3.5 rounded-2xl transition-colors shadow-xl shadow-black/20">
                     {tx.pricing.pro.cta}
                   </Link>
@@ -825,37 +831,53 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             {/* ── Enterprise ── */}
             <div className="bg-white border-2 border-purple-200 rounded-3xl p-7 flex flex-col relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }} />
-              <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-3">{tx.pricing.enterprise.name}</div>
-              <div className="mb-1">
-                <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.price}</span>
+              {/* Price area */}
+              <div className="h-52 flex flex-col">
+                <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-4">{tx.pricing.enterprise.name}</div>
+                {billing === 'monthly' ? (
+                  <div className="flex items-baseline gap-1.5 mb-1">
+                    <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.priceMonthly}</span>
+                    <span className="text-sm text-gray-500 font-medium">{tx.pricing.enterprise.perMonthly}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1.5 mb-1">
+                      <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.priceAnnual}</span>
+                      <span className="text-sm text-gray-500 font-medium">{tx.pricing.enterprise.perAnnual}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="text-base font-bold text-gray-500">{tx.pricing.enterprise.priceAnnualMonthly}</span>
+                      <span className="text-xs text-gray-400">{tx.pricing.enterprise.perMonthly}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 self-start bg-purple-50 rounded-xl px-3 py-1.5">
+                      <Star className="w-3 h-3 text-purple-400" fill="currentColor" />
+                      <span className="text-xs font-bold text-purple-600">{tx.pricing.enterprise.savingAnnual}</span>
+                    </div>
+                  </>
+                )}
+                <p className="text-sm text-gray-400 mt-auto pt-2">{tx.pricing.enterprise.sub}</p>
               </div>
-              <p className="text-sm text-gray-400 mb-6 mt-1">{tx.pricing.enterprise.sub}</p>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                <li className="flex items-start gap-2.5 text-sm font-semibold text-gray-700">
-                  <Check className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />{tx.pricing.enterprise.includeLabel}
-                </li>
-                {tx.pricing.enterpriseFeatures.map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                    <Check className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />{f}
+              {/* Features */}
+              <ul className="space-y-2.5 flex-1 mb-7 mt-6">
+                {tx.pricing.features.map(f => (
+                  <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.enterprise ? 'text-gray-700' : 'text-gray-300'}`}>
+                    {f.enterprise
+                      ? <Check className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
+                      : <X className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />}
+                    {f.label}
                   </li>
                 ))}
               </ul>
-              <a
-                href="https://wa.me/message/YHLE2IFII4MSJ1"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/register?plan=enterprise"
                 className="block text-center font-black py-3.5 rounded-2xl transition-colors text-white"
                 style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
               >
                 {tx.pricing.enterprise.cta}
-              </a>
+              </Link>
             </div>
-          </div>
 
-          <p className="text-center mt-8 text-sm text-gray-400">
-            {tx.pricing.more}
-            <a href="#contact" className="text-emerald-600 font-semibold hover:underline">{tx.pricing.moreLink}</a>
-          </p>
+          </div>
         </div>
       </section>
 

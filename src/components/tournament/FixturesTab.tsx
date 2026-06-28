@@ -189,6 +189,13 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
   )
   const [isEditing, setIsEditing] = useState(status !== 'finished')
   const [form, setForm]           = useState<FormState | null>(null)
+  // Saved score: needed because fixture prop is stale until realtime re-syncs
+  const [savedH, setSavedH] = useState<number | null>(
+    fixture.played && fixture.home_score != null ? fixture.home_score : null
+  )
+  const [savedA, setSavedA] = useState<number | null>(
+    fixture.played && fixture.away_score != null ? fixture.away_score : null
+  )
 
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
@@ -251,7 +258,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
     )
     setSaving(false)
     if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
-    else { toast.success('Результат сохранён'); setIsEditing(false) }
+    else { toast.success('Результат сохранён'); setIsEditing(false); setSavedH(hs); setSavedA(as_) }
   }
 
   if (fixture.is_bye || !fixture.home_team_id || !fixture.away_team_id) {
@@ -285,7 +292,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
             <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2">{homeTeam?.name}</span>
           </div>
           <div className="font-black text-2xl text-gray-900 font-mono shrink-0 tabular-nums px-2">
-            {fixture.home_score ?? homeScore} – {fixture.away_score ?? awayScore}
+            {savedH ?? fixture.home_score ?? 0} – {savedA ?? fixture.away_score ?? 0}
           </div>
           <div className="flex items-center gap-2 justify-end min-w-0">
             <span className="font-bold text-sm text-gray-900 leading-tight break-words line-clamp-2 text-right">{awayTeam?.name}</span>
@@ -517,6 +524,9 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const T = tx[lang]
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
 
+  const hasUpcoming = initialFixtures.some(f => !f.is_bye && !f.played)
+  const [subTab, setSubTab] = useState<'upcoming' | 'results'>(hasUpcoming ? 'upcoming' : 'results')
+
   // Realtime sync: update fixtures when another user saves results
   useEffect(() => {
     const supabase = createClient()
@@ -542,32 +552,66 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
     )
   }
 
-  const byMatchday = fixtures.reduce<Record<number, Fixture[]>>((acc, f) => {
+  const played = fixtures.filter(f => !f.is_bye && f.played).length
+  const total  = fixtures.filter(f => !f.is_bye).length
+
+  const visibleFixtures = fixtures.filter(f => {
+    if (f.is_bye) return false
+    return subTab === 'upcoming' ? !f.played : f.played
+  })
+
+  const byMatchday = visibleFixtures.reduce<Record<number, Fixture[]>>((acc, f) => {
     if (!acc[f.matchday]) acc[f.matchday] = []
     acc[f.matchday].push(f)
     return acc
   }, {})
 
-  const played = fixtures.filter(f => !f.is_bye && f.played).length
-  const total  = fixtures.filter(f => !f.is_bye).length
-
-  const sortedMatchdays = Object.entries(byMatchday).sort(([mdA, mxsA], [mdB, mxsB]) => {
-    const aLive = mxsA.some(f => f.status === 'live')
-    const bLive = mxsB.some(f => f.status === 'live')
-    if (aLive !== bLive) return aLive ? -1 : 1
-    const aPlayed = mxsA.some(f => f.played && !f.is_bye)
-    const bPlayed = mxsB.some(f => f.played && !f.is_bye)
-    if (aPlayed && bPlayed) return +mdB - +mdA
-    if (!aPlayed && !bPlayed) return +mdA - +mdB
-    return aPlayed ? -1 : 1
+  const sortedMatchdays = Object.entries(byMatchday).sort(([mdA], [mdB]) => {
+    return subTab === 'results' ? +mdB - +mdA : +mdA - +mdB
   })
 
   const showCycleLabel = tournament.format === 'round_robin' || tournament.format === 'league_playoff' || !tournament.format
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setSubTab('upcoming')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+            subTab === 'upcoming'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {T.subUpcoming}
+        </button>
+        <button
+          onClick={() => setSubTab('results')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+            subTab === 'results'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {T.subResults}
+          {played > 0 && (
+            <span className="ml-1.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              {played}
+            </span>
+          )}
+        </button>
+      </div>
+
       <p className="text-sm text-gray-500">{T.matchesProgress(played, total)}</p>
-      {sortedMatchdays.map(([md, mxs]) => (
+
+      {sortedMatchdays.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+          <p className="text-gray-400 text-sm font-medium">
+            {subTab === 'upcoming' ? T.noUpcomingMatches : T.noResults}
+          </p>
+        </div>
+      ) : sortedMatchdays.map(([md, mxs]) => (
         <div key={md}>
           <div className="flex items-center gap-3 mb-3">
             <span className="font-black text-emerald-600 text-lg">{T.roundLabel(+md)}</span>

@@ -227,7 +227,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
   const showPlayoffTab        = fmt !== 'round_robin'                                    // playoff, groups_playoff, league_playoff
-  const fixturesTabLabel = fmt === 'league_playoff' ? T.tabLeagueStage : T.tabFixtures
+  const fixturesTabLabel = T.tabFixtures
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
@@ -535,7 +535,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                       text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
                       data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <BarChart2 size={13} className="shrink-0" />
-                    <span>{T.tabStandings}</span>
+                    <span>{fmt === 'league_playoff' ? T.tabLeagueStage : T.tabStandings}</span>
                   </TabsTrigger>
                 )}
 

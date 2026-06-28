@@ -69,16 +69,15 @@ const T = {
         { label: 'Публичная страница турнира', free: true, pro: true, enterprise: true },
         { label: 'Отчёты в PDF и PNG', free: true, pro: true, enterprise: true },
         { label: 'LIVE-режим с табло', free: true, pro: true, enterprise: true },
-        { label: 'Активных турниров — без лимита', free: false, pro: true, enterprise: true },
-        { label: 'Команд — без лимита', free: false, pro: true, enterprise: true },
-        { label: 'Отчёты без водяного знака', free: false, pro: true, enterprise: true },
-        { label: 'Соредакторы (до 3)', free: false, pro: true, enterprise: true },
+        { label: 'Неограниченное количество турниров и команд', free: false, pro: true, enterprise: true },
+        { label: 'Брендированные отчёты', free: false, pro: true, enterprise: true },
+        { label: 'Добавление соредакторов', free: false, pro: true, enterprise: true },
         { label: 'Приоритетная поддержка', free: false, pro: true, enterprise: true },
         { label: 'Постоянные лиги с сезонами', free: false, pro: false, enterprise: true },
         { label: 'Аналитика и статистика', free: false, pro: false, enterprise: true },
         { label: 'Профили команд и игроков', free: false, pro: false, enterprise: true },
         { label: 'Составы к матчам', free: false, pro: false, enterprise: true },
-        { label: 'SEO-страницы для лиги', free: false, pro: false, enterprise: true },
+        { label: 'Доступность в поисковых системах', free: false, pro: false, enterprise: true },
       ],
       free: {
         name: 'Старт',
@@ -87,17 +86,17 @@ const T = {
         cta: 'Начать бесплатно',
       },
       pro: {
-        name: 'Про', badge: 'Выбор организаторов',
+        name: 'PRO', badge: 'Выбор организаторов',
         priceMonthly: '4 990 ₸', perMonthly: '/ мес',
         priceAnnual: '44 990 ₸', perAnnual: '/ год',
-        priceAnnualMonthly: '3 749 ₸', savingAnnual: 'Экономия 14 890 ₸',
-        cta: 'Перейти на Про',
+        priceOriginalAnnual: 'Вместо 59 880 ₸', savingAnnual: 'Экономия 14 890 ₸',
+        cta: 'Перейти на PRO',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'Для федераций и лиг',
+        name: 'Enterprise', badge: 'Для федераций и лиг', sub: 'Полный функционал платформы',
         priceMonthly: 'от 39 990 ₸', perMonthly: '/ мес',
         priceAnnual: '349 990 ₸', perAnnual: '/ год',
-        priceAnnualMonthly: 'от 29 166 ₸', savingAnnual: 'Скидка 25%',
+        priceOriginalAnnual: 'Вместо 479 880 ₸', savingAnnual: 'Экономия 129 890 ₸',
         cta: 'Подключить Enterprise',
       },
     },
@@ -177,16 +176,15 @@ const T = {
         { label: 'Турнирдің жалпыға ортақ беті', free: true, pro: true, enterprise: true },
         { label: 'PDF және PNG есептері', free: true, pro: true, enterprise: true },
         { label: 'LIVE-режим тақтасы', free: true, pro: true, enterprise: true },
-        { label: 'Белсенді турнирлер — шексіз', free: false, pro: true, enterprise: true },
-        { label: 'Командалар — шексіз', free: false, pro: true, enterprise: true },
-        { label: 'Су белгісіз есептер', free: false, pro: true, enterprise: true },
-        { label: 'Соредакторлар (3-ке дейін)', free: false, pro: true, enterprise: true },
+        { label: 'Турнирлер мен командалар — шексіз', free: false, pro: true, enterprise: true },
+        { label: 'Брендтелген есептер', free: false, pro: true, enterprise: true },
+        { label: 'Соредакторларды қосу', free: false, pro: true, enterprise: true },
         { label: 'Басым қолдау', free: false, pro: true, enterprise: true },
         { label: 'Маусымдары бар тұрақты лигалар', free: false, pro: false, enterprise: true },
         { label: 'Аналитика және статистика', free: false, pro: false, enterprise: true },
         { label: 'Команда мен ойыншы профильдері', free: false, pro: false, enterprise: true },
         { label: 'Матчқа арналған құрамдар', free: false, pro: false, enterprise: true },
-        { label: 'Лигаға арналған SEO-беттер', free: false, pro: false, enterprise: true },
+        { label: 'Іздеу жүйелерінде қолжетімділік', free: false, pro: false, enterprise: true },
       ],
       free: {
         name: 'Старт',
@@ -195,17 +193,17 @@ const T = {
         cta: 'Тегін бастау',
       },
       pro: {
-        name: 'Про', badge: 'Ұйымдастырушылардың таңдауы',
+        name: 'PRO', badge: 'Ұйымдастырушылардың таңдауы',
         priceMonthly: '4 990 ₸', perMonthly: '/ ай',
         priceAnnual: '44 990 ₸', perAnnual: '/ жыл',
-        priceAnnualMonthly: '3 749 ₸', savingAnnual: '14 890 ₸ үнемдеу',
-        cta: 'Про-ға өту',
+        priceOriginalAnnual: 'Орнына 59 880 ₸', savingAnnual: '14 890 ₸ үнемдеу',
+        cta: 'PRO-ға өту',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'Федерациялар мен лигалар үшін',
+        name: 'Enterprise', badge: 'Федерациялар мен лигалар үшін', sub: 'Платформаның толық мүмкіндіктері',
         priceMonthly: '39 990 ₸-дан', perMonthly: '/ ай',
         priceAnnual: '349 990 ₸', perAnnual: '/ жыл',
-        priceAnnualMonthly: '29 166 ₸-дан', savingAnnual: '25% жеңілдік',
+        priceOriginalAnnual: 'Орнына 479 880 ₸', savingAnnual: '129 890 ₸ үнемдеу',
         cta: 'Enterprise-ке қосылу',
       },
     },
@@ -285,16 +283,15 @@ const T = {
         { label: 'Public tournament page', free: true, pro: true, enterprise: true },
         { label: 'PDF and PNG reports', free: true, pro: true, enterprise: true },
         { label: 'LIVE scoreboard', free: true, pro: true, enterprise: true },
-        { label: 'Unlimited active tournaments', free: false, pro: true, enterprise: true },
-        { label: 'Unlimited teams', free: false, pro: true, enterprise: true },
-        { label: 'Reports without watermark', free: false, pro: true, enterprise: true },
-        { label: 'Co-editors (up to 3)', free: false, pro: true, enterprise: true },
+        { label: 'Unlimited tournaments and teams', free: false, pro: true, enterprise: true },
+        { label: 'Branded reports', free: false, pro: true, enterprise: true },
+        { label: 'Adding co-editors', free: false, pro: true, enterprise: true },
         { label: 'Priority support', free: false, pro: true, enterprise: true },
         { label: 'Permanent leagues with seasons', free: false, pro: false, enterprise: true },
         { label: 'Analytics & statistics', free: false, pro: false, enterprise: true },
         { label: 'Team and player profiles', free: false, pro: false, enterprise: true },
         { label: 'Match lineups', free: false, pro: false, enterprise: true },
-        { label: 'SEO pages for leagues', free: false, pro: false, enterprise: true },
+        { label: 'Search engine visibility', free: false, pro: false, enterprise: true },
       ],
       free: {
         name: 'Starter',
@@ -303,17 +300,17 @@ const T = {
         cta: 'Start free',
       },
       pro: {
-        name: 'Pro', badge: 'Organizers\' choice',
+        name: 'PRO', badge: 'Organizers\' choice',
         priceMonthly: '4,990 ₸', perMonthly: '/ mo',
         priceAnnual: '44,990 ₸', perAnnual: '/ yr',
-        priceAnnualMonthly: '3,749 ₸', savingAnnual: 'Save 14,890 ₸',
-        cta: 'Go Pro',
+        priceOriginalAnnual: 'Instead of 59,880 ₸', savingAnnual: 'Save 14,890 ₸',
+        cta: 'Go PRO',
       },
       enterprise: {
-        name: 'Enterprise', sub: 'For federations & leagues',
+        name: 'Enterprise', badge: 'For leagues & federations', sub: 'Full platform capabilities',
         priceMonthly: 'from 39,990 ₸', perMonthly: '/ mo',
         priceAnnual: '349,990 ₸', perAnnual: '/ yr',
-        priceAnnualMonthly: 'from 29,166 ₸', savingAnnual: 'Save 25%',
+        priceOriginalAnnual: 'Instead of 479,880 ₸', savingAnnual: 'Save 129,890 ₸',
         cta: 'Get Enterprise',
       },
     },
@@ -527,7 +524,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a2218]/85 via-[#0a2218]/40 to-transparent hidden lg:block pointer-events-none" />
         <div className="absolute inset-0 block lg:hidden pointer-events-none" style={{ background: 'linear-gradient(to bottom, #0a2218 0%, #0a2218 55%, rgba(10,34,24,0.7) 75%, transparent 100%)' }} />
         {/* Content */}
-        <div className="relative pt-14 pb-20 lg:pt-20 lg:pb-32">
+        <div className="relative pt-24 pb-16 lg:pt-20 lg:pb-32">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="lg:max-w-[52%]">
               <div className="inline-flex items-center gap-2 bg-white/10 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 border border-white/15">
@@ -722,22 +719,19 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
       </section>
 
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="bg-gray-50 py-24 lg:py-28">
+      <section id="pricing" className="bg-gray-50 py-16 lg:py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <h2 className="text-[2rem] sm:text-[2.4rem] font-black tracking-tight mb-3" style={{ letterSpacing: '-.03em' }}>{tx.pricing.h2}</h2>
             <p className="text-gray-400 text-base">{tx.pricing.sub}</p>
           </div>
 
           {/* Billing tabs */}
-          <div className="flex justify-center mb-10">
+          <div className="flex justify-center mb-8">
             <div className="flex bg-white border border-gray-200 rounded-2xl p-1 gap-1 shadow-sm">
               {(['monthly', 'annual'] as const).map(b => (
-                <button
-                  key={b}
-                  onClick={() => setBilling(b)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${billing === b ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
-                >
+                <button key={b} onClick={() => setBilling(b)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${billing === b ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}>
                   {tx.pricing.tabs[b]}
                   {b === 'annual' && (
                     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full transition-colors ${billing === 'annual' ? 'bg-emerald-400/20 text-emerald-300' : 'bg-emerald-100 text-emerald-600'}`}>{tx.pricing.annualBadge}</span>
@@ -747,81 +741,72 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-5 items-stretch">
+          <div className="grid sm:grid-cols-3 gap-5 items-stretch mt-5">
 
             {/* ── Free ── */}
-            <div className="bg-white border border-gray-200 rounded-3xl p-7 flex flex-col">
-              {/* Price area */}
-              <div className="h-52 flex flex-col">
-                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-4">{tx.pricing.free.name}</div>
-                <div className="mb-3">
-                  <span className="text-5xl font-black text-gray-900 tracking-tight">0 ₸</span>
-                </div>
-                <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5 self-start mt-auto">{tx.pricing.free.limit}</span>
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 flex flex-col">
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[.12em] mb-3">{tx.pricing.free.name}</div>
+              <div className="flex items-baseline gap-1.5 mb-2">
+                <span className="text-4xl font-black text-gray-900 tracking-tight">0 ₸</span>
               </div>
-              {/* Features */}
-              <ul className="space-y-2.5 flex-1 mb-7 mt-6">
+              <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5 self-start">{tx.pricing.free.limit}</span>
+              <div className="border-t border-gray-100 mt-5 mb-4" />
+              <ul className="space-y-2 flex-1 mb-5">
                 {tx.pricing.features.map(f => (
-                  <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.free ? 'text-gray-700' : 'text-gray-300'}`}>
+                  <li key={f.label} className={`flex items-start gap-2 text-[13px] ${f.free ? 'text-gray-700' : 'text-gray-300'}`}>
                     {f.free
-                      ? <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                      : <X className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />}
+                      ? <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                      : <X className="w-3.5 h-3.5 text-gray-200 mt-0.5 shrink-0" />}
                     {f.label}
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-gray-900 hover:bg-gray-700 text-white font-bold py-3.5 rounded-2xl transition-colors">
+              <Link href="/register" className="block text-center bg-gray-900 hover:bg-gray-700 text-white font-bold py-3 rounded-2xl transition-colors text-sm">
                 {tx.pricing.free.cta}
               </Link>
             </div>
 
-            {/* ── Pro ── */}
+            {/* ── PRO ── */}
             <div className="relative flex flex-col">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
                 <span className="bg-emerald-950 text-emerald-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
                   {tx.pricing.pro.badge}
                 </span>
               </div>
-              <div className="relative rounded-3xl p-7 flex flex-col flex-1 overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
+              <div className="relative rounded-3xl p-6 flex flex-col flex-1 overflow-hidden" style={{ background: 'linear-gradient(145deg,#047857 0%,#059669 60%,#10b981 100%)' }}>
                 <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                 <div className="relative z-10 flex flex-col flex-1">
-                  {/* Price area */}
-                  <div className="h-52 flex flex-col">
-                    <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-4">{tx.pricing.pro.name}</div>
-                    {billing === 'monthly' ? (
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceMonthly}</span>
-                        <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perMonthly}</span>
+                  <div className="text-[10px] font-black text-emerald-300 uppercase tracking-[.12em] mb-3">{tx.pricing.pro.name}</div>
+                  {billing === 'monthly' ? (
+                    <div className="flex items-baseline gap-1.5 mb-2">
+                      <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceMonthly}</span>
+                      <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perMonthly}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1.5 mb-1">
+                        <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceAnnual}</span>
+                        <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perAnnual}</span>
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1.5 mb-1">
-                          <span className="text-4xl font-black text-white tracking-tight">{tx.pricing.pro.priceAnnual}</span>
-                          <span className="text-sm text-emerald-200 font-medium">{tx.pricing.pro.perAnnual}</span>
-                        </div>
-                        <div className="flex items-baseline gap-1 mb-3">
-                          <span className="text-lg font-bold text-emerald-200">{tx.pricing.pro.priceAnnualMonthly}</span>
-                          <span className="text-xs text-emerald-300">{tx.pricing.pro.perMonthly}</span>
-                        </div>
-                        <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1.5 mt-auto">
-                          <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
-                          <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.savingAnnual}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {/* Features */}
-                  <ul className="space-y-2.5 flex-1 mb-7 mt-6">
+                      <div className="text-sm text-emerald-200/60 mb-2">{tx.pricing.pro.priceOriginalAnnual}</div>
+                      <div className="inline-flex items-center gap-1.5 self-start bg-emerald-950/40 rounded-xl px-3 py-1 mb-1">
+                        <Star className="w-3 h-3 text-yellow-400" fill="currentColor" />
+                        <span className="text-xs font-bold text-emerald-100">{tx.pricing.pro.savingAnnual}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="border-t border-emerald-400/20 mt-5 mb-4" />
+                  <ul className="space-y-2 flex-1 mb-5">
                     {tx.pricing.features.map(f => (
-                      <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.pro ? 'text-emerald-50' : 'text-emerald-300/35'}`}>
+                      <li key={f.label} className={`flex items-start gap-2 text-[13px] ${f.pro ? 'text-emerald-50' : 'text-emerald-300/35'}`}>
                         {f.pro
-                          ? <Check className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
-                          : <X className="w-4 h-4 text-emerald-300/25 mt-0.5 shrink-0" />}
+                          ? <Check className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
+                          : <X className="w-3.5 h-3.5 text-emerald-300/25 mt-0.5 shrink-0" />}
                         {f.label}
                       </li>
                     ))}
                   </ul>
-                  <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3.5 rounded-2xl transition-colors shadow-xl shadow-black/20">
+                  <Link href="/register?plan=pro" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3 rounded-2xl transition-colors shadow-xl shadow-black/20 text-sm">
                     {tx.pricing.pro.cta}
                   </Link>
                 </div>
@@ -829,11 +814,15 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             </div>
 
             {/* ── Enterprise ── */}
-            <div className="bg-white border-2 border-purple-200 rounded-3xl p-7 flex flex-col relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }} />
-              {/* Price area */}
-              <div className="h-52 flex flex-col">
-                <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-4">{tx.pricing.enterprise.name}</div>
+            <div className="relative flex flex-col">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                <span className="bg-purple-950 text-purple-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                  {tx.pricing.enterprise.badge}
+                </span>
+              </div>
+              <div className="bg-white border-2 border-purple-200 rounded-3xl p-6 flex flex-col flex-1 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }} />
+                <div className="text-[10px] font-black text-purple-500 uppercase tracking-[.12em] mb-3">{tx.pricing.enterprise.name}</div>
                 {billing === 'monthly' ? (
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.priceMonthly}</span>
@@ -845,36 +834,33 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                       <span className="text-2xl font-black text-gray-900 tracking-tight">{tx.pricing.enterprise.priceAnnual}</span>
                       <span className="text-sm text-gray-500 font-medium">{tx.pricing.enterprise.perAnnual}</span>
                     </div>
-                    <div className="flex items-baseline gap-1 mb-2">
-                      <span className="text-base font-bold text-gray-500">{tx.pricing.enterprise.priceAnnualMonthly}</span>
-                      <span className="text-xs text-gray-400">{tx.pricing.enterprise.perMonthly}</span>
-                    </div>
-                    <div className="inline-flex items-center gap-1.5 self-start bg-purple-50 rounded-xl px-3 py-1.5">
+                    <div className="text-sm text-gray-400 mb-2">{tx.pricing.enterprise.priceOriginalAnnual}</div>
+                    <div className="inline-flex items-center gap-1.5 self-start bg-purple-50 rounded-xl px-3 py-1 mb-1">
                       <Star className="w-3 h-3 text-purple-400" fill="currentColor" />
                       <span className="text-xs font-bold text-purple-600">{tx.pricing.enterprise.savingAnnual}</span>
                     </div>
                   </>
                 )}
-                <p className="text-sm text-gray-400 mt-auto pt-2">{tx.pricing.enterprise.sub}</p>
+                <p className="text-xs text-gray-400 mt-2">{tx.pricing.enterprise.sub}</p>
+                <div className="border-t border-purple-100 mt-5 mb-4" />
+                <ul className="space-y-2 flex-1 mb-5">
+                  {tx.pricing.features.map(f => (
+                    <li key={f.label} className={`flex items-start gap-2 text-[13px] ${f.enterprise ? 'text-gray-700' : 'text-gray-300'}`}>
+                      {f.enterprise
+                        ? <Check className="w-3.5 h-3.5 text-purple-500 mt-0.5 shrink-0" />
+                        : <X className="w-3.5 h-3.5 text-gray-200 mt-0.5 shrink-0" />}
+                      {f.label}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/register?plan=enterprise"
+                  className="block text-center font-black py-3 rounded-2xl transition-colors text-white text-sm"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
+                >
+                  {tx.pricing.enterprise.cta}
+                </Link>
               </div>
-              {/* Features */}
-              <ul className="space-y-2.5 flex-1 mb-7 mt-6">
-                {tx.pricing.features.map(f => (
-                  <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.enterprise ? 'text-gray-700' : 'text-gray-300'}`}>
-                    {f.enterprise
-                      ? <Check className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
-                      : <X className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />}
-                    {f.label}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/register?plan=enterprise"
-                className="block text-center font-black py-3.5 rounded-2xl transition-colors text-white"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
-              >
-                {tx.pricing.enterprise.cta}
-              </Link>
             </div>
 
           </div>

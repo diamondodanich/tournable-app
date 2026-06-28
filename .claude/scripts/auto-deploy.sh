@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Auto CI/CD pipeline — runs as Stop hook after every Claude turn
-# Flow: TS check → commit → push branch → merge main → Vercel deploy
-# Exit 2 = asyncRewake (wakes Claude to fix errors)
+# Auto CI/CD pipeline — runs as Stop hook after every Claude session
+# Flow: TS check → commit → push → (merge main if on branch) → Vercel deploy
 
 BRANCH=$(git branch --show-current 2>/dev/null)
 [ -z "$BRANCH" ] && exit 0
-[ "$BRANCH" = "main" ] && exit 0
 
 # ── 1. Any uncommitted changes? ───────────────────────────────────────────────
 CHANGED=$(git status --porcelain 2>/dev/null)
@@ -27,18 +25,20 @@ if ! git diff --staged --quiet 2>/dev/null; then
   git commit --quiet -m "auto: ${STAT:-changes} ($(date '+%H:%M'))" 2>/dev/null
 fi
 
-# ── 4. Push branch ────────────────────────────────────────────────────────────
+# ── 4. Push ───────────────────────────────────────────────────────────────────
+if [ "$BRANCH" = "main" ]; then
+  # Working directly on main — just push
+  git push origin main --quiet 2>/dev/null || true
+  printf '{"systemMessage":"[auto-ci] OK — закоммичено и запушено в main. Vercel деплоит..."}'
+  exit 0
+fi
+
+# ── 5. Push feature branch ────────────────────────────────────────────────────
 git push origin "$BRANCH" --quiet 2>/dev/null || \
   git push --set-upstream origin "$BRANCH" --quiet 2>/dev/null || true
 
-# ── 5. Build check (fast Next.js type+lint, not full webpack build) ───────────
-BUILD_OUT=$(npx --no-install tsc --noEmit 2>&1 && echo "OK")
-# Note: full `npm run build` is done by Vercel on merge — skip it here to save time
-
-# ── 6. Code review (diff stat shown as lightweight QA summary) ────────────────
+# ── 6. Merge into main via main worktree ─────────────────────────────────────
 REVIEW=$(git log main..HEAD --oneline 2>/dev/null | head -10)
-
-# ── 7. Merge into main via main worktree ─────────────────────────────────────
 MAIN_DIR=$(git worktree list --porcelain 2>/dev/null \
            | grep "^worktree " | head -1 | sed "s/^worktree //")
 PUSHED=false
@@ -59,7 +59,6 @@ if [ -n "$MAIN_DIR" ] && [ "$MAIN_DIR" != "$(pwd)" ]; then
   fi
 fi
 
-# ── 8. Report ─────────────────────────────────────────────────────────────────
 if $PUSHED; then
   COMMITS=$(echo "$REVIEW" | wc -l | xargs)
   printf '{"systemMessage":"[auto-ci] OK — %s commit(s) merged в main. Vercel деплоит..."}' "$COMMITS"

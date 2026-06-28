@@ -524,41 +524,38 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-white pt-16 pb-12 lg:pt-24 lg:pb-16">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: .5 }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-white/50 to-white pointer-events-none" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 border border-emerald-100">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+      <section className="relative overflow-hidden bg-[#0a2218] min-h-[500px] lg:min-h-[600px]">
+        {/* Desktop background */}
+        <Image src="/screens/hero-desktop.png" alt="" fill sizes="100vw"
+          className="object-cover object-center hidden lg:block" priority />
+        {/* Mobile background */}
+        <Image src="/screens/hero-mobile.png" alt="" fill sizes="100vw"
+          className="object-cover object-center block lg:hidden" priority />
+        {/* Gradient overlay — ensures text legibility on left (desktop) / top (mobile) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a2218]/85 via-[#0a2218]/40 to-transparent hidden lg:block pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a2218]/80 via-[#0a2218]/30 to-transparent block lg:hidden pointer-events-none" />
+        {/* Content */}
+        <div className="relative pt-14 pb-20 lg:pt-20 lg:pb-32">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="lg:max-w-[52%]">
+              <div className="inline-flex items-center gap-2 bg-white/10 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 border border-white/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
                 {tx.hero.badge}
               </div>
-              <h1 className="text-[1.7rem] sm:text-[2.1rem] lg:text-[2.5rem] font-black leading-[1.08] tracking-tight text-gray-900 mb-5" style={{ letterSpacing: '-.03em' }}>
+              <h1 className="text-[1.7rem] sm:text-[2.1rem] lg:text-[2.5rem] font-black leading-[1.08] tracking-tight text-white mb-5" style={{ letterSpacing: '-.03em' }}>
                 {tx.hero.h1[0]}<br />
                 {tx.hero.h1[1]}<br />
-                <span className="text-emerald-600">{tx.hero.h1[2]}</span>
+                <span className="text-emerald-400">{tx.hero.h1[2]}</span>
               </h1>
-              <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-md">{tx.hero.sub}</p>
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-100">
+              <p className="text-base text-white/70 leading-relaxed mb-8 max-w-md">{tx.hero.sub}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href={`/register${lang !== 'ru' ? `?lang=${lang}` : ''}`} className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-colors shadow-lg shadow-black/30">
                   {tx.hero.cta} <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="#how" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 font-medium text-sm px-4 py-3.5 transition-colors">
+                <a href="#how" className="inline-flex items-center gap-1.5 text-white/60 hover:text-white font-medium text-sm px-4 py-3.5 transition-colors">
                   {tx.hero.cta2} <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
-            </div>
-            {/* Real laptop photo */}
-            <div className="relative">
-              <div className="absolute -inset-6 bg-gradient-to-br from-emerald-50/80 to-transparent rounded-[40px] -z-10" />
-              <Image
-                src="/screens/laptop.png"
-                alt="Tournable — турнирная таблица"
-                width={900} height={600}
-                className="w-full rounded-xl shadow-2xl"
-                priority
-              />
             </div>
           </div>
         </div>

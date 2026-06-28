@@ -49,6 +49,11 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
 
+  const langSuffix = lang !== 'ru' ? `?lang=${lang}` : ''
+  const registerHref = next
+    ? `/register${langSuffix || '?'}${langSuffix ? '&' : ''}next=${encodeURIComponent(next)}`
+    : `/register${langSuffix}`
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
@@ -117,7 +122,7 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
 
           <p className="text-center text-sm text-gray-500 mt-6">
             {tx.noAccount}{' '}
-            <Link href={tx.registerHref} className="text-emerald-600 font-bold hover:underline">
+            <Link href={registerHref} className="text-emerald-600 font-bold hover:underline">
               {tx.registerLink}
             </Link>
           </p>

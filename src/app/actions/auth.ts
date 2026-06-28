@@ -9,6 +9,7 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const nextRaw = (formData.get('next') as string | null) ?? ''
 
   const { error } = await supabase.auth.signUp({ email, password })
   if (error) return { error: error.message }
@@ -16,7 +17,9 @@ export async function signUp(formData: FormData) {
   // Fire-and-forget — not blocking redirect on email failure
   sendWelcomeEmail(email).catch(() => {})
 
-  redirect('/onboarding')
+  // If an invite or other deep link was waiting, go there instead of onboarding
+  const safePath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/onboarding'
+  redirect(safePath)
 }
 
 export async function signIn(formData: FormData) {

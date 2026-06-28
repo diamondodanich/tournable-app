@@ -525,16 +525,16 @@ export async function startFixture(
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
   if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
-  // Use admin client to bypass RLS for write operations (editors have view-only RLS)
-  const admin = createAdminClient()
+  // Prefer admin client (bypasses RLS for editors); fall back to user session for owners
+  const db = createAdminClient() ?? supabase
 
   // Mark fixture as live
-  const { error: fe } = await admin.from('fixtures').update({ status: 'live' }).eq('id', fixtureId)
+  const { error: fe } = await db.from('fixtures').update({ status: 'live' }).eq('id', fixtureId)
   if (fe) return { error: fe.message }
 
   // Pre-create the live_games record so the board opens immediately
   if (homeTeamId && awayTeamId) {
-    await admin.from('live_games').upsert({
+    await db.from('live_games').upsert({
       tournament_id: tournamentId,
       home_team_id: homeTeamId,
       away_team_id: awayTeamId,
@@ -560,8 +560,10 @@ export async function saveFixtureResult(
   events: { teamId: string; playerName: string; type?: string; minute?: number }[]
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
+  // Prefer admin client so editors can also save results (RLS would block them otherwise)
+  const db = createAdminClient() ?? supabase
 
-  const { error: fixtureError } = await supabase.from('fixtures').update({
+  const { error: fixtureError } = await db.from('fixtures').update({
     home_score: homeScore,
     away_score: awayScore,
     played: true,
@@ -570,14 +572,14 @@ export async function saveFixtureResult(
 
   if (fixtureError) return { error: fixtureError.message }
 
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await db
     .from('match_events').delete().eq('fixture_id', fixtureId)
 
   if (deleteError) return { error: deleteError.message }
 
   const valid = events.filter(e => e.playerName.trim())
   if (valid.length > 0) {
-    const { error: insertError } = await supabase.from('match_events').insert(
+    const { error: insertError } = await db.from('match_events').insert(
       valid.map(e => ({
         fixture_id: fixtureId,
         team_id: e.teamId,
@@ -589,8 +591,7 @@ export async function saveFixtureResult(
     if (insertError) return { error: insertError.message }
   }
 
-  // Sync score to live_games if a live game is active for this fixture
-  await supabase
+  await db
     .from('live_games')
     .update({ home_score: homeScore, away_score: awayScore })
     .eq('tournament_id', tournamentId)

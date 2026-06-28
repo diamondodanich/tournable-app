@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
-// Проверяет план ВЛАДЕЛЬЦА турнира
 async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro'> {
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -43,7 +42,6 @@ async function getOwnerOrEditorCheck(
   if (!t) return null
   if (t.user_id === user.id) return user
 
-  // Check editor access
   const { data: member } = await supabase
     .from('tournament_members')
     .select('role')
@@ -66,13 +64,12 @@ export async function initLiveGame(
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  // Live-табло — только для тарифа Про (проверяем план владельца турнира)
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
   if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
 
-  // Use admin client — editors can't upsert live_games directly due to RLS
-  const admin = createAdminClient()
-  const { data, error } = await admin.from('live_games').upsert({
+  // Prefer admin client (bypasses RLS for editors); fall back to user session for owners
+  const db = createAdminClient() ?? supabase
+  const { data, error } = await db.from('live_games').upsert({
     tournament_id: tournamentId,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
@@ -91,15 +88,27 @@ export async function initLiveGame(
   return { data: data as Record<string, unknown> }
 }
 
+export async function patchLiveGame(
+  tournamentId: string,
+  patch: Record<string, unknown>
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
+  const db = createAdminClient() ?? supabase
+  const { error } = await db.from('live_games').update(patch).eq('tournament_id', tournamentId)
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function finishLiveMatch(
   tournamentId: string
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  const admin = createAdminClient()
+  const db = createAdminClient() ?? supabase
 
-  const { data: liveGame, error: fetchError } = await admin
+  const { data: liveGame, error: fetchError } = await db
     .from('live_games')
     .select('*')
     .eq('tournament_id', tournamentId)
@@ -107,9 +116,8 @@ export async function finishLiveMatch(
 
   if (fetchError || !liveGame) return { error: 'Матч не найден' }
 
-  // Save results to fixture if linked (round-robin)
   if (liveGame.fixture_id) {
-    const { error } = await admin.from('fixtures').update({
+    const { error } = await db.from('fixtures').update({
       home_score: liveGame.home_score,
       away_score: liveGame.away_score,
       played: true,
@@ -119,12 +127,11 @@ export async function finishLiveMatch(
     if (error) return { error: error.message }
   }
 
-  // Save results to playoff_matches if linked
   if (liveGame.playoff_match_id) {
     const hs = liveGame.home_score
     const as_ = liveGame.away_score
     if (hs !== as_) {
-      const { data: pm } = await admin
+      const { data: pm } = await db
         .from('playoff_matches')
         .select('*')
         .eq('id', liveGame.playoff_match_id)
@@ -132,7 +139,7 @@ export async function finishLiveMatch(
 
       if (pm) {
         const winnerId = hs > as_ ? pm.home_team_id : pm.away_team_id
-        await admin.from('playoff_matches').update({
+        await db.from('playoff_matches').update({
           home_score: hs,
           away_score: as_,
           winner_id: winnerId,
@@ -140,14 +147,13 @@ export async function finishLiveMatch(
 
         if (pm.winner_to_match && winnerId) {
           const field = pm.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
-          await admin.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
+          await db.from('playoff_matches').update({ [field]: winnerId }).eq('id', pm.winner_to_match)
         }
       }
     }
   }
 
-  // Delete live game record
-  await admin.from('live_games').delete().eq('tournament_id', tournamentId)
+  await db.from('live_games').delete().eq('tournament_id', tournamentId)
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   revalidatePath(`/t/${tournamentId}/live`)

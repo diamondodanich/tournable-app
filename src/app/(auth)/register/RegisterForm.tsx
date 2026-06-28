@@ -20,7 +20,6 @@ const T = {
     confirm: 'Подтвердите пароль', confirmPh: 'Повторите пароль',
     btn: 'Создать аккаунт бесплатно', btnLoading: 'Создаём аккаунт…',
     hasAccount: 'Уже есть аккаунт?', loginLink: 'Войти',
-    loginHref: '/login',
     mismatch: 'Пароли не совпадают',
     tooShort: 'Пароль должен быть не менее 6 символов',
     consent: 'Нажимая «Создать аккаунт», вы принимаете',
@@ -36,7 +35,6 @@ const T = {
     confirm: 'Құпия сөзді растаңыз', confirmPh: 'Құпия сөзді қайталаңыз',
     btn: 'Тегін аккаунт жасау', btnLoading: 'Аккаунт жасалуда…',
     hasAccount: 'Аккаунт бар ма?', loginLink: 'Кіру',
-    loginHref: '/login?lang=kz',
     mismatch: 'Құпия сөздер сәйкес келмейді',
     tooShort: 'Құпия сөз кемінде 6 таңбадан тұруы керек',
     consent: '«Аккаунт жасау» батырмасын басу арқылы сіз қабылдайсыз',
@@ -52,7 +50,6 @@ const T = {
     confirm: 'Confirm password', confirmPh: 'Repeat your password',
     btn: 'Create free account', btnLoading: 'Creating account…',
     hasAccount: 'Already have an account?', loginLink: 'Sign in',
-    loginHref: '/login?lang=en',
     mismatch: 'Passwords do not match',
     tooShort: 'Password must be at least 6 characters',
     consent: 'By clicking "Create account" you agree to our',
@@ -62,10 +59,15 @@ const T = {
   },
 } as const
 
-export default function RegisterForm({ lang }: { lang: Lang }) {
+export default function RegisterForm({ lang, next = '' }: { lang: Lang; next?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
+
+  const langSuffix = lang !== 'ru' ? `?lang=${lang}` : ''
+  const loginHref = next
+    ? `/login${langSuffix || '?'}${langSuffix ? '&' : ''}next=${encodeURIComponent(next)}`
+    : `/login${langSuffix}`
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -87,7 +89,6 @@ export default function RegisterForm({ lang }: { lang: Lang }) {
         <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#047857,#10b981)' }} />
 
         <div className="p-8">
-          {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <Image src="/logo-green.png" alt="Tournable" width={44} height={44} className="w-11 h-11 object-contain" />
             <div>
@@ -101,6 +102,7 @@ export default function RegisterForm({ lang }: { lang: Lang }) {
           <OAuthButtons lang={lang} mode="register" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {next && <input type="hidden" name="next" value={next} />}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-semibold text-gray-700">{tx.email}</Label>
               <Input id="email" name="email" type="email" placeholder={tx.emailPh} required
@@ -139,7 +141,7 @@ export default function RegisterForm({ lang }: { lang: Lang }) {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             {tx.hasAccount}{' '}
-            <Link href={tx.loginHref} className="text-emerald-600 font-bold hover:underline">
+            <Link href={loginHref} className="text-emerald-600 font-bold hover:underline">
               {tx.loginLink}
             </Link>
           </p>

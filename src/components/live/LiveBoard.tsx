@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
-import { finishLiveMatch, initLiveGame } from '@/app/actions/live'
+import { finishLiveMatch, initLiveGame, patchLiveGame } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus } from 'lucide-react'
@@ -232,9 +232,8 @@ export default function LiveBoard({
 
   // ── DB helper ─────────────────────────────────────────────────────────────
   const patchGame = useCallback(async (patch: Partial<LiveGame>) => {
-    const { error } = await supabase
-      .from('live_games').update(patch).eq('tournament_id', tournament.id)
-    if (error) toast.error(error.message)
+    const { error } = await patchLiveGame(tournament.id, patch as Record<string, unknown>)
+    if (error) toast.error(error)
   }, [tournament.id])
 
   // ── Init match (via server action — works for both owners and editors) ─────

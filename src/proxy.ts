@@ -28,12 +28,18 @@ export async function proxy(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/register')
 
+  // Unauthenticated user on a protected route → redirect to login, preserving next
   if (!user && !isAuthPage && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+    return NextResponse.redirect(loginUrl)
   }
 
+  // Logged-in user on auth page → redirect to next if present, otherwise dashboard
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const next = request.nextUrl.searchParams.get('next')
+    const target = next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+    return NextResponse.redirect(new URL(target, request.url))
   }
 
   return supabaseResponse

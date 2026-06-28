@@ -369,37 +369,52 @@ export default function SetupTab({
             </p>
           ) : (
             <div className="space-y-2">
-              {members.map(m => (
-                <div key={m.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    {m.status === 'accepted' ? (
-                      <p className="text-sm font-medium text-gray-800">
-                        {m.role === 'editor' ? 'Редактор' : 'Наблюдатель'}
-                        <span className="ml-2 text-xs text-gray-400 font-mono">
-                          #{m.user_id?.slice(-8) ?? '—'}
+              {members.map(m => {
+                const email = m.invited_email
+                const initials = email
+                  ? email.slice(0, 2).toUpperCase()
+                  : (m.user_id ? m.user_id.slice(0, 2).toUpperCase() : '?')
+                const roleLabel = m.role === 'editor' ? 'Редактор' : 'Наблюдатель'
+                const roleColor = m.role === 'editor'
+                  ? 'bg-violet-100 text-violet-700'
+                  : 'bg-sky-100 text-sky-700'
+                return (
+                  <div key={m.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${
+                      m.status === 'accepted' ? 'bg-gray-200 text-gray-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {email ?? (m.user_id ? `#${m.user_id.slice(-8)}` : '—')}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleColor}`}>
+                          {roleLabel}
                         </span>
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 flex items-center gap-1.5">
-                        <Clock size={12} />
-                        Ожидает принятия
-                        <span className="text-xs">({m.role === 'editor' ? 'редактор' : 'наблюдатель'})</span>
-                      </p>
-                    )}
+                        {m.status === 'pending' && (
+                          <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                            <Clock size={10} />
+                            Ожидает
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setMembers(prev => prev.filter(x => x.id !== m.id))
+                        await removeMember(m.id, tournament.id)
+                        toast.success('Доступ отозван')
+                      }}
+                      className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
+                      title="Отозвать доступ"
+                    >
+                      <UserX size={15} />
+                    </button>
                   </div>
-                  <button
-                    onClick={async () => {
-                      setMembers(prev => prev.filter(x => x.id !== m.id))
-                      await removeMember(m.id, tournament.id)
-                      toast.success('Доступ отозван')
-                    }}
-                    className="text-gray-300 hover:text-red-500 transition-colors"
-                    title="Отозвать доступ"
-                  >
-                    <UserX size={15} />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

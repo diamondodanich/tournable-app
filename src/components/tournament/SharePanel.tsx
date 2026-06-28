@@ -398,22 +398,31 @@ function MemberRow({ member, onRemove }: {
   member: TournamentMember
   onRemove: (id: string) => void
 }) {
-  const initials = member.user_id
-    ? member.user_id.slice(0, 2).toUpperCase()
-    : '?'
+  const email = member.invited_email
+  const initials = email
+    ? email.slice(0, 2).toUpperCase()
+    : (member.user_id ? member.user_id.slice(0, 2).toUpperCase() : '?')
 
-  const joinedAt = new Date(member.created_at).toLocaleDateString('ru-RU', {
-    day: 'numeric', month: 'short',
-  })
+  const roleLabel = member.role === 'editor' ? 'Редактор' : 'Наблюдатель'
+  const roleColor = member.role === 'editor' ? 'bg-violet-100 text-violet-700' : 'bg-sky-100 text-sky-700'
 
   return (
     <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
-      <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-black text-gray-600 shrink-0">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+        member.status === 'accepted' ? 'bg-gray-200 text-gray-600' : 'bg-gray-100 text-gray-400'
+      }`}>
         {initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold text-gray-700 truncate">Участник</p>
-        <p className="text-[10px] text-gray-400">с {joinedAt}</p>
+        <p className="text-xs font-bold text-gray-700 truncate">
+          {email ?? (member.user_id ? `#${member.user_id.slice(-8)}` : '—')}
+        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${roleColor}`}>{roleLabel}</span>
+          {member.status === 'pending' && (
+            <span className="text-[9px] text-amber-500 font-medium">Ожидает</span>
+          )}
+        </div>
       </div>
       <button
         onClick={() => onRemove(member.id)}

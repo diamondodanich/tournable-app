@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
-import { SoccerBallIcon, AssistIcon } from '@/components/ui/SportIcon'
+import { AssistIcon } from '@/components/ui/SportIcon'
+import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useFeedback } from '@/hooks/useFeedback'
@@ -29,9 +30,20 @@ function formatTime(secs: number) {
   return `${m}:${s}`
 }
 
-function EventIcon({ type, size = 14 }: { type: string; size?: number }) {
-  if (type === 'goal')        return <SoccerBallIcon size={size} className="text-emerald-400 shrink-0" />
-  if (type === 'own_goal')    return <SoccerBallIcon size={size} className="text-red-400 shrink-0" />
+const BASKETBALL_SPORTS = new Set(['basketball', 'streetball', 'ebasketball'])
+
+function GoalBall({ size, sport, className }: { size: number; sport?: string; className?: string }) {
+  const Ball = BASKETBALL_SPORTS.has(sport ?? '') ? BasketballBall : SoccerBall
+  return (
+    <div style={{ width: size, height: size }} className={`inline-flex items-center justify-center shrink-0 ${className ?? ''}`}>
+      <Ball className="w-full h-full" />
+    </div>
+  )
+}
+
+function EventIcon({ type, size = 14, sport }: { type: string; size?: number; sport?: string }) {
+  if (type === 'goal')        return <GoalBall size={size} sport={sport} className="text-emerald-400" />
+  if (type === 'own_goal')    return <GoalBall size={size} sport={sport} className="text-red-400" />
   if (type === 'assist')      return <AssistIcon size={size} className="text-sky-400 shrink-0" />
   if (type === 'yellow_card') return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0"
     style={{ width: Math.round(size * 0.65), height: size }} />
@@ -306,9 +318,9 @@ export default function LiveBoard({
     ) as unknown as any
 
     setSubmitting(true)
-    // Auto-minute: use current timer minute if field is empty
+    // Auto-minute: use current timer minute if field is empty; 0:xx → 1' (football 1-indexed)
     const autoMin = Math.floor(displaySecs / 60)
-    const min = minute.trim() ? parseInt(minute) : (autoMin > 0 ? autoMin : null)
+    const min = minute.trim() ? parseInt(minute) : Math.max(1, autoMin)
 
     if (actionType === 'goal') {
       const type = isOwnGoal ? 'own_goal' as const : 'goal' as const
@@ -771,7 +783,7 @@ export default function LiveBoard({
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0 pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
-                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} /></span>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} /></span>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate leading-tight ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
                         {e.player_name}
@@ -810,7 +822,7 @@ export default function LiveBoard({
                         <p className="text-gray-500 text-[11px] truncate leading-tight text-right">{assist.player_name} ↗</p>
                       )}
                     </div>
-                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} /></span>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} /></span>
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>

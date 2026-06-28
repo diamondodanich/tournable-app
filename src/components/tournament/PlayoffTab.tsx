@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
-import { SoccerBallIcon } from '@/components/ui/SportIcon'
+import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -42,9 +42,18 @@ function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
 }
 
-function EventIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <SoccerBallIcon size={12} className="text-emerald-500 align-middle shrink-0" />
-  if (type === 'own_goal')    return <SoccerBallIcon size={12} className="text-red-400 align-middle shrink-0" />
+const BASKETBALL_SPORTS_PT = new Set(['basketball', 'streetball', 'ebasketball'])
+
+function EventIcon({ type, sport }: { type: string; sport?: string }) {
+  if (type === 'goal' || type === 'own_goal') {
+    const Ball = BASKETBALL_SPORTS_PT.has(sport ?? '') ? BasketballBall : SoccerBall
+    const color = type === 'own_goal' ? 'text-red-400' : 'text-emerald-500'
+    return (
+      <div style={{ width: 12, height: 12 }} className={`inline-flex items-center justify-center shrink-0 align-middle ${color}`}>
+        <Ball className="w-full h-full" />
+      </div>
+    )
+  }
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
@@ -173,11 +182,12 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, isLive, homeLabel, awayLabel, isPro,
+  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro,
 }: {
   match: PlayoffMatch
   teams: Team[]
   tournamentId: string
+  sport?: string
   isLive: boolean
   homeLabel?: string   // shown when home_team_id is null (e.g. "A1", "1-е м.")
   awayLabel?: string   // shown when away_team_id is null
@@ -321,7 +331,7 @@ function PlayoffMatchCard({
               <div className="space-y-1">
                 {homeRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    <EventIcon type={r.type} />
+                    <EventIcon type={r.type} sport={sport} />
                     <span className="font-medium truncate">
                       {r.playerName}
                       {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -338,7 +348,7 @@ function PlayoffMatchCard({
                       {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                       {r.playerName}
                     </span>
-                    <EventIcon type={r.type} />
+                    <EventIcon type={r.type} sport={sport} />
                   </div>
                 ))}
               </div>
@@ -441,7 +451,7 @@ function PlayoffMatchCard({
             <div className="min-w-0 overflow-hidden">
               {homeRows.map((r, i) => (
                 <div key={i} className="flex items-center gap-1 mb-1">
-                  <EventIcon type={r.type} />
+                  <EventIcon type={r.type} sport={sport} />
                   <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
                     {r.playerName}
                     {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -474,7 +484,7 @@ function PlayoffMatchCard({
                     {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                     {r.playerName}
                   </span>
-                  <EventIcon type={r.type} />
+                  <EventIcon type={r.type} sport={sport} />
                 </div>
               ))}
               <button onClick={() => match.away_team_id && openForm(match.away_team_id)}
@@ -687,6 +697,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                         match={m}
                         teams={teams}
                         tournamentId={tournament.id}
+                        sport={tournament.sport ?? undefined}
                         isLive={livePlayoffMatchId === m.id}
                         homeLabel={labels?.home}
                         awayLabel={labels?.away}

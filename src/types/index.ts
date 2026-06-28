@@ -172,5 +172,6 @@ export type TournamentMember = {
   role: 'editor' | 'viewer'
   status: 'pending' | 'accepted'
   invite_token: string | null
+  invited_email: string | null
   created_at: string
 }

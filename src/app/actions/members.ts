@@ -52,7 +52,7 @@ export async function acceptInvite(token: string): Promise<{ ok?: true; tourname
     // UPDATE with user session — requires RLS policy "authenticated_accept_invite" on tournament_members
     const { error: updateErr } = await supabase
       .from('tournament_members')
-      .update({ user_id: user.id, status: 'accepted' })
+      .update({ user_id: user.id, status: 'accepted', invited_email: user.email ?? null })
       .eq('id', member.id)
 
     if (updateErr) {
@@ -99,6 +99,7 @@ export async function inviteByEmail(
     role,
     status: 'pending',
     invite_token: token,
+    invited_email: email,
   })
   if (error) return { error: error.message }
 

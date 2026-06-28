@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import Link from 'next/link'
-import { SoccerBallIcon } from '@/components/ui/SportIcon'
+import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/client'
 
@@ -34,9 +34,18 @@ function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
 }
 
-function EvtIcon({ type }: { type: string }) {
-  if (type === 'goal')        return <SoccerBallIcon size={12} className="text-emerald-500 align-middle shrink-0" />
-  if (type === 'own_goal')    return <SoccerBallIcon size={12} className="text-red-500 align-middle shrink-0" />
+const BASKETBALL_SPORTS_FT = new Set(['basketball', 'streetball', 'ebasketball'])
+
+function EvtIcon({ type, sport }: { type: string; sport?: string }) {
+  if (type === 'goal' || type === 'own_goal') {
+    const Ball = BASKETBALL_SPORTS_FT.has(sport ?? '') ? BasketballBall : SoccerBall
+    const color = type === 'own_goal' ? 'text-red-500' : 'text-emerald-500'
+    return (
+      <div style={{ width: 12, height: 12 }} className={`inline-flex items-center justify-center shrink-0 align-middle ${color}`}>
+        <Ball className="w-full h-full" />
+      </div>
+    )
+  }
   if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
   if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
   return null
@@ -154,10 +163,11 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
+  sport?: string
   isPro: boolean
   T: TournamentTx
 }) {
@@ -288,7 +298,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
               <div className="min-w-0 space-y-1">
                 {homeRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    <EvtIcon type={r.type} />
+                    <EvtIcon type={r.type} sport={sport} />
                     <span className="font-medium truncate flex-1 min-w-0">
                       {r.playerName}
                       {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -305,7 +315,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
                       {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                       {r.playerName}
                     </span>
-                    <EvtIcon type={r.type} />
+                    <EvtIcon type={r.type} sport={sport} />
                   </div>
                 ))}
               </div>
@@ -415,7 +425,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
           <div className="min-w-0 overflow-hidden">
             {homeRows.map((r, i) => (
               <div key={i} className="flex items-center gap-1 mb-1">
-                <EvtIcon type={r.type} />
+                <EvtIcon type={r.type} sport={sport} />
                 <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
                   {r.playerName}
                   {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -448,7 +458,7 @@ function FixtureCard({ fixture, teams, tournamentId, isPro, T }: {
                   {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                   {r.playerName}
                 </span>
-                <EvtIcon type={r.type} />
+                <EvtIcon type={r.type} sport={sport} />
               </div>
             ))}
             <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
@@ -569,7 +579,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} isPro={isPro} T={T} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} T={T} />)}
           </div>
         </div>
       ))}

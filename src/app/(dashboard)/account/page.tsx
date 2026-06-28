@@ -4,10 +4,11 @@ import ChangePasswordForm from './ChangePasswordForm'
 import CancelSubscriptionButton from './CancelSubscriptionButton'
 import SignOutButton from '@/components/account/SignOutButton'
 import DeleteAccountButton from '@/components/account/DeleteAccountButton'
+import AdminPlanButton from './AdminPlanButton'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
-  Mail, Calendar, Trophy, Zap, Infinity, Trash2, RefreshCw, Clock,
+  Mail, Calendar, Trophy, Zap, Infinity, Trash2, RefreshCw, Clock, Crown,
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -24,7 +25,7 @@ export default async function AccountPage() {
     getUserPlan(),
     supabase
       .from('profiles')
-      .select('plan_expires_at')
+      .select('plan_expires_at, is_admin')
       .eq('id', user!.id)
       .maybeSingle(),
     getPaymentHistory(),
@@ -36,6 +37,8 @@ export default async function AccountPage() {
   })
   const tc = tournamentCount ?? 0
   const isFreePlan = plan === 'free'
+  const isEnterprise = plan === 'enterprise'
+  const isAdmin = profileData?.is_admin === true
   const proExpiresAt = profileData?.plan_expires_at
     ? new Date(profileData.plan_expires_at).toLocaleDateString('ru-RU', {
         year: 'numeric', month: 'long', day: 'numeric',
@@ -123,7 +126,35 @@ export default async function AccountPage() {
             Тарифный план
           </h2>
 
-          {isFreePlan ? (
+          {isEnterprise ? (
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl font-black text-gray-900">Enterprise</span>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wide"
+                    style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+                    Активный план
+                  </span>
+                </div>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {[
+                    'Безлимитные турниры и команды',
+                    'Постоянные лиги с сезонами',
+                    'Профили команд и игроков',
+                    'Составы к матчам',
+                    'Углублённая статистика и аналитика',
+                    'До 10 соредакторов',
+                    'Приоритетная поддержка 24/7',
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-2">
+                      <Crown className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : isFreePlan ? (
             <div className="flex flex-col sm:flex-row items-start gap-6">
               {/* Current plan info */}
               <div className="flex-1">
@@ -232,7 +263,7 @@ export default async function AccountPage() {
                 <CancelSubscriptionButton />
               </div>
             </div>
-          )}
+          ) /* end !isFreePlan && !isEnterprise */}
         </div>
 
         {/* ── Payment history ───────────────────────────────────────── */}
@@ -286,6 +317,14 @@ export default async function AccountPage() {
 
         {/* ── Account actions: sign out (with confirmation) ─────────── */}
         <SignOutButton />
+
+        {/* ── Admin: plan switcher ──────────────────────────────────── */}
+        {isAdmin && (
+          <div className="bg-violet-50 border border-violet-200 rounded-2xl p-6">
+            <h2 className="font-black text-sm text-violet-500 uppercase tracking-widest mb-4">Admin — переключить план</h2>
+            <AdminPlanButton userId={user!.id} currentPlan={plan} />
+          </div>
+        )}
 
         {/* ── Danger zone: delete account ───────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-red-100 shadow-sm p-6">

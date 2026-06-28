@@ -26,7 +26,7 @@ function toSlug(name: string, id: string): string {
 }
 
 // ─── Plan helpers ─────────────────────────────────────────────────────────────
-async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<'free' | 'pro' | 'enterprise'> {
   const { data } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at')
@@ -34,6 +34,7 @@ async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, u
     .maybeSingle()
 
   if (!data) return 'free'
+  if (data.plan === 'enterprise') return 'enterprise'
   if (data.plan === 'pro') {
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }

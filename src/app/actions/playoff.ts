@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { generatePlayoffBracket } from '@/lib/tournament/playoff'
 
 // Проверяет план ВЛАДЕЛЬЦА турнира
-async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro'> {
+async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro' | 'enterprise'> {
   const { data: tournament } = await supabase
     .from('tournaments')
     .select('user_id')
@@ -21,6 +21,7 @@ async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, 
     .maybeSingle()
 
   if (!data) return 'free'
+  if (data.plan === 'enterprise') return 'enterprise'
   if (data.plan === 'pro') {
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }

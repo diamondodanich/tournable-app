@@ -116,7 +116,7 @@ export default async function DashboardPage() {
       .limit(3),
   ])
 
-  const isPro = plan === 'pro'
+  const isPro = plan === 'pro' || plan === 'enterprise'
   const invitedIds = new Set((tournaments ?? []).map((t: TournamentWithCount) => t.id))
   const invitedTournaments = (memberRows ?? [])
     .filter((m: any) => m.tournaments && !invitedIds.has(m.tournament_id) && !m.tournaments.deleted_at)

@@ -266,7 +266,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     supabase.auth.getUser(),
     getOwnerPlan(id),
   ])
-  const isPro = plan === 'pro'
+  const isPro = plan === 'pro' || plan === 'enterprise'
 
   const { data: tournament } = await supabase
     .from('tournaments')

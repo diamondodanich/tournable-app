@@ -120,6 +120,25 @@ export async function activatePro(
   return {}
 }
 
+// ── Активирует Enterprise (только is_admin) ───────────────────────────────────
+export async function activateEnterprise(userId: string): Promise<{ error?: string }> {
+  noStore()
+  const supabase = await createClient()
+
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) return { error: 'Не авторизован' }
+
+  const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle()
+  if (!profile?.is_admin) return { error: 'Недостаточно прав' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ id: userId, plan: 'enterprise', plan_expires_at: null, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+
+  if (error) return { error: error.message }
+  return {}
+}
+
 // ── Отменяет Pro (сразу переводит на free) ────────────────────────────────────
 export async function cancelSubscription(): Promise<{ error?: string }> {
   noStore()

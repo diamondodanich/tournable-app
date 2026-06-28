@@ -131,7 +131,14 @@
       "PowerShell(node \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\tournable_bizmodel.js\")",
       "Bash(find \"/c/Program Files/nodejs\" -name \"node.exe\" 2>/dev/null; find \"/c/Users/user\" -name \"node.exe\" -maxdepth 6 2>/dev/null | head -5)",
       "Bash(\"/c/Program Files/nodejs/npm.cmd\" install docx)",
-      "Bash(\"/c/Program Files/nodejs/node.exe\" tournable_bizmodel.js)"
+      "Bash(\"/c/Program Files/nodejs/node.exe\" tournable_bizmodel.js)",
+      "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/\\(dashboard\\)/dashboard/leagues/[leagueId]\")",
+      "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/players/[playerId]\")",
+      "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/teams/[teamSlug]\")",
+      "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/seasons/[year]\")",
+      "Bash(mkdir -p \"C:/Users/user/Documents/tournable-next/src/app/leagues/[slug]/matches/[matchId]\")",
+      "Bash(grep -v \"^[0-9]*:.*//\\\\|text\\\\|title\\\\|sub\\\\|badge\\\\|item\\\\|name\\\\|monthly\\\\|annual\\\\|saving\\\\|discount\\\\|nav\\\\|link\\\\|features\\\\|services\\\\|contact\\\\|start\\\\|login\\\\|dash\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")"
     ]
   }
 }

@@ -261,10 +261,10 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
             <ShieldCheck className="w-3 h-3" />
-            <span>Защищено FreedomPay · PCI DSS · 3D Secure</span>
+            <span>Защищено · PCI DSS · 3D Secure</span>
           </div>
 
-          {/* Payment system logos — required by FreedomPay */}
+          {/* Payment system logos */}
           <div className="flex items-center justify-center gap-2 pt-1">
             <svg width="44" height="14" viewBox="0 0 44 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Visa">
               <rect width="44" height="14" rx="2" fill="#1A1F71"/>

@@ -523,7 +523,7 @@ export async function startFixture(
 
   // Live-табло — только для тарифа Про (проверяем план владельца турнира)
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
-  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
+  if (ownerPlan === 'free') return { error: 'Live-табло доступно только на тарифе Про' }
 
   // Mark fixture as live
   const { error: fe } = await supabase.from('fixtures').update({ status: 'live' }).eq('id', fixtureId)

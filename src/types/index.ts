@@ -165,6 +165,26 @@ export type Player = {
   created_at: string
 }
 
+export type TeamPlayer = {
+  id: string
+  team_id: string
+  name: string
+  number: number | null
+  position: 'goalkeeper' | 'defender' | 'midfielder' | 'forward' | 'other'
+  photo_url: string | null
+  created_at: string
+}
+
+export type MatchLineup = {
+  id: string
+  fixture_id: string
+  team_id: string
+  player_id: string
+  role: 'starter' | 'sub'
+  slot: number | null
+  created_at: string
+}
+
 export type TournamentMember = {
   id: string
   tournament_id: string

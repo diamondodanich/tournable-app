@@ -267,6 +267,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     getOwnerPlan(id),
   ])
   const isPro = plan === 'pro' || plan === 'enterprise'
+  const isEnterprise = plan === 'enterprise'
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -657,7 +658,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
-            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} lang={lang} />
+            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} lang={lang} />
           </TabsContent>
         )}
         {showGroupStandingsTab && (

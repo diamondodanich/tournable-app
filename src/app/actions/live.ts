@@ -65,7 +65,7 @@ export async function initLiveGame(
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
-  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
+  if (ownerPlan === 'free') return { error: 'Live-табло доступно только на тарифе Про' }
 
   const { data, error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,

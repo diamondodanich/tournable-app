@@ -96,7 +96,7 @@ export async function startPlayoffMatch(
 
   // Live-табло — только для тарифа Про (проверяем план владельца турнира)
   const ownerPlan = await getOwnerPlan(supabase, tournamentId)
-  if (ownerPlan !== 'pro') return { error: 'Live-табло доступно только на тарифе Про' }
+  if (ownerPlan === 'free') return { error: 'Live-табло доступно только на тарифе Про' }
 
   // Use existing match scores if already recorded via card edit
   const { data: existingMatch } = await supabase

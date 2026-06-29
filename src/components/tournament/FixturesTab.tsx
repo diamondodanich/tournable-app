@@ -6,9 +6,10 @@ import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil, Lock, Loader2 } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Lock, Loader2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
+import LineupEditor from './LineupEditor'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
@@ -163,14 +164,16 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
   sport?: string
   isPro: boolean
+  isEnterprise: boolean
   T: TournamentTx
 }) {
+  const [showLineup, setShowLineup] = useState(false)
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
   const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
   const [events, setEvents] = useState<EventEntry[]>(
@@ -209,6 +212,23 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
     (e.teamId === fixture.away_team_id && e.type === 'goal') ||
     (e.teamId === fixture.home_team_id && e.type === 'own_goal')
   ).length
+
+  const canLineup = isEnterprise && !fixture.is_bye && !!fixture.home_team_id && !!fixture.away_team_id
+  const lineupBtn = canLineup ? (
+    <button onClick={() => setShowLineup(true)}
+      className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors">
+      <Users size={11} /> Состав
+    </button>
+  ) : null
+  const lineupModal = showLineup ? (
+    <LineupEditor
+      fixtureId={fixture.id}
+      tournamentId={tournamentId}
+      homeTeam={homeTeam}
+      awayTeam={awayTeam}
+      onClose={() => setShowLineup(false)}
+    />
+  ) : null
 
   function openForm(teamId: string) {
     if (form?.teamId === teamId) { setForm(null); return }
@@ -341,8 +361,10 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
         {showUpgrade && (
           <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
         )}
+        {lineupModal}
         <div className="flex items-center justify-between mb-4">
           <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>
+          {lineupBtn}
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-5">
           <div className="flex items-center gap-2 min-w-0">
@@ -380,12 +402,14 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
       {showUpgrade && (
         <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
       )}
+      {lineupModal}
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
           {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>}
         </div>
         <div className="flex items-center gap-2">
+          {lineupBtn}
           {status === 'finished' && isEditing && (
             <button onClick={() => setIsEditing(false)}
               className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors">
@@ -514,11 +538,12 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, T }: {
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, lang = 'ru' }: {
+export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, isEnterprise = false, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
   isPro?: boolean
+  isEnterprise?: boolean
   lang?: Lang
 }) {
   const T = tx[lang]
@@ -623,7 +648,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} T={T} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} />)}
           </div>
         </div>
       ))}

@@ -152,7 +152,9 @@
       "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $raw = [System.IO.File]::ReadAllBytes\\(\"src/components/landing/LandingPage.tsx\"\\); $skipBOM = $raw[3..\\($raw.Length-1\\)]; $asLatin = [System.Text.Encoding]::Latin1.GetString\\($skipBOM\\); $fixedBytes = [System.Text.Encoding]::Latin1.GetBytes\\($asLatin\\); $result = [System.Text.Encoding]::UTF8.GetString\\($fixedBytes\\); $idx = $result.IndexOf\\(\"h2:\"\\); $result.Substring\\($idx, 60\\))",
       "PowerShell(python3 --version 2>&1)",
       "PowerShell(python --version 2>&1)",
-      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $content = [System.IO.File]::ReadAllText\\(\"src/components/landing/LandingPage.tsx\", [System.Text.Encoding]::UTF8\\); $idx = $content.IndexOf\\(\"pricing\"\\); $content.Substring\\($idx, 150\\))"
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $content = [System.IO.File]::ReadAllText\\(\"src/components/landing/LandingPage.tsx\", [System.Text.Encoding]::UTF8\\); $idx = $content.IndexOf\\(\"pricing\"\\); $content.Substring\\($idx, 150\\))",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\фотки для лендинга\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\public\\\\screens\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})"
     ]
   }
 }

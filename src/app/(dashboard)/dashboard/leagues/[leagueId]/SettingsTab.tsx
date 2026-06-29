@@ -49,7 +49,7 @@ export default function SettingsTab({ league }: { league: League }) {
   }
 
   function handleDelete() {
-    if (!confirm(`Удалить лигу "${league.name}"? Это действие необратимо.`)) return
+    if (!confirm(`Удалить чемпионат "${league.name}"? Это действие необратимо.`)) return
     startTransition(() => deleteLeague(league.id))
   }
 
@@ -101,7 +101,7 @@ export default function SettingsTab({ league }: { league: League }) {
           <input
             value={metaTitle}
             onChange={e => setMetaTitle(e.target.value)}
-            placeholder="Meta title (по умолчанию = название лиги)"
+            placeholder="Meta title (по умолчанию = название чемпионата)"
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-purple-400 outline-none text-sm"
           />
           <input
@@ -144,7 +144,7 @@ export default function SettingsTab({ league }: { league: League }) {
           disabled={isPending}
           className="flex items-center gap-2 text-red-400 hover:text-red-600 text-sm font-medium transition-colors ml-auto"
         >
-          <Trash2 size={14} /> Удалить лигу
+          <Trash2 size={14} /> Удалить чемпионат
         </button>
       </div>
     </div>

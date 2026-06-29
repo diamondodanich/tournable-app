@@ -9,7 +9,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Подключить Enterprise — Tournable',
-  description: 'Enterprise для федераций и лиг. Постоянные лиги, профили игроков, углублённая статистика.',
+  description: 'Enterprise для федераций и лиг. Чемпионаты с сезонами, профили игроков, углублённая статистика.',
 }
 
 export default async function EnterpriseCheckoutPage() {

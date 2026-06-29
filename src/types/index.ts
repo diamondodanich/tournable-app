@@ -33,6 +33,7 @@ export type Team = {
   name: string
   logo_url: string | null
   group_name: string | null
+  league_team_id: string | null  // persistent championship team this represents (carries stats across seasons)
   created_at: string
 }
 

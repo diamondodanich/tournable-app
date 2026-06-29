@@ -1,27 +1,42 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Archive, Zap, X } from 'lucide-react'
+import { Plus, Archive, Zap, X, Trophy, Crown, ChevronDown } from 'lucide-react'
 import { archiveTournament } from '@/app/actions/tournaments'
 
 interface Props {
   isPro: boolean
+  isEnterprise?: boolean
   activeTournament: { id: string; name: string } | null
   label: string
 }
 
-export default function NewTournamentButton({ isPro, activeTournament, label }: Props) {
+export default function NewTournamentButton({ isPro, isEnterprise = false, activeTournament, label }: Props) {
   const [showModal, setShowModal] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  function handleClick() {
-    if (!isPro && activeTournament) {
-      setShowModal(true)
-      return
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
     }
+    if (menuOpen) document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [menuOpen])
+
+  function newTournament() {
+    setMenuOpen(false)
+    if (!isPro && activeTournament) { setShowModal(true); return }
     router.push('/dashboard/new')
+  }
+
+  function newChampionship() {
+    setMenuOpen(false)
+    if (!isEnterprise) { router.push('/checkout/enterprise'); return }
+    router.push('/dashboard/new?type=championship')
   }
 
   async function handleArchive() {
@@ -38,12 +53,48 @@ export default function NewTournamentButton({ isPro, activeTournament, label }: 
 
   return (
     <>
-      <button
-        onClick={handleClick}
-        className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap shrink-0"
-      >
-        <Plus size={15} /> {label}
-      </button>
+      <div className="relative shrink-0" ref={menuRef}>
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap"
+        >
+          <Plus size={15} /> {label}
+          <ChevronDown size={14} className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5 z-50">
+            <button
+              onClick={newTournament}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                <Trophy size={17} className="text-emerald-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-gray-900 text-sm">Турнир</p>
+                <p className="text-xs text-gray-400">Одно соревнование с расписанием</p>
+              </div>
+            </button>
+
+            <button
+              onClick={newChampionship}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-violet-50 transition-colors text-left group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                <Crown size={17} className="text-violet-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-gray-900 text-sm">Чемпионат</p>
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 leading-none">ENT</span>
+                </div>
+                <p className="text-xs text-gray-400">Постоянный, с сезонами и игроками</p>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
 
       {showModal && activeTournament && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

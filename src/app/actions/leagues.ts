@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { createTournamentWithSetup } from './tournaments'
 
 // ─── Slug generation (same transliteration as tournaments) ────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -246,4 +247,146 @@ export async function removePlayer(playerId: string, leagueId: string): Promise<
   await supabase.from('players').delete().eq('id', playerId)
   revalidatePath(`/dashboard/leagues/${leagueId}`)
   return {}
+}
+
+// ── Championship creation (championship + first season in one wizard) ──────────
+// Reuses the tournament wizard engine: creates a league (championship), then a
+// tournament (first season) with the full schedule, links persistent teams, and
+// records the season. Enterprise-only.
+type ChampSettings = {
+  matchPeriods?: number
+  extraTime?: boolean
+  matchDurationMins?: number
+  pointsWin?: number
+  pointsDraw?: number
+  pointsLoss?: number
+  groupsCount?: number
+  teamsAdvance?: number
+  sport?: string
+}
+
+export async function createChampionshipWithSetup(
+  name: string,
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
+  numRounds: number,
+  teamNames: string[],
+  seasonName: string,
+  settings?: ChampSettings,
+): Promise<{ leagueId?: string; tournamentId?: string; teamIds?: string[]; error?: string }> {
+  const { error: authErr, supabase, userId } = await requireEnterprise()
+  if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
+
+  const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+
+  // 1. Create the championship (league)
+  const leagueId = crypto.randomUUID()
+  const leagueSlug = toSlug(name.trim(), leagueId)
+  const { error: lErr } = await supabase.from('leagues').insert({
+    id: leagueId,
+    owner_id: userId,
+    name: name.trim(),
+    slug: leagueSlug,
+    sport: settings?.sport ?? null,
+    is_public: true,
+  })
+  if (lErr) return { error: lErr.message }
+
+  // 2. Create the first season as a full tournament (reuse wizard engine)
+  const t = await createTournamentWithSetup(name, format, numRounds, teamNames, settings)
+  if (t.error || !t.id) {
+    await supabase.from('leagues').delete().eq('id', leagueId) // rollback
+    return { error: t.error ?? 'Ошибка создания сезона' }
+  }
+
+  // 3. Create persistent championship teams + link tournament teams (same order)
+  const tournamentTeamIds = t.teamIds ?? []
+  if (validNames.length > 0) {
+    const ltRows = validNames.map(n => ({
+      league_id: leagueId,
+      name: n,
+      slug: teamSlug(n) || n.slice(0, 20).toLowerCase(),
+    }))
+    const { data: insertedLT } = await supabase.from('league_teams').insert(ltRows).select('id')
+    const ltIds = (insertedLT ?? []).map((r: { id: string }) => r.id)
+    await Promise.all(
+      tournamentTeamIds.map((tid, i) =>
+        ltIds[i]
+          ? supabase.from('teams').update({ league_team_id: ltIds[i] }).eq('id', tid)
+          : Promise.resolve()
+      )
+    )
+  }
+
+  // 4. Record the season linking championship + tournament
+  await supabase.from('seasons').insert({
+    league_id: leagueId,
+    tournament_id: t.id,
+    name: seasonName.trim() || 'Сезон 1',
+    status: 'active',
+  })
+
+  revalidatePath('/dashboard')
+  return { leagueId, tournamentId: t.id, teamIds: tournamentTeamIds }
+}
+
+// Returns the championship's persistent team names (for prefilling the season wizard).
+export async function getChampionshipTeams(leagueId: string): Promise<{ name: string; logo_url: string | null }[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('league_teams')
+    .select('name, logo_url')
+    .eq('league_id', leagueId)
+    .order('created_at')
+  return (data ?? []) as { name: string; logo_url: string | null }[]
+}
+
+// Add a new season to an existing championship, reusing its persistent teams.
+export async function addSeasonWithSetup(
+  leagueId: string,
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
+  numRounds: number,
+  teamNames: string[],
+  seasonName: string,
+  settings?: ChampSettings,
+): Promise<{ tournamentId?: string; teamIds?: string[]; error?: string }> {
+  const { error: authErr, supabase, userId } = await requireEnterprise()
+  if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
+
+  const { data: league } = await supabase.from('leagues').select('name, owner_id').eq('id', leagueId).single()
+  if (!league || league.owner_id !== userId) return { error: 'Нет доступа' }
+
+  const validNames = teamNames.map(n => n.trim()).filter(Boolean)
+
+  // Create the season tournament (named after the championship)
+  const t = await createTournamentWithSetup(league.name, format, numRounds, teamNames, settings)
+  if (t.error || !t.id) return { error: t.error ?? 'Ошибка создания сезона' }
+  const tournamentTeamIds = t.teamIds ?? []
+
+  // Map each season team to a persistent championship team (reuse existing by name, create if new)
+  const { data: existingLT } = await supabase.from('league_teams').select('id, name').eq('league_id', leagueId)
+  const byName = new Map<string, string>((existingLT ?? []).map((r: { id: string; name: string }) => [r.name.toLowerCase(), r.id]))
+
+  const linkOps = validNames.map(async (n, i) => {
+    let ltId = byName.get(n.toLowerCase())
+    if (!ltId) {
+      const { data: created } = await supabase
+        .from('league_teams')
+        .insert({ league_id: leagueId, name: n, slug: teamSlug(n) || n.slice(0, 20).toLowerCase() })
+        .select('id').single()
+      ltId = created?.id
+    }
+    const tid = tournamentTeamIds[i]
+    if (ltId && tid) await supabase.from('teams').update({ league_team_id: ltId }).eq('id', tid)
+  })
+  await Promise.all(linkOps)
+
+  await supabase.from('seasons').insert({
+    league_id: leagueId,
+    tournament_id: t.id,
+    name: seasonName.trim() || 'Новый сезон',
+    status: 'active',
+  })
+
+  revalidatePath(`/dashboard/leagues/${leagueId}`)
+  return { tournamentId: t.id, teamIds: tournamentTeamIds }
 }

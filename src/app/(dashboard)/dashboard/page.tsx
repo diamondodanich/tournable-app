@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { getUserPlan } from '@/app/actions/billing'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink } from 'lucide-react'
+import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import NewTournamentButton from '@/components/tournament/NewTournamentButton'
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
 
-  const [plan, { data: tournaments }, { data: memberRows }, { data: showcaseTournaments }] = await Promise.all([
+  const [plan, { data: tournaments }, { data: memberRows }, { data: showcaseTournaments }, { data: championships }] = await Promise.all([
     getUserPlan(),
     supabase
       .from('tournaments')
@@ -114,9 +114,17 @@ export default async function DashboardPage() {
       .neq('user_id', user!.id)
       .order('created_at', { ascending: false })
       .limit(3),
+    // Championships (leagues) owned by the user — with season & team counts
+    supabase
+      .from('leagues')
+      .select('id, name, slug, sport, logo_url, seasons(count), league_teams(count)')
+      .eq('owner_id', user!.id)
+      .order('created_at', { ascending: false }),
   ])
 
   const isPro = plan === 'pro' || plan === 'enterprise'
+  const isEnterprise = plan === 'enterprise'
+  const champList = (championships ?? []) as any[]
   const invitedIds = new Set((tournaments ?? []).map((t: TournamentWithCount) => t.id))
   const invitedTournaments = (memberRows ?? [])
     .filter((m: any) => m.tournaments && !invitedIds.has(m.tournament_id) && !m.tournaments.deleted_at)
@@ -135,8 +143,9 @@ export default async function DashboardPage() {
         </div>
         <NewTournamentButton
           isPro={isPro}
+          isEnterprise={isEnterprise}
           activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
-          label={tx.newTournament}
+          label="Создать"
         />
       </div>
 
@@ -248,6 +257,48 @@ export default async function DashboardPage() {
               <Plus size={15} /> {tx.newTournament}
             </div>
           </Link>
+        </div>
+      )}
+
+      {champList.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Crown size={16} className="text-violet-500" />
+            <h2 className="text-base font-black text-gray-700">Чемпионаты</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {champList.map((c) => {
+              const seasonCount = c.seasons?.[0]?.count ?? 0
+              const teamCount = c.league_teams?.[0]?.count ?? 0
+              return (
+                <Link key={c.id} href={`/dashboard/leagues/${c.id}`}>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-violet-100 hover:border-violet-300 hover:shadow-md transition-all p-5 h-full flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <TeamAvatar name={c.name} logoUrl={c.logo_url} size={40} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-black text-gray-900 text-base leading-snug">{c.name}</p>
+                          <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                            Чемпионат
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
+                      <span className="flex items-center gap-1">
+                        <Layers size={11} /> {seasonCount} сезон{seasonCount === 1 ? '' : seasonCount >= 2 && seasonCount <= 4 ? 'а' : 'ов'}
+                      </span>
+                      {teamCount > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users size={11} /> {tx.teams(teamCount)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 

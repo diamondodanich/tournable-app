@@ -1,43 +1,22 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { addSeason, removeSeason, updateSeason } from '@/app/actions/leagues'
-import { Plus, Trash2, ExternalLink, Check, X } from 'lucide-react'
+import { useTransition } from 'react'
+import Link from 'next/link'
+import { removeSeason, updateSeason } from '@/app/actions/leagues'
+import { Plus, Trash2, ExternalLink } from 'lucide-react'
 import type { Season } from '@/types'
-
-type TournamentOption = { id: string; name: string }
 
 export default function SeasonsTab({
   leagueId,
   seasons,
-  tournaments,
 }: {
   leagueId: string
   seasons: Season[]
-  tournaments: TournamentOption[]
 }) {
   const [isPending, startTransition] = useTransition()
-  const [adding, setAdding] = useState(false)
-  const [name, setName] = useState('')
-  const [tournamentId, setTournamentId] = useState('')
-  const [error, setError] = useState('')
-
-  function handleAdd() {
-    if (!name.trim()) { setError('Введите название'); return }
-    setError('')
-    startTransition(() => {
-      void (async () => {
-        const result = await addSeason(leagueId, name.trim(), tournamentId || null)
-        if (result?.error) { setError(result.error); return }
-        setAdding(false)
-        setName('')
-        setTournamentId('')
-      })()
-    })
-  }
 
   function handleRemove(seasonId: string) {
-    if (!confirm('Удалить сезон?')) return
+    if (!confirm('Удалить сезон? Турнир этого сезона тоже будет удалён.')) return
     startTransition(() => { void removeSeason(seasonId, leagueId) })
   }
 
@@ -48,8 +27,8 @@ export default function SeasonsTab({
 
   return (
     <div className="space-y-3">
-      {seasons.length === 0 && !adding && (
-        <p className="text-sm text-gray-400 py-4 text-center">Нет сезонов. Добавьте первый.</p>
+      {seasons.length === 0 && (
+        <p className="text-sm text-gray-400 py-4 text-center">Пока нет сезонов. Создайте первый.</p>
       )}
 
       {seasons.map(s => (
@@ -57,13 +36,12 @@ export default function SeasonsTab({
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm text-gray-900">{s.name}</p>
             {s.tournament_id && (
-              <a
+              <Link
                 href={`/dashboard/tournament/${s.tournament_id}`}
-                target="_blank"
-                className="flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 mt-0.5"
+                className="flex items-center gap-1 text-xs text-violet-500 hover:text-violet-700 mt-0.5"
               >
-                <ExternalLink size={10} /> Открыть турнир
-              </a>
+                <ExternalLink size={10} /> Открыть сезон
+              </Link>
             )}
           </div>
           <button
@@ -87,50 +65,15 @@ export default function SeasonsTab({
         </div>
       ))}
 
-      {adding ? (
-        <div className="bg-white rounded-xl border border-purple-200 p-4 space-y-3">
-          <input
-            autoFocus
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Название сезона (напр. Сезон 2025)"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-sm"
-          />
-          <select
-            value={tournamentId}
-            onChange={e => setTournamentId(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-sm bg-white"
-          >
-            <option value="">Турнир не выбран</option>
-            {tournaments.map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-          {error && <p className="text-xs text-red-500">{error}</p>}
-          <div className="flex gap-2">
-            <button
-              onClick={handleAdd}
-              disabled={isPending}
-              className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
-            >
-              <Check size={14} /> Добавить
-            </button>
-            <button
-              onClick={() => { setAdding(false); setError('') }}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 text-sm px-3 py-2 rounded-lg transition-colors"
-            >
-              <X size={14} /> Отмена
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-purple-600 font-medium transition-colors py-1"
-        >
-          <Plus size={14} /> Добавить сезон
-        </button>
-      )}
+      <Link
+        href={`/dashboard/new?type=championship&league=${leagueId}`}
+        className="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-colors py-2.5 rounded-xl mt-2"
+      >
+        <Plus size={15} /> Добавить сезон
+      </Link>
+      <p className="text-xs text-gray-400 text-center">
+        Новый сезон создаётся как турнир с командами чемпионата — формат и расписание выбираются в мастере.
+      </p>
     </div>
   )
 }

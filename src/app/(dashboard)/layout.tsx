@@ -91,12 +91,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/dashboard" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
               {tx.myTournaments}
             </Link>
-            {isEnterprise && (
-              <Link href="/dashboard/leagues" className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
-                {tx.leagues}
-                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-400/30 text-purple-200 leading-none">ENT</span>
-              </Link>
-            )}
             <Link href="/#features" className="px-3 py-2 text-sm text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-all font-medium">
               {tx.features}
             </Link>

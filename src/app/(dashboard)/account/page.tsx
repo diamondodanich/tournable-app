@@ -139,7 +139,7 @@ export default async function AccountPage() {
                 <ul className="space-y-2 text-sm text-gray-600">
                   {[
                     'Безлимитные турниры и команды',
-                    'Постоянные лиги с сезонами',
+                    'Чемпионаты с сезонами',
                     'Профили команд и игроков',
                     'Составы к матчам',
                     'Углублённая статистика и аналитика',
@@ -224,7 +224,7 @@ export default async function AccountPage() {
                   <div className="text-xs text-violet-200 mb-4">/ месяц</div>
                   <ul className="space-y-1.5 text-xs text-violet-100 mb-5 text-left">
                     {[
-                      'Постоянные лиги с сезонами',
+                      'Чемпионаты с сезонами',
                       'Профили команд и игроков',
                       'Составы к матчам',
                       'Углублённая статистика',

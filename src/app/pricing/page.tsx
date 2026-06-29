@@ -35,8 +35,8 @@ const PRO_FEATURES = [
 
 const ENTERPRISE_FEATURES = [
   { text: 'Всё из тарифа Про', included: true },
-  { text: 'Постоянные лиги с сезонами', included: true },
-  { text: 'Публичные страницы лиги', included: true },
+  { text: 'Чемпионаты с сезонами', included: true },
+  { text: 'Публичные страницы чемпионата', included: true },
   { text: 'Профили команд и игроков', included: true },
   { text: 'Составы и история сезонов', included: true },
   { text: 'Таблица бомбардиров по сезонам', included: true },

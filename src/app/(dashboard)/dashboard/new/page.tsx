@@ -3,8 +3,9 @@
 import { useRef, useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
+import { createChampionshipWithSetup, addSeasonWithSetup, getChampionshipTeams } from '@/app/actions/leagues'
 import { getUserPlanAndAdmin } from '@/app/actions/billing'
-import { uploadTournamentLogo, uploadTeamLogo, uploadTournamentCover, setTournamentCoverTheme } from '@/app/actions/logos'
+import { uploadTournamentLogo, uploadTeamLogo, uploadTournamentCover, setTournamentCoverTheme, uploadLeagueLogo } from '@/app/actions/logos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -26,6 +27,33 @@ function getLang(): Lang {
   const v = m?.[1]
   return v === 'kz' || v === 'en' ? v : 'ru'
 }
+
+type WizardMode = 'tournament' | 'championship'
+function getMode(): WizardMode {
+  if (typeof window === 'undefined') return 'tournament'
+  return new URLSearchParams(window.location.search).get('type') === 'championship'
+    ? 'championship' : 'tournament'
+}
+function getLeagueParam(): string | null {
+  if (typeof window === 'undefined') return null
+  return new URLSearchParams(window.location.search).get('league')
+}
+
+// Championship-mode label overrides (only the strings that say "турнир")
+const CHAMP = {
+  ru: { back: 'Дашборд', titleNew: 'Новый чемпионат', create: 'Создать чемпионат', creating: 'Создаём…',
+    errName: 'Введите название чемпионата', namePh: 'например: Городская лига Астаны',
+    seasonLbl: 'Название первого сезона', seasonPh: 'например: Сезон 2025/26', logoLbl: 'Логотип чемпионата',
+    seasonTitle: 'Новый сезон', seasonNameLbl: 'Название сезона', seasonCreate: 'Создать сезон', errSeason: 'Введите название сезона' },
+  kz: { back: 'Дашборд', titleNew: 'Жаңа чемпионат', create: 'Чемпионат құру', creating: 'Құрылуда…',
+    errName: 'Чемпионат атауын енгізіңіз', namePh: 'мысалы: Астана қалалық лигасы',
+    seasonLbl: 'Бірінші маусым атауы', seasonPh: 'мысалы: 2025/26 маусымы', logoLbl: 'Чемпионат логотипі',
+    seasonTitle: 'Жаңа маусым', seasonNameLbl: 'Маусым атауы', seasonCreate: 'Маусым құру', errSeason: 'Маусым атауын енгізіңіз' },
+  en: { back: 'Dashboard', titleNew: 'New championship', create: 'Create championship', creating: 'Creating…',
+    errName: 'Enter a championship name', namePh: 'e.g. Astana City League',
+    seasonLbl: 'First season name', seasonPh: 'e.g. Season 2025/26', logoLbl: 'Championship logo',
+    seasonTitle: 'New season', seasonNameLbl: 'Season name', seasonCreate: 'Create season', errSeason: 'Enter a season name' },
+} as const
 
 const T = {
   ru: {
@@ -393,13 +421,25 @@ export default function NewTournamentPage() {
   const router = useRouter()
   const lang = getLang()
   const tx = T[lang]
+  const [mode] = useState<WizardMode>(getMode)
+  const [leagueId] = useState<string | null>(getLeagueParam)
+  const isChampionship = mode === 'championship'
+  const isAddSeason = isChampionship && !!leagueId  // adding a season to an existing championship
+  const champTx = CHAMP[lang]
 
   // Plan
   const [isPro, setIsPro] = useState(false)
+  const [isEnterprise, setIsEnterprise] = useState(false)
   const [upgradeFor, setUpgradeFor] = useState<string | null>(null)
   useEffect(() => {
-    getUserPlanAndAdmin().then(({ plan }) => setIsPro(plan === 'pro'))
+    getUserPlanAndAdmin().then(({ plan }) => {
+      setIsPro(plan === 'pro' || plan === 'enterprise')
+      setIsEnterprise(plan === 'enterprise')
+    })
   }, [])
+
+  // First-season name (championship mode only)
+  const [seasonName, setSeasonName] = useState('Сезон 2025/26')
 
   // Step 1
   const [name, setName]           = useState('')
@@ -462,6 +502,18 @@ export default function NewTournamentPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
+  // Add-season mode: prefill teams from the championship's persistent roster
+  useEffect(() => {
+    if (!isAddSeason || !leagueId) return
+    getChampionshipTeams(leagueId).then(teams => {
+      if (teams.length >= 2) {
+        setTeamNames(teams.map(t => t.name))
+        setTeamLogos(teams.map(t => t.logo_url))
+        setTeamRatings(teams.map(() => null))
+      }
+    })
+  }, [isAddSeason, leagueId])
+
   // ── Derived sport config + colour theme ──────────────────────────────────────
   const subtype = getSubtype(sport)
   const theme: SportTheme = getSportTheme(sport)
@@ -490,13 +542,13 @@ export default function NewTournamentPage() {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   function goToStep2() {
-    if (!name.trim()) { setError(tx.errName); return }
+    if (!name.trim()) { setError(isChampionship ? champTx.errName : tx.errName); return }
     setError(null); setStep(2)
   }
   // Confirm format choice from the bottom sheet, then advance
   function confirmFormatSheet() {
     setSheetFormat(null)
-    if (!name.trim()) { setError(tx.errName); return }
+    if (!name.trim()) { setError(isChampionship ? champTx.errName : tx.errName); return }
     setError(null); setStep(2)
   }
   function goToStep3() {
@@ -583,11 +635,58 @@ export default function NewTournamentPage() {
       orderedLogos = indexed.map(x => x.logo)
     }
 
-    const result = await createTournamentWithSetup(name, format, numRounds, orderedNames, {
+    const settings = {
       matchPeriods, extraTime, matchDurationMins: durationMins,
       pointsWin, pointsDraw, pointsLoss,
       groupsCount, teamsAdvance, sport,
-    })
+    }
+
+    // Add-season mode: create a new season (tournament) inside an existing championship
+    if (isAddSeason && leagueId) {
+      const res = await addSeasonWithSetup(leagueId, format, numRounds, orderedNames, name, settings)
+      if (res.error) { setError(res.error); setLoading(false); return }
+      const tournamentId = res.tournamentId!
+      const teamIds = res.teamIds ?? []
+      const uploads: Promise<unknown>[] = []
+      orderedNames.map((n, i) => ({ name: n.trim(), origIdx: i }))
+        .filter(({ name }) => !!name)
+        .forEach(({ origIdx }, teamIdx) => {
+          const logoDataUrl = orderedLogos[origIdx]
+          const teamId = teamIds[teamIdx]
+          // Only upload freshly-picked images; prefilled logos are existing URLs
+          if (logoDataUrl?.startsWith('data:') && teamId) uploads.push(uploadTeamLogo(teamId, tournamentId, logoDataUrl))
+        })
+      if (uploads.length > 0) { try { await Promise.all(uploads) } catch {} }
+      router.push(`/dashboard/leagues/${leagueId}`)
+      return
+    }
+
+    // Championship mode: create league + first season, then go to the championship page
+    if (isChampionship) {
+      const res = await createChampionshipWithSetup(name, format, numRounds, orderedNames, seasonName, settings)
+      if (res.error) { setError(res.error); setLoading(false); return }
+      const newLeagueId = res.leagueId!
+      const tournamentId = res.tournamentId!
+      const teamIds = res.teamIds ?? []
+
+      const uploads: Promise<unknown>[] = []
+      if (tournamentLogo) {
+        uploads.push(uploadLeagueLogo(newLeagueId, tournamentLogo))
+        uploads.push(uploadTournamentLogo(tournamentId, tournamentLogo))
+      }
+      orderedNames.map((n, i) => ({ name: n.trim(), origIdx: i }))
+        .filter(({ name }) => !!name)
+        .forEach(({ origIdx }, teamIdx) => {
+          const logoDataUrl = orderedLogos[origIdx]
+          const teamId = teamIds[teamIdx]
+          if (logoDataUrl && teamId) uploads.push(uploadTeamLogo(teamId, tournamentId, logoDataUrl))
+        })
+      if (uploads.length > 0) { try { await Promise.all(uploads) } catch {} }
+      router.push(`/dashboard/leagues/${newLeagueId}`)
+      return
+    }
+
+    const result = await createTournamentWithSetup(name, format, numRounds, orderedNames, settings)
 
     if (result.error === 'PLAN_LIMIT_TOURNAMENTS') { setPlanLimit('tournament'); setLoading(false); return }
     if (result.error === 'PLAN_LIMIT_TEAMS')        { setPlanLimit('team');       setLoading(false); return }
@@ -638,7 +737,7 @@ export default function NewTournamentPage() {
       {upgradeFor && <UpgradePrompt featureName={`Формат "${upgradeFor}"`} onClose={() => setUpgradeFor(null)} />}
 
       <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-        <ArrowLeft size={15} /> {tx.back}
+        <ArrowLeft size={15} /> {isChampionship ? champTx.back : tx.back}
       </Link>
 
       <StepBar step={step} labels={tx.steps} accent={theme.primary} />
@@ -647,7 +746,7 @@ export default function NewTournamentPage() {
       {step === 1 && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
           <div>
-            <h1 className="text-xl font-black text-gray-900">{tx.step1.title}</h1>
+            <h1 className="text-xl font-black text-gray-900">{isAddSeason ? champTx.seasonTitle : isChampionship ? champTx.titleNew : tx.step1.title}</h1>
             <p className="text-sm text-gray-400 mt-0.5">{tx.step1.sub}</p>
           </div>
 
@@ -693,10 +792,10 @@ export default function NewTournamentPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700">{tx.nameLbl}</label>
+            <label className="text-sm font-bold text-gray-700">{isAddSeason ? champTx.seasonNameLbl : tx.nameLbl}</label>
             <Input value={name} onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && goToStep2()}
-              placeholder={tx.namePh} maxLength={40} className="text-base" />
+              placeholder={isAddSeason ? champTx.seasonPh : isChampionship ? champTx.namePh : tx.namePh} maxLength={40} className="text-base" />
           </div>
 
           <div className="space-y-1.5">
@@ -1090,8 +1189,17 @@ export default function NewTournamentPage() {
             </div>
           )}
 
+          {/* Championship: first season name (not in add-season mode — there the name field is the season) */}
+          {isChampionship && !isAddSeason && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">{champTx.seasonLbl}</label>
+              <Input value={seasonName} onChange={e => setSeasonName(e.target.value)}
+                placeholder={champTx.seasonPh} maxLength={40} className="text-base" />
+            </div>
+          )}
+
           <div className="space-y-2">
-            <p className="text-sm font-bold text-gray-700">{tx.logoLbl}</p>
+            <p className="text-sm font-bold text-gray-700">{isChampionship ? champTx.logoLbl : tx.logoLbl}</p>
             <div className="flex items-center gap-4">
               <AvatarPicker dataUrl={tournamentLogo} name={name} size={64}
                 onPick={setTournamentLogo} onRemove={() => setTournamentLogo(null)} />
@@ -1099,7 +1207,8 @@ export default function NewTournamentPage() {
             </div>
           </div>
 
-          {/* Cover / banner */}
+          {/* Cover / banner — tournament only */}
+          {!isChampionship && (
           <div className="space-y-2">
             <p className="text-sm font-bold text-gray-700">Обложка турнира</p>
             {coverValue && (
@@ -1119,6 +1228,7 @@ export default function NewTournamentPage() {
             />
             <p className="text-xs text-gray-400">Баннер в шапке страницы турнира — необязательно</p>
           </div>
+          )}
 
           <div className="space-y-2">
             <p className="text-sm font-bold text-gray-700">{periodLabelTxt}</p>
@@ -1274,7 +1384,7 @@ export default function NewTournamentPage() {
               {loading
                 ? <Loader2 size={15} className="mr-1.5 animate-spin" />
                 : <Zap size={15} className="mr-1.5" />}
-              {loading ? tx.creating : tx.create}
+              {loading ? (isChampionship ? champTx.creating : tx.creating) : (isAddSeason ? champTx.seasonCreate : isChampionship ? champTx.create : tx.create)}
             </Button>
           </div>
         </div>

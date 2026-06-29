@@ -33,7 +33,7 @@ export default async function LeagueManagePage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const plan = await getUserPlan()
-  if (plan !== 'enterprise') redirect('/dashboard/leagues')
+  if (plan !== 'enterprise') redirect('/dashboard')
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,12 +46,10 @@ export default async function LeagueManagePage({
     { data: leagueRaw },
     { data: seasonsRaw },
     { data: teamsRaw },
-    { data: tournamentsRaw },
   ] = await Promise.all([
     supabase.from('leagues').select('*').eq('id', leagueId).eq('owner_id', user.id).maybeSingle(),
     supabase.from('seasons').select('*').eq('league_id', leagueId).order('created_at', { ascending: false }),
     supabase.from('league_teams').select('*, players(*)').eq('league_id', leagueId).order('name'),
-    supabase.from('tournaments').select('id, name').eq('user_id', user.id).is('deleted_at', null).order('created_at', { ascending: false }),
   ])
 
   if (!leagueRaw) notFound()
@@ -60,7 +58,6 @@ export default async function LeagueManagePage({
   const seasons = (seasonsRaw ?? []) as Season[]
   const teamsWithPlayers = (teamsRaw ?? []) as (LeagueTeam & { players: Player[] })[]
   const teams = teamsWithPlayers.map(({ players: _p, ...t }) => t) as LeagueTeam[]
-  const tournaments = (tournamentsRaw ?? []) as { id: string; name: string }[]
 
   const activeTabId = TABS.some(t => t.id === activeTab) ? activeTab : 'seasons'
 
@@ -68,8 +65,8 @@ export default async function LeagueManagePage({
     <div>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="mb-6">
-        <Link href="/dashboard/leagues" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-4">
-          <ChevronLeft size={14} /> Все лиги
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-4">
+          <ChevronLeft size={14} /> Дашборд
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -132,7 +129,7 @@ export default async function LeagueManagePage({
       {/* ── Tab content ─────────────────────────────────────────────────── */}
       <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100">
         {activeTabId === 'seasons' && (
-          <SeasonsTab leagueId={leagueId} seasons={seasons} tournaments={tournaments} />
+          <SeasonsTab leagueId={leagueId} seasons={seasons} />
         )}
         {activeTabId === 'teams' && (
           <TeamsTab leagueId={leagueId} teams={teams} />

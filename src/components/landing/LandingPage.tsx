@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -984,7 +984,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
           {/* Email line */}
           <p className="text-center mt-8 text-sm text-gray-400">
             {lang === 'en' ? 'Or write to us by email:' : lang === 'kz' ? 'Немесе электронды поштамен жазыңыз:' : 'Или напишите на почту:'}{' '}
-            <a href="mailto:hello@tournable.app" className="text-emerald-600 font-semibold hover:underline">hello@tournable.app</a>
+            <a href="mailto:info@tournable.app" className="text-emerald-600 font-semibold hover:underline">info@tournable.app</a>
           </p>
         </div>
       </section>
@@ -1024,7 +1024,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                     <Icon className="w-4 h-4 text-gray-400" />
                   </a>
                 ))}
-                <a href="mailto:hello@tournable.app" className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                <a href="mailto:info@tournable.app" className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
                   <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
                   </svg>
@@ -1058,7 +1058,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               <ul className="space-y-3">
                 <li><a href="https://wa.me/message/YHLE2IFII4MSJ1" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"><IconWhatsApp className="w-3.5 h-3.5" />WhatsApp</a></li>
                 <li><a href="tel:+77064092021" className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"><Phone className="w-3.5 h-3.5" />+7 (706) 409-20-21</a></li>
-                <li><a href="mailto:hello@tournable.app" className="text-sm text-gray-500 hover:text-white transition-colors">hello@tournable.app</a></li>
+                <li><a href="mailto:info@tournable.app" className="text-sm text-gray-500 hover:text-white transition-colors">info@tournable.app</a></li>
               </ul>
             </div>
           </div>

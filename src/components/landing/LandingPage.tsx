@@ -377,7 +377,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'Любительские турниры', title: 'Организуешь турнир среди друзей, команд района или офиса?', desc: 'Создай расписание меньше 1 минуты, поделись ссылкой в чат — участники сами следят за таблицей и счётом. Без Excel, без скринов из WhatsApp.', cta: 'Начать бесплатно', href: '/register' },
       { tag: 'Спортивные клубы', title: 'Ведёшь регулярные соревнования внутри клуба?', desc: 'Несколько турниров одновременно, несколько соредакторов, брендированный отчёт в один клик. Статистика по всем сезонам всегда под рукой.', cta: 'Попробовать PRO', href: '/register?plan=pro' },
-      { tag: 'Федерации и лиги', title: 'Проводишь городской чемпионат или официальную лигу?', desc: 'Постоянная лига с архивом сезонов, профилями команд и игроков, углублённой статистикой и доступностью в поисковых системах. Как у профессиональных лиг — без технической команды.', cta: 'Enterprise — от 39 990 ₸', href: '#contact' },
+      { tag: 'Федерации и лиги', title: 'Проводишь городской чемпионат или официальную лигу?', desc: 'Постоянная лига с архивом сезонов, профилями команд и игроков, углублённой статистикой и доступностью в поисковых системах. Как у профессиональных лиг — без технической команды.', cta: 'Enterprise — от 39 990 ₸', href: '/checkout/enterprise' },
     ],
   },
   kz: {
@@ -387,7 +387,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'Хобби турнирлер', title: 'Достар арасында немесе аудандағы командалар турнирін ұйымдастырасың ба?', desc: 'Кестені 1 минуттан аз уақытта жасаңыз, чатқа сілтемені жіберіңіз — қатысушылар кестені және есепті өздері қадағалайды. Excel жоқ, WhatsApp скриншоты жоқ.', cta: 'Тегін бастау', href: '/register' },
       { tag: 'Спорт клубтары', title: 'Клуб ішінде жүйелі жарыстар өткізесің бе?', desc: 'Бірнеше турнир бір уақытта, бірнеше соредактор, брендтелген есеп бір шертумен. Барлық маусымдардың статистикасы әрқашан қолда.', cta: 'PRO-ды қолданып көру', href: '/register?plan=pro' },
-      { tag: 'Федерациялар мен лигалар', title: 'Қалалық чемпионат немесе ресми лига өткізесің бе?', desc: 'Маусымдары бар тұрақты лига, команда мен ойыншы профильдері, тереңдетілген статистика және іздеу жүйелерінде қолжетімділік — кәсіби лигалар сияқты. Техникалық команда жоқ.', cta: 'Enterprise — 39 990 ₸-дан', href: '#contact' },
+      { tag: 'Федерациялар мен лигалар', title: 'Қалалық чемпионат немесе ресми лига өткізесің бе?', desc: 'Маусымдары бар тұрақты лига, команда мен ойыншы профильдері, тереңдетілген статистика және іздеу жүйелерінде қолжетімділік — кәсіби лигалар сияқты. Техникалық команда жоқ.', cta: 'Enterprise — 39 990 ₸-дан', href: '/checkout/enterprise' },
     ],
   },
   en: {
@@ -397,7 +397,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'Amateur tournaments', title: 'Organising a tournament with friends, your neighbourhood or the office?', desc: 'Build the schedule in under a minute, share the link — participants track standings and scores themselves. No Excel, no WhatsApp screenshots.', cta: 'Start free', href: '/register' },
       { tag: 'Sports clubs', title: 'Running regular competitions within your club?', desc: 'Multiple tournaments at once, multiple co-editors, branded report in one click. Season stats always at hand.', cta: 'Try PRO', href: '/register?plan=pro' },
-      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility — like professional leagues. No technical team needed.', cta: 'Enterprise — from 39,990 ₸', href: '#contact' },
+      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility — like professional leagues. No technical team needed.', cta: 'Enterprise — from 39,990 ₸', href: '/checkout/enterprise' },
     ],
   },
 }
@@ -886,7 +886,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   })}
                 </ul>
                 <Link
-                  href="/register?plan=enterprise"
+                  href="/checkout/enterprise"
                   className="block text-center font-black py-3 rounded-2xl transition-colors text-white text-sm"
                   style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
                 >

@@ -141,7 +141,13 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")",
       "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_07_29.png\" \"C:/Users/user/Documents/tournable-next/public/screens/hero-desktop.png\" -Force)",
       "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_18_47.png\" \"C:/Users/user/Documents/tournable-next/public/screens/hero-mobile.png\" -Force)",
-      "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_26_36.png\" \"C:/Users/user/Documents/tournable-next/public/screens/led.png\" -Force)"
+      "PowerShell(Copy-Item \"C:/Users/user/Documents/tournable-next/�⪨ ��� ��������/ChatGPT Image 28 ��. 2026 �., 15_26_36.png\" \"C:/Users/user/Documents/tournable-next/public/screens/led.png\" -Force)",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\src\\\\components\\\\landing\\\\LandingPage.tsx\"\\); $bytes[0..3] | ForEach-Object { $_.ToString\\(\"X2\"\\) })",
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; [System.Text.Encoding]::UTF8.GetString\\([System.IO.File]::ReadAllBytes\\(\"src/components/landing/LandingPage.tsx\"\\)[0..200]\\))",
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $content = [System.IO.File]::ReadAllText\\(\"src/components/landing/LandingPage.tsx\", [System.Text.Encoding]::UTF8\\); $idx = $content.IndexOf\\(\"groupLabels\"\\); $content.Substring\\($idx, 150\\))",
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $bytes = [System.IO.File]::ReadAllBytes\\(\"src/components/landing/LandingPage.tsx\"\\); $start = 0; for\\($i=0; $i -lt $bytes.Length-10; $i++\\) { if\\($bytes[$i] -eq 0x67 -and $bytes[$i+1] -eq 0x72 -and $bytes[$i+2] -eq 0x6F -and $bytes[$i+3] -eq 0x75\\) { $start = $i; break } }; $bytes[$start..\\($start+120\\)] | ForEach-Object { $_.ToString\\(\"X2\"\\) } | Join-String -Separator \" \")",
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $bytes = [System.IO.File]::ReadAllBytes\\(\"src/components/landing/LandingPage.tsx\"\\); $start = 0; for\\($i=0; $i -lt $bytes.Length-10; $i++\\) { if\\($bytes[$i] -eq 0x67 -and $bytes[$i+1] -eq 0x72 -and $bytes[$i+2] -eq 0x6F -and $bytes[$i+3] -eq 0x75\\) { $start = $i; break } }; \\($bytes[$start..\\($start+120\\)] | ForEach-Object { $_.ToString\\(\"X2\"\\) }\\) -join \" \")",
+      "PowerShell(cd \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\"; $content = [System.IO.File]::ReadAllText\\(\"src/components/landing/LandingPage.tsx\", [System.Text.Encoding]::GetEncoding\\(1252\\)\\); $idx = $content.IndexOf\\(\"groupLabels\"\\); $content.Substring\\($idx, 100\\))"
     ]
   }
 }

@@ -377,7 +377,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'Р›СЋР±РёС‚РµР»СЊСЃРєРёРµ С‚СѓСЂРЅРёСЂС‹', title: 'РћСЂРіР°РЅРёР·СѓРµС€СЊ С‚СѓСЂРЅРёСЂ СЃСЂРµРґРё РґСЂСѓР·РµР№, РєРѕРјР°РЅРґ СЂР°Р№РѕРЅР° РёР»Рё РѕС„РёСЃР°?', desc: 'РЎРѕР·РґР°Р№ СЂР°СЃРїРёСЃР°РЅРёРµ РјРµРЅСЊС€Рµ 1 РјРёРЅСѓС‚С‹, РїРѕРґРµР»РёСЃСЊ СЃСЃС‹Р»РєРѕР№ РІ С‡Р°С‚ вЂ” СѓС‡Р°СЃС‚РЅРёРєРё СЃР°РјРё СЃР»РµРґСЏС‚ Р·Р° С‚Р°Р±Р»РёС†РµР№ Рё СЃС‡С‘С‚РѕРј. Р‘РµР· Excel, Р±РµР· СЃРєСЂРёРЅРѕРІ РёР· WhatsApp.', cta: 'РќР°С‡Р°С‚СЊ Р±РµСЃРїР»Р°С‚РЅРѕ', href: '/register' },
       { tag: 'РЎРїРѕСЂС‚РёРІРЅС‹Рµ РєР»СѓР±С‹', title: 'Р’РµРґС‘С€СЊ СЂРµРіСѓР»СЏСЂРЅС‹Рµ СЃРѕСЂРµРІРЅРѕРІР°РЅРёСЏ РІРЅСѓС‚СЂРё РєР»СѓР±Р°?', desc: 'РќРµСЃРєРѕР»СЊРєРѕ С‚СѓСЂРЅРёСЂРѕРІ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ, РЅРµСЃРєРѕР»СЊРєРѕ СЃРѕСЂРµРґР°РєС‚РѕСЂРѕРІ, Р±СЂРµРЅРґРёСЂРѕРІР°РЅРЅС‹Р№ РѕС‚С‡С‘С‚ РІ РѕРґРёРЅ РєР»РёРє. РЎС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РІСЃРµРј СЃРµР·РѕРЅР°Рј РІСЃРµРіРґР° РїРѕРґ СЂСѓРєРѕР№.', cta: 'РџРѕРїСЂРѕР±РѕРІР°С‚СЊ PRO', href: '/register?plan=pro' },
-      { tag: 'Р¤РµРґРµСЂР°С†РёРё Рё Р»РёРіРё', title: 'РџСЂРѕРІРѕРґРёС€СЊ РіРѕСЂРѕРґСЃРєРѕР№ С‡РµРјРїРёРѕРЅР°С‚ РёР»Рё РѕС„РёС†РёР°Р»СЊРЅСѓСЋ Р»РёРіСѓ?', desc: 'РџРѕСЃС‚РѕСЏРЅРЅР°СЏ Р»РёРіР° СЃ Р°СЂС…РёРІРѕРј СЃРµР·РѕРЅРѕРІ, РїСЂРѕС„РёР»СЏРјРё РєРѕРјР°РЅРґ Рё РёРіСЂРѕРєРѕРІ, СѓРіР»СѓР±Р»С‘РЅРЅРѕР№ СЃС‚Р°С‚РёСЃС‚РёРєРѕР№ Рё РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊСЋ РІ РїРѕРёСЃРєРѕРІС‹С… СЃРёСЃС‚РµРјР°С…. РљР°Рє Сѓ РїСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅС‹С… Р»РёРі вЂ” Р±РµР· С‚РµС…РЅРёС‡РµСЃРєРѕР№ РєРѕРјР°РЅРґС‹.', cta: 'Enterprise вЂ” РѕС‚ 39 990 в‚ё', href: '#contact' },
+      { tag: 'Р¤РµРґРµСЂР°С†РёРё Рё Р»РёРіРё', title: 'РџСЂРѕРІРѕРґРёС€СЊ РіРѕСЂРѕРґСЃРєРѕР№ С‡РµРјРїРёРѕРЅР°С‚ РёР»Рё РѕС„РёС†РёР°Р»СЊРЅСѓСЋ Р»РёРіСѓ?', desc: 'РџРѕСЃС‚РѕСЏРЅРЅР°СЏ Р»РёРіР° СЃ Р°СЂС…РёРІРѕРј СЃРµР·РѕРЅРѕРІ, РїСЂРѕС„РёР»СЏРјРё РєРѕРјР°РЅРґ Рё РёРіСЂРѕРєРѕРІ, СѓРіР»СѓР±Р»С‘РЅРЅРѕР№ СЃС‚Р°С‚РёСЃС‚РёРєРѕР№ Рё РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊСЋ РІ РїРѕРёСЃРєРѕРІС‹С… СЃРёСЃС‚РµРјР°С…. РљР°Рє Сѓ РїСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅС‹С… Р»РёРі вЂ” Р±РµР· С‚РµС…РЅРёС‡РµСЃРєРѕР№ РєРѕРјР°РЅРґС‹.', cta: 'Enterprise вЂ” РѕС‚ 39 990 в‚ё', href: '/checkout/enterprise' },
     ],
   },
   kz: {
@@ -387,7 +387,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'РҐРѕР±Р±Рё С‚СѓСЂРЅРёСЂР»РµСЂ', title: 'Р”РѕСЃС‚Р°СЂ Р°СЂР°СЃС‹РЅРґР° РЅРµРјРµСЃРµ Р°СѓРґР°РЅРґР°Т“С‹ РєРѕРјР°РЅРґР°Р»Р°СЂ С‚СѓСЂРЅРёСЂС–РЅ Т±Р№С‹РјРґР°СЃС‚С‹СЂР°СЃС‹ТЈ Р±Р°?', desc: 'РљРµСЃС‚РµРЅС– 1 РјРёРЅСѓС‚С‚Р°РЅ Р°Р· СѓР°Т›С‹С‚С‚Р° Р¶Р°СЃР°ТЈС‹Р·, С‡Р°С‚Т›Р° СЃС–Р»С‚РµРјРµРЅС– Р¶С–Р±РµСЂС–ТЈС–Р· вЂ” Т›Р°С‚С‹СЃСѓС€С‹Р»Р°СЂ РєРµСЃС‚РµРЅС– Р¶У™РЅРµ РµСЃРµРїС‚С– У©Р·РґРµСЂС– Т›Р°РґР°Т“Р°Р»Р°Р№РґС‹. Excel Р¶РѕТ›, WhatsApp СЃРєСЂРёРЅС€РѕС‚С‹ Р¶РѕТ›.', cta: 'РўРµРіС–РЅ Р±Р°СЃС‚Р°Сѓ', href: '/register' },
       { tag: 'РЎРїРѕСЂС‚ РєР»СѓР±С‚Р°СЂС‹', title: 'РљР»СѓР± С–С€С–РЅРґРµ Р¶ТЇР№РµР»С– Р¶Р°СЂС‹СЃС‚Р°СЂ У©С‚РєС–Р·РµСЃС–ТЈ Р±Рµ?', desc: 'Р‘С–СЂРЅРµС€Рµ С‚СѓСЂРЅРёСЂ Р±С–СЂ СѓР°Т›С‹С‚С‚Р°, Р±С–СЂРЅРµС€Рµ СЃРѕСЂРµРґР°РєС‚РѕСЂ, Р±СЂРµРЅРґС‚РµР»РіРµРЅ РµСЃРµРї Р±С–СЂ С€РµСЂС‚СѓРјРµРЅ. Р‘Р°СЂР»С‹Т› РјР°СѓСЃС‹РјРґР°СЂРґС‹ТЈ СЃС‚Р°С‚РёСЃС‚РёРєР°СЃС‹ У™СЂТ›Р°С€Р°РЅ Т›РѕР»РґР°.', cta: 'PRO-РґС‹ Т›РѕР»РґР°РЅС‹Рї РєУ©СЂСѓ', href: '/register?plan=pro' },
-      { tag: 'Р¤РµРґРµСЂР°С†РёСЏР»Р°СЂ РјРµРЅ Р»РёРіР°Р»Р°СЂ', title: 'ТљР°Р»Р°Р»С‹Т› С‡РµРјРїРёРѕРЅР°С‚ РЅРµРјРµСЃРµ СЂРµСЃРјРё Р»РёРіР° У©С‚РєС–Р·РµСЃС–ТЈ Р±Рµ?', desc: 'РњР°СѓСЃС‹РјРґР°СЂС‹ Р±Р°СЂ С‚Т±СЂР°Т›С‚С‹ Р»РёРіР°, РєРѕРјР°РЅРґР° РјРµРЅ РѕР№С‹РЅС€С‹ РїСЂРѕС„РёР»СЊРґРµСЂС–, С‚РµСЂРµТЈРґРµС‚С–Р»РіРµРЅ СЃС‚Р°С‚РёСЃС‚РёРєР° Р¶У™РЅРµ С–Р·РґРµСѓ Р¶ТЇР№РµР»РµСЂС–РЅРґРµ Т›РѕР»Р¶РµС‚С–РјРґС–Р»С–Рє вЂ” РєУ™СЃС–Р±Рё Р»РёРіР°Р»Р°СЂ СЃРёСЏТ›С‚С‹. РўРµС…РЅРёРєР°Р»С‹Т› РєРѕРјР°РЅРґР° Р¶РѕТ›.', cta: 'Enterprise вЂ” 39 990 в‚ё-РґР°РЅ', href: '#contact' },
+      { tag: 'Р¤РµРґРµСЂР°С†РёСЏР»Р°СЂ РјРµРЅ Р»РёРіР°Р»Р°СЂ', title: 'ТљР°Р»Р°Р»С‹Т› С‡РµРјРїРёРѕРЅР°С‚ РЅРµРјРµСЃРµ СЂРµСЃРјРё Р»РёРіР° У©С‚РєС–Р·РµСЃС–ТЈ Р±Рµ?', desc: 'РњР°СѓСЃС‹РјРґР°СЂС‹ Р±Р°СЂ С‚Т±СЂР°Т›С‚С‹ Р»РёРіР°, РєРѕРјР°РЅРґР° РјРµРЅ РѕР№С‹РЅС€С‹ РїСЂРѕС„РёР»СЊРґРµСЂС–, С‚РµСЂРµТЈРґРµС‚С–Р»РіРµРЅ СЃС‚Р°С‚РёСЃС‚РёРєР° Р¶У™РЅРµ С–Р·РґРµСѓ Р¶ТЇР№РµР»РµСЂС–РЅРґРµ Т›РѕР»Р¶РµС‚С–РјРґС–Р»С–Рє вЂ” РєУ™СЃС–Р±Рё Р»РёРіР°Р»Р°СЂ СЃРёСЏТ›С‚С‹. РўРµС…РЅРёРєР°Р»С‹Т› РєРѕРјР°РЅРґР° Р¶РѕТ›.', cta: 'Enterprise вЂ” 39 990 в‚ё-РґР°РЅ', href: '/checkout/enterprise' },
     ],
   },
   en: {
@@ -397,7 +397,7 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     cases: [
       { tag: 'Amateur tournaments', title: 'Organising a tournament with friends, your neighbourhood or the office?', desc: 'Build the schedule in under a minute, share the link вЂ” participants track standings and scores themselves. No Excel, no WhatsApp screenshots.', cta: 'Start free', href: '/register' },
       { tag: 'Sports clubs', title: 'Running regular competitions within your club?', desc: 'Multiple tournaments at once, multiple co-editors, branded report in one click. Season stats always at hand.', cta: 'Try PRO', href: '/register?plan=pro' },
-      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility вЂ” like professional leagues. No technical team needed.', cta: 'Enterprise вЂ” from 39,990 в‚ё', href: '#contact' },
+      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility вЂ” like professional leagues. No technical team needed.', cta: 'Enterprise вЂ” from 39,990 в‚ё', href: '/checkout/enterprise' },
     ],
   },
 }
@@ -886,7 +886,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   })}
                 </ul>
                 <Link
-                  href="/register?plan=enterprise"
+                  href="/checkout/enterprise"
                   className="block text-center font-black py-3 rounded-2xl transition-colors text-white text-sm"
                   style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
                 >

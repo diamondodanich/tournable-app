@@ -14,7 +14,13 @@ export const PRICES = {
   annual:  { amount: 44990, months: 12 },
 } as const
 
+export const ENTERPRISE_PRICES = {
+  monthly: { amount: 39990,  months: 1  },
+  annual:  { amount: 349990, months: 12 },
+} as const
+
 export type PlanPeriod = keyof typeof PRICES
+export type PlanType = 'pro' | 'enterprise'
 
 // ── Signature ─────────────────────────────────────────────────────────────────
 // Formula: MD5(scriptName + ';' + sorted_param_values_by_key + ';' + secretKey)

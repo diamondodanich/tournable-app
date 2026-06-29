@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
-import { getPaymentOrderParams, activateProAfterPayment } from '@/app/actions/payments'
-import type { PlanPeriod } from '@/lib/freedompay'
+import { getPaymentOrderParams, activateProAfterPayment, activateEnterpriseAfterPayment } from '@/app/actions/payments'
+import type { PlanPeriod, PlanType } from '@/lib/freedompay'
 
 const WIDGET_TOKEN = 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
 const SDK_URL = 'https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js'
@@ -37,6 +37,7 @@ interface Props {
   period:    PlanPeriod
   amount:    number
   userEmail?: string
+  planType?: PlanType
 }
 
 type Step = 'form' | '3ds'
@@ -50,7 +51,7 @@ function formatExpiry(raw: string) {
   return d.length >= 3 ? `${d.slice(0, 2)}/${d.slice(2)}` : d
 }
 
-export function CardPaymentForm({ period, amount, userEmail }: Props) {
+export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }: Props) {
   const [sdkReady, setSdkReady] = useState(false)
   const [sdkError, setSdkError] = useState(false)
 
@@ -94,7 +95,7 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
     setIsPending(true)
 
     try {
-      const order = await getPaymentOrderParams(period)
+      const order = await getPaymentOrderParams(period, planType)
       if ('error' in order) { setError(order.error); return }
 
       const [expMonth, expYear] = expiry.split('/')
@@ -107,7 +108,7 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
           description:   order.description,
           auto_clearing: 1,
           options: {
-            custom_params: { user_id: order.userId, plan_period: period },
+            custom_params: { user_id: order.userId, plan_period: period, plan_type: planType },
             user: { email: userEmail ?? '' },
           },
         },
@@ -129,9 +130,11 @@ export function CardPaymentForm({ period, amount, userEmail }: Props) {
       }
 
       if (result.payment_status === 'success') {
-        const activation = await activateProAfterPayment(period, result.payment_id ?? '')
+        const activation = planType === 'enterprise'
+          ? await activateEnterpriseAfterPayment(period, result.payment_id ?? '')
+          : await activateProAfterPayment(period, result.payment_id ?? '')
         if ('error' in activation) {
-          setError(`Оплата прошла, но Pro не активировался: ${activation.error}`)
+          setError(`Оплата прошла, но план не активировался: ${activation.error}`)
           setStep('form')
           return
         }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { buildSignature, SECRET_KEY, PRICES, type PlanPeriod } from '@/lib/freedompay'
+import { buildSignature, SECRET_KEY, PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/freedompay'
 
 export const runtime = 'nodejs'
 
@@ -54,13 +54,14 @@ export async function POST(req: NextRequest) {
   // ── 3. Extract our custom params ──────────────────────────────────────────
   const userId     = params.user_id    as string | undefined
   const planPeriod = params.plan_period as PlanPeriod | undefined
+  const planType   = (params.plan_type ?? 'pro') as PlanType
 
   if (!userId || !planPeriod || !(planPeriod in PRICES)) {
     console.error('[freedompay webhook] missing user_id or plan_period', params)
     return xmlResponse('error', 'Missing user_id or plan_period')
   }
 
-  // ── 4. Activate Pro ───────────────────────────────────────────────────────
+  // ── 4. Activate plan ──────────────────────────────────────────────────────
   const url        = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest) {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
-  const months    = PRICES[planPeriod].months
+  const prices    = planType === 'enterprise' ? ENTERPRISE_PRICES : PRICES
+  const months    = prices[planPeriod].months
   const expiresAt = new Date()
   expiresAt.setMonth(expiresAt.getMonth() + months)
 
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
     .upsert(
       {
         id:              userId,
-        plan:            'pro',
+        plan:            planType,
         plan_expires_at: expiresAt.toISOString(),
         updated_at:      new Date().toISOString(),
       },
@@ -90,21 +92,21 @@ export async function POST(req: NextRequest) {
     )
 
   if (error) {
-    console.error('[freedompay webhook] failed to activate pro:', error)
+    console.error(`[freedompay webhook] failed to activate ${planType}:`, error)
     return xmlResponse('error', 'Failed to activate subscription')
   }
 
   // ── 5. Record payment in subscriptions table ──────────────────────────────
   const { error: subErr } = await supabase.from('subscriptions').insert({
     user_id:     userId,
-    plan:        'pro',
+    plan:        planType,
     expires_at:  expiresAt.toISOString(),
-    amount_kzt:  PRICES[planPeriod].amount,
+    amount_kzt:  prices[planPeriod].amount,
     source:      'freedompay',
     external_id: params.pg_payment_id ?? params.pg_order_id ?? null,
   })
   if (subErr) console.error('[freedompay webhook] subscriptions insert:', subErr)
 
-  console.log(`[freedompay webhook] Pro activated for ${userId} until ${expiresAt.toISOString()}`)
-  return xmlResponse('ok', 'Pro activated')
+  console.log(`[freedompay webhook] ${planType} activated for ${userId} until ${expiresAt.toISOString()}`)
+  return xmlResponse('ok', `${planType} activated`)
 }

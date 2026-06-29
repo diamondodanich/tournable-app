@@ -180,34 +180,69 @@ export default async function AccountPage() {
                 </ul>
               </div>
 
-              {/* Upgrade block */}
-              <div
-                className="shrink-0 w-full sm:w-auto rounded-2xl p-5 text-white text-center"
-                style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
-              >
-                <div className="text-xs font-bold text-emerald-200 uppercase tracking-widest mb-2">Про</div>
-                <div className="text-3xl font-black mb-0.5">4 990 ₸</div>
-                <div className="text-xs text-emerald-200 mb-4">/ месяц</div>
-                <ul className="space-y-1.5 text-xs text-emerald-100 mb-5 text-left">
-                  {[
-                    'Бесконечные турниры',
-                    'До 64 команд',
-                    'Live-табло в реальном времени',
-                    'До 3 соредакторов',
-                  ].map(item => (
-                    <li key={item} className="flex items-center gap-1.5">
-                      <Star className="w-3 h-3 text-yellow-300 shrink-0" fill="currentColor" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/checkout"
-                  className="block bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
+              {/* Upgrade blocks — PRO + Enterprise */}
+              <div className="shrink-0 w-full sm:w-72 space-y-3">
+                {/* PRO */}
+                <div
+                  className="rounded-2xl p-5 text-white text-center"
+                  style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
                 >
-                  Перейти на Про →
-                </Link>
-                <p className="text-[10px] text-emerald-300 mt-2">44 990 ₸/год · скидка −25%</p>
+                  <div className="text-xs font-bold text-emerald-200 uppercase tracking-widest mb-2">Про</div>
+                  <div className="text-3xl font-black mb-0.5">4 990 ₸</div>
+                  <div className="text-xs text-emerald-200 mb-4">/ месяц</div>
+                  <ul className="space-y-1.5 text-xs text-emerald-100 mb-5 text-left">
+                    {[
+                      'Бесконечные турниры',
+                      'До 64 команд',
+                      'Live-табло в реальном времени',
+                      'До 3 соредакторов',
+                    ].map(item => (
+                      <li key={item} className="flex items-center gap-1.5">
+                        <Star className="w-3 h-3 text-yellow-300 shrink-0" fill="currentColor" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/checkout"
+                    className="block bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
+                  >
+                    Перейти на Про →
+                  </Link>
+                  <p className="text-[10px] text-emerald-300 mt-2">44 990 ₸/год · скидка −25%</p>
+                </div>
+
+                {/* Enterprise */}
+                <div
+                  className="rounded-2xl p-5 text-white text-center"
+                  style={{ background: 'linear-gradient(135deg,#5b21b6,#a855f7)' }}
+                >
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-violet-200 uppercase tracking-widest mb-2">
+                    <Crown className="w-3 h-3" /> Enterprise
+                  </div>
+                  <div className="text-3xl font-black mb-0.5">39 990 ₸</div>
+                  <div className="text-xs text-violet-200 mb-4">/ месяц</div>
+                  <ul className="space-y-1.5 text-xs text-violet-100 mb-5 text-left">
+                    {[
+                      'Постоянные лиги с сезонами',
+                      'Профили команд и игроков',
+                      'Составы к матчам',
+                      'Углублённая статистика',
+                    ].map(item => (
+                      <li key={item} className="flex items-center gap-1.5">
+                        <Crown className="w-3 h-3 text-violet-300 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/checkout/enterprise"
+                    className="block bg-white text-violet-700 hover:bg-violet-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
+                  >
+                    Подключить Enterprise →
+                  </Link>
+                  <p className="text-[10px] text-violet-300 mt-2">349 990 ₸/год · скидка −25%</p>
+                </div>
               </div>
             </div>
           ) : (
@@ -259,6 +294,23 @@ export default async function AccountPage() {
                   </Link>
                 </div>
               </div>
+              {/* Enterprise upsell for Pro users */}
+              <Link
+                href="/checkout/enterprise"
+                className="mt-5 flex items-center justify-between gap-3 rounded-xl p-4 text-white transition-opacity hover:opacity-95"
+                style={{ background: 'linear-gradient(135deg,#5b21b6,#a855f7)' }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-sm">Перейти на Enterprise</p>
+                    <p className="text-xs text-violet-200">Лиги, профили игроков, составы, углублённая статистика</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold whitespace-nowrap shrink-0">от 39 990 ₸ →</span>
+              </Link>
               <div className="mt-5 pt-4 border-t border-gray-100">
                 <CancelSubscriptionButton />
               </div>

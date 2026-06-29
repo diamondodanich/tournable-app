@@ -99,7 +99,7 @@ export default function RegisterForm({ lang, next = '' }: { lang: Lang; next?: s
 
           <h1 className="text-xl font-black text-gray-900 mb-6">{tx.title}</h1>
 
-          <OAuthButtons lang={lang} mode="register" />
+          <OAuthButtons lang={lang} mode="register" next={next} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {next && <input type="hidden" name="next" value={next} />}

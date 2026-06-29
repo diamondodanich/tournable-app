@@ -84,7 +84,7 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
 
           <h1 className="text-xl font-black text-gray-900 mb-6">{tx.title}</h1>
 
-          <OAuthButtons lang={lang} mode="login" />
+          <OAuthButtons lang={lang} mode="login" next={next} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {next && <input type="hidden" name="next" value={next} />}

@@ -17,7 +17,7 @@ const T_register = {
   en: { divider: 'or sign up with email' },
 }
 
-export default function OAuthButtons({ lang, mode = 'login' }: { lang: Lang; mode?: 'login' | 'register' }) {
+export default function OAuthButtons({ lang, mode = 'login', next = '' }: { lang: Lang; mode?: 'login' | 'register'; next?: string }) {
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
   const divider = mode === 'register' ? T_register[lang].divider : tx.divider
@@ -25,11 +25,14 @@ export default function OAuthButtons({ lang, mode = 'login' }: { lang: Lang; mod
   async function handleGoogle() {
     setLoading(true)
     const supabase = createClient()
+    // Preserve deep-link target (e.g. /checkout/enterprise) through the OAuth round-trip
+    const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : ''
+    const callback = safeNext
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
+      : `${window.location.origin}/auth/callback`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: callback },
     })
     // If we get here, redirect didn't happen (error case) — reset loading
     setLoading(false)

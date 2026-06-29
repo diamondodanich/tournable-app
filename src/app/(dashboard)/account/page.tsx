@@ -8,7 +8,7 @@ import AdminPlanButton from './AdminPlanButton'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
-  Mail, Calendar, Trophy, Zap, Infinity, Trash2, RefreshCw, Clock, Crown,
+  Mail, Calendar, Trophy, Zap, Infinity, RefreshCw, Clock, Crown,
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -378,17 +378,8 @@ export default async function AccountPage() {
           </div>
         )}
 
-        {/* ── Danger zone: delete account ───────────────────────────── */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-red-100 shadow-sm p-6">
-          <h2 className="font-black text-lg text-gray-900 mb-1 flex items-center gap-2">
-            <Trash2 className="w-5 h-5 text-red-400" />
-            Удаление аккаунта
-          </h2>
-          <p className="text-sm text-gray-400 mb-5">
-            Удаление необратимо: аккаунт, турниры и статистика будут стёрты безвозвратно.
-            Чтобы исключить случайность, потребуется подтверждение. Подробнее — в{' '}
-            <a href="/privacy" className="text-emerald-600 hover:underline">Политике конфиденциальности</a>.
-          </p>
+        {/* ── Danger zone: delete account (hidden link) ─────────────── */}
+        <div className="pt-2 pb-4 flex justify-center">
           <DeleteAccountButton email={user!.email!} />
         </div>
 

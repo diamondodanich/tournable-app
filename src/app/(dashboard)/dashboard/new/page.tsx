@@ -519,10 +519,10 @@ export default function NewTournamentPage() {
   const theme: SportTheme = getSportTheme(sport)
   // CSS variables let us tint Tailwind-styled elements with the sport colour.
   const themeVars = {
-    ['--sp' as string]:  theme.primary,
-    ['--spd' as string]: theme.primaryDark,
-    ['--spl' as string]: theme.light,
-    ['--spr' as string]: theme.ringRgba,
+    ['--sp' as string]:  isChampionship ? '#7c3aed' : theme.primary,
+    ['--spd' as string]: isChampionship ? '#6d28d9' : theme.primaryDark,
+    ['--spl' as string]: isChampionship ? '#f5f3ff' : theme.light,
+    ['--spr' as string]: isChampionship ? 'rgba(124,58,237,0.15)' : theme.ringRgba,
   } as React.CSSProperties
   // Formats ordered & filtered to those practised in the chosen sport.
   const sportFormats: Format[] = subtype?.formats ?? ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
@@ -740,7 +740,25 @@ export default function NewTournamentPage() {
         <ArrowLeft size={15} /> {isChampionship ? champTx.back : tx.back}
       </Link>
 
-      <StepBar step={step} labels={tx.steps} accent={theme.primary} />
+      {/* ── Championship mode: violet identity banner ───────────────────── */}
+      {isChampionship && (
+        <div className="mb-5 rounded-2xl p-4 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(135deg,#5b21b6,#7c3aed)' }}>
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <Crown size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-black text-sm leading-tight">
+              {isAddSeason ? champTx.seasonTitle : champTx.titleNew}
+            </p>
+            <p className="text-violet-200 text-xs mt-0.5">
+              {isAddSeason ? 'Новый сезон привяжется к командам чемпионата' : 'Постоянная структура — команды и игроки сохраняются между сезонами'}
+            </p>
+          </div>
+          <span className="shrink-0 text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-wide">Enterprise</span>
+        </div>
+      )}
+
+      <StepBar step={step} labels={tx.steps} accent={isChampionship ? '#7c3aed' : theme.primary} />
 
       {/* ── Step 1: Name & Format ──────────────────────────────────────── */}
       {step === 1 && (

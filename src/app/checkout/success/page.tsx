@@ -61,11 +61,11 @@ export default async function CheckoutSuccessPage() {
         <div className="space-y-3">
           {isEnterprise ? (
             <Link
-              href="/dashboard/leagues"
+              href="/dashboard/new?type=championship"
               className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl ${accent.btn} text-white font-bold text-sm transition-colors`}
             >
               <Crown className="w-4 h-4" />
-              Создать лигу
+              Создать чемпионат
             </Link>
           ) : (
             <Link

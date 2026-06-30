@@ -156,7 +156,9 @@
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\фотки для лендинга\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\user\\\\Documents\\\\tournable-next\\\\public\\\\screens\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})",
       "PowerShell(node \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-user-Documents-tournable-next\\\\1b7bce5b-ccaa-4cda-8348-3d9b10af7fb4\\\\scratchpad\\\\tiptoppay_response.js\")",
-      "PowerShell(Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\tiptoppay_marketing_response.docx\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})"
+      "PowerShell(Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\tiptoppay_marketing_response.docx\" | Select-Object Name, @{N='Size_KB';E={[math]::Round\\($_.Length/1KB\\)}})",
+      "Bash(extract-text \"/c/Users/user/Documents/tournable-next/Береке согласие ИП.docx\")",
+      "Bash(pandoc \"/c/Users/user/Documents/tournable-next/Береке согласие ИП.docx\" -t plain)"
     ]
   }
 }

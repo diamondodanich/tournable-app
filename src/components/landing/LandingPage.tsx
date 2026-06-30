@@ -522,7 +522,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
           className="object-contain object-right hidden lg:block" priority />
         {/* Mobile background */}
         <Image src="/screens/hero-mobile.png" alt="" fill sizes="100vw"
-          className="object-cover object-center block lg:hidden" priority />
+          className="object-cover object-bottom block lg:hidden" priority />
         {/* Gradient overlay — ensures text legibility on left (desktop) / top (mobile) */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a2218]/85 via-[#0a2218]/40 to-transparent hidden lg:block pointer-events-none" />
         <div className="absolute inset-0 block lg:hidden pointer-events-none" style={{ background: 'linear-gradient(to bottom, #0a2218 0%, #0a2218 55%, rgba(10,34,24,0.7) 75%, transparent 100%)' }} />

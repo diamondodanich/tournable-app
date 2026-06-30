@@ -14,7 +14,7 @@ type Lang = 'ru' | 'kz' | 'en'
 const T = {
   ru: {
     label: 'RU',
-    nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Мои турниры' },
+    nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Все турниры' },
     hero: {
       badge: 'Для организаторов лиг и турниров',
       h1: ['Счёт у всех — онлайн.', 'Статистика считается сама.', 'Турнир — меньше 1 минуты.'],
@@ -122,7 +122,7 @@ const T = {
 
   kz: {
     label: 'KZ',
-    nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Менің турнирларым' },
+    nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Барлық турнирлер' },
     hero: {
       badge: 'Лигалар мен турнирлер ұйымдастырушыларына',
       h1: ['Есеп барлығында — онлайн.', 'Статистика өздігінен есептеледі.', 'Турнир — 1 минуттан аз.'],
@@ -230,7 +230,7 @@ const T = {
 
   en: {
     label: 'EN',
-    nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'My Tournaments' },
+    nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'All tournaments' },
     hero: {
       badge: 'For league & tournament organisers',
       h1: ['Live scores for everyone.', 'Stats calculate themselves.', 'Tournament in under a minute.'],

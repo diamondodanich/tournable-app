@@ -62,25 +62,33 @@ export async function sendInviteEmail(
   }
 }
 
-// ── Pro activated ─────────────────────────────────────────────────────────────
+// ── Subscription activated (Pro / Enterprise) ─────────────────────────────────
 export async function sendProActivatedEmail(
   email: string,
   period: 'monthly' | 'annual',
   amount: number,
   expiresAt: Date,
+  planType: 'pro' | 'enterprise' = 'pro',
+  lang: 'ru' | 'kz' | 'en' = 'ru',
 ) {
   const resend = getResend()
   if (!resend) return
   try {
-    const html = await render(ProActivatedEmail({ email, period, amount, expiresAt, appUrl: APP_URL }))
+    const html = await render(ProActivatedEmail({ email, period, amount, expiresAt, appUrl: APP_URL, planType, lang }))
+    const planName = planType === 'enterprise' ? 'Enterprise' : 'Pro'
+    const subjects = {
+      ru: `Tournable ${planName} активирован`,
+      kz: `Tournable ${planName} белсендірілді`,
+      en: `Tournable ${planName} activated`,
+    }
     await resend.emails.send({
       from:    FROM,
       to:      email,
-      subject: 'Tournable Pro активирован',
+      subject: subjects[lang],
       html,
     })
   } catch (e) {
-    console.error('[email] pro-activated failed:', e)
+    console.error('[email] subscription-activated failed:', e)
   }
 }
 

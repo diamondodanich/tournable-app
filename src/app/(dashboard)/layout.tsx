@@ -7,14 +7,13 @@ import Image from 'next/image'
 import { User } from 'lucide-react'
 import LangSwitcher from '@/components/dashboard/LangSwitcher'
 import SupportWidget from '@/components/landing/SupportWidget'
-import SignOutButton from '@/components/account/SignOutButton'
 import InstallPrompt from '@/components/InstallPrompt'
 
 type Lang = 'ru' | 'kz' | 'en'
 
 const T = {
   ru: {
-    myTournaments: 'Мои турниры',
+    myTournaments: 'Все турниры',
     leagues: 'Лиги',
     features: 'Возможности',
     pricing: 'Тарифы',
@@ -23,7 +22,7 @@ const T = {
     signOut: 'Выйти из аккаунта',
   },
   kz: {
-    myTournaments: 'Менің турнирлерім',
+    myTournaments: 'Барлық турнирлер',
     leagues: 'Лигалар',
     features: 'Мүмкіндіктер',
     pricing: 'Тарифтер',
@@ -32,7 +31,7 @@ const T = {
     signOut: 'Шығу',
   },
   en: {
-    myTournaments: 'My tournaments',
+    myTournaments: 'All tournaments',
     leagues: 'Leagues',
     features: 'Features',
     pricing: 'Pricing',
@@ -71,9 +70,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         />
       </div>
 
-      {/* ── Header ────────────────────────────────────────────────────── */}
+      {/* ── Header (fixed — stays on scroll; parent overflow-x-hidden breaks sticky) ── */}
       <header
-        className="relative z-20 sticky top-0"
+        className="fixed top-0 inset-x-0 z-30"
         style={{ background: 'linear-gradient(90deg,#047857 0%,#059669 100%)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
@@ -135,14 +134,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <span className="text-xs text-white font-bold max-w-[110px] truncate">{emailShort}</span>
               </div>
             </Link>
-
-            <SignOutButton variant="icon" title={tx.signOut} />
           </div>
         </div>
       </header>
 
+      {/* Spacer to offset the fixed header (h-16) */}
+      <div className="h-16" />
+
       {/* ── Main content ──────────────────────────────────────────────── */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-8">
         {children}
       </main>
 

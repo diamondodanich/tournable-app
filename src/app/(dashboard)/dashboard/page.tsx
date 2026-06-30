@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { getUserPlan } from '@/app/actions/billing'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Trophy, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
+import { Plus, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import NewTournamentButton from '@/components/tournament/NewTournamentButton'
@@ -15,7 +15,7 @@ type Lang = 'ru' | 'kz' | 'en'
 // ─── Translations ─────────────────────────────────────────────────────────────
 const T = {
   ru: {
-    title: 'Мои турниры',
+    title: 'Все турниры',
     subtitle: 'Управляйте своими соревнованиями',
     newTournament: 'Новый турнир',
     emptyTitle: 'Первый турнир — за 30 секунд',
@@ -44,7 +44,7 @@ const T = {
     },
   },
   kz: {
-    title: 'Менің турнирлерім',
+    title: 'Барлық турнирлер',
     subtitle: 'Жарыстарыңызды басқарыңыз',
     newTournament: 'Жаңа турнир',
     emptyTitle: 'Бірінші турнир — 30 секундта',
@@ -61,7 +61,7 @@ const T = {
     teams:  (n: number) => `${n} команда`,
   },
   en: {
-    title: 'My Tournaments',
+    title: 'All tournaments',
     subtitle: 'Manage your competitions',
     newTournament: 'New tournament',
     emptyTitle: 'Your first tournament — in 30 seconds',
@@ -149,23 +149,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {list.length === 0 ? (
+      {list.length === 0 && champList.length === 0 ? (
         <div className="space-y-4">
-          <div className="relative overflow-hidden bg-emerald-600 rounded-3xl px-8 py-12 text-center text-white">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
-              style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-            <Trophy size={52} className="mx-auto mb-4 opacity-90" />
-            <h2 className="text-2xl font-black mb-2">{tx.emptyTitle}</h2>
-            <p className="text-emerald-100 text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-              {tx.emptyDesc}
-            </p>
-            <Link
-              href="/dashboard/new"
-              className="inline-flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 font-bold px-7 py-3 rounded-xl shadow-md transition-colors text-sm"
-            >
-              <Plus size={15} /> {tx.start}
-            </Link>
-          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {tx.features.map((f, i) => {
               const Icon = FEAT_ICONS[i]

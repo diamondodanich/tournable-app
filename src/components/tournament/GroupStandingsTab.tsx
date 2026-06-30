@@ -2,6 +2,7 @@
 
 import { Team, Fixture, Tournament } from '@/types'
 import StandingsTable from './StandingsTable'
+import MatchMatrix from './MatchMatrix'
 import ExportButtons from './ExportButtons'
 import { BarChart2, Trophy } from 'lucide-react'
 import { tx, type Lang } from '@/lib/i18n'
@@ -99,6 +100,17 @@ export default function GroupStandingsTab({
                   lang={lang}
                 />
               </div>
+            </div>
+
+            <div className="mt-3">
+              <MatchMatrix
+                teams={groupTeams}
+                fixtures={groupFixtures}
+                pointsWin={tournament.points_win}
+                pointsDraw={tournament.points_draw}
+                pointsLoss={tournament.points_loss}
+                lang={lang}
+              />
             </div>
           </div>
         )

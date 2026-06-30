@@ -166,7 +166,7 @@ export default function OnboardingPage() {
                 disabled={saving}
                 className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Сначала посмотреть дашборд
+                Перейти ко всем турнирам
               </button>
             </div>
           </div>

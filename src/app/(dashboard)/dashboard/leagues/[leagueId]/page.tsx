@@ -66,7 +66,7 @@ export default async function LeagueManagePage({
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="mb-6">
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-4">
-          <ChevronLeft size={14} /> Дашборд
+          <ChevronLeft size={14} /> Все турниры
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>

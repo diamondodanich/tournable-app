@@ -1,9 +1,17 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/freedompay'
 import { sendProActivatedEmail } from '@/lib/email'
+
+// Read the viewer's UI language from the `lang` cookie (server-side).
+async function getLangFromCookie(): Promise<'ru' | 'kz' | 'en'> {
+  const store = await cookies()
+  const v = store.get('lang')?.value
+  return v === 'kz' || v === 'en' ? v : 'ru'
+}
 
 export async function getPaymentOrderParams(
   period: PlanPeriod,
@@ -66,7 +74,8 @@ export async function activateProAfterPayment(
 
   // Best-effort email — no RESEND_API_KEY → silent no-op
   if (user.email) {
-    sendProActivatedEmail(user.email, period, PRICES[period].amount, expiresAt)
+    const lang = await getLangFromCookie()
+    sendProActivatedEmail(user.email, period, PRICES[period].amount, expiresAt, 'pro', lang)
       .catch(() => {})
   }
 
@@ -102,6 +111,13 @@ export async function activateEnterpriseAfterPayment(
   }).then(({ error }) => {
     if (error) console.warn('[activateEnterpriseAfterPayment] subscription record skipped:', error.message)
   })
+
+  // Best-effort email — no RESEND_API_KEY → silent no-op
+  if (user.email) {
+    const lang = await getLangFromCookie()
+    sendProActivatedEmail(user.email, period, ENTERPRISE_PRICES[period].amount, expiresAt, 'enterprise', lang)
+      .catch(() => {})
+  }
 
   console.log(`[activateEnterpriseAfterPayment] Enterprise activated for ${user.id} until ${expiresAt.toISOString()}`)
   return { ok: true }

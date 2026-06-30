@@ -41,15 +41,15 @@ function getLeagueParam(): string | null {
 
 // Championship-mode label overrides (only the strings that say "турнир")
 const CHAMP = {
-  ru: { back: 'Дашборд', titleNew: 'Новый чемпионат', create: 'Создать чемпионат', creating: 'Создаём…',
+  ru: { back: 'Все турниры', titleNew: 'Новый чемпионат', create: 'Создать чемпионат', creating: 'Создаём…',
     errName: 'Введите название чемпионата', namePh: 'например: Городская лига Астаны',
     seasonLbl: 'Название первого сезона', seasonPh: 'например: Сезон 2025/26', logoLbl: 'Логотип чемпионата',
     seasonTitle: 'Новый сезон', seasonNameLbl: 'Название сезона', seasonCreate: 'Создать сезон', errSeason: 'Введите название сезона' },
-  kz: { back: 'Дашборд', titleNew: 'Жаңа чемпионат', create: 'Чемпионат құру', creating: 'Құрылуда…',
+  kz: { back: 'Барлық турнирлер', titleNew: 'Жаңа чемпионат', create: 'Чемпионат құру', creating: 'Құрылуда…',
     errName: 'Чемпионат атауын енгізіңіз', namePh: 'мысалы: Астана қалалық лигасы',
     seasonLbl: 'Бірінші маусым атауы', seasonPh: 'мысалы: 2025/26 маусымы', logoLbl: 'Чемпионат логотипі',
     seasonTitle: 'Жаңа маусым', seasonNameLbl: 'Маусым атауы', seasonCreate: 'Маусым құру', errSeason: 'Маусым атауын енгізіңіз' },
-  en: { back: 'Dashboard', titleNew: 'New championship', create: 'Create championship', creating: 'Creating…',
+  en: { back: 'All tournaments', titleNew: 'New championship', create: 'Create championship', creating: 'Creating…',
     errName: 'Enter a championship name', namePh: 'e.g. Astana City League',
     seasonLbl: 'First season name', seasonPh: 'e.g. Season 2025/26', logoLbl: 'Championship logo',
     seasonTitle: 'New season', seasonNameLbl: 'Season name', seasonCreate: 'Create season', errSeason: 'Enter a season name' },
@@ -57,7 +57,7 @@ const CHAMP = {
 
 const T = {
   ru: {
-    back: 'Мои турниры',
+    back: 'Все турниры',
     steps: ['Название', 'Команды', 'Настройки', 'Старт'],
     step1: { title: 'Новый турнир', sub: 'Шаг 1 из 4 — основная информация' },
     step2: { title: 'Команды', sub: 'Шаг 2 из 4 — добавьте участников и логотипы' },
@@ -126,7 +126,7 @@ const T = {
     leagueHint: (teams: number) => `${teams} команд — Лига + Плей-офф`,
   },
   kz: {
-    back: 'Менің турнирларым',
+    back: 'Барлық турнирлер',
     steps: ['Атауы', 'Командалар', 'Параметрлер', 'Старт'],
     step1: { title: 'Жаңа турнир', sub: '4-тен 1-қадам — негізгі ақпарат' },
     step2: { title: 'Командалар', sub: '4-тен 2-қадам — қатысушылар мен логотиптер' },
@@ -192,7 +192,7 @@ const T = {
     leagueHint: (teams: number) => `${teams} команда — Лига + Плей-офф`,
   },
   en: {
-    back: 'My Tournaments',
+    back: 'All tournaments',
     steps: ['Name', 'Teams', 'Settings', 'Launch'],
     step1: { title: 'New Tournament', sub: 'Step 1 of 4 — basic info' },
     step2: { title: 'Teams', sub: 'Step 2 of 4 — add participants and logos' },

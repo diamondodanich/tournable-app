@@ -54,7 +54,7 @@ export default async function AccountPage() {
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 mb-6 transition-colors group"
       >
         <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
-        Мои турниры
+        Все турниры
       </Link>
 
       <h1 className="text-2xl font-black text-gray-900 mb-8">Личный кабинет</h1>
@@ -155,93 +155,89 @@ export default async function AccountPage() {
               </div>
             </div>
           ) : isFreePlan ? (
-            <div className="flex flex-col sm:flex-row items-start gap-6">
-              {/* Current plan info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl font-black text-gray-900">Старт</span>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 uppercase tracking-wide">
+            <div className="space-y-5">
+              {/* Current plan — compact banner */}
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg font-black text-gray-900">Старт</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 uppercase tracking-wide">
                     Текущий план
                   </span>
                 </div>
-                <ul className="space-y-2 text-sm text-gray-500">
-                  {[
-                    'До 3 турниров за всё время',
-                    'До 16 команд в турнире',
-                    'Круговой и плей-офф форматы',
-                    'Публичная страница для участников',
-                    'Статистика и экспорт PDF/PNG',
-                  ].map(item => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                <span className="text-xs text-gray-400">3 турнира · 16 команд · бесплатно</span>
               </div>
 
-              {/* Upgrade blocks — PRO + Enterprise */}
-              <div className="shrink-0 w-full sm:w-72 space-y-3">
+              <p className="text-sm text-gray-500">
+                Откройте больше возможностей — выберите план под свою задачу:
+              </p>
+
+              {/* Paid plans — horizontal, side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* PRO */}
                 <div
-                  className="rounded-2xl p-5 text-white text-center"
+                  className="rounded-2xl p-5 text-white flex flex-col"
                   style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
                 >
                   <div className="text-xs font-bold text-emerald-200 uppercase tracking-widest mb-2">Про</div>
-                  <div className="text-3xl font-black mb-0.5">4 990 ₸</div>
-                  <div className="text-xs text-emerald-200 mb-4">/ месяц</div>
-                  <ul className="space-y-1.5 text-xs text-emerald-100 mb-5 text-left">
+                  <div className="flex items-baseline gap-1.5 mb-4">
+                    <span className="text-3xl font-black">4 990 ₸</span>
+                    <span className="text-xs text-emerald-200">/ месяц</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-emerald-50 mb-5 flex-1">
                     {[
-                      'Бесконечные турниры',
-                      'До 64 команд',
+                      'Безлимит турниров и до 64 команд',
                       'Live-табло в реальном времени',
+                      'Все форматы: лига, группы, плей-офф',
                       'До 3 соредакторов',
                     ].map(item => (
-                      <li key={item} className="flex items-center gap-1.5">
-                        <Star className="w-3 h-3 text-yellow-300 shrink-0" fill="currentColor" />
+                      <li key={item} className="flex items-start gap-1.5">
+                        <Star className="w-3 h-3 text-yellow-300 shrink-0 mt-0.5" fill="currentColor" />
                         {item}
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/checkout"
-                    className="block bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
+                    className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
                   >
-                    Перейти на Про →
+                    Перейти на Про
                   </Link>
-                  <p className="text-[10px] text-emerald-300 mt-2">44 990 ₸/год · скидка −25%</p>
+                  <p className="text-[10px] text-emerald-300 mt-2 text-center">44 990 ₸ в год — выгода 25%</p>
                 </div>
 
                 {/* Enterprise */}
                 <div
-                  className="rounded-2xl p-5 text-white text-center"
+                  className="rounded-2xl p-5 text-white flex flex-col relative overflow-hidden"
                   style={{ background: 'linear-gradient(135deg,#5b21b6,#a855f7)' }}
                 >
-                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-violet-200 uppercase tracking-widest mb-2">
+                  <span className="absolute top-3 right-3 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/20 uppercase tracking-wide">Максимум</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-violet-200 uppercase tracking-widest mb-2">
                     <Crown className="w-3 h-3" /> Enterprise
                   </div>
-                  <div className="text-3xl font-black mb-0.5">39 990 ₸</div>
-                  <div className="text-xs text-violet-200 mb-4">/ месяц</div>
-                  <ul className="space-y-1.5 text-xs text-violet-100 mb-5 text-left">
+                  <div className="flex items-baseline gap-1.5 mb-4">
+                    <span className="text-3xl font-black">39 990 ₸</span>
+                    <span className="text-xs text-violet-200">/ месяц</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-violet-50 mb-5 flex-1">
                     {[
-                      'Чемпионаты с сезонами',
-                      'Профили команд и игроков',
-                      'Составы к матчам',
-                      'Углублённая статистика',
+                      'Всё из Про без ограничений',
+                      'Чемпионаты с сезонами и архивом',
+                      'Профили команд и игроков, составы',
+                      'Углублённая статистика и аналитика',
                     ].map(item => (
-                      <li key={item} className="flex items-center gap-1.5">
-                        <Crown className="w-3 h-3 text-violet-300 shrink-0" />
+                      <li key={item} className="flex items-start gap-1.5">
+                        <Crown className="w-3 h-3 text-violet-200 shrink-0 mt-0.5" />
                         {item}
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/checkout/enterprise"
-                    className="block bg-white text-violet-700 hover:bg-violet-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
+                    className="block text-center bg-white text-violet-700 hover:bg-violet-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
                   >
-                    Подключить Enterprise →
+                    Подключить Enterprise
                   </Link>
-                  <p className="text-[10px] text-violet-300 mt-2">349 990 ₸/год · скидка −25%</p>
+                  <p className="text-[10px] text-violet-300 mt-2 text-center">349 990 ₸ в год — выгода 25%</p>
                 </div>
               </div>
             </div>

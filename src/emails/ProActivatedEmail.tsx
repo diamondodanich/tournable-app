@@ -3,26 +3,124 @@ import {
   Img, Preview, Section, Text,
 } from '@react-email/components'
 
+type Lang = 'ru' | 'kz' | 'en'
+type PlanType = 'pro' | 'enterprise'
+
 interface Props {
   email:     string
   expiresAt: Date
   appUrl:    string
   period:    'monthly' | 'annual'
   amount:    number
+  planType?: PlanType
+  lang?:     Lang
 }
 
-export default function ProActivatedEmail({ email, expiresAt, appUrl, period, amount }: Props) {
-  const periodLabel = period === 'annual' ? 'год' : 'месяц'
-  const expiresStr  = expiresAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+const LOCALE: Record<Lang, string> = { ru: 'ru-RU', kz: 'kk-KZ', en: 'en-US' }
+
+const T = {
+  ru: {
+    badge:   (p: PlanType) => p === 'enterprise' ? 'ENT' : 'PRO',
+    planName:(p: PlanType) => p === 'enterprise' ? 'Enterprise' : 'Pro',
+    preview: (p: PlanType) => `Tournable ${p === 'enterprise' ? 'Enterprise' : 'Pro'} активирован — все возможности разблокированы`,
+    h1:      (p: PlanType) => `${p === 'enterprise' ? 'Enterprise' : 'Pro'} активирован`,
+    intro:   'Оплата прошла. Все возможности тарифа уже доступны в вашем аккаунте.',
+    period:  (a: boolean) => a ? 'год' : 'месяц',
+    rTariff: 'Тариф', rSum: 'Сумма', rAccount: 'Аккаунт', rUntil: 'Действует до',
+    cta:     (p: PlanType) => p === 'enterprise' ? 'Создать чемпионат' : 'Создать турнир',
+    footer:  'Вы получили это письмо, потому что оформили подписку на',
+    footerTail: 'По вопросам — напишите в WhatsApp: +7 706 409-20-21.',
+    features: {
+      pro: [
+        ['01', 'Безлимитные турниры', 'Проводите любое количество турниров без ограничений.'],
+        ['02', 'До 64 команд', 'Большие лиги, групповые этапы, полноценные чемпионаты.'],
+        ['03', 'Live-табло', 'Счёт в реальном времени по ссылке — без приложений.'],
+        ['04', 'PDF и PNG экспорт', 'Сетки и таблицы одним кликом для чата или печати.'],
+      ],
+      enterprise: [
+        ['01', 'Чемпионаты с сезонами', 'Постоянная структура с архивом всех сезонов.'],
+        ['02', 'Профили команд и игроков', 'Карточки и статистика, которые сохраняются между сезонами.'],
+        ['03', 'Составы к матчам', 'Стартовый состав и запасные для каждой игры.'],
+        ['04', 'Углублённая аналитика', 'Расширенная статистика и публичные SEO-страницы.'],
+      ],
+    },
+  },
+  kz: {
+    badge:   (p: PlanType) => p === 'enterprise' ? 'ENT' : 'PRO',
+    planName:(p: PlanType) => p === 'enterprise' ? 'Enterprise' : 'Pro',
+    preview: (p: PlanType) => `Tournable ${p === 'enterprise' ? 'Enterprise' : 'Pro'} белсендірілді — барлық мүмкіндіктер ашылды`,
+    h1:      (p: PlanType) => `${p === 'enterprise' ? 'Enterprise' : 'Pro'} белсендірілді`,
+    intro:   'Төлем өтті. Тарифтің барлық мүмкіндіктері аккаунтыңызда қолжетімді.',
+    period:  (a: boolean) => a ? 'жыл' : 'ай',
+    rTariff: 'Тариф', rSum: 'Сома', rAccount: 'Аккаунт', rUntil: 'Дейін жарамды',
+    cta:     (p: PlanType) => p === 'enterprise' ? 'Чемпионат құру' : 'Турнир құру',
+    footer:  'Бұл хатты алдыңыз, себебі сіз жазылым рәсімдедіңіз',
+    footerTail: 'Сұрақтар бойынша WhatsApp: +7 706 409-20-21.',
+    features: {
+      pro: [
+        ['01', 'Шексіз турнирлер', 'Кез келген санда турнир өткізіңіз, шектеусіз.'],
+        ['02', '64 командаға дейін', 'Үлкен лигалар, топтық кезеңдер, толық чемпионаттар.'],
+        ['03', 'Live-таблосы', 'Сілтеме арқылы нақты уақыттағы есеп — қосымшасыз.'],
+        ['04', 'PDF және PNG экспорт', 'Кестелерді бір шертумен чатқа немесе басып шығаруға.'],
+      ],
+      enterprise: [
+        ['01', 'Маусымдары бар чемпионаттар', 'Барлық маусым архиві бар тұрақты құрылым.'],
+        ['02', 'Команда мен ойыншы профильдері', 'Маусымдар арасында сақталатын карточкалар мен статистика.'],
+        ['03', 'Матч құрамдары', 'Әр ойынға негізгі құрам мен қосалқылар.'],
+        ['04', 'Тереңдетілген аналитика', 'Кеңейтілген статистика және SEO-беттер.'],
+      ],
+    },
+  },
+  en: {
+    badge:   (p: PlanType) => p === 'enterprise' ? 'ENT' : 'PRO',
+    planName:(p: PlanType) => p === 'enterprise' ? 'Enterprise' : 'Pro',
+    preview: (p: PlanType) => `Tournable ${p === 'enterprise' ? 'Enterprise' : 'Pro'} activated — everything unlocked`,
+    h1:      (p: PlanType) => `${p === 'enterprise' ? 'Enterprise' : 'Pro'} activated`,
+    intro:   'Payment received. All plan features are now available in your account.',
+    period:  (a: boolean) => a ? 'year' : 'month',
+    rTariff: 'Plan', rSum: 'Amount', rAccount: 'Account', rUntil: 'Valid until',
+    cta:     (p: PlanType) => p === 'enterprise' ? 'Create championship' : 'Create tournament',
+    footer:  'You received this email because you subscribed at',
+    footerTail: 'Questions? Message us on WhatsApp: +7 706 409-20-21.',
+    features: {
+      pro: [
+        ['01', 'Unlimited tournaments', 'Run any number of tournaments without limits.'],
+        ['02', 'Up to 64 teams', 'Large leagues, group stages, full championships.'],
+        ['03', 'Live scoreboard', 'Real-time scores via a link — no apps needed.'],
+        ['04', 'PDF & PNG export', 'Brackets and tables in one click for chat or print.'],
+      ],
+      enterprise: [
+        ['01', 'Championships with seasons', 'A permanent structure with a full season archive.'],
+        ['02', 'Team & player profiles', 'Cards and stats that persist across seasons.'],
+        ['03', 'Match lineups', 'Starting eleven and substitutes for every game.'],
+        ['04', 'Advanced analytics', 'Extended statistics and public SEO pages.'],
+      ],
+    },
+  },
+} as const
+
+export default function ProActivatedEmail({
+  email, expiresAt, appUrl, period, amount, planType = 'pro', lang = 'ru',
+}: Props) {
+  const tx = T[lang]
+  const isEnt = planType === 'enterprise'
+  const periodLabel = tx.period(period === 'annual')
+  const expiresStr  = expiresAt.toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric' })
+  const ctaHref = isEnt ? `${appUrl}/dashboard/new?type=championship` : `${appUrl}/dashboard/new`
+  const features = isEnt ? tx.features.enterprise : tx.features.pro
+
+  const headerBg = isEnt ? 'linear-gradient(135deg, #5b21b6, #a855f7)' : 'linear-gradient(135deg, #047857, #10b981)'
+  const accent   = isEnt ? '#7c3aed' : '#059669'
+  const accentBg = isEnt ? '#f5f3ff' : '#ecfdf5'
 
   return (
-    <Html lang="ru">
+    <Html lang={lang}>
       <Head />
-      <Preview>Tournable Pro активирован — все возможности разблокированы</Preview>
+      <Preview>{tx.preview(planType)}</Preview>
       <Body style={body}>
         <Container style={container}>
 
-          <Section style={header}>
+          <Section style={{ ...header, background: headerBg }}>
             <table align="center" cellPadding="0" cellSpacing="0" style={{ margin: '0 auto 8px' }}>
               <tbody>
                 <tr>
@@ -35,42 +133,39 @@ export default function ProActivatedEmail({ email, expiresAt, appUrl, period, am
                 </tr>
               </tbody>
             </table>
-            <Text style={headerBadge}>PRO</Text>
+            <Text style={headerBadge}>{tx.badge(planType)}</Text>
           </Section>
 
           <Section style={heroSection}>
-            <Heading style={h1}>Pro активирован</Heading>
-            <Text style={paragraph}>
-              Оплата прошла. Все Pro-возможности уже доступны в вашем аккаунте.
-            </Text>
+            <Heading style={h1}>{tx.h1(planType)}</Heading>
+            <Text style={paragraph}>{tx.intro}</Text>
           </Section>
 
           <Section style={receiptSection}>
-            <ReceiptRow label="Тариф" value={`Tournable Pro — ${periodLabel}`} />
-            <ReceiptRow label="Сумма" value={`${amount.toLocaleString('ru-RU')} ₸`} />
-            <ReceiptRow label="Аккаунт" value={email} />
-            <ReceiptRow label="Действует до" value={expiresStr} last />
+            <ReceiptRow label={tx.rTariff} value={`Tournable ${tx.planName(planType)} — ${periodLabel}`} />
+            <ReceiptRow label={tx.rSum} value={`${amount.toLocaleString(LOCALE[lang])} ₸`} />
+            <ReceiptRow label={tx.rAccount} value={email} />
+            <ReceiptRow label={tx.rUntil} value={expiresStr} last />
           </Section>
 
           <Section style={{ textAlign: 'center', padding: '24px 40px 0' }}>
-            <Button href={`${appUrl}/dashboard/new`} style={button}>
-              Создать турнир
+            <Button href={ctaHref} style={{ ...button, backgroundColor: accent }}>
+              {tx.cta(planType)}
             </Button>
           </Section>
 
           <Section style={featuresSection}>
-            <FeatureRow icon="01" title="Безлимитные турниры" desc="Проводите любое количество турниров без ограничений." />
-            <FeatureRow icon="02" title="До 64 команд" desc="Большие лиги, групповые этапы, полноценные чемпионаты." />
-            <FeatureRow icon="03" title="Live-табло" desc="Счёт в реальном времени по ссылке — без приложений." />
-            <FeatureRow icon="04" title="PDF и PNG экспорт" desc="Сетки и таблицы одним кликом для чата или печати." />
+            {features.map(([icon, title, desc]) => (
+              <FeatureRow key={icon} icon={icon} title={title} desc={desc} accent={accent} accentBg={accentBg} />
+            ))}
           </Section>
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Вы получили это письмо, потому что оформили подписку на{' '}
-            <a href={appUrl} style={link}>tournable.app</a>.
-            По вопросам — напишите в WhatsApp: +7 706 409-20-21.
+            {tx.footer}{' '}
+            <a href={appUrl} style={{ ...link, color: accent }}>tournable.app</a>.
+            {' '}{tx.footerTail}
           </Text>
 
         </Container>
@@ -88,10 +183,10 @@ function ReceiptRow({ label, value, last }: { label: string; value: string; last
   )
 }
 
-function FeatureRow({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+function FeatureRow({ icon, title, desc, accent, accentBg }: { icon: string; title: string; desc: string; accent: string; accentBg: string }) {
   return (
     <Section style={featureRow}>
-      <Text style={featureIcon}>{icon}</Text>
+      <Text style={{ ...featureIcon, color: accent, backgroundColor: accentBg }}>{icon}</Text>
       <Section style={featureText}>
         <Text style={featureTitle}>{title}</Text>
         <Text style={featureDesc}>{desc}</Text>
@@ -117,7 +212,6 @@ const container: React.CSSProperties = {
 }
 
 const header: React.CSSProperties = {
-  background: 'linear-gradient(135deg, #047857, #10b981)',
   padding: '24px 40px',
   textAlign: 'center',
 }
@@ -132,14 +226,6 @@ const headerBadge: React.CSSProperties = {
   borderRadius: '6px',
   padding: '3px 10px',
   margin: '0 0 6px',
-}
-
-const headerTitle: React.CSSProperties = {
-  color: '#ffffff',
-  fontSize: '18px',
-  fontWeight: '900',
-  letterSpacing: '-0.03em',
-  margin: 0,
 }
 
 const heroSection: React.CSSProperties = {
@@ -190,7 +276,6 @@ const receiptValue: React.CSSProperties = {
 }
 
 const button: React.CSSProperties = {
-  backgroundColor: '#059669',
   borderRadius: '12px',
   color: '#ffffff',
   fontSize: '15px',
@@ -212,8 +297,6 @@ const featureRow: React.CSSProperties = {
 }
 
 const featureIcon: React.CSSProperties = {
-  backgroundColor: '#ecfdf5',
-  color: '#059669',
   fontSize: '11px',
   fontWeight: '900',
   borderRadius: '8px',

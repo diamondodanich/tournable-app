@@ -94,7 +94,7 @@ const T = {
     summary: { format: 'Формат', teams: 'команд', periods: 'Таймы', pts: 'Очки' },
     planLimit: {
       title: 'Лимит бесплатного плана',
-      desc: 'На бесплатном плане можно создать до 3 турниров. Перейдите на Про для безлимитных турниров и команд до 64.',
+      desc: 'На бесплатном плане доступен 1 активный турнир. Перейдите на Про для безлимитных турниров и команд до 64.',
       cta: 'Перейти на Про', dismiss: 'Закрыть',
     },
     teamLimit: {
@@ -163,7 +163,7 @@ const T = {
     summary: { format: 'Формат', teams: 'команда', periods: 'Таймдар', pts: 'Ұпайлар' },
     planLimit: {
       title: 'Тегін жоспар шегі',
-      desc: 'Тегін жоспарда 3 турнирге дейін жасауға болады. Про-ға өтіп, шексіз турнирлер мен 64 командаға дейін пайдаланыңыз.',
+      desc: 'Тегін жоспарда 1 белсенді турнир қолжетімді. Про-ға өтіп, шексіз турнирлер мен 64 командаға дейін пайдаланыңыз.',
       cta: 'Про-ға өту', dismiss: 'Жабу',
     },
     teamLimit: {
@@ -229,7 +229,7 @@ const T = {
     summary: { format: 'Format', teams: 'teams', periods: 'Periods', pts: 'Points' },
     planLimit: {
       title: 'Free plan limit',
-      desc: 'The free plan allows up to 3 tournaments. Upgrade to Pro for unlimited tournaments and up to 64 teams.',
+      desc: 'The free plan allows 1 active tournament. Upgrade to Pro for unlimited tournaments and up to 64 teams.',
       cta: 'Upgrade to Pro', dismiss: 'Dismiss',
     },
     teamLimit: {

@@ -14,7 +14,7 @@ Auth middleware: `src/proxy.ts` (not middleware.ts), export named `proxy`.
 Tabs use `data-active` attribute (NOT `data-state="active"`). Active tab: `data-[active]:bg-[var(--sp)] data-[active]:text-white`.
 
 ## Business Model
-- **Free**: 3 активных турнира, 16 команд, без Pro-фич
+- **Free**: 1 активный турнир, 16 команд, без Pro-фич
 - **Pro**: 4 990 ₸/мес · 44 990 ₸/год — безлимит, Live-табло, экспорт PDF, все форматы, до 3 со-редакторов
 - Оплата: FreedomPay (MID: 586535, тестовый режим)
 

@@ -49,7 +49,7 @@ export default function SubscriptionExpiringEmail({ expiresAt, appUrl }: Props) 
 
             <Section style={featuresList}>
               <Text style={featuresTitle}>Что вы потеряете:</Text>
-              <Text style={featureItem}>— Создание более 3 турниров</Text>
+              <Text style={featureItem}>— Более 1 активного турнира одновременно</Text>
               <Text style={featureItem}>— Форматы «Лига + Плей-офф» и «Группы + Плей-офф»</Text>
               <Text style={featureItem}>— LIVE-режим ведения матчей</Text>
               <Text style={featureItem}>— Экспорт таблиц и отчётов</Text>

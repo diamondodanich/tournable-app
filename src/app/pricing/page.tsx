@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 const FREE_FEATURES = [
-  { text: 'До 3 турниров', included: true },
+  { text: '1 активный турнир', included: true },
   { text: 'До 16 команд в турнире', included: true },
   { text: 'Круговой и плей-офф форматы', included: true },
   { text: 'Публичная страница для участников', included: true },

@@ -100,7 +100,7 @@ const FAQ: Record<Lang, FaqItem[]> = {
       q: 'Какие тарифы и цены?',
       tags: ['тариф', 'цена', 'стоимость', 'про', 'бесплатный', 'оплата', 'подписка', 'купить', '4990', 'деньги'],
       steps: [
-        'Бесплатный план: до 3 турниров, до 16 команд, базовые функции.',
+        'Бесплатный план: 1 активный турнир, до 16 команд, базовые функции.',
         'Pro — 4 990 ₸/мес или 44 990 ₸/год (выгоднее на 25%).',
         'Pro включает: безлимитные турниры, до 64 команд.',
         'Pro включает: Live-табло, приоритетную поддержку 24/7.',
@@ -194,7 +194,7 @@ const FAQ: Record<Lang, FaqItem[]> = {
       q: 'Тарифтер мен бағалар қандай?',
       tags: ['тариф', 'баға', 'про', 'тегін', 'төлем', 'жазылым', '4990'],
       steps: [
-        'Тегін: 3 турнирге дейін, 16 командаға дейін.',
+        'Тегін: 1 белсенді турнир, 16 командаға дейін.',
         'Pro — 4 990 ₸/ай немесе 44 990 ₸/жыл.',
         'Pro: шексіз турнирлер, 64 командаға дейін.',
         'Pro: Live-тақта, басым қолдау 24/7.',
@@ -311,7 +311,7 @@ const FAQ: Record<Lang, FaqItem[]> = {
       q: 'What are the plans and pricing?',
       tags: ['plan', 'price', 'cost', 'pro', 'free', 'payment', 'subscription', '4990'],
       steps: [
-        'Free plan: up to 3 tournaments, up to 16 teams.',
+        'Free plan: 1 active tournament, up to 16 teams.',
         'Pro — 4,990 ₸/month or 44,990 ₸/year (save 25%).',
         'Pro includes: unlimited tournaments, up to 64 teams.',
         'Pro includes: Live scoreboard, priority support 24/7.',

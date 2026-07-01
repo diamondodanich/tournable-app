@@ -164,7 +164,7 @@ export default async function AccountPage() {
                     Текущий план
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">3 турнира · 16 команд · бесплатно</span>
+                <span className="text-xs text-gray-400">1 турнир · 16 команд · бесплатно</span>
               </div>
 
               <p className="text-sm text-gray-500">

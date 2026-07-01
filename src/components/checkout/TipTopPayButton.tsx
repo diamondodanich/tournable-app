@@ -85,10 +85,14 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
         description:      order.description,
         amount,
         currency:         'KZT',
-        accountId:        order.userId,
         externalId:       order.orderId,
-        email:            userEmail,
         paymentSchema:    'Single',
+        // accountId/email must live under userInfo — top-level accountId/email
+        // are not part of the widget's CreateIntentCommand shape.
+        userInfo: {
+          accountId: order.userId,
+          email:     userEmail,
+        },
         metadata: {
           user_id:     order.userId,
           plan_period: period,

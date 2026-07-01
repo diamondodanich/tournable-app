@@ -88,9 +88,9 @@ Values in `tournaments.sport` column:
 - `src/lib/tiptoppay.ts` — Public ID, API Secret, prices, `verifyWebhookSignature()`
 - Dashboard: https://merchant.tiptoppay.kz/next/dashboard/main — Public ID + API Secret (test terminal) live in `.env.local` as `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID` / `TIPTOPPAY_API_SECRET` (add to Vercel env for prod)
 - Widget script: `https://widget.tiptoppay.kz/bundles/widget.js` → global `window.tiptop.Widget` (verified in browser: also exposes `window.cp` — same lib, `tiptop` alias)
-- Flow: `new tiptop.Widget()` → `widget.start({ publicTerminalId, amount, currency, accountId, externalId, metadata, ... })` → `widget.oncomplete = (result) => {...}` (result.status: success/fail/reject/cancel)
+- Flow: `new tiptop.Widget()` → `widget.start({ publicTerminalId, amount, currency, externalId, paymentSchema, userInfo: { accountId, email }, metadata, ... })` → `widget.oncomplete = (result) => {...}` (result.status: success/fail/reject/cancel). **`accountId`/`email` must be nested under `userInfo`** — passing them top-level is silently ignored (confirmed against the official param reference, not just CloudPayments docs)
 - `metadata` (user_id, plan_period, plan_type) round-trips back in the webhook as a `Data` JSON field — same pattern as FreedomPay's `custom_params`
-- Webhook: `src/app/api/webhooks/tiptoppay/route.ts` — verifies `Content-HMAC` header (`HMAC-SHA256(rawBody, ApiSecret)`, base64), responds `{"code":0}`
+- Webhook: `src/app/api/webhooks/tiptoppay/route.ts` — verifies `Content-HMAC`/`X-Content-HMAC` header (`HMAC-SHA256(rawBody, ApiSecret)`, UTF8, base64), responds `{"code":0}` — field names (`TransactionId`, `AccountId`, `InvoiceId`, `SubscriptionId`, `Data`) and response format confirmed word-for-word against the official TipTop Pay doc (2026-07-01), not inferred from CloudPayments
 - Subscriptions `source` value: `'cloudpayments'` (already allowed by the original 011 migration's check constraint — no new constraint needed)
 - RPC: `record_cloudpayments_subscription` (migration 023) — mirrors `record_freedompay_subscription`, used by `activateProAfterPayment`/`activateEnterpriseAfterPayment` when called with `source: 'cloudpayments'`
 - Recurring payments: supported via `metadata`/`recurrent` object in widget params — not yet wired up (next step once test terminal is validated)

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Copy, Crown, MessageCircle, CheckCircle2 } from 'lucide-react'
-import { CardPaymentForm } from './CardPaymentForm'
+import { TipTopPayButton } from './TipTopPayButton'
 
 const MONTHLY_PRICE = 39990
 const PLANS = {
@@ -150,7 +150,7 @@ export function EnterpriseCheckoutForm({ userEmail }: Props) {
         {/* Card payment */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-black text-gray-900 mb-4">Оплата картой</h2>
-          <CardPaymentForm period={period} amount={plan.price} userEmail={userEmail} planType="enterprise" />
+          <TipTopPayButton period={period} amount={plan.price} userEmail={userEmail} planType="enterprise" />
         </div>
 
         {/* WhatsApp fallback */}

@@ -83,13 +83,25 @@ Values in `tournaments.sport` column:
 - Other: `volleyball`, `beach_volleyball`, `hockey`, `other`
 - `--sp` CSS variable = sport primary color (set in tournament page)
 
-## FreedomPay JS SDK
+## TipTop Pay (active payment provider — CloudPayments-compatible, white-label for KZ)
+- Live checkout (`CheckoutForm.tsx`, `EnterpriseCheckoutForm.tsx`) uses `TipTopPayButton.tsx`, NOT `CardPaymentForm.tsx` (FreedomPay — kept in repo unused, not deleted)
+- `src/lib/tiptoppay.ts` — Public ID, API Secret, prices, `verifyWebhookSignature()`
+- Dashboard: https://merchant.tiptoppay.kz/next/dashboard/main — Public ID + API Secret (test terminal) live in `.env.local` as `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID` / `TIPTOPPAY_API_SECRET` (add to Vercel env for prod)
+- Widget script: `https://widget.tiptoppay.kz/bundles/widget.js` → global `window.tiptop.Widget` (verified in browser: also exposes `window.cp` — same lib, `tiptop` alias)
+- Flow: `new tiptop.Widget()` → `widget.start({ publicTerminalId, amount, currency, accountId, externalId, metadata, ... })` → `widget.oncomplete = (result) => {...}` (result.status: success/fail/reject/cancel)
+- `metadata` (user_id, plan_period, plan_type) round-trips back in the webhook as a `Data` JSON field — same pattern as FreedomPay's `custom_params`
+- Webhook: `src/app/api/webhooks/tiptoppay/route.ts` — verifies `Content-HMAC` header (`HMAC-SHA256(rawBody, ApiSecret)`, base64), responds `{"code":0}`
+- Subscriptions `source` value: `'cloudpayments'` (already allowed by the original 011 migration's check constraint — no new constraint needed)
+- RPC: `record_cloudpayments_subscription` (migration 023) — mirrors `record_freedompay_subscription`, used by `activateProAfterPayment`/`activateEnterpriseAfterPayment` when called with `source: 'cloudpayments'`
+- Recurring payments: supported via `metadata`/`recurrent` object in widget params — not yet wired up (next step once test terminal is validated)
+- Onboarding sequence per TipTop manager: анкета → сбор 6 000 ₸ (оферта says 6 000, manager quoted 20 000 — clarify) → банк Береке выдаёт онлайн-терминал (согласие ИП на сбор/обработку данных отправлено) → полная готовность
+
+## FreedomPay JS SDK (legacy — code kept, not wired into checkout)
 - MID: 586535, test token: `OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP`
 - SDK: `https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js`
 - Flow: `SDK.setup(publicKey, token)` → `SDK.charge(payment, transaction)` → if `need_confirm`: `SDK.confirmInIframe(result, containerId)`
 - FreedomPay does NOT support recurring payments — one-time only
 - Webhook signature: `MD5(scriptName + ';' + sorted_param_values_by_key + ';' + secretKey)`
-- For recurring payments: migrate to CloudPayments (zaявка отправлена 2026-06-23, ожидаем ответа)
 
 ## Live Match Flow
 1. Click "Начать матч" → POST /api/live/start → creates live_games row
@@ -142,15 +154,16 @@ Additional (in Vercel, not needed locally for basic dev):
 - CardPaymentForm.tsx: consent text on payment
 - No auto-renewal: after expiry, cron immediately sets plan to Free
 
-## Pending Tasks (as of 2026-06-25)
-1. TipTop Pay: заполнить анкету → уточнить сумму сбора (6 000 или 20 000 ₸) → оплатить → интегрировать платёжный шлюз + онлайн-кассу (ОФД) + рекуррентные платежи
+## Pending Tasks (as of 2026-07-01)
+1. TipTop Pay: уточнить сумму сбора (оферта — 6 000 ₸, менеджер называл 20 000 ₸) → оплатить → дождаться выдачи боевого терминала от Береке Банка → добавить `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID`/`TIPTOPPAY_API_SECRET` (prod) в Vercel → онлайн-касса (ОФД) → рекуррентные платежи
 2. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
 3. Домен: купить tournable.kz → подключить к Vercel
 4. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
 
 ## Завершено
 - ИП зарегистрировано на eGov.kz: "Tournable.app", ИИН 030830501207
-- FreedomPay: заменён на TipTop Pay (рекуррент доступен сразу)
+- TipTop Pay: тестовый терминал подключён в чекаут (`TipTopPayButton.tsx`), проверен в браузере (виджет открывается, корректный global `window.tiptop.Widget`)
+- FreedomPay: код оставлен в репо, но больше не используется в чекауте (заменён TipTop Pay)
 
 ## SupportWidget
 - `src/components/landing/SupportWidget.tsx`

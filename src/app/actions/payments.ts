@@ -38,11 +38,14 @@ export async function getPaymentOrderParams(
   }
 }
 
+export type PaymentSource = 'freedompay' | 'cloudpayments'
+
 // Called client-side after SDK returns payment_status === 'success'.
 // Uses user session — profiles RLS allows owner to update their own row.
 export async function activateProAfterPayment(
   period: PlanPeriod,
   paymentId: string,
+  source: PaymentSource = 'freedompay',
 ): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -62,7 +65,8 @@ export async function activateProAfterPayment(
   }
 
   // Best-effort payment record; may fail if RLS/constraints block it
-  await supabase.rpc('record_freedompay_subscription', {
+  const rpcName = source === 'cloudpayments' ? 'record_cloudpayments_subscription' : 'record_freedompay_subscription'
+  await supabase.rpc(rpcName, {
     p_user_id:    user.id,
     p_plan:       'pro',
     p_expires_at: expiresAt.toISOString(),
@@ -87,6 +91,7 @@ export async function activateProAfterPayment(
 export async function activateEnterpriseAfterPayment(
   period: PlanPeriod,
   paymentId: string,
+  source: PaymentSource = 'freedompay',
 ): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -102,7 +107,8 @@ export async function activateEnterpriseAfterPayment(
   )
   if (profErr) return { error: profErr.message }
 
-  await supabase.rpc('record_freedompay_subscription', {
+  const rpcName = source === 'cloudpayments' ? 'record_cloudpayments_subscription' : 'record_freedompay_subscription'
+  await supabase.rpc(rpcName, {
     p_user_id:    user.id,
     p_plan:       'enterprise',
     p_expires_at: expiresAt.toISOString(),

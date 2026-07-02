@@ -219,7 +219,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   const lineupBtn = canLineup ? (
     <button onClick={() => setShowLineup(true)}
       className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors">
-      <Users size={11} /> Состав
+      <Users size={11} /> {T.lineupBtn}
     </button>
   ) : null
   const lineupModal = showLineup ? (
@@ -265,13 +265,13 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
     const as_ = parseInt(awayScore) || 0
     const result = await startFixture(fixture.id, tournamentId, fixture.home_team_id ?? undefined, fixture.away_team_id ?? undefined, hs, as_)
     setStarting(false)
-    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
+    if (result?.error) { setStatus(prevStatus); toast.error(T.errorPrefix(result.error)) }
   }
 
   async function handleSave() {
     const hs  = hasGoals ? cHome : parseInt(homeScore)
     const as_ = hasGoals ? cAway : parseInt(awayScore)
-    if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error('Введите корректный счёт'); return }
+    if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) { toast.error(T.invalidScore); return }
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
@@ -280,8 +280,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
       events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined }))
     )
     setSaving(false)
-    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
-    else { toast.success('Результат сохранён'); setIsEditing(false); setSavedH(hs); setSavedA(as_) }
+    if (result?.error) { setStatus(prevStatus); toast.error(T.errorPrefix(result.error)) }
+    else { toast.success(T.resultSaved); setIsEditing(false); setSavedH(hs); setSavedA(as_) }
   }
 
   if (fixture.is_bye || !fixture.home_team_id || !fixture.away_team_id) {
@@ -529,7 +529,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
             href={`/t/${tournamentId}/live?home=${fixture.home_team_id}&away=${fixture.away_team_id}&fixture=${fixture.id}`}
             target="_blank"
             className="flex items-center gap-2 text-sm font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors shadow-sm shrink-0">
-            <Radio size={12} /> Live-табло
+            <Radio size={12} /> {T.statusLive} · {T.btnLiveBoard}
           </Link>
         ) : <div />}
         <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">

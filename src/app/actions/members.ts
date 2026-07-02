@@ -103,7 +103,7 @@ export async function inviteByEmail(
   })
   if (error) return { error: error.message }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
   const inviteUrl = `${appUrl}/invite/${token}`
 
   await sendInviteEmail(email, t.name, inviteUrl, role, lang)

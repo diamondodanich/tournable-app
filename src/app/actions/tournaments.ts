@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { generatePlayoffBracket } from '@/lib/tournament/playoff'
+import { generatePlayoffBracket, seededBracketPositions } from '@/lib/tournament/playoff'
 
 // ─── Slug generation ──────────────────────────────────────────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -39,18 +39,6 @@ async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, u
     if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
   }
   return 'free'
-}
-
-// Проверяет план ВЛАДЕЛЬЦА турнира (не текущего пользователя — он может быть редактором)
-async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string) {
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('user_id')
-    .eq('id', tournamentId)
-    .maybeSingle()
-
-  if (!tournament) return 'free'
-  return getUserPlan(supabase, tournament.user_id)
 }
 
 export async function createTournament(formData: FormData) {
@@ -521,10 +509,7 @@ export async function startFixture(
     if (!member) return { error: 'Нет доступа' }
   }
 
-  // Live-табло — только для тарифа Про (проверяем план владельца турнира)
-  const ownerPlan = await getOwnerPlan(supabase, tournamentId)
-  if (ownerPlan === 'free') return { error: 'Live-табло доступно только на тарифе Про' }
-
+  // Live scoreboard is available on all plans (gate removed 2026-07 by product decision)
   // Mark fixture as live
   const { error: fe } = await supabase.from('fixtures').update({ status: 'live' }).eq('id', fixtureId)
   if (fe) return { error: fe.message }
@@ -592,8 +577,106 @@ export async function saveFixtureResult(
     .eq('tournament_id', tournamentId)
     .eq('fixture_id', fixtureId)
 
+  // Stage may have just finished — seed the playoff bracket if so (best-effort)
+  try { await maybeSeedPlayoff(tournamentId) } catch (e) { console.warn('[maybeSeedPlayoff]', e) }
+
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   return {}
+}
+
+// ─── Auto-seed playoff after group/league stage completes ─────────────────────
+// For groups_playoff / league_playoff: once every real (non-bye) stage fixture is
+// played, fill the placeholder first round with teams according to standings.
+// Seed order mirrors the labels shown in PlayoffTab (seedLabel):
+//   league_playoff  → table position 1..N
+//   groups_playoff  → A1,B1,C1,… then A2,B2,C2,… (cross-group pairing via seededBracketPositions)
+export async function maybeSeedPlayoff(tournamentId: string): Promise<void> {
+  const supabase = await createClient()
+
+  const { data: t } = await supabase
+    .from('tournaments')
+    .select('format, teams_advance, points_win, points_draw, points_loss')
+    .eq('id', tournamentId)
+    .maybeSingle()
+  if (!t || (t.format !== 'groups_playoff' && t.format !== 'league_playoff')) return
+
+  const { data: fixtures } = await supabase
+    .from('fixtures')
+    .select('home_team_id, away_team_id, home_score, away_score, played, is_bye')
+    .eq('tournament_id', tournamentId)
+  const real = (fixtures ?? []).filter(f => !f.is_bye && f.home_team_id && f.away_team_id)
+  if (real.length === 0 || real.some(f => !f.played)) return  // stage not finished yet
+
+  const { data: pms } = await supabase
+    .from('playoff_matches')
+    .select('id, round_order, match_order, home_team_id, away_team_id, winner_to_match, winner_slot')
+    .eq('tournament_id', tournamentId)
+    .order('round_order', { ascending: false })
+    .order('match_order')
+  if (!pms || pms.length === 0) return
+  const maxRound = pms[0].round_order
+  const firstRound = pms.filter(m => m.round_order === maxRound).sort((a, b) => a.match_order - b.match_order)
+  if (firstRound.some(m => m.home_team_id || m.away_team_id)) return  // already seeded
+
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id, group_name')
+    .eq('tournament_id', tournamentId)
+  if (!teams || teams.length === 0) return
+
+  // Server-side standings (same ranking rules as StandingsTable: Pts → GD → GF)
+  const PW = t.points_win ?? 3, PD = t.points_draw ?? 1, PL = t.points_loss ?? 0
+  type Row = { id: string; group: string | null; pts: number; gd: number; gf: number }
+  const rows = new Map<string, Row>(teams.map(tm => [tm.id, { id: tm.id, group: tm.group_name, pts: 0, gd: 0, gf: 0 }]))
+  for (const f of real) {
+    const h = rows.get(f.home_team_id!), a = rows.get(f.away_team_id!)
+    if (!h || !a) continue
+    const hs = f.home_score ?? 0, as = f.away_score ?? 0
+    h.gf += hs; a.gf += as
+    h.gd += hs - as; a.gd += as - hs
+    if (hs > as)      { h.pts += PW; a.pts += PL }
+    else if (hs < as) { a.pts += PW; h.pts += PL }
+    else              { h.pts += PD; a.pts += PD }
+  }
+  const rank = (x: Row, y: Row) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf
+
+  const advance = t.teams_advance ?? 2
+  const seeds: string[] = []
+  if (t.format === 'league_playoff') {
+    seeds.push(...[...rows.values()].sort(rank).slice(0, advance).map(r => r.id))
+  } else {
+    const groups = [...new Set(teams.map(tm => tm.group_name).filter((g): g is string => !!g))].sort()
+    const perGroup = new Map(groups.map(g => [g, [...rows.values()].filter(r => r.group === g).sort(rank)]))
+    for (let place = 0; place < advance; place++) {
+      for (const g of groups) {
+        const r = perGroup.get(g)?.[place]
+        if (r) seeds.push(r.id)
+      }
+    }
+  }
+  if (seeds.length < 2) return
+
+  const size = firstRound.length * 2
+  const padded: string[] = [...seeds]
+  while (padded.length < size) padded.push('')
+  const positions = seededBracketPositions(size)
+
+  for (let i = 0; i < firstRound.length; i++) {
+    const m = firstRound[i]
+    const home = padded[positions[i * 2]] || null
+    const away = padded[positions[i * 2 + 1]] || null
+    await supabase.from('playoff_matches').update({ home_team_id: home, away_team_id: away }).eq('id', m.id)
+
+    // Walkover: only one side seeded → advance it immediately
+    const winnerId = home && !away ? home : (!home && away ? away : null)
+    if (winnerId) {
+      await supabase.from('playoff_matches').update({ winner_id: winnerId }).eq('id', m.id)
+      if (m.winner_to_match) {
+        const field = m.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
+        await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', m.winner_to_match)
+      }
+    }
+  }
 }
 
 function generateRoundRobin(teams: (string | null)[]): (string | null)[][] [] {

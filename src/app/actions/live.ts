@@ -2,29 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-
-async function getOwnerPlan(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<'free' | 'pro' | 'enterprise'> {
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('user_id')
-    .eq('id', tournamentId)
-    .maybeSingle()
-
-  if (!tournament) return 'free'
-
-  const { data } = await supabase
-    .from('profiles')
-    .select('plan, plan_expires_at')
-    .eq('id', tournament.user_id)
-    .maybeSingle()
-
-  if (!data) return 'free'
-  if (data.plan === 'enterprise') return 'enterprise'
-  if (data.plan === 'pro') {
-    if (!data.plan_expires_at || new Date(data.plan_expires_at) > new Date()) return 'pro'
-  }
-  return 'free'
-}
+import { maybeSeedPlayoff } from './tournaments'
 
 async function getOwnerOrEditorCheck(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -64,9 +42,7 @@ export async function initLiveGame(
   const supabase = await createClient()
   if (!await getOwnerOrEditorCheck(supabase, tournamentId)) return { error: 'Нет доступа' }
 
-  const ownerPlan = await getOwnerPlan(supabase, tournamentId)
-  if (ownerPlan === 'free') return { error: 'Live-табло доступно только на тарифе Про' }
-
+  // Live scoreboard is available on all plans (gate removed 2026-07 by product decision)
   const { data, error } = await supabase.from('live_games').upsert({
     tournament_id: tournamentId,
     home_team_id: homeTeamId,
@@ -149,6 +125,11 @@ export async function finishLiveMatch(
   }
 
   await supabase.from('live_games').delete().eq('tournament_id', tournamentId)
+
+  // Stage may have just finished — seed the playoff bracket if so (best-effort)
+  if (liveGame.fixture_id) {
+    try { await maybeSeedPlayoff(tournamentId) } catch (e) { console.warn('[maybeSeedPlayoff]', e) }
+  }
 
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   revalidatePath(`/t/${tournamentId}/live`)

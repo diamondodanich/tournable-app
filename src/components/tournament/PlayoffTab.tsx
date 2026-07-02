@@ -7,11 +7,10 @@ import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Lock, Clock, ChevronRight } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Clock, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
-import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 
@@ -205,7 +204,6 @@ function PlayoffMatchCard({
   )
   const [saving, setSaving]     = useState(false)
   const [starting, setStarting] = useState(false)
-  const [showUpgrade, setShowUpgrade] = useState(false)
   const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     match.winner_id ? 'finished' : isLive ? 'live' : 'scheduled'
   )
@@ -259,7 +257,7 @@ function PlayoffMatchCard({
 
   async function handleStart() {
     if (!match.home_team_id || !match.away_team_id) return
-    if (!isPro) { setShowUpgrade(true); return }
+    // Live scoreboard is available on all plans (gate removed 2026-07 by product decision)
     setStarting(true)
     const prevStatus = status
     setStatus('live')
@@ -370,10 +368,6 @@ function PlayoffMatchCard({
     <div className={`bg-white border rounded-xl p-3 shadow-sm w-[300px] max-w-[85vw] ${
       isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-dashed border-gray-200 bg-gray-50/40'
     }`}>
-      {showUpgrade && (
-        <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
-      )}
-
       {/* ── Header (only shown when match has teams or is in progress) ── */}
       {(isReady || status === 'finished' || status === 'live') && (
         <div className="flex items-center justify-between mb-2.5">
@@ -391,13 +385,9 @@ function PlayoffMatchCard({
             )}
             {status === 'scheduled' && isReady && (
               <button onClick={handleStart} disabled={starting}
-                className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${
-                  isPro
-                    ? 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
-                    : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
-                }`}>
-                {isPro ? <Play size={10} /> : <Lock size={10} />}
-                {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
+                className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100">
+                <Play size={10} />
+                {starting ? T.btnStarting : T.btnStartMatch}
               </button>
             )}
             {status === 'finished' && isEditing && (

@@ -42,6 +42,20 @@ const T = {
       if (m10 >= 2 && m10 <= 4) return `${n} команды`
       return `${n} команд`
     },
+    createBtn: 'Создать',
+    championships: 'Чемпионаты',
+    championshipBadge: 'Чемпионат',
+    seasons: (n: number) => {
+      const m10 = n % 10, m100 = n % 100
+      if (m100 >= 11 && m100 <= 14) return `${n} сезонов`
+      if (m10 === 1) return `${n} сезон`
+      if (m10 >= 2 && m10 <= 4) return `${n} сезона`
+      return `${n} сезонов`
+    },
+    invitedTournaments: 'Приглашённые турниры',
+    roleEditor: 'Редактор',
+    roleViewer: 'Наблюдатель',
+    examplesLabel: 'Примеры турниров',
   },
   kz: {
     title: 'Барлық турнирлер',
@@ -59,6 +73,14 @@ const T = {
     ],
     rounds: (n: number) => `${n} тур`,
     teams:  (n: number) => `${n} команда`,
+    createBtn: 'Жасау',
+    championships: 'Чемпионаттар',
+    championshipBadge: 'Чемпионат',
+    seasons: (n: number) => `${n} маусым`,
+    invitedTournaments: 'Шақырылған турнирлер',
+    roleEditor: 'Редактор',
+    roleViewer: 'Бақылаушы',
+    examplesLabel: 'Турнир мысалдары',
   },
   en: {
     title: 'All tournaments',
@@ -76,10 +98,19 @@ const T = {
     ],
     rounds: (n: number) => `${n} round${n !== 1 ? 's' : ''}`,
     teams:  (n: number) => `${n} team${n !== 1 ? 's' : ''}`,
+    createBtn: 'Create',
+    championships: 'Championships',
+    championshipBadge: 'Championship',
+    seasons: (n: number) => `${n} season${n !== 1 ? 's' : ''}`,
+    invitedTournaments: 'Invited tournaments',
+    roleEditor: 'Editor',
+    roleViewer: 'Viewer',
+    examplesLabel: 'Example tournaments',
   },
 } as const
 
 const FEAT_ICONS = [Zap, BarChart2, Share2]
+const DATE_LOCALE: Record<Lang, string> = { ru: 'ru-RU', kz: 'kk-KZ', en: 'en-US' }
 
 type TournamentWithCount = Tournament & { teams: { count: number }[] }
 
@@ -145,7 +176,7 @@ export default async function DashboardPage() {
           isPro={isPro}
           isEnterprise={isEnterprise}
           activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
-          label="Создать"
+          label={tx.createBtn}
           lang={lang}
         />
       </div>
@@ -172,7 +203,7 @@ export default async function DashboardPage() {
           {/* Live examples — public tournaments from DB */}
           {(showcaseTournaments ?? []).length > 0 && (
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Примеры турниров</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.examplesLabel}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(showcaseTournaments ?? []).map((t: any) => (
                   <Link
@@ -226,7 +257,7 @@ export default async function DashboardPage() {
                           <Calendar size={11} /> {tx.rounds(t.num_rounds)}
                         </span>
                       )}
-                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
+                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString(DATE_LOCALE[lang])}</span>
                     </div>
                   </div>
                 </Link>
@@ -250,7 +281,7 @@ export default async function DashboardPage() {
         <div className="mt-10">
           <div className="flex items-center gap-2 mb-4">
             <Crown size={16} className="text-violet-500" />
-            <h2 className="text-base font-black text-gray-700">Чемпионаты</h2>
+            <h2 className="text-base font-black text-gray-700">{tx.championships}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {champList.map((c) => {
@@ -265,14 +296,14 @@ export default async function DashboardPage() {
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-black text-gray-900 text-base leading-snug">{c.name}</p>
                           <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
-                            Чемпионат
+                            {tx.championshipBadge}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
                       <span className="flex items-center gap-1">
-                        <Layers size={11} /> {seasonCount} сезон{seasonCount === 1 ? '' : seasonCount >= 2 && seasonCount <= 4 ? 'а' : 'ов'}
+                        <Layers size={11} /> {tx.seasons(seasonCount)}
                       </span>
                       {teamCount > 0 && (
                         <span className="flex items-center gap-1">
@@ -292,7 +323,7 @@ export default async function DashboardPage() {
         <div className="mt-10">
           <div className="flex items-center gap-2 mb-4">
             <UserCheck size={16} className="text-indigo-500" />
-            <h2 className="text-base font-black text-gray-700">Приглашённые турниры</h2>
+            <h2 className="text-base font-black text-gray-700">{tx.invitedTournaments}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {invitedTournaments.map((t) => {
@@ -307,7 +338,7 @@ export default async function DashboardPage() {
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-black text-gray-900 text-base leading-snug">{t.name}</p>
                           <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                            {t._role === 'editor' ? 'Редактор' : 'Наблюдатель'}
+                            {t._role === 'editor' ? tx.roleEditor : tx.roleViewer}
                           </span>
                         </div>
                         <span className={`text-xs font-medium mt-0.5 inline-block ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
@@ -321,7 +352,7 @@ export default async function DashboardPage() {
                           <Users size={11} /> {tx.teams(teamCount)}
                         </span>
                       )}
-                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
+                      <span className="ml-auto">{new Date(t.created_at).toLocaleDateString(DATE_LOCALE[lang])}</span>
                     </div>
                   </div>
                 </Link>

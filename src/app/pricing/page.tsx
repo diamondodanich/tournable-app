@@ -23,8 +23,8 @@ const T = {
       { text: 'Круговой и плей-офф форматы', included: true },
       { text: 'Публичная страница для участников', included: true },
       { text: 'Статистика игроков и команд', included: true },
+      { text: 'Live-табло в реальном времени', included: true },
       { text: 'Экспорт PDF и PNG', included: true },
-      { text: 'Live-табло в реальном времени', included: false },
       { text: 'Неограниченные турниры', included: false },
       { text: 'До 64 команд в турнире', included: false },
       { text: 'До 3 соредакторов', included: false },
@@ -52,19 +52,23 @@ const T = {
     faq: [
       {
         q: 'Можно ли сменить план позже?',
-        a: 'Да. Вы начинаете с бесплатного плана Старт, а перейти на Про можно в любой момент через WhatsApp.',
+        a: 'Да. Начните бесплатно, а на Про или Enterprise можно перейти в любой момент — оплата картой прямо на сайте, доступ открывается сразу после оплаты.',
       },
       {
-        q: 'Что происходит, когда заканчивается подписка Про?',
-        a: 'Ваши турниры и данные остаются целыми. Live-табло и создание новых турниров сверх лимита становятся недоступны до продления.',
+        q: 'Что даёт Enterprise?',
+        a: 'Чемпионаты с сезонами и постоянными командами, профили команд и игроков, составы к матчам, углублённая статистика и публичные страницы, которые находятся в поисковиках.',
+      },
+      {
+        q: 'Что происходит, когда заканчивается подписка?',
+        a: 'Ваши турниры и данные остаются целыми. До продления ограничиваются только платные возможности — всё созданное никуда не пропадает.',
       },
       {
         q: 'Как оплатить?',
-        a: 'Принимаем оплату через Kaspi Pay и банковские карты. Свяжитесь с нами в WhatsApp — вышлем реквизиты.',
+        a: 'Банковской картой прямо на сайте — подписка активируется автоматически и продлевается сама. Нужен счёт на организацию? Напишите нам в WhatsApp.',
       },
       {
         q: 'Есть ли скидка на год?',
-        a: 'Да. Годовая подписка стоит 44 990 ₸ — это на 25% выгоднее ежемесячной оплаты.',
+        a: 'Да. Годовая подписка выгоднее на 25%: Про — 44 990 ₸/год, Enterprise — 349 990 ₸/год.',
       },
     ] as FaqItem[],
     planFree: 'Старт',
@@ -76,9 +80,10 @@ const T = {
     perMonth: '/ месяц',
     planProCaption: '44 990 ₸/год · скидка −25%',
     planEnterprise: 'Enterprise',
-    planEnterprisePrice: 'По запросу',
-    planEnterpriseCaption: 'Для федераций и лиг',
+    planEnterprisePrice: 'от 39 990 ₸',
+    planEnterpriseCaption: '349 990 ₸/год · скидка −25%',
     ctaGoPro: 'Перейти на Про',
+    ctaGoEnterprise: 'Подключить Enterprise',
     ctaContactUs: 'Связаться с нами',
     faqTitle: 'Частые вопросы',
     ctaTitle: 'Готовы провести турнир?',
@@ -102,8 +107,8 @@ const T = {
       { text: 'Дөңгелек және плей-офф форматтары', included: true },
       { text: 'Қатысушыларға арналған жалпыға ортақ бет', included: true },
       { text: 'Ойыншылар мен командалар статистикасы', included: true },
+      { text: 'Нақты уақыттағы Live-тақта', included: true },
       { text: 'PDF және PNG экспорты', included: true },
-      { text: 'Нақты уақыттағы Live-тақта', included: false },
       { text: 'Шексіз турнирлер', included: false },
       { text: 'Турнирде 64 командаға дейін', included: false },
       { text: '3 соредакторға дейін', included: false },
@@ -131,19 +136,23 @@ const T = {
     faq: [
       {
         q: 'Жоспарды кейін ауыстыруға бола ма?',
-        a: 'Иә. Сіз тегін Старт жоспарынан бастайсыз, ал Про-ға кез келген уақытта WhatsApp арқылы өтуге болады.',
+        a: 'Иә. Тегін бастаңыз, ал Про немесе Enterprise-ке кез келген уақытта өтуге болады — төлем картамен тікелей сайтта, қолжетімділік бірден ашылады.',
       },
       {
-        q: 'Про жазылымы аяқталғанда не болады?',
-        a: 'Турнирлеріңіз бен деректеріңіз сақталады. Live-тақта және лимиттен тыс жаңа турнирлер жасау жаңарту жасалғанша қолжетімсіз болады.',
+        q: 'Enterprise не береді?',
+        a: 'Маусымдары мен тұрақты командалары бар чемпионаттар, команда мен ойыншы профильдері, матч құрамдары, тереңдетілген статистика және іздеу жүйелерінде табылатын жалпыға ортақ беттер.',
+      },
+      {
+        q: 'Жазылым аяқталғанда не болады?',
+        a: 'Турнирлеріңіз бен деректеріңіз сақталады. Жаңартқанға дейін тек ақылы мүмкіндіктер шектеледі — жасалғанның бәрі орнында қалады.',
       },
       {
         q: 'Қалай төлеуге болады?',
-        a: 'Kaspi Pay және банк карталары арқылы төлемді қабылдаймыз. WhatsApp-та бізбен байланысыңыз — деректемелерді жібереміз.',
+        a: 'Банк картасымен тікелей сайтта — жазылым автоматты белсендіріледі және өздігінен ұзарады. Ұйымға шот керек пе? WhatsApp-та жазыңыз.',
       },
       {
         q: 'Жылдық жеңілдік бар ма?',
-        a: 'Иә. Жылдық жазылым 44 990 ₸ тұрады — бұл ай сайынғы төлемге қарағанда 25% тиімді.',
+        a: 'Иә. Жылдық жазылым 25% тиімді: Про — 44 990 ₸/жыл, Enterprise — 349 990 ₸/жыл.',
       },
     ] as FaqItem[],
     planFree: 'Старт',
@@ -155,9 +164,10 @@ const T = {
     perMonth: '/ ай',
     planProCaption: '44 990 ₸/жыл · −25% жеңілдік',
     planEnterprise: 'Enterprise',
-    planEnterprisePrice: 'Сұраныс бойынша',
-    planEnterpriseCaption: 'Федерациялар мен лигалар үшін',
+    planEnterprisePrice: '39 990 ₸-дан',
+    planEnterpriseCaption: '349 990 ₸/жыл · −25% жеңілдік',
     ctaGoPro: 'Про-ға өту',
+    ctaGoEnterprise: 'ҚОСУ',
     ctaContactUs: 'Бізбен байланысу',
     faqTitle: 'Жиі қойылатын сұрақтар',
     ctaTitle: 'Турнир өткізуге дайынсыз ба?',
@@ -181,8 +191,8 @@ const T = {
       { text: 'Round-robin and playoff formats', included: true },
       { text: 'Public page for participants', included: true },
       { text: 'Player and team statistics', included: true },
+      { text: 'Real-time live scoreboard', included: true },
       { text: 'PDF and PNG export', included: true },
-      { text: 'Real-time live scoreboard', included: false },
       { text: 'Unlimited tournaments', included: false },
       { text: 'Up to 64 teams per tournament', included: false },
       { text: 'Up to 3 co-editors', included: false },
@@ -210,19 +220,23 @@ const T = {
     faq: [
       {
         q: 'Can I change plans later?',
-        a: 'Yes. You start with the free Starter plan, and you can upgrade to Pro any time via WhatsApp.',
+        a: 'Yes. Start free and upgrade to Pro or Enterprise any time — pay by card right on the site, access unlocks immediately.',
       },
       {
-        q: 'What happens when my Pro subscription ends?',
-        a: 'Your tournaments and data stay intact. The live scoreboard and creating new tournaments beyond the limit become unavailable until you renew.',
+        q: 'What does Enterprise include?',
+        a: 'Championships with seasons and persistent teams, team and player profiles, match lineups, advanced statistics and public pages that show up in search engines.',
+      },
+      {
+        q: 'What happens when my subscription ends?',
+        a: 'Your tournaments and data stay intact. Only the paid features are limited until you renew — nothing you created is lost.',
       },
       {
         q: 'How do I pay?',
-        a: 'We accept Kaspi Pay and bank cards. Contact us on WhatsApp and we will send the payment details.',
+        a: 'By bank card right on the site — the subscription activates automatically and renews itself. Need an invoice for your organisation? Message us on WhatsApp.',
       },
       {
         q: 'Is there an annual discount?',
-        a: 'Yes. The annual subscription costs 44,990 ₸ — that is 25% cheaper than paying monthly.',
+        a: 'Yes. Annual billing saves 25%: Pro — 44,990 ₸/yr, Enterprise — 349,990 ₸/yr.',
       },
     ] as FaqItem[],
     planFree: 'Starter',
@@ -234,9 +248,10 @@ const T = {
     perMonth: '/ month',
     planProCaption: '44,990 ₸/yr · −25% discount',
     planEnterprise: 'Enterprise',
-    planEnterprisePrice: 'On request',
-    planEnterpriseCaption: 'For federations and leagues',
+    planEnterprisePrice: 'from 39,990 ₸',
+    planEnterpriseCaption: '349,990 ₸/yr · −25% discount',
     ctaGoPro: 'Go Pro',
+    ctaGoEnterprise: 'Get Enterprise',
     ctaContactUs: 'Contact us',
     faqTitle: 'Frequently asked questions',
     ctaTitle: 'Ready to run a tournament?',
@@ -395,7 +410,7 @@ export default async function PricingPage() {
             </div>
 
             {/* Enterprise */}
-            <div className="bg-white rounded-2xl border-2 border-purple-200 shadow-sm p-8 flex flex-col relative overflow-hidden">
+            <div id="enterprise" className="bg-white rounded-2xl border-2 border-purple-200 shadow-sm p-8 flex flex-col relative overflow-hidden scroll-mt-20">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-700" />
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
@@ -404,8 +419,9 @@ export default async function PricingPage() {
                   </div>
                   <span className="font-black text-lg text-gray-900">{tx.planEnterprise}</span>
                 </div>
-                <div className="flex items-end gap-1 mb-2">
+                <div className="flex items-end gap-2 mb-1">
                   <span className="text-3xl font-black text-gray-900">{tx.planEnterprisePrice}</span>
+                  <span className="text-gray-400 text-sm mb-1">{tx.perMonth}</span>
                 </div>
                 <p className="text-sm text-gray-400">{tx.planEnterpriseCaption}</p>
               </div>
@@ -420,12 +436,10 @@ export default async function PricingPage() {
               </ul>
 
               <Link
-                href="https://wa.me/message/YHLE2IFII4MSJ1"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/checkout/enterprise"
                 className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl transition-colors text-sm"
               >
-                {tx.ctaContactUs}
+                {tx.ctaGoEnterprise}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

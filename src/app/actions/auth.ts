@@ -70,7 +70,7 @@ export async function requestPasswordReset(formData: FormData) {
   if (!email) return { error: 'Введите email' }
 
   const supabase = await createClient()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.tournable.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
   })

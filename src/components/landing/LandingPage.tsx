@@ -16,9 +16,9 @@ const T = {
     label: 'RU',
     nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Все турниры', account: 'Личный кабинет', accountTitle: 'Личный кабинет', menu: 'Меню' },
     hero: {
-      badge: 'Для организаторов лиг и турниров',
+      badge: 'Соревнования любого масштаба — от двора до федерации',
       h1: ['Счёт у всех — онлайн.', 'Статистика считается сама.', 'Турнир — меньше 1 минуты.'],
-      sub: 'Создайте расписание, поделитесь ссылкой — и живая страница вашего турнира уже у каждого участника. Голы, таблица, плей-офф и бомбардиры считаются сами. Вы просто ведёте игру.',
+      sub: 'Создайте расписание, поделитесь ссылкой — и живая страница вашего турнира уже у каждого участника. Счёт, таблица, плей-офф и лучшие игроки считаются сами. Вы просто ведёте игру.',
       cta: 'Создать турнир бесплатно', cta2: 'Как это работает',
       proof: [['1 турнир бесплатно', 'все функции включены'], ['Готово', 'за 2 минуты'], ['Живая ссылка', 'без приложений']],
     },
@@ -28,7 +28,7 @@ const T = {
       sub: 'Запустите Live-режим до матча — счёт, голы и карточки мгновенно появляются на экране у каждого зрителя. Проецируйте на телевизор или большой экран. Без приложений, без регистрации, без задержки.',
       items: [
         'Таймер в реальном времени — накопленное время, пауза, дополнительное',
-        'Голы и ассисты мгновенно появляются у всех зрителей',
+        'События матча мгновенно появляются у всех зрителей',
         'Полноэкранный режим — проецируйте на телевизор или LED-экран',
         'Достаточно одной ссылки — команды и болельщики следят без регистрации',
       ],
@@ -36,14 +36,14 @@ const T = {
     },
     stats: {
       h2: ['Конец ручному счёту.', 'Всё считается само.'],
-      sub: 'После каждого результата — бомбардиры, разница мячей, дисциплина обновляются мгновенно. Ноль ручного труда.',
+      sub: 'После каждого результата статистика пересчитывается мгновенно, а любые итоги скачиваются в один клик — от полного отчёта турнира до отдельной таблицы.',
       items: [
-        'Живая таблица бомбардиров и ассистентов',
-        'Карточки и предупреждения по каждой команде',
-        'Автоматический расчёт очков и разницы мячей',
-        'Экспорт итогов в PDF — для печати, чата или соцсетей',
+        'Полный брендированный отчёт турнира — одним файлом PDF',
+        'Частичные выгрузки: таблица, сетка, лидеры — PNG для чата и соцсетей',
+        'Очки, разница, дисциплина — считаются сами после каждого матча',
+        'Живой рейтинг результативности и матрица встреч',
       ],
-      imgAlt: 'Tournable — таблица бомбардиров',
+      imgAlt: 'Tournable — статистика и отчёты турнира',
     },
     features: {
       tag: 'Возможности',
@@ -51,9 +51,9 @@ const T = {
       sub: 'То, что раньше занимало вечер — теперь занимает минуту.',
       items: [
         { title: 'Расписание — меньше 1 минуты', desc: 'Выберите формат, добавьте команды — все матчи готовы автоматически. Круговой, плей-офф, групповой этап, лига с плей-оффом.' },
-        { title: 'Живой счёт без приложений', desc: 'Голы с телефона — счёт у всех мгновенно. Больше никто не ждёт скрин из WhatsApp. Просто ссылка.' },
-        { title: 'Статистика, которая не ждёт', desc: 'Очки, разница мячей, бомбардиры — обновляются сами после каждого матча. Всегда точно, всегда вовремя.' },
-        { title: 'Плей-офф без головной боли', desc: 'Победители переходят дальше автоматически. До 64 команд — от 1/8 до финала.' },
+        { title: 'Живой счёт без приложений', desc: 'Счёт вводится с телефона — у всех обновляется мгновенно. Больше никаких скриншотов таблиц. Просто ссылка.' },
+        { title: 'Статистика, которая не ждёт', desc: 'Очки, разница, лидеры по результативности — обновляются сами после каждого матча. Всегда точно, всегда вовремя.' },
+        { title: 'Честный жребий — по силе команд', desc: 'Укажите силу каждой команды — платформа справедливо распределит их по группам и сетке. Фавориты не встретятся в первом же раунде.' },
         { title: 'Живая страница турнира', desc: 'Каждый турнир получает публичный URL. Поделитесь с командами до игры — все следят за таблицей и счётом онлайн без регистрации.' },
         { title: 'Брендированные отчёты в один клик', desc: 'Таблица, сетка, статистика — готовы для печати, соцсетей или чата. Красиво с первого раза.' },
       ],
@@ -110,8 +110,10 @@ const T = {
         { icon: 'video', title: 'Профессиональная видеосъёмка', desc: 'Наша команда приедет на турнир и профессионально снимет каждый матч. Видеозаписи появятся в вашем аккаунте автоматически.', price: null, pricePer: null, badge: 'Скоро', badgeColor: 'blue' },
         { icon: 'trophy', title: 'Оператор на турнир', desc: 'Наш специалист приедет и возьмёт на себя все результаты — вводит матчи прямо в платформу в реальном времени. Вы ведёте игру — мы за экраном.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
       ],
+      cta: 'Оставить заявку',
+      waMessage: 'Здравствуйте! Хочу заказать услугу для турнира.',
     },
-    contact: { h2: 'Есть вопрос? Пишите.', sub: 'Отвечаем быстро. Живые люди, не боты.', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Позвонить', orEmail: 'Или напишите на почту:' },
+    contact: { h2: 'Есть вопрос? Пишите.', sub: 'Отвечаем быстро — обычно в течение часа.', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Позвонить', orEmail: 'Или напишите на почту:' },
     cta: { h2: 'Ваш следующий турнир — уже сегодня.', sub: 'Минута на регистрацию. Турнир готов. Участники в шоке от уровня.', btn: 'Начать бесплатно' },
     footer: {
       tagline: 'Создайте первый турнир меньше 1 минуты. Статистика, Live-табло и плей-офф — всё считается само.',
@@ -126,9 +128,9 @@ const T = {
     label: 'KZ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Барлық турнирлер', account: 'Жеке кабинет', accountTitle: 'Жеке кабинет', menu: 'Мәзір' },
     hero: {
-      badge: 'Лигалар мен турнирлер ұйымдастырушыларына',
+      badge: 'Кез келген деңгейдегі жарыстар — ауладан федерацияға дейін',
       h1: ['Есеп барлығында — онлайн.', 'Статистика өздігінен есептеледі.', 'Турнир — 1 минуттан аз.'],
-      sub: 'Кесте жасаңыз, сілтемемен бөлісіңіз — және турниріңіздің тірі беті әрбір қатысушыда. Голдар, кесте, плей-офф және бомбардирлер өздігінен есептеледі. Сіз тек турнирді өткізесіз.',
+      sub: 'Кесте жасаңыз, сілтемемен бөлісіңіз — және турниріңіздің тірі беті әрбір қатысушыда. Есеп, кесте, плей-офф және үздік ойыншылар өздігінен есептеледі. Сіз тек турнирді өткізесіз.',
       cta: 'Турнирді тегін жасау', cta2: 'Қалай жұмыс істейді',
       proof: [['1 турнир тегін', 'барлық мүмкіндіктер'], ['Дайын', '2 минутта'], ['Тірі сілтеме', 'қосымшасыз']],
     },
@@ -138,7 +140,7 @@ const T = {
       sub: 'Live-режимді матчқа дейін іске қосыңыз — есеп, голдар мен карточкалар барлық тамашалаушылардың экранында лезде пайда болады. Теледидарға немесе экранға проекциялаңыз. Қосымшасыз, тіркелусіз, кешіктірусіз.',
       items: [
         'Нақты уақытта таймер — жинақталған уақыт, үзіліс, қосымша уақыт',
-        'Голдар мен ассисттер барлық тамашалаушыларға лезде жетеді',
+        'Матч оқиғалары барлық тамашалаушыларға лезде жетеді',
         'Толық экран режимі — теледидарда немесе LED-экранда проекциялаңыз',
         'Бір сілтеме жеткілікті — тіркелмей қарай алады',
       ],
@@ -146,14 +148,14 @@ const T = {
     },
     stats: {
       h2: ['Қолмен есептеу артта қалды.', 'Бәрі өздігінен есептеледі.'],
-      sub: 'Әр нәтиже енгізілгеннен кейін — бомбардирлер, доп айырмасы, тәртіп лезде жаңарады. Ешқандай қолмен есептеу жоқ.',
+      sub: 'Әр нәтижеден кейін статистика лезде қайта есептеледі, ал кез келген қорытынды бір шертумен жүктеледі — толық турнир есебінен жеке кестеге дейін.',
       items: [
-        'Бомбардирлер мен ассисттердің тірі кестесі',
-        'Карточкалар мен ескертулер — әр команда бойынша',
-        'Ұпайлар мен доп айырмасын автоматты есептеу',
-        'Қорытындыны PDF-ке экспорттау — басып шығаруға, чатқа немесе әлеуметтік желілерге',
+        'Толық брендтелген турнир есебі — бір PDF файлмен',
+        'Жеке жүктеулер: кесте, тор, үздіктер — чат пен әлеуметтік желіге PNG',
+        'Ұпайлар, айырма, тәртіп — әр матчтан кейін өздігінен есептеледі',
+        'Нәтижелілік рейтингі мен кездесулер матрицасы — тірі күйде',
       ],
-      imgAlt: 'Tournable — бомбардирлер кестесі',
+      imgAlt: 'Tournable — турнир статистикасы мен есептері',
     },
     features: {
       tag: 'Мүмкіндіктер',
@@ -161,9 +163,9 @@ const T = {
       sub: 'Бұрын кешке алатын нәрсе — енді бір минутта.',
       items: [
         { title: 'Кесте — 1 минуттан аз', desc: 'Форматты таңдаңыз, командаларды қосыңыз — барлық матчтар автоматты дайын. Дөңгелек, плей-офф, топтық кезең, лига + плей-офф.' },
-        { title: 'Қосымшасыз тірі есеп', desc: 'Телефоннан голдар — есеп барлығына лезде. Ешкім WhatsApp скриншотын күтпейді. Тек сілтеме.' },
-        { title: 'Жаңарып тұратын статистика', desc: 'Ұпайлар, доп айырмасы, бомбардирлер — әр матчтан кейін өздігінен жаңарады. Әрқашан дәл, әрқашан уақытында.' },
-        { title: 'Бас ауыртпайтын плей-офф', desc: 'Жеңімпаздар автоматты алға өтеді. 64 командаға дейін — 1/8-ден финалға.' },
+        { title: 'Қосымшасыз тірі есеп', desc: 'Есеп телефоннан енгізіледі — барлығында лезде жаңарады. Енді ешқандай кесте скриншоттары керек емес. Тек сілтеме.' },
+        { title: 'Жаңарып тұратын статистика', desc: 'Ұпайлар, айырма, нәтижелілік көшбасшылары — әр матчтан кейін өздігінен жаңарады. Әрқашан дәл, әрқашан уақытында.' },
+        { title: 'Әділ жеребе — командалар күшіне қарай', desc: 'Әр команданың күшін көрсетіңіз — платформа оларды топтар мен торға әділ бөледі. Фавориттер бірінші раундта кездеспейді.' },
         { title: 'Турнирдің тірі беті', desc: 'Әрбір турнир жалпыға ортақ URL алады. Матчқа дейін командаларға сілтемені жіберіңіз — барлығы тіркелмей кестені онлайн қарайды.' },
         { title: 'Брендтелген есептер бір шертумен', desc: 'Кесте, тор, статистика — басып шығаруға, әлеуметтік желілерге немесе чатқа дайын. Бірден сұлу шығады.' },
       ],
@@ -210,7 +212,7 @@ const T = {
         priceMonthly: '39 990 ₸-дан', perMonthly: '/ ай',
         priceAnnual: '349 990 ₸', perAnnual: '/ жыл',
         priceOriginalAnnual: 'Орнына 479 880 ₸', savingAnnual: '129 890 ₸ үнемдеу',
-        cta: 'Enterprise-ке қосылу',
+        cta: 'ҚОСУ',
       },
     },
     services: {
@@ -220,8 +222,10 @@ const T = {
         { icon: 'video', title: 'Кәсіби бейнетүсіру', desc: 'Командамыз турнирге келіп, алаңдағы әр матчты кәсіби түрде түсіреді. Бейнежазбалар аккаунтыңызда автоматты пайда болады.', price: null, pricePer: null, badge: 'Жақында', badgeColor: 'blue' },
         { icon: 'trophy', title: 'Турниріңізге оператор', desc: 'Маманымыз келіп, барлық матч нәтижелерін тікелей платформаға нақты уақытта енгізеді. Сіз ойынды жүргізесіз — біз экран алдындамыз.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
       ],
+      cta: 'Өтінім қалдыру',
+      waMessage: 'Сәлеметсіз бе! Турнирге қызмет тапсырыс бергім келеді.',
     },
-    contact: { h2: 'Сұрағыңыз бар ма? Жазыңыз.', sub: 'Жылдам жауап береміз. Тірі адамдар, роботтар емес.', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21', callUs: 'Қоңырау шалу', orEmail: 'Немесе электронды поштамен жазыңыз:' },
+    contact: { h2: 'Сұрағыңыз бар ма? Жазыңыз.', sub: 'Жылдам жауап береміз — әдетте бір сағат ішінде.', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21', callUs: 'Қоңырау шалу', orEmail: 'Немесе электронды поштамен жазыңыз:' },
     cta: { h2: 'Келесі турниріңіз — бүгін.', sub: 'Тіркелу — бір минут. Турнир дайын. Қатысушылар деңгейден таң қалады.', btn: 'Тегін бастау' },
     footer: {
       tagline: 'Алғашқы турнирді 1 минуттан аз уақытта жасаңыз. Статистика, Live-тақта және плей-офф — бәрі автоматты.',
@@ -236,9 +240,9 @@ const T = {
     label: 'EN',
     nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'All tournaments', account: 'Account', accountTitle: 'Account', menu: 'Menu' },
     hero: {
-      badge: 'For league & tournament organisers',
+      badge: 'Competitions of any scale — from backyard to federation',
       h1: ['Live scores for everyone.', 'Stats calculate themselves.', 'Tournament in under a minute.'],
-      sub: 'Build the schedule, share the link — and every participant instantly has a live tournament page. Goals, standings, playoff and top scorers update on their own. You just run the game.',
+      sub: 'Build the schedule, share the link — and every participant instantly has a live tournament page. Scores, standings, playoff and top performers update on their own. You just run the game.',
       cta: 'Create a tournament — free', cta2: 'See how it works',
       proof: [['1 tournament free', 'all features included'], ['Ready', 'in 2 minutes'], ['Live link', 'no app needed']],
     },
@@ -248,7 +252,7 @@ const T = {
       sub: 'Start Live mode before the match — scores, goals and cards appear instantly on every spectator\'s screen. Project onto a TV or big screen. No app, no sign-up, no delay.',
       items: [
         'Real-time match timer — running time, pause, extra time',
-        'Goals and assists appear instantly for all spectators',
+        'Match events appear instantly for all spectators',
         'Full-screen mode — project onto a TV or LED display',
         'One link is enough — teams and fans follow without signing up',
       ],
@@ -256,14 +260,14 @@ const T = {
     },
     stats: {
       h2: ['No more manual counting.', 'Everything calculates itself.'],
-      sub: 'After every result — top scorers, goal difference, discipline update instantly. Zero manual work.',
+      sub: 'After every result the stats recalculate instantly, and any output is one click away — from a full tournament report to a single table.',
       items: [
-        'Live top scorers and assists table',
-        'Cards and warnings tracked per team',
-        'Automatic points and goal difference calculation',
-        'Export full standings to PDF — for print, chat or social media',
+        'Full branded tournament report — one PDF file',
+        'Partial exports: table, bracket, leaders — PNG for chat and social media',
+        'Points, difference, discipline — calculated after every match',
+        'Live performance leaders and head-to-head matrix',
       ],
-      imgAlt: 'Tournable — top scorers table',
+      imgAlt: 'Tournable — tournament stats and reports',
     },
     features: {
       tag: 'Features',
@@ -271,9 +275,9 @@ const T = {
       sub: 'What used to take an evening now takes a minute.',
       items: [
         { title: 'Schedule in under a minute', desc: 'Pick a format, add teams — all matches generated automatically. Round-robin, playoff, group stage, league with playoff.' },
-        { title: 'Live scoreboard without apps', desc: 'Enter goals on your phone — everyone sees the update instantly. No more waiting for a WhatsApp screenshot. Just a link.' },
-        { title: 'Stats that never wait', desc: 'Points, goal difference, top scorers — refreshed after every match. Always accurate. Always live.' },
-        { title: 'Playoff without the headache', desc: 'Winners advance automatically. Up to 64 teams, from round of 16 to the final.' },
+        { title: 'Live scoreboard without apps', desc: 'Enter the score on your phone — everyone sees the update instantly. No more screenshot-passing. Just a link.' },
+        { title: 'Stats that never wait', desc: 'Points, difference, performance leaders — refreshed after every match. Always accurate. Always live.' },
+        { title: 'Fair draw — by team strength', desc: 'Rate each team\'s strength — the platform distributes them fairly across groups and the bracket. Favourites won\'t clash in round one.' },
         { title: 'Live tournament page', desc: 'Every tournament gets its own public URL. Share with teams before the game — everyone follows standings and live scores without signing up.' },
         { title: 'Branded reports in one click', desc: 'Standings, bracket, stats — ready for print, social media or chat. Looks sharp every time.' },
       ],
@@ -330,8 +334,10 @@ const T = {
         { icon: 'video', title: 'Professional video recording', desc: 'Our team comes to your tournament and professionally films every match on the pitch. Videos appear in your account automatically.', price: null, pricePer: null, badge: 'Coming Soon', badgeColor: 'blue' },
         { icon: 'trophy', title: 'On-site results operator', desc: 'Our specialist arrives and enters all match results directly into the platform in real time. You run the game — we handle the screen.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
       ],
+      cta: 'Request a callback',
+      waMessage: 'Hi! I\'d like to order a service for my tournament.',
     },
-    contact: { h2: 'Got a question? Write to us.', sub: 'Fast responses. Real people, no bots.', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Call us', orEmail: 'Or write to us by email:' },
+    contact: { h2: 'Got a question? Write to us.', sub: 'Fast responses — usually within the hour.', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Call us', orEmail: 'Or write to us by email:' },
     cta: { h2: 'Your next tournament starts today.', sub: 'One minute to sign up. Tournament ready. Participants blown away by the level.', btn: 'Start for free' },
     footer: {
       tagline: 'Create your first tournament in under a minute. Stats, live scoreboard and playoff — all automated.',
@@ -381,9 +387,9 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     h2: 'Tournable — для каждого, кто организует.',
     sub: 'Любитель, клуб или федерация — платформа подстраивается под вас.',
     cases: [
-      { tag: 'Любительские турниры', title: 'Организуешь турнир среди друзей, команд района или офиса?', desc: 'Создай расписание меньше 1 минуты, поделись ссылкой в чат — участники сами следят за таблицей и счётом. Без Excel, без скринов из WhatsApp.', cta: 'Начать бесплатно', href: '/register' },
-      { tag: 'Спортивные клубы', title: 'Ведёшь регулярные соревнования внутри клуба?', desc: 'Несколько турниров одновременно, несколько соредакторов, брендированный отчёт в один клик. Статистика по всем сезонам всегда под рукой.', cta: 'Попробовать PRO', href: '/register?next=/checkout' },
-      { tag: 'Федерации и лиги', title: 'Проводишь городской чемпионат или официальную лигу?', desc: 'Постоянная лига с архивом сезонов, профилями команд и игроков, углублённой статистикой и доступностью в поисковых системах. Как у профессиональных лиг — без технической команды.', cta: 'Enterprise — от 39 990 ₸', href: '/checkout/enterprise' },
+      { tag: 'Любительские турниры', title: 'Организуешь турнир среди друзей, команд района или офиса?', desc: 'Создай расписание меньше 1 минуты, поделись ссылкой в чат — участники сами следят за таблицей и счётом. Без Excel, без пересылки скриншотов.', cta: 'Начать бесплатно', href: '/register' },
+      { tag: 'Спортивные клубы', title: 'Ведёшь регулярные соревнования внутри клуба?', desc: 'Несколько турниров одновременно, несколько соредакторов, брендированный отчёт в один клик. Статистика по всем сезонам всегда под рукой.', cta: 'Подробнее', href: '#pricing' },
+      { tag: 'Федерации и лиги', title: 'Проводишь городской чемпионат или официальную лигу?', desc: 'Постоянная лига с архивом сезонов, профилями команд и игроков, углублённой статистикой и доступностью в поисковых системах. Как у профессиональных лиг — без технической команды.', cta: 'Подробнее', href: '#pricing' },
     ],
   },
   kz: {
@@ -391,9 +397,9 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     h2: 'Tournable — ұйымдастырушы үшін.',
     sub: 'Хобби, клуб немесе федерация — платформа сізге бейімделеді.',
     cases: [
-      { tag: 'Хобби турнирлер', title: 'Достар арасында немесе аудандағы командалар турнирін ұйымдастырасың ба?', desc: 'Кестені 1 минуттан аз уақытта жасаңыз, чатқа сілтемені жіберіңіз — қатысушылар кестені және есепті өздері қадағалайды. Excel жоқ, WhatsApp скриншоты жоқ.', cta: 'Тегін бастау', href: '/register' },
-      { tag: 'Спорт клубтары', title: 'Клуб ішінде жүйелі жарыстар өткізесің бе?', desc: 'Бірнеше турнир бір уақытта, бірнеше соредактор, брендтелген есеп бір шертумен. Барлық маусымдардың статистикасы әрқашан қолда.', cta: 'PRO-ды қолданып көру', href: '/register?next=/checkout' },
-      { tag: 'Федерациялар мен лигалар', title: 'Қалалық чемпионат немесе ресми лига өткізесің бе?', desc: 'Маусымдары бар тұрақты лига, команда мен ойыншы профильдері, тереңдетілген статистика және іздеу жүйелерінде қолжетімділік — кәсіби лигалар сияқты. Техникалық команда жоқ.', cta: 'Enterprise — 39 990 ₸-дан', href: '/checkout/enterprise' },
+      { tag: 'Хобби турнирлер', title: 'Достар арасында немесе аудандағы командалар турнирін ұйымдастырасың ба?', desc: 'Кестені 1 минуттан аз уақытта жасаңыз, чатқа сілтемені жіберіңіз — қатысушылар кестені және есепті өздері қадағалайды. Excel жоқ, скриншот жіберу жоқ.', cta: 'Тегін бастау', href: '/register' },
+      { tag: 'Спорт клубтары', title: 'Клуб ішінде жүйелі жарыстар өткізесің бе?', desc: 'Бірнеше турнир бір уақытта, бірнеше соредактор, брендтелген есеп бір шертумен. Барлық маусымдардың статистикасы әрқашан қолда.', cta: 'Толығырақ', href: '#pricing' },
+      { tag: 'Федерациялар мен лигалар', title: 'Қалалық чемпионат немесе ресми лига өткізесің бе?', desc: 'Маусымдары бар тұрақты лига, команда мен ойыншы профильдері, тереңдетілген статистика және іздеу жүйелерінде қолжетімділік — кәсіби лигалар сияқты. Техникалық команда жоқ.', cta: 'Толығырақ', href: '#pricing' },
     ],
   },
   en: {
@@ -401,9 +407,9 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
     h2: 'Tournable is for everyone who organises.',
     sub: 'Amateur, club or federation — the platform adapts to you.',
     cases: [
-      { tag: 'Amateur tournaments', title: 'Organising a tournament with friends, your neighbourhood or the office?', desc: 'Build the schedule in under a minute, share the link — participants track standings and scores themselves. No Excel, no WhatsApp screenshots.', cta: 'Start free', href: '/register' },
-      { tag: 'Sports clubs', title: 'Running regular competitions within your club?', desc: 'Multiple tournaments at once, multiple co-editors, branded report in one click. Season stats always at hand.', cta: 'Try PRO', href: '/register?next=/checkout' },
-      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility — like professional leagues. No technical team needed.', cta: 'Enterprise — from 39,990 ₸', href: '/checkout/enterprise' },
+      { tag: 'Amateur tournaments', title: 'Organising a tournament with friends, your neighbourhood or the office?', desc: 'Build the schedule in under a minute, share the link — participants track standings and scores themselves. No Excel, no screenshot-passing.', cta: 'Start free', href: '/register' },
+      { tag: 'Sports clubs', title: 'Running regular competitions within your club?', desc: 'Multiple tournaments at once, multiple co-editors, branded report in one click. Season stats always at hand.', cta: 'Learn more', href: '#pricing' },
+      { tag: 'Federations & leagues', title: 'Running a city championship or an official league?', desc: 'Permanent league with season archive, team and player profiles, advanced analytics and search engine visibility — like professional leagues. No technical team needed.', cta: 'Learn more', href: '#pricing' },
     ],
   },
 }
@@ -413,6 +419,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
   const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
+  const [featDot, setFeatDot] = useState(0)
   const tx = T[lang]
   const audience = AUDIENCE[lang]
 
@@ -683,7 +690,15 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
 
           {/* Cards: scroll on mobile, 3-col grid on sm+ */}
           <div className="-mx-4 sm:mx-0">
-            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none px-4 sm:px-0 pb-4 sm:pb-0">
+            <div
+              className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none px-4 sm:px-0 pb-4 sm:pb-0"
+              onScroll={e => {
+                const el = e.currentTarget
+                const count = tx.features.items.length
+                const step = (el.scrollWidth - el.clientWidth) / Math.max(1, count - 1)
+                setFeatDot(Math.min(count - 1, Math.max(0, Math.round(el.scrollLeft / Math.max(1, step)))))
+              }}
+            >
               {tx.features.items.map((feat, i) => {
                 const Icon = FEAT_ICONS[i]
                 const s = FEAT_STYLES[i]
@@ -710,7 +725,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             {/* Scroll dots — mobile only */}
             <div className="flex justify-center gap-1.5 mt-5 sm:hidden">
               {tx.features.items.map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === featDot ? 'bg-emerald-400' : 'bg-white/20'}`} />
               ))}
             </div>
           </div>
@@ -929,16 +944,23 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   <h3 className="font-black text-xl text-gray-900 mb-3 leading-tight">{svc.title}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed mb-6">{svc.desc}</p>
                   {svc.price ? (
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 mb-6">
                       <span className="text-3xl font-black text-emerald-600">{svc.price}</span>
                       <span className="text-sm text-gray-400 font-medium">{svc.pricePer}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-6">
                       <Video className="w-4 h-4 text-blue-400" />
                       <span className="text-sm text-blue-500 font-semibold">{svc.badge}</span>
                     </div>
                   )}
+                  <a
+                    href={`https://wa.me/message/YHLE2IFII4MSJ1?text=${encodeURIComponent(`${tx.services.waMessage} — ${svc.title}`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    <IconWhatsApp className="w-4 h-4" /> {tx.services.cta}
+                  </a>
                 </div>
               </div>
             ))}
@@ -1021,8 +1043,8 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               <p className="text-sm leading-relaxed text-gray-500 mb-6">{tx.footer.tagline}</p>
               <div className="flex items-center gap-3">
                 {[
-                  { href: 'https://instagram.com/tournable_app', Icon: IconInstagram },
-                  { href: 'https://tiktok.com/@tournable', Icon: IconTikTok },
+                  { href: 'https://instagram.com/tournable.app', Icon: IconInstagram },
+                  { href: 'https://tiktok.com/@tournable4', Icon: IconTikTok },
                   { href: 'https://t.me/tournable', Icon: IconTelegram },
                 ].map(({ href, Icon }) => (
                   <a key={href} href={href} target="_blank" rel="noopener noreferrer"

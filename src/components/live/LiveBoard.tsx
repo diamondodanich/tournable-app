@@ -13,6 +13,7 @@ import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useFeedback } from '@/hooks/useFeedback'
+import { getSportTheme } from '@/lib/sports'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ function GoalBall({ size, sport, className }: { size: number; sport?: string; cl
 }
 
 function EventIcon({ type, size = 14, sport }: { type: string; size?: number; sport?: string }) {
-  if (type === 'goal')        return <GoalBall size={size} sport={sport} className="text-emerald-400" />
+  if (type === 'goal')        return <GoalBall size={size} sport={sport} className="text-[var(--lb)]" />
   if (type === 'own_goal')    return <GoalBall size={size} sport={sport} className="text-red-400" />
   if (type === 'assist')      return <AssistIcon size={size} className="text-sky-400 shrink-0" />
   if (type === 'yellow_card') return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0"
@@ -624,6 +625,10 @@ export default function LiveBoard({
     ? 'fixed inset-0 z-50 bg-gray-950 flex flex-col overflow-hidden'
     : 'flex-1 flex flex-col overflow-hidden'
 
+  // Sport-coloured accents: --lb (primary) / --lbd (dark) drive all accent classes below
+  const sportTheme = getSportTheme(tournament.sport)
+  const themeVars = { ['--lb' as string]: sportTheme.primary, ['--lbd' as string]: sportTheme.primaryDark } as React.CSSProperties
+
   const submitLabel = submitting
     ? 'Сохраняем…'
     : actionType === 'goal'
@@ -633,13 +638,13 @@ export default function LiveBoard({
   const submitClass = actionType === 'goal' && isOwnGoal
     ? 'bg-red-900/70 hover:bg-red-900 text-red-200'
     : actionType === 'goal'
-      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+      ? 'bg-[var(--lbd)] hover:bg-[var(--lb)] text-white'
       : actionType === 'yellow_card'
         ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
         : 'bg-red-600 hover:bg-red-500 text-white'
 
   return (
-    <div className={boardWrap}>
+    <div className={boardWrap} style={themeVars}>
 
       {/* ── Top bar: period tabs + fullscreen ───────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900/80 border-b border-gray-800 shrink-0">
@@ -651,7 +656,7 @@ export default function LiveBoard({
               disabled={!isOwner}
               className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 game.period === p.value
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-[var(--lb)] text-white'
                   : 'bg-gray-800 text-gray-500 ' + (isOwner ? 'hover:bg-gray-700' : 'cursor-default')
               }`}
             >
@@ -740,7 +745,7 @@ export default function LiveBoard({
         {/* Timer + period + controls row */}
         <div className="flex items-center justify-center gap-3 mt-4">
           <span className={`font-mono font-black tabular-nums ${
-            game.timer_running ? 'text-emerald-400' : 'text-gray-600'
+            game.timer_running ? 'text-[var(--lb)]' : 'text-gray-600'
           } ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>
             {formatTime(displaySecs)}
           </span>
@@ -754,7 +759,7 @@ export default function LiveBoard({
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                   game.timer_running
                     ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                    : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                    : 'bg-[var(--lbd)] hover:bg-[var(--lb)] text-white'
                 }`}
               >
                 {game.timer_running ? <Pause size={15} /> : <Play size={15} />}
@@ -843,7 +848,7 @@ export default function LiveBoard({
             return matchStarted ? (
               <button
                 onClick={() => setShowForm(true)}
-                className="px-6 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
+                className="px-6 py-3 rounded-2xl bg-[var(--lbd)] hover:bg-[var(--lb)] active:bg-[var(--lbd)] text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
               >
                 <Plus size={16} />
                 Событие
@@ -887,7 +892,7 @@ export default function LiveBoard({
               <button
                 onClick={handleFinish}
                 disabled={finishing}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[var(--lb)] hover:bg-[var(--lbd)] text-white text-sm font-bold transition-colors disabled:opacity-50"
               >
                 {finishing ? 'Сохраняем…' : 'Сохранить и завершить'}
               </button>
@@ -920,7 +925,7 @@ export default function LiveBoard({
                     onClick={() => setSide(s)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${
                       active
-                        ? 'border-emerald-600 bg-emerald-900/30 text-white'
+                        ? 'border-[var(--lb)] bg-white/10 text-white'
                         : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
                     }`}
                   >
@@ -943,7 +948,7 @@ export default function LiveBoard({
                   onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
                   className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
                     actionType === opt.value
-                      ? opt.value === 'goal'        ? 'bg-emerald-700 text-white'
+                      ? opt.value === 'goal'        ? 'bg-[var(--lbd)] text-white'
                       : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
                       : 'bg-red-600 text-white'
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -993,7 +998,7 @@ export default function LiveBoard({
             <div className="flex items-center gap-2">
               {/* Auto-minute (read-only) */}
               <div className="h-10 px-3 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center shrink-0">
-                <span className="text-emerald-400 font-mono text-sm font-bold tabular-nums">
+                <span className="text-[var(--lb)] font-mono text-sm font-bold tabular-nums">
                   {currentMinute > 0 ? `${currentMinute}'` : '0\''}
                 </span>
               </div>

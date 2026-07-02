@@ -6,11 +6,10 @@ import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil, Lock, Loader2, Users } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import LineupEditor from './LineupEditor'
-import UpgradePrompt from '@/components/billing/UpgradePrompt'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
@@ -187,10 +186,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   )
   const [saving, setSaving]       = useState(false)
   const [starting, setStarting]   = useState(false)
-  const [showUpgrade, setShowUpgrade] = useState(false)
-  // 'manual' = client-only "entering score without live broadcast" state (Free plan).
-  // Only Pro/Enterprise reach 'live' (creates a live_games row + public live board).
-  const [status, setStatus]     = useState<'scheduled' | 'manual' | 'live' | 'finished'>(
+  const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
   const [isEditing, setIsEditing] = useState(status !== 'finished')
@@ -258,8 +254,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
   async function handleStart() {
     if (!fixture.home_team_id || !fixture.away_team_id) return
-    // Free plan: enter the score/events locally — no live broadcast, no server call.
-    if (!isPro) { setStatus('manual'); return }
+    // Live scoreboard is available on all plans (gate removed 2026-07 by product decision)
     setStarting(true)
     const prevStatus = status
     setStatus('live')
@@ -363,9 +358,6 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   if (status === 'scheduled') {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        {showUpgrade && (
-          <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
-        )}
         {lineupModal}
         <div className="flex items-center justify-between mb-4">
           <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>
@@ -389,14 +381,6 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           {starting ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
           {starting ? T.btnStarting : T.btnStartMatch}
         </button>
-        {!isPro && (
-          <button
-            type="button"
-            onClick={() => setShowUpgrade(true)}
-            className="w-full flex items-center justify-center gap-1.5 mt-2 text-xs font-semibold text-gray-400 hover:text-emerald-600 transition-colors">
-            <Lock size={11} /> {T.btnLivePro}
-          </button>
-        )}
       </div>
     )
   }
@@ -408,9 +392,6 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
   return (
     <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200' : 'border-gray-200'}`}>
-      {showUpgrade && (
-        <UpgradePrompt featureName="LIVE-режим" onClose={() => setShowUpgrade(false)} />
-      )}
       {lineupModal}
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -558,7 +539,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const T = tx[lang]
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
 
-  const hasUpcoming = initialFixtures.some(f => !f.is_bye && !f.played)
+  const hasUpcoming = initialFixtures.some(f => !f.is_bye && f.home_team_id && f.away_team_id && !f.played)
   const [subTab, setSubTab] = useState<'upcoming' | 'results'>(hasUpcoming ? 'upcoming' : 'results')
 
   // Realtime sync: update fixtures when another user saves results
@@ -586,11 +567,14 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
     )
   }
 
-  const played = fixtures.filter(f => !f.is_bye && f.played).length
-  const total  = fixtures.filter(f => !f.is_bye).length
+  // A bye is any fixture missing a side — legacy rows may lack the is_bye flag.
+  const isByeFixture = (f: Fixture) => f.is_bye || !f.home_team_id || !f.away_team_id
+
+  const played = fixtures.filter(f => !isByeFixture(f) && f.played).length
+  const total  = fixtures.filter(f => !isByeFixture(f)).length
 
   const visibleFixtures = fixtures.filter(f => {
-    if (f.is_bye) return false
+    if (isByeFixture(f)) return false
     return subTab === 'upcoming' ? !f.played : f.played
   })
 

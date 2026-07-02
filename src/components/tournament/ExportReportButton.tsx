@@ -48,8 +48,8 @@ export default function ExportReportButton({ fileName, isPro = false, lang = 'ru
       pdf.save(`${fileName}.pdf`)
 
       if (!isPro) {
-        toast.info('PDF скачан', {
-          description: 'Убрать водяной знак — подключите Pro',
+        toast.info(T.pdfDownloaded, {
+          description: T.removeWatermarkCta,
           action: { label: 'Pro', onClick: () => { window.location.href = '/pricing' } },
           duration: 6000,
         })

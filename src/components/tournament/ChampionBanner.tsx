@@ -105,7 +105,7 @@ export default function ChampionBanner({
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-3.5 right-3.5 z-10 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-colors backdrop-blur-sm"
-        aria-label="Закрыть"
+        aria-label={T.close}
       >
         <X size={14} />
       </button>
@@ -188,7 +188,7 @@ export default function ChampionBanner({
               <button
                 onClick={copyLink}
                 className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 flex items-center justify-center transition-colors backdrop-blur-sm"
-                title="Скопировать ссылку"
+                title={T.shareCopyLink}
               >
                 {copied ? <Check size={16} className="text-amber-300" /> : <Copy size={16} />}
               </button>
@@ -198,12 +198,12 @@ export default function ChampionBanner({
 
         {/* Season CTA */}
         <div className="mt-5 pt-4 border-t border-white/10 text-center" style={{ animation: 'champ-rise .9s ease-out both' }}>
-          <p className="text-xs text-white/50 mb-2.5">Сохраните историю и запустите следующий сезон</p>
+          <p className="text-xs text-white/50 mb-2.5">{T.saveHistoryCta}</p>
           <a
             href="/pricing#enterprise"
             className="inline-flex items-center gap-1.5 h-8 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-xs font-bold transition-colors backdrop-blur-sm border border-white/10"
           >
-            Создать лигу с сезонами → Enterprise
+            {T.createLeagueCta}
           </a>
         </div>
       </div>

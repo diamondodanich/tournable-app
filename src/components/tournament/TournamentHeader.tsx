@@ -100,7 +100,7 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
                   href="/pricing"
                   className="text-[10px] text-gray-400 hover:text-emerald-600 transition-colors leading-none px-0.5 whitespace-nowrap"
                 >
-                  Убрать бэдж Tournable с публичной страницы → Pro
+                  {T.removeBadgeCta}
                 </a>
               )}
             </div>

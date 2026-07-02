@@ -167,7 +167,7 @@ export default function StatsTab({
       {/* Enterprise preview — season player profiles */}
       <div className="relative rounded-2xl overflow-hidden border border-gray-100 mt-2">
         <div className="select-none pointer-events-none opacity-40 p-4 space-y-2.5" aria-hidden>
-          {[['А. Иванов', '18 матчей', '12 голов'], ['Б. Петров', '16 матчей', '9 голов'], ['В. Сидоров', '14 матчей', '7 голов']].map(([name, games, stat]) => (
+          {[['А. Иванов', '18', '12'], ['Б. Петров', '16', '9'], ['В. Сидоров', '14', '7']].map(([name, games, stat]) => (
             <div key={name} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
               <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
               <div className="flex-1">
@@ -185,13 +185,13 @@ export default function StatsTab({
           <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center mb-3 shadow-lg">
             <Lock size={18} className="text-white" />
           </div>
-          <p className="text-sm font-black text-gray-900 mb-0.5">Полная статистика игроков по сезонам</p>
+          <p className="text-sm font-black text-gray-900 mb-0.5">{T.fullPlayerStatsTitle}</p>
           <p className="text-xs text-gray-400 mb-3">Enterprise</p>
           <Link
             href="/pricing#enterprise"
             className="text-xs font-bold px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
           >
-            Узнать больше
+            {T.learnMore}
           </Link>
         </div>
       </div>

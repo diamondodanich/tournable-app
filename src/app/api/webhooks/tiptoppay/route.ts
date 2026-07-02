@@ -50,6 +50,15 @@ export async function POST(req: NextRequest) {
     return ack()
   }
 
+  // Only Pay notifications with a successful authorization may activate a plan.
+  // Fail/Refund/Cancel notifications carry the same Data metadata — never
+  // activate from those even if a stray toggle in the TipTop ЛК routes them here.
+  const status = params.Status ?? ''
+  if (status !== 'Completed' && status !== 'Authorized') {
+    console.log(`[tiptoppay webhook] ignoring notification with Status="${status}"`)
+    return ack()
+  }
+
   // Widget's `metadata` param comes back as a JSON-encoded `Data` field
   let metadata: Partial<PaymentMetadata> = {}
   if (params.Data) {

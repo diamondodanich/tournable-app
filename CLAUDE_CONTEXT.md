@@ -86,8 +86,10 @@ Values in `tournaments.sport` column:
 ## TipTop Pay (active payment provider — CloudPayments-compatible, white-label for KZ)
 - Live checkout (`CheckoutForm.tsx`, `EnterpriseCheckoutForm.tsx`) uses `TipTopPayButton.tsx`, NOT `CardPaymentForm.tsx` (FreedomPay — kept in repo unused, not deleted)
 - `src/lib/tiptoppay.ts` — client-safe: Public ID, prices, types ONLY (no Node imports — TipTopPayButton imports from it). `verifyWebhookSignature()` + API_SECRET live inside the webhook route
-- Test keys in ЛК appear TRUNCATED (Public ID 29 chars after pk_, secret 31 — standard is 32; API /test returns 401) — re-copy from ЛК before testing payments
-- Webhook verified locally end-to-end (2026-07-01): valid HMAC passes → parses Data metadata → hits Supabase step; invalid HMAC → "signature mismatch", ack {"code":0}. Pay-уведомление URL must be set in TipTop ЛК: https://tournable.app/api/webhooks/tiptoppay
+- Keys verified working (2026-07-02, API /test → Success:true). Public ID is genuinely 29 chars after pk_ (TipTop format); secret is 32 chars (was truncated by 1 char on first copy — watch for this)
+- Webhook verified locally end-to-end (2026-07-02): valid HMAC + Status=Completed → parses Data metadata → hits Supabase step; invalid HMAC → "signature mismatch"; Status other than Completed/Authorized (e.g. Declined) → ignored. Always acks {"code":0}
+- ЛК notification toggles: enable ONLY Pay → https://tournable.app/api/webhooks/tiptoppay. Do NOT enable Check/Fail/Confirm/Refund/Receipt/SbpToken/Kkt/Cancel for now; Recurrent — later when подписки wired. SSL-ignore / client cert / basic auth toggles — off
+- Migration 023 applied in Supabase (2026-07-02)
 - Dashboard: https://merchant.tiptoppay.kz/next/dashboard/main — Public ID + API Secret (test terminal) live in `.env.local` as `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID` / `TIPTOPPAY_API_SECRET` (add to Vercel env for prod)
 - Widget script: `https://widget.tiptoppay.kz/bundles/widget.js` → global `window.tiptop.Widget` (verified in browser: also exposes `window.cp` — same lib, `tiptop` alias)
 - Flow: `new tiptop.Widget()` → `widget.start({ publicTerminalId, amount, currency, externalId, paymentSchema, userInfo: { accountId, email }, metadata, ... })` → `widget.oncomplete = (result) => {...}` (result.status: success/fail/reject/cancel). **`accountId`/`email` must be nested under `userInfo`** — passing them top-level is silently ignored (confirmed against the official param reference, not just CloudPayments docs)

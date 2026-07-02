@@ -187,7 +187,9 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   const [saving, setSaving]       = useState(false)
   const [starting, setStarting]   = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const [status, setStatus]     = useState<'scheduled' | 'live' | 'finished'>(
+  // 'manual' = client-only "entering score without live broadcast" state (Free plan).
+  // Only Pro/Enterprise reach 'live' (creates a live_games row + public live board).
+  const [status, setStatus]     = useState<'scheduled' | 'manual' | 'live' | 'finished'>(
     fixture.status ?? (fixture.played ? 'finished' : 'scheduled')
   )
   const [isEditing, setIsEditing] = useState(status !== 'finished')
@@ -254,7 +256,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
   async function handleStart() {
     if (!fixture.home_team_id || !fixture.away_team_id) return
-    if (!isPro) { setShowUpgrade(true); return }
+    // Free plan: enter the score/events locally — no live broadcast, no server call.
+    if (!isPro) { setStatus('manual'); return }
     setStarting(true)
     const prevStatus = status
     setStatus('live')
@@ -380,14 +383,18 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
         <button
           onClick={handleStart}
           disabled={starting}
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${
-            isPro
-              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-          }`}>
-          {starting ? <Loader2 size={15} className="animate-spin" /> : isPro ? <Play size={15} /> : <Lock size={15} />}
-          {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md">
+          {starting ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+          {starting ? T.btnStarting : T.btnStartMatch}
         </button>
+        {!isPro && (
+          <button
+            type="button"
+            onClick={() => setShowUpgrade(true)}
+            className="w-full flex items-center justify-center gap-1.5 mt-2 text-xs font-semibold text-gray-400 hover:text-emerald-600 transition-colors">
+            <Lock size={11} /> {T.btnLivePro}
+          </button>
+        )}
       </div>
     )
   }

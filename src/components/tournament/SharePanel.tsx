@@ -9,7 +9,7 @@ import {
   Eye, Pencil, ChevronLeft, Clock, UserX, Mail, Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { tx, type Lang } from '@/lib/i18n'
+import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 
 interface Props {
   tournamentId: string
@@ -65,7 +65,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
   async function copy(text: string, id: string) {
     try { await navigator.clipboard.writeText(text) } catch { return }
     setCopiedId(id)
-    toast.success('Скопировано!')
+    toast.success(T.shareCopied)
     setTimeout(() => setCopiedId(null), 2500)
   }
 
@@ -91,19 +91,19 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
 
   async function handleEmailInvite() {
     const email = emailInput.trim()
-    if (!email || !email.includes('@')) { toast.error('Введите корректный email'); return }
+    if (!email || !email.includes('@')) { toast.error(T.invalidEmail); return }
     setSendingEmail(true)
     const res = await inviteByEmail(tournamentId, 'editor', email, lang)
     setSendingEmail(false)
     if (res?.error) { toast.error(res.error); return }
-    toast.success(`Приглашение отправлено на ${email}`)
+    toast.success(T.inviteSent(email))
     setEmailInput('')
   }
 
   async function handleRemove(memberId: string) {
     setMembers(prev => prev.filter(m => m.id !== memberId))
     await removeMember(memberId, tournamentId)
-    toast.success('Доступ отозван')
+    toast.success(T.accessRevoked)
   }
 
   const displayUrl      = publicUrl.replace(/^https?:\/\//, '')
@@ -134,7 +134,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
           <button
             onClick={handleClose}
             className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0"
-            aria-label="Закрыть"
+            aria-label={T.close}
           >
             <X size={13} className="text-gray-500" />
           </button>
@@ -185,7 +185,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       {T.shareEditors} · {acceptedEditors.length}
                     </p>
                     {acceptedEditors.map(m => (
-                      <MemberRow key={m.id} member={m} onRemove={handleRemove} />
+                      <MemberRow key={m.id} member={m} onRemove={handleRemove} T={T} />
                     ))}
                   </div>
                 )}
@@ -197,7 +197,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       {T.shareViewers} · {acceptedViewers.length}
                     </p>
                     {acceptedViewers.map(m => (
-                      <MemberRow key={m.id} member={m} onRemove={handleRemove} />
+                      <MemberRow key={m.id} member={m} onRemove={handleRemove} T={T} />
                     ))}
                   </div>
                 )}
@@ -315,8 +315,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                   </div>
                   {!isPro && (
                     <p className="text-[11px] text-gray-400">
-                      Совместное редактирование доступно с{' '}
-                      <a href="/pricing" className="text-emerald-600 font-bold hover:underline">Pro</a>
+                      <a href="/pricing" className="text-emerald-600 font-bold hover:underline">{T.coEditingProNote}</a>
                     </p>
                   )}
                 </div>
@@ -394,16 +393,17 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
 }
 
 // ── Member row sub-component ──────────────────────────────────
-function MemberRow({ member, onRemove }: {
+function MemberRow({ member, onRemove, T }: {
   member: TournamentMember
   onRemove: (id: string) => void
+  T: TournamentTx
 }) {
   const email = member.invited_email
   const initials = email
     ? email.slice(0, 2).toUpperCase()
     : (member.user_id ? member.user_id.slice(0, 2).toUpperCase() : '?')
 
-  const roleLabel = member.role === 'editor' ? 'Редактор' : 'Наблюдатель'
+  const roleLabel = member.role === 'editor' ? T.roleEditor : T.roleViewer
   const roleColor = member.role === 'editor' ? 'bg-violet-100 text-violet-700' : 'bg-sky-100 text-sky-700'
 
   return (
@@ -420,14 +420,14 @@ function MemberRow({ member, onRemove }: {
         <div className="flex items-center gap-1.5 mt-0.5">
           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${roleColor}`}>{roleLabel}</span>
           {member.status === 'pending' && (
-            <span className="text-[9px] text-amber-500 font-medium">Ожидает</span>
+            <span className="text-[9px] text-amber-500 font-medium">{T.pending}</span>
           )}
         </div>
       </div>
       <button
         onClick={() => onRemove(member.id)}
         className="w-6 h-6 rounded-full hover:bg-red-100 flex items-center justify-center transition-colors group shrink-0"
-        title="Отозвать доступ"
+        title={T.revokeAccess}
       >
         <UserX size={12} className="text-gray-400 group-hover:text-red-500 transition-colors" />
       </button>

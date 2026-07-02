@@ -1,8 +1,24 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyWebhookSignature, PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/tiptoppay'
+import { PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/tiptoppay'
 
 export const runtime = 'nodejs'
+
+// TipTop Pay signs each notification: Content-HMAC / X-Content-HMAC header =
+// base64( HMAC-SHA256(rawBody, ApiSecret) ), UTF8. API Secret is server-only.
+const API_SECRET = process.env.TIPTOPPAY_API_SECRET ?? ''
+
+function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+  if (!signature || !API_SECRET) return false
+
+  const expected = crypto.createHmac('sha256', API_SECRET).update(rawBody, 'utf8').digest('base64')
+
+  const a = Buffer.from(expected)
+  const b = Buffer.from(signature)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
 
 // TipTop Pay expects {"code": 0} to acknowledge a notification; any other
 // code (or a timeout) triggers up to 100 retries.

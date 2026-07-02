@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Lock, Loader2, ShieldCheck } from 'lucide-react'
+import { Loader2, ShieldCheck } from 'lucide-react'
 import { getPaymentOrderParams, activateProAfterPayment, activateEnterpriseAfterPayment } from '@/app/actions/payments'
 import { PUBLIC_ID, WIDGET_SCRIPT_URL, type PlanPeriod, type PlanType } from '@/lib/tiptoppay'
 
 interface WidgetCompleteResult {
   type: string
   status: string
-  data?: { transactionId?: string }
+  data?: { transactionId?: number | string }
   message?: string
 }
 
@@ -16,8 +16,9 @@ declare global {
   interface Window {
     tiptop?: {
       Widget: new () => {
-        start: (params: Record<string, unknown>) => void
+        start: (params: Record<string, unknown>) => Promise<unknown>
         oncomplete?: (result: WidgetCompleteResult) => void
+        close: () => void
       }
     }
   }
@@ -28,6 +29,11 @@ interface Props {
   amount:     number
   userEmail?: string
   planType?:  PlanType
+}
+
+const GRADIENTS: Record<PlanType, string> = {
+  pro:        'linear-gradient(135deg,#047857,#10b981)',
+  enterprise: 'linear-gradient(135deg,#7c3aed,#a855f7)',
 }
 
 export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }: Props) {
@@ -50,6 +56,12 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
 
   async function handlePay() {
     if (!window.tiptop) return
+
+    if (!PUBLIC_ID) {
+      setError('Платёжный модуль не настроен: отсутствует идентификатор терминала. Напишите нам — мы быстро поможем.')
+      return
+    }
+
     setError(null)
     setIsPending(true)
 
@@ -61,9 +73,11 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
 
       widget.oncomplete = async (result: WidgetCompleteResult) => {
         if (result.status === 'success') {
+          setIsPending(true)
+          const txId = result.data?.transactionId != null ? String(result.data.transactionId) : ''
           const activation = planType === 'enterprise'
-            ? await activateEnterpriseAfterPayment(period, result.data?.transactionId ?? '', 'cloudpayments')
-            : await activateProAfterPayment(period, result.data?.transactionId ?? '', 'cloudpayments')
+            ? await activateEnterpriseAfterPayment(period, txId, 'cloudpayments')
+            : await activateProAfterPayment(period, txId, 'cloudpayments')
 
           setIsPending(false)
           if ('error' in activation) {
@@ -98,7 +112,14 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
           plan_period: period,
           plan_type:   planType,
         },
+      }).catch((err: unknown) => {
+        setIsPending(false)
+        setError(err instanceof Error ? err.message : 'Не удалось открыть платёжную форму. Попробуйте ещё раз.')
       })
+
+      // The widget overlay is open now — stop the button spinner so the page
+      // doesn't look stuck behind it. oncomplete drives the rest.
+      setIsPending(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при оплате')
       setIsPending(false)
@@ -123,20 +144,22 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
 
       <p className="text-[11px] text-gray-400 text-center leading-relaxed">
         Нажимая «Оплатить», вы подтверждаете согласие с{' '}
-        <a href="/terms" className="text-emerald-500 hover:underline">условиями оферты</a>
+        <a
+          href="/terms"
+          className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
+        >
+          условиями оферты
+        </a>
       </p>
 
       <button
         onClick={handlePay}
         disabled={!scriptReady || isPending}
         className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl transition-all hover:opacity-90 text-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-        style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
+        style={{ background: GRADIENTS[planType] }}
       >
-        {isPending
-          ? <Loader2 className="w-4 h-4 animate-spin" />
-          : <Lock className="w-4 h-4" />
-        }
-        {isPending ? 'Обработка...' : `Оплатить ${amount.toLocaleString('ru-RU')} ₸`}
+        {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+        {isPending ? 'Обработка...' : 'Оплатить'}
       </button>
 
       <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">

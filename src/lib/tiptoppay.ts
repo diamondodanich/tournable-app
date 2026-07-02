@@ -1,10 +1,9 @@
-import crypto from 'crypto'
+// Client-safe module: no Node imports here — TipTopPayButton (client component)
+// imports constants from this file. Webhook signature verification lives in
+// src/app/api/webhooks/tiptoppay/route.ts (server-only).
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 // Public ID is safe to expose client-side (same trust level as a Stripe publishable key).
 export const PUBLIC_ID  = process.env.NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID ?? ''
-// API Secret must stay server-side only — used to verify webhook signatures.
-export const API_SECRET = process.env.TIPTOPPAY_API_SECRET ?? ''
 
 export const WIDGET_SCRIPT_URL = 'https://widget.tiptoppay.kz/bundles/widget.js'
 
@@ -26,18 +25,4 @@ export interface PaymentMetadata {
   user_id: string
   plan_period: PlanPeriod
   plan_type: PlanType
-}
-
-// ── Webhook signature verification ─────────────────────────────────────────────
-// TipTop Pay (CloudPayments-compatible) signs each notification with a
-// `Content-HMAC` header: base64( HMAC-SHA256(rawBody, ApiSecret) ).
-export function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
-  if (!signature || !API_SECRET) return false
-
-  const expected = crypto.createHmac('sha256', API_SECRET).update(rawBody, 'utf8').digest('base64')
-
-  const a = Buffer.from(expected)
-  const b = Buffer.from(signature)
-  if (a.length !== b.length) return false
-  return crypto.timingSafeEqual(a, b)
 }

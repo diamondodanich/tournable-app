@@ -50,15 +50,15 @@ const T = {
       h2: 'Всё для турнира.\nУже внутри.',
       sub: 'То, что раньше занимало вечер — теперь занимает минуту.',
       items: [
-        { title: 'Расписание — меньше 1 минуты', desc: 'Выберите формат, добавьте команды — все матчи готовы автоматически. Круговой, плей-офф, групповой этап, лига с плей-оффом.' },
-        { title: 'Живой счёт без приложений', desc: 'Счёт вводится с телефона — у всех обновляется мгновенно. Больше никаких скриншотов таблиц. Просто ссылка.' },
-        { title: 'Статистика, которая не ждёт', desc: 'Очки, разница, лидеры по результативности — обновляются сами после каждого матча. Всегда точно, всегда вовремя.' },
-        { title: 'Честный жребий — по силе команд', desc: 'Укажите силу каждой команды — платформа справедливо распределит их по группам и сетке. Фавориты не встретятся в первом же раунде.' },
-        { title: 'Живая страница турнира', desc: 'Каждый турнир получает публичный URL. Поделитесь с командами до игры — все следят за таблицей и счётом онлайн без регистрации.' },
-        { title: 'Брендированные отчёты в один клик', desc: 'Таблица, сетка, статистика — готовы для печати, соцсетей или чата. Красиво с первого раза.' },
+        { title: 'Турнир за минуту, а не за вечер', desc: 'Формат, команды — готово: расписание, сетка и таблица создаются сами. Круговой, плей-офф, группы, лига.' },
+        { title: 'Live-табло на любом экране', desc: 'Счёт, таймер и события матча — в реальном времени у каждого зрителя. Проецируйте на телевизор: выглядит как трансляция.' },
+        { title: 'Честный жребий по силе команд', desc: 'Оцените силу участников — платформа разведёт фаворитов по разным группам и частям сетки.' },
+        { title: 'Статистика без калькулятора', desc: 'Очки, разница, форма команд, лидеры результативности, матрица встреч — всё считается само.' },
+        { title: 'Отчёты, которые не стыдно печатать', desc: 'Полный брендированный PDF-отчёт или отдельные таблицы в PNG — одним кликом, для печати и соцсетей.' },
+        { title: 'Одна ссылка вместо ста сообщений', desc: 'Публичная страница турнира: участники и болельщики следят без регистрации и приложений.' },
       ],
-      sportsLabel: 'Работает для любого командного спорта',
-      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Бадминтон'],
+      sportsLabel: 'Работает для любого вида спорта',
+      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Бадминтон', 'Шахматы', 'Тогуз-кумалак', 'Киберспорт'],
     },
     pricing: {
       h2: 'Выберите свой формат.',
@@ -162,15 +162,15 @@ const T = {
       h2: 'Турнир үшін бәрі.\nДайын күйде.',
       sub: 'Бұрын кешке алатын нәрсе — енді бір минутта.',
       items: [
-        { title: 'Кесте — 1 минуттан аз', desc: 'Форматты таңдаңыз, командаларды қосыңыз — барлық матчтар автоматты дайын. Дөңгелек, плей-офф, топтық кезең, лига + плей-офф.' },
-        { title: 'Қосымшасыз тірі есеп', desc: 'Есеп телефоннан енгізіледі — барлығында лезде жаңарады. Енді ешқандай кесте скриншоттары керек емес. Тек сілтеме.' },
-        { title: 'Жаңарып тұратын статистика', desc: 'Ұпайлар, айырма, нәтижелілік көшбасшылары — әр матчтан кейін өздігінен жаңарады. Әрқашан дәл, әрқашан уақытында.' },
-        { title: 'Әділ жеребе — командалар күшіне қарай', desc: 'Әр команданың күшін көрсетіңіз — платформа оларды топтар мен торға әділ бөледі. Фавориттер бірінші раундта кездеспейді.' },
-        { title: 'Турнирдің тірі беті', desc: 'Әрбір турнир жалпыға ортақ URL алады. Матчқа дейін командаларға сілтемені жіберіңіз — барлығы тіркелмей кестені онлайн қарайды.' },
-        { title: 'Брендтелген есептер бір шертумен', desc: 'Кесте, тор, статистика — басып шығаруға, әлеуметтік желілерге немесе чатқа дайын. Бірден сұлу шығады.' },
+        { title: 'Турнир — кешке емес, бір минутқа', desc: 'Формат, командалар — дайын: кесте, тор және таблица өздігінен жасалады. Дөңгелек, плей-офф, топтар, лига.' },
+        { title: 'Кез келген экрандағы Live-тақта', desc: 'Есеп, таймер және матч оқиғалары — әр көрерменде нақты уақытта. Теледидарға шығарыңыз: трансляция сияқты көрінеді.' },
+        { title: 'Командалар күшіне қарай әділ жеребе', desc: 'Қатысушылардың күшін бағалаңыз — платформа фавориттерді әртүрлі топтар мен тордың бөліктеріне бөледі.' },
+        { title: 'Калькуляторсыз статистика', desc: 'Ұпайлар, айырма, командалар формасы, нәтижелілік көшбасшылары, кездесулер матрицасы — бәрі өздігінен есептеледі.' },
+        { title: 'Басып шығаруға ұят емес есептер', desc: 'Толық брендтелген PDF-есеп немесе жеке кестелер PNG форматында — бір шертумен, баспаға және әлеуметтік желіге.' },
+        { title: 'Жүз хабарламаның орнына бір сілтеме', desc: 'Турнирдің жалпыға ортақ беті: қатысушылар мен жанкүйерлер тіркелусіз және қосымшасыз қадағалайды.' },
       ],
-      sportsLabel: 'Кез келген командалық спорт үшін жұмыс істейді',
-      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тенисі', 'Бадминтон'],
+      sportsLabel: 'Кез келген спорт түріне жарайды',
+      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел тенисі', 'Бадминтон', 'Шахмат', 'Тоғызқұмалақ', 'Киберспорт'],
     },
     pricing: {
       h2: 'Өз форматыңызды таңдаңыз.',
@@ -274,15 +274,15 @@ const T = {
       h2: 'Everything for your tournament.\nAlready inside.',
       sub: 'What used to take an evening now takes a minute.',
       items: [
-        { title: 'Schedule in under a minute', desc: 'Pick a format, add teams — all matches generated automatically. Round-robin, playoff, group stage, league with playoff.' },
-        { title: 'Live scoreboard without apps', desc: 'Enter the score on your phone — everyone sees the update instantly. No more screenshot-passing. Just a link.' },
-        { title: 'Stats that never wait', desc: 'Points, difference, performance leaders — refreshed after every match. Always accurate. Always live.' },
-        { title: 'Fair draw — by team strength', desc: 'Rate each team\'s strength — the platform distributes them fairly across groups and the bracket. Favourites won\'t clash in round one.' },
-        { title: 'Live tournament page', desc: 'Every tournament gets its own public URL. Share with teams before the game — everyone follows standings and live scores without signing up.' },
-        { title: 'Branded reports in one click', desc: 'Standings, bracket, stats — ready for print, social media or chat. Looks sharp every time.' },
+        { title: 'A tournament in a minute, not an evening', desc: 'Format, teams — done: schedule, bracket and table build themselves. Round-robin, playoff, groups, league.' },
+        { title: 'Live scoreboard on any screen', desc: 'Score, timer and match events — in real time for every spectator. Project onto a TV: looks like a broadcast.' },
+        { title: 'Fair draw by team strength', desc: 'Rate the participants — the platform spreads the favourites across groups and bracket halves.' },
+        { title: 'Statistics without a calculator', desc: 'Points, difference, team form, performance leaders, head-to-head matrix — everything counts itself.' },
+        { title: 'Reports you\'re proud to print', desc: 'A full branded PDF report or individual tables as PNG — one click, ready for print and social media.' },
+        { title: 'One link instead of a hundred messages', desc: 'A public tournament page: participants and fans follow along with no sign-up and no apps.' },
       ],
-      sportsLabel: 'Works for any team sport',
-      sports: ['Football', 'Futsal', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Badminton'],
+      sportsLabel: 'Works for any sport',
+      sports: ['Football', 'Futsal', 'Basketball', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Badminton', 'Chess', 'Togyzkumalak', 'Esports'],
     },
     pricing: {
       h2: 'Choose your format.',
@@ -1092,7 +1092,13 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
           </div>
 
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-600">{tx.footer.legal}</p>
+            <p className="text-xs text-gray-600 flex items-center gap-2">
+              {tx.footer.legal}
+              <span className="inline-flex items-center gap-1.5 border border-gray-800 rounded-full px-2.5 py-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
+                <span className="text-gray-500 font-semibold">Made in Kazakhstan</span>
+              </span>
+            </p>
             <div className="flex items-center gap-6 text-xs text-gray-600">
               <Link href="/privacy" className="hover:text-gray-400 transition-colors">{tx.footer.privacy}</Link>
               <Link href="/terms" className="hover:text-gray-400 transition-colors">{tx.footer.terms}</Link>

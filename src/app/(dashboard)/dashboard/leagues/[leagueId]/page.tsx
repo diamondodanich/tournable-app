@@ -8,6 +8,8 @@ import SeasonsTab from './SeasonsTab'
 import TeamsTab from './TeamsTab'
 import SquadsTab from './SquadsTab'
 import SettingsTab from './SettingsTab'
+import ChampStatsTab from './ChampStatsTab'
+import { getChampionshipPlayerStats, type ChampPlayerStat } from '@/app/actions/leagues'
 import type { League, Season, LeagueTeam, Player } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +45,7 @@ const T = {
       seasons: 'Сезоны',
       teams: 'Команды',
       squads: 'Составы',
+      stats: 'Статистика',
       settings: 'Настройки',
     },
   },
@@ -53,6 +56,7 @@ const T = {
       seasons: 'Маусымдар',
       teams: 'Командалар',
       squads: 'Құрамдар',
+      stats: 'Статистика',
       settings: 'Баптаулар',
     },
   },
@@ -63,6 +67,7 @@ const T = {
       seasons: 'Seasons',
       teams: 'Teams',
       squads: 'Squads',
+      stats: 'Stats',
       settings: 'Settings',
     },
   },
@@ -74,6 +79,7 @@ function getTabs(lang: Lang) {
     { id: 'seasons',  label: tx.tabs.seasons },
     { id: 'teams',    label: tx.tabs.teams },
     { id: 'squads',   label: tx.tabs.squads },
+    { id: 'stats',    label: tx.tabs.stats },
     { id: 'settings', label: tx.tabs.settings },
   ]
 }
@@ -119,6 +125,11 @@ export default async function LeagueManagePage({
   const teams = teamsWithPlayers.map(({ players: _p, ...t }) => t) as LeagueTeam[]
 
   const activeTabId = TABS.some(t => t.id === activeTab) ? activeTab : 'seasons'
+
+  // Stats are heavier (events across all seasons) — fetch only when the tab is open
+  const champStats: ChampPlayerStat[] = activeTabId === 'stats'
+    ? await getChampionshipPlayerStats(leagueId)
+    : []
 
   return (
     <div>
@@ -195,6 +206,9 @@ export default async function LeagueManagePage({
         )}
         {activeTabId === 'squads' && (
           <SquadsTab leagueId={leagueId} teams={teamsWithPlayers} lang={lang} tabsLabel={tx.tabs.teams} />
+        )}
+        {activeTabId === 'stats' && (
+          <ChampStatsTab stats={champStats} lang={lang} />
         )}
         {activeTabId === 'settings' && (
           <SettingsTab league={league} lang={lang} />

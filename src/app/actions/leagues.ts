@@ -340,6 +340,85 @@ export async function getChampionshipTeams(leagueId: string): Promise<{ name: st
   return (data ?? []) as { name: string; logo_url: string | null }[]
 }
 
+// ── Championship-wide player statistics ───────────────────────────────────────
+// Aggregates match events across ALL seasons of a championship. Season teams are
+// linked to persistent championship teams via teams.league_team_id, so a player's
+// numbers carry over between seasons (Flashscore model).
+export type ChampPlayerStat = {
+  player: string
+  teamName: string
+  goals: number
+  assists: number
+  yellow: number
+  red: number
+  seasons: number
+}
+
+export async function getChampionshipPlayerStats(leagueId: string): Promise<ChampPlayerStat[]> {
+  const supabase = await createClient()
+
+  const { data: seasons } = await supabase
+    .from('seasons')
+    .select('id, tournament_id')
+    .eq('league_id', leagueId)
+  const tournamentIds = (seasons ?? []).map(s => s.tournament_id).filter((x): x is string => !!x)
+  if (tournamentIds.length === 0) return []
+
+  const [{ data: seasonTeams }, { data: leagueTeams }, { data: fixtures }, { data: playoffMatches }] = await Promise.all([
+    supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
+    supabase.from('league_teams').select('id, name').eq('league_id', leagueId),
+    supabase.from('fixtures').select('id, tournament_id').in('tournament_id', tournamentIds),
+    supabase.from('playoff_matches').select('id, tournament_id').in('tournament_id', tournamentIds),
+  ])
+
+  const fixtureIds = (fixtures ?? []).map(f => f.id)
+  const playoffIds = (playoffMatches ?? []).map(m => m.id)
+  if (fixtureIds.length === 0 && playoffIds.length === 0) return []
+
+  const [{ data: fixtureEvents }, { data: playoffEvents }] = await Promise.all([
+    fixtureIds.length
+      ? supabase.from('match_events').select('team_id, player_name, type').in('fixture_id', fixtureIds)
+      : Promise.resolve({ data: [] as { team_id: string; player_name: string; type: string }[] }),
+    playoffIds.length
+      ? supabase.from('match_events').select('team_id, player_name, type').in('playoff_match_id', playoffIds)
+      : Promise.resolve({ data: [] as { team_id: string; player_name: string; type: string }[] }),
+  ])
+
+  // team (season) id → persistent championship team + tournament (season) id
+  const teamInfo = new Map<string, { leagueTeamId: string | null; name: string; tournamentId: string }>()
+  for (const t of seasonTeams ?? []) teamInfo.set(t.id, { leagueTeamId: t.league_team_id, name: t.name, tournamentId: t.tournament_id })
+  const leagueTeamName = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.name]))
+
+  type Acc = ChampPlayerStat & { seasonSet: Set<string> }
+  const acc = new Map<string, Acc>()
+
+  const events = [...(fixtureEvents ?? []), ...(playoffEvents ?? [])] as { team_id: string; player_name: string; type: string }[]
+  for (const e of events) {
+    const info = teamInfo.get(e.team_id)
+    if (!info) continue
+    const player = e.player_name.trim()
+    if (!player) continue
+    // Group by persistent championship team when linked, else by season team name
+    const teamKey = info.leagueTeamId ?? `name:${info.name.toLowerCase()}`
+    const teamName = info.leagueTeamId ? (leagueTeamName.get(info.leagueTeamId) ?? info.name) : info.name
+    const key = `${teamKey}|${player.toLowerCase()}`
+    let row = acc.get(key)
+    if (!row) {
+      row = { player, teamName, goals: 0, assists: 0, yellow: 0, red: 0, seasons: 0, seasonSet: new Set() }
+      acc.set(key, row)
+    }
+    row.seasonSet.add(info.tournamentId)
+    if (e.type === 'goal') row.goals++
+    else if (e.type === 'assist') row.assists++
+    else if (e.type === 'yellow_card') row.yellow++
+    else if (e.type === 'red_card') row.red++
+  }
+
+  return [...acc.values()]
+    .map(({ seasonSet, ...r }) => ({ ...r, seasons: seasonSet.size }))
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player))
+}
+
 // Add a new season to an existing championship, reusing its persistent teams.
 export async function addSeasonWithSetup(
   leagueId: string,

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getChampionshipPlayerStats } from '@/app/actions/leagues'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -20,11 +21,15 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
   const { data: league } = await supabase.from('leagues').select('id, name').eq('slug', slug).eq('is_public', true).maybeSingle()
   if (!league) notFound()
 
-  const { data: teams } = await supabase
-    .from('league_teams')
-    .select('id, name, slug, players(id, name, number, position)')
-    .eq('league_id', league.id)
-    .order('name')
+  const [{ data: teams }, allTimeStats] = await Promise.all([
+    supabase
+      .from('league_teams')
+      .select('id, name, slug, players(id, name, number, position)')
+      .eq('league_id', league.id)
+      .order('name'),
+    getChampionshipPlayerStats(league.id),
+  ])
+  const allTimeLeaders = allTimeStats.filter(s => s.goals > 0 || s.assists > 0).slice(0, 10)
 
   const POSITION_LABELS: Record<string, string> = {
     goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—',
@@ -42,6 +47,32 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* All-time championship leaders — aggregated across every season */}
+        {allTimeLeaders.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
+              <h2 className="font-black text-white text-sm uppercase tracking-widest">Лидеры за всю историю</h2>
+            </div>
+            <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+              <div className="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
+                <span>#</span><span>Игрок</span><span className="text-center">Голы</span><span className="text-center">Ассисты</span>
+              </div>
+              {allTimeLeaders.map((s, i) => (
+                <div key={`${s.teamName}|${s.player}`} className={`grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`}>
+                  <span className={`text-xs font-black ${i === 0 ? 'text-purple-300' : 'text-white/30'}`}>{i + 1}</span>
+                  <span className="min-w-0">
+                    <span className="text-sm font-bold text-white/90 truncate block">{s.player}</span>
+                    <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · сезонов: ${s.seasons}` : ''}</span>
+                  </span>
+                  <span className="text-center text-sm font-black text-purple-300 tabular-nums">{s.goals}</span>
+                  <span className="text-center text-sm text-white/50 tabular-nums">{s.assists}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {(teams ?? []).map((team: any) => (
           <div key={team.id}>
             <div className="flex items-center gap-2 mb-3">

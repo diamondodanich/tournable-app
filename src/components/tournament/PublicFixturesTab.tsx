@@ -1,6 +1,7 @@
 import { Tournament, Team, Fixture } from '@/types'
 import TeamAvatar from './TeamAvatar'
 import { Check, Clock } from 'lucide-react'
+import { tx, type Lang } from '@/lib/i18n'
 
 function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
@@ -20,18 +21,21 @@ function EventBadge({ type }: { type: string }) {
   return null
 }
 
-export default function PublicFixturesTab({ tournament, teams, fixtures }: {
+export default function PublicFixturesTab({ tournament, teams, fixtures, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
+  lang?: Lang
 }) {
+  const T = tx[lang]
+
   if (!tournament.generated || fixtures.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
         <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
           <Clock className="w-6 h-6 text-gray-400" />
         </div>
-        <p className="font-bold text-gray-600">Матчи ещё не запланированы</p>
+        <p className="font-bold text-gray-600">{T.noMatchesPlanned}</p>
       </div>
     )
   }
@@ -47,7 +51,7 @@ export default function PublicFixturesTab({ tournament, teams, fixtures }: {
       {Object.entries(byMatchday).sort(([a], [b]) => +a - +b).map(([md, mxs]) => (
         <div key={md}>
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-black text-emerald-600 text-sm uppercase tracking-wide">Тур {md}</span>
+            <span className="font-black text-emerald-600 text-sm uppercase tracking-wide">{T.roundLabel(+md)}</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -63,8 +67,8 @@ export default function PublicFixturesTab({ tournament, teams, fixtures }: {
                   {/* Status bar */}
                   <div className={`px-4 py-1.5 flex items-center gap-1.5 ${f.played ? 'bg-emerald-50' : 'bg-gray-50'}`}>
                     {f.played
-                      ? <><Check className="w-3 h-3 text-emerald-600" /><span className="text-xs font-bold text-emerald-700">Сыгран</span></>
-                      : <><Clock className="w-3 h-3 text-gray-400" /><span className="text-xs font-bold text-gray-400">Не сыгран</span></>
+                      ? <><Check className="w-3 h-3 text-emerald-600" /><span className="text-xs font-bold text-emerald-700">{T.statusPlayed}</span></>
+                      : <><Clock className="w-3 h-3 text-gray-400" /><span className="text-xs font-bold text-gray-400">{T.statusScheduled}</span></>
                     }
                   </div>
 

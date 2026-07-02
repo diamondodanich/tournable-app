@@ -249,6 +249,17 @@ const ru = {
   learnMore: 'Узнать больше',
   pdfDownloaded: 'PDF скачан',
   removeWatermarkCta: 'Убрать водяной знак — подключите Pro',
+  newTournamentMenuLbl: 'Турнир',
+  newTournamentMenuDesc: 'Одно соревнование с расписанием',
+  newChampionshipMenuLbl: 'Чемпионат',
+  newChampionshipMenuDesc: 'Постоянный, с сезонами и игроками',
+  activeTournamentLbl: 'У вас активен турнир',
+  chooseActionLbl: 'Выберите действие:',
+  archivingLbl: 'Архивирование…',
+  archiveThisTournamentLbl: 'Архивировать его',
+  archiveTournamentHint: 'Турнир будет скрыт, данные сохранятся',
+  launchBothProLbl: 'Запустить оба — Pro',
+  unlimitedToursAllFeaturesLbl: 'Безлимитные турниры и все возможности',
 }
 
 const kz: typeof ru = {
@@ -481,6 +492,17 @@ const kz: typeof ru = {
   learnMore: 'Толығырақ білу',
   pdfDownloaded: 'PDF жүктелді',
   removeWatermarkCta: 'Су таңбаны алып тастау — Pro қосыңыз',
+  newTournamentMenuLbl: 'Турнир',
+  newTournamentMenuDesc: 'Кестесі бар бір жарыс',
+  newChampionshipMenuLbl: 'Чемпионат',
+  newChampionshipMenuDesc: 'Тұрақты, маусымдары мен ойыншылары бар',
+  activeTournamentLbl: 'Сізде белсенді турнир бар',
+  chooseActionLbl: 'Әрекетті таңдаңыз:',
+  archivingLbl: 'Мұрағаттау…',
+  archiveThisTournamentLbl: 'Оны мұрағаттау',
+  archiveTournamentHint: 'Турнир жасырылады, деректер сақталады',
+  launchBothProLbl: 'Екеуін де іске қосу — Pro',
+  unlimitedToursAllFeaturesLbl: 'Шексіз турнирлер және барлық мүмкіндіктер',
 }
 
 const en: typeof ru = {
@@ -713,6 +735,17 @@ const en: typeof ru = {
   learnMore: 'Learn more',
   pdfDownloaded: 'PDF downloaded',
   removeWatermarkCta: 'Remove the watermark — get Pro',
+  newTournamentMenuLbl: 'Tournament',
+  newTournamentMenuDesc: 'A single competition with a schedule',
+  newChampionshipMenuLbl: 'Championship',
+  newChampionshipMenuDesc: 'Ongoing, with seasons and players',
+  activeTournamentLbl: 'You have an active tournament',
+  chooseActionLbl: 'Choose an action:',
+  archivingLbl: 'Archiving…',
+  archiveThisTournamentLbl: 'Archive it',
+  archiveTournamentHint: 'The tournament will be hidden, data will be kept',
+  launchBothProLbl: 'Launch both — Pro',
+  unlimitedToursAllFeaturesLbl: 'Unlimited tournaments and all features',
 }
 
 export const tx = { ru, kz, en }

@@ -5,7 +5,43 @@ import { addLeagueTeam, removeLeagueTeam } from '@/app/actions/leagues'
 import { Plus, Trash2, MapPin, Check, X } from 'lucide-react'
 import type { LeagueTeam } from '@/types'
 
-export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams: LeagueTeam[] }) {
+type Lang = 'ru' | 'kz' | 'en'
+
+const T = {
+  ru: {
+    enterName: 'Введите название команды',
+    confirmRemove: (name: string) => `Удалить команду "${name}"?`,
+    noTeams: 'Нет команд. Добавьте первую.',
+    namePlaceholder: 'Название команды',
+    cityPlaceholder: 'Город (необязательно)',
+    add: 'Добавить',
+    cancel: 'Отмена',
+    addTeam: 'Добавить команду',
+  },
+  kz: {
+    enterName: 'Команда атауын енгізіңіз',
+    confirmRemove: (name: string) => `"${name}" командасын жою керек пе?`,
+    noTeams: 'Командалар жоқ. Біріншісін қосыңыз.',
+    namePlaceholder: 'Команда атауы',
+    cityPlaceholder: 'Қала (міндетті емес)',
+    add: 'Қосу',
+    cancel: 'Бас тарту',
+    addTeam: 'Команда қосу',
+  },
+  en: {
+    enterName: 'Enter team name',
+    confirmRemove: (name: string) => `Remove team "${name}"?`,
+    noTeams: 'No teams yet. Add the first one.',
+    namePlaceholder: 'Team name',
+    cityPlaceholder: 'City (optional)',
+    add: 'Add',
+    cancel: 'Cancel',
+    addTeam: 'Add team',
+  },
+} as const
+
+export default function TeamsTab({ leagueId, teams, lang = 'ru' }: { leagueId: string; teams: LeagueTeam[]; lang?: Lang }) {
+  const T_ = T[lang]
   const [isPending, startTransition] = useTransition()
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
@@ -13,7 +49,7 @@ export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams:
   const [error, setError] = useState('')
 
   function handleAdd() {
-    if (!name.trim()) { setError('Введите название команды'); return }
+    if (!name.trim()) { setError(T_.enterName); return }
     setError('')
     startTransition(() => {
       void (async () => {
@@ -27,14 +63,14 @@ export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams:
   }
 
   function handleRemove(teamId: string, teamName: string) {
-    if (!confirm(`Удалить команду "${teamName}"?`)) return
+    if (!confirm(T_.confirmRemove(teamName))) return
     startTransition(() => { void removeLeagueTeam(teamId, leagueId) })
   }
 
   return (
     <div className="space-y-3">
       {teams.length === 0 && !adding && (
-        <p className="text-sm text-gray-400 py-4 text-center">Нет команд. Добавьте первую.</p>
+        <p className="text-sm text-gray-400 py-4 text-center">{T_.noTeams}</p>
       )}
 
       {teams.map(t => (
@@ -67,13 +103,13 @@ export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams:
             autoFocus
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="Название команды"
+            placeholder={T_.namePlaceholder}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-sm"
           />
           <input
             value={city}
             onChange={e => setCity(e.target.value)}
-            placeholder="Город (необязательно)"
+            placeholder={T_.cityPlaceholder}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-sm"
           />
           {error && <p className="text-xs text-red-500">{error}</p>}
@@ -83,13 +119,13 @@ export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams:
               disabled={isPending}
               className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
             >
-              <Check size={14} /> Добавить
+              <Check size={14} /> {T_.add}
             </button>
             <button
               onClick={() => { setAdding(false); setError('') }}
               className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 text-sm px-3 py-2 rounded-lg transition-colors"
             >
-              <X size={14} /> Отмена
+              <X size={14} /> {T_.cancel}
             </button>
           </div>
         </div>
@@ -98,7 +134,7 @@ export default function TeamsTab({ leagueId, teams }: { leagueId: string; teams:
           onClick={() => setAdding(true)}
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-purple-600 font-medium transition-colors py-1"
         >
-          <Plus size={14} /> Добавить команду
+          <Plus size={14} /> {T_.addTeam}
         </button>
       )}
     </div>

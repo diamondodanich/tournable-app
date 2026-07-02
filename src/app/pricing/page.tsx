@@ -1,68 +1,272 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { cookies } from 'next/headers'
 import { Check, X, Zap, Trophy, Star, ArrowRight, Building2 } from 'lucide-react'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Тарифы — Tournable',
-  description: 'Выберите подходящий план: бесплатный Старт или профессиональный Про с Live-табло и неограниченными турнирами.',
+type Lang = 'ru' | 'kz' | 'en'
+type Feature = { text: string; included: boolean }
+type FaqItem = { q: string; a: string }
+
+const T = {
+  ru: {
+    metaTitle: 'Тарифы — Tournable',
+    metaDescription: 'Выберите подходящий план: бесплатный Старт или профессиональный Про с Live-табло и неограниченными турнирами.',
+    login: 'Войти',
+    startFree: 'Начать бесплатно',
+    badge: 'Тарифы',
+    heroTitle: 'Простые и честные цены',
+    heroSubtitle: 'Начните бесплатно. Переходите на Про, когда готовы к большему.',
+    freeFeatures: [
+      { text: '1 активный турнир', included: true },
+      { text: 'До 16 команд в турнире', included: true },
+      { text: 'Круговой и плей-офф форматы', included: true },
+      { text: 'Публичная страница для участников', included: true },
+      { text: 'Статистика игроков и команд', included: true },
+      { text: 'Экспорт PDF и PNG', included: true },
+      { text: 'Live-табло в реальном времени', included: false },
+      { text: 'Неограниченные турниры', included: false },
+      { text: 'До 64 команд в турнире', included: false },
+      { text: 'До 3 соредакторов', included: false },
+    ] as Feature[],
+    proFeatures: [
+      { text: 'Неограниченные турниры', included: true },
+      { text: 'До 64 команд в турнире', included: true },
+      { text: 'Все форматы (круговой, плей-офф, групповой)', included: true },
+      { text: 'Публичная страница для участников', included: true },
+      { text: 'Статистика игроков и команд', included: true },
+      { text: 'Экспорт PDF и PNG', included: true },
+      { text: 'Live-табло в реальном времени', included: true },
+      { text: 'До 3 соредакторов', included: true },
+      { text: 'Приоритетная поддержка', included: true },
+    ] as Feature[],
+    enterpriseFeatures: [
+      { text: 'Всё из тарифа Про', included: true },
+      { text: 'Чемпионаты с сезонами', included: true },
+      { text: 'Публичные страницы чемпионата', included: true },
+      { text: 'Профили команд и игроков', included: true },
+      { text: 'Составы и история сезонов', included: true },
+      { text: 'Таблица бомбардиров по сезонам', included: true },
+      { text: 'Выделенная поддержка', included: true },
+    ] as Feature[],
+    faq: [
+      {
+        q: 'Можно ли сменить план позже?',
+        a: 'Да. Вы начинаете с бесплатного плана Старт, а перейти на Про можно в любой момент через WhatsApp.',
+      },
+      {
+        q: 'Что происходит, когда заканчивается подписка Про?',
+        a: 'Ваши турниры и данные остаются целыми. Live-табло и создание новых турниров сверх лимита становятся недоступны до продления.',
+      },
+      {
+        q: 'Как оплатить?',
+        a: 'Принимаем оплату через Kaspi Pay и банковские карты. Свяжитесь с нами в WhatsApp — вышлем реквизиты.',
+      },
+      {
+        q: 'Есть ли скидка на год?',
+        a: 'Да. Годовая подписка стоит 44 990 ₸ — это на 25% выгоднее ежемесячной оплаты.',
+      },
+    ] as FaqItem[],
+    planFree: 'Старт',
+    planFreePrice: '0 ₸',
+    planFreeCaption: 'Всегда бесплатно',
+    planPro: 'Про',
+    recommended: 'Рекомендуем',
+    planProPrice: '4 990 ₸',
+    perMonth: '/ месяц',
+    planProCaption: '44 990 ₸/год · скидка −25%',
+    planEnterprise: 'Enterprise',
+    planEnterprisePrice: 'По запросу',
+    planEnterpriseCaption: 'Для федераций и лиг',
+    ctaGoPro: 'Перейти на Про',
+    ctaContactUs: 'Связаться с нами',
+    faqTitle: 'Частые вопросы',
+    ctaTitle: 'Готовы провести турнир?',
+    ctaSubtitle: 'Зарегистрируйтесь бесплатно и создайте первый турнир за 2 минуты.',
+    footerLegal: '© 2026 Tournable. Все права защищены.',
+    footerPrivacy: 'Конфиденциальность',
+    footerTerms: 'Условия',
+    footerDashboard: 'Кабинет',
+  },
+  kz: {
+    metaTitle: 'Тарифтер — Tournable',
+    metaDescription: 'Қажетті жоспарды таңдаңыз: тегін Старт немесе Live-тақтасы мен шексіз турнирлері бар кәсіби Про.',
+    login: 'Кіру',
+    startFree: 'Тегін бастау',
+    badge: 'Тарифтер',
+    heroTitle: 'Қарапайым және әділ бағалар',
+    heroSubtitle: 'Тегін бастаңыз. Дайын болғанда Про-ға өтіңіз.',
+    freeFeatures: [
+      { text: '1 белсенді турнир', included: true },
+      { text: 'Турнирде 16 командаға дейін', included: true },
+      { text: 'Дөңгелек және плей-офф форматтары', included: true },
+      { text: 'Қатысушыларға арналған жалпыға ортақ бет', included: true },
+      { text: 'Ойыншылар мен командалар статистикасы', included: true },
+      { text: 'PDF және PNG экспорты', included: true },
+      { text: 'Нақты уақыттағы Live-тақта', included: false },
+      { text: 'Шексіз турнирлер', included: false },
+      { text: 'Турнирде 64 командаға дейін', included: false },
+      { text: '3 соредакторға дейін', included: false },
+    ] as Feature[],
+    proFeatures: [
+      { text: 'Шексіз турнирлер', included: true },
+      { text: 'Турнирде 64 командаға дейін', included: true },
+      { text: 'Барлық форматтар (дөңгелек, плей-офф, топтық)', included: true },
+      { text: 'Қатысушыларға арналған жалпыға ортақ бет', included: true },
+      { text: 'Ойыншылар мен командалар статистикасы', included: true },
+      { text: 'PDF және PNG экспорты', included: true },
+      { text: 'Нақты уақыттағы Live-тақта', included: true },
+      { text: '3 соредакторға дейін', included: true },
+      { text: 'Басым қолдау', included: true },
+    ] as Feature[],
+    enterpriseFeatures: [
+      { text: 'Про тарифінің бәрі', included: true },
+      { text: 'Маусымдары бар чемпионаттар', included: true },
+      { text: 'Чемпионаттың жалпыға ортақ беттері', included: true },
+      { text: 'Команда мен ойыншы профильдері', included: true },
+      { text: 'Құрамдар және маусым тарихы', included: true },
+      { text: 'Маусым бойынша бомбардирлер кестесі', included: true },
+      { text: 'Арнайы қолдау', included: true },
+    ] as Feature[],
+    faq: [
+      {
+        q: 'Жоспарды кейін ауыстыруға бола ма?',
+        a: 'Иә. Сіз тегін Старт жоспарынан бастайсыз, ал Про-ға кез келген уақытта WhatsApp арқылы өтуге болады.',
+      },
+      {
+        q: 'Про жазылымы аяқталғанда не болады?',
+        a: 'Турнирлеріңіз бен деректеріңіз сақталады. Live-тақта және лимиттен тыс жаңа турнирлер жасау жаңарту жасалғанша қолжетімсіз болады.',
+      },
+      {
+        q: 'Қалай төлеуге болады?',
+        a: 'Kaspi Pay және банк карталары арқылы төлемді қабылдаймыз. WhatsApp-та бізбен байланысыңыз — деректемелерді жібереміз.',
+      },
+      {
+        q: 'Жылдық жеңілдік бар ма?',
+        a: 'Иә. Жылдық жазылым 44 990 ₸ тұрады — бұл ай сайынғы төлемге қарағанда 25% тиімді.',
+      },
+    ] as FaqItem[],
+    planFree: 'Старт',
+    planFreePrice: '0 ₸',
+    planFreeCaption: 'Әрқашан тегін',
+    planPro: 'Про',
+    recommended: 'Ұсынамыз',
+    planProPrice: '4 990 ₸',
+    perMonth: '/ ай',
+    planProCaption: '44 990 ₸/жыл · −25% жеңілдік',
+    planEnterprise: 'Enterprise',
+    planEnterprisePrice: 'Сұраныс бойынша',
+    planEnterpriseCaption: 'Федерациялар мен лигалар үшін',
+    ctaGoPro: 'Про-ға өту',
+    ctaContactUs: 'Бізбен байланысу',
+    faqTitle: 'Жиі қойылатын сұрақтар',
+    ctaTitle: 'Турнир өткізуге дайынсыз ба?',
+    ctaSubtitle: 'Тегін тіркеліп, 2 минутта алғашқы турнирді жасаңыз.',
+    footerLegal: '© 2026 Tournable. Барлық құқықтар қорғалған.',
+    footerPrivacy: 'Құпиялылық',
+    footerTerms: 'Шарттар',
+    footerDashboard: 'Кабинет',
+  },
+  en: {
+    metaTitle: 'Pricing — Tournable',
+    metaDescription: 'Choose the right plan: the free Starter or the professional Pro plan with a live scoreboard and unlimited tournaments.',
+    login: 'Sign In',
+    startFree: 'Start free',
+    badge: 'Pricing',
+    heroTitle: 'Simple, honest pricing',
+    heroSubtitle: 'Start free. Upgrade to Pro when you are ready for more.',
+    freeFeatures: [
+      { text: '1 active tournament', included: true },
+      { text: 'Up to 16 teams per tournament', included: true },
+      { text: 'Round-robin and playoff formats', included: true },
+      { text: 'Public page for participants', included: true },
+      { text: 'Player and team statistics', included: true },
+      { text: 'PDF and PNG export', included: true },
+      { text: 'Real-time live scoreboard', included: false },
+      { text: 'Unlimited tournaments', included: false },
+      { text: 'Up to 64 teams per tournament', included: false },
+      { text: 'Up to 3 co-editors', included: false },
+    ] as Feature[],
+    proFeatures: [
+      { text: 'Unlimited tournaments', included: true },
+      { text: 'Up to 64 teams per tournament', included: true },
+      { text: 'All formats (round-robin, playoff, group stage)', included: true },
+      { text: 'Public page for participants', included: true },
+      { text: 'Player and team statistics', included: true },
+      { text: 'PDF and PNG export', included: true },
+      { text: 'Real-time live scoreboard', included: true },
+      { text: 'Up to 3 co-editors', included: true },
+      { text: 'Priority support', included: true },
+    ] as Feature[],
+    enterpriseFeatures: [
+      { text: 'Everything in Pro', included: true },
+      { text: 'Championships with seasons', included: true },
+      { text: 'Public championship pages', included: true },
+      { text: 'Team and player profiles', included: true },
+      { text: 'Lineups and season history', included: true },
+      { text: 'Top scorers table by season', included: true },
+      { text: 'Dedicated support', included: true },
+    ] as Feature[],
+    faq: [
+      {
+        q: 'Can I change plans later?',
+        a: 'Yes. You start with the free Starter plan, and you can upgrade to Pro any time via WhatsApp.',
+      },
+      {
+        q: 'What happens when my Pro subscription ends?',
+        a: 'Your tournaments and data stay intact. The live scoreboard and creating new tournaments beyond the limit become unavailable until you renew.',
+      },
+      {
+        q: 'How do I pay?',
+        a: 'We accept Kaspi Pay and bank cards. Contact us on WhatsApp and we will send the payment details.',
+      },
+      {
+        q: 'Is there an annual discount?',
+        a: 'Yes. The annual subscription costs 44,990 ₸ — that is 25% cheaper than paying monthly.',
+      },
+    ] as FaqItem[],
+    planFree: 'Starter',
+    planFreePrice: '0 ₸',
+    planFreeCaption: 'Always free',
+    planPro: 'Pro',
+    recommended: 'Recommended',
+    planProPrice: '4,990 ₸',
+    perMonth: '/ month',
+    planProCaption: '44,990 ₸/yr · −25% discount',
+    planEnterprise: 'Enterprise',
+    planEnterprisePrice: 'On request',
+    planEnterpriseCaption: 'For federations and leagues',
+    ctaGoPro: 'Go Pro',
+    ctaContactUs: 'Contact us',
+    faqTitle: 'Frequently asked questions',
+    ctaTitle: 'Ready to run a tournament?',
+    ctaSubtitle: 'Sign up for free and create your first tournament in 2 minutes.',
+    footerLegal: '© 2026 Tournable. All rights reserved.',
+    footerPrivacy: 'Privacy',
+    footerTerms: 'Terms',
+    footerDashboard: 'Dashboard',
+  },
+} as const
+
+async function getLang(): Promise<Lang> {
+  const cookieStore = await cookies()
+  const langRaw = cookieStore.get('lang')?.value ?? 'ru'
+  return (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
 }
 
-const FREE_FEATURES = [
-  { text: '1 активный турнир', included: true },
-  { text: 'До 16 команд в турнире', included: true },
-  { text: 'Круговой и плей-офф форматы', included: true },
-  { text: 'Публичная страница для участников', included: true },
-  { text: 'Статистика игроков и команд', included: true },
-  { text: 'Экспорт PDF и PNG', included: true },
-  { text: 'Live-табло в реальном времени', included: false },
-  { text: 'Неограниченные турниры', included: false },
-  { text: 'До 64 команд в турнире', included: false },
-  { text: 'До 3 соредакторов', included: false },
-]
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang()
+  const tx = T[lang]
+  return {
+    title: tx.metaTitle,
+    description: tx.metaDescription,
+  }
+}
 
-const PRO_FEATURES = [
-  { text: 'Неограниченные турниры', included: true },
-  { text: 'До 64 команд в турнире', included: true },
-  { text: 'Все форматы (круговой, плей-офф, групповой)', included: true },
-  { text: 'Публичная страница для участников', included: true },
-  { text: 'Статистика игроков и команд', included: true },
-  { text: 'Экспорт PDF и PNG', included: true },
-  { text: 'Live-табло в реальном времени', included: true },
-  { text: 'До 3 соредакторов', included: true },
-  { text: 'Приоритетная поддержка', included: true },
-]
+export default async function PricingPage() {
+  const lang = await getLang()
+  const tx = T[lang]
 
-const ENTERPRISE_FEATURES = [
-  { text: 'Всё из тарифа Про', included: true },
-  { text: 'Чемпионаты с сезонами', included: true },
-  { text: 'Публичные страницы чемпионата', included: true },
-  { text: 'Профили команд и игроков', included: true },
-  { text: 'Составы и история сезонов', included: true },
-  { text: 'Таблица бомбардиров по сезонам', included: true },
-  { text: 'Выделенная поддержка', included: true },
-]
-
-const FAQ = [
-  {
-    q: 'Можно ли сменить план позже?',
-    a: 'Да. Вы начинаете с бесплатного плана Старт, а перейти на Про можно в любой момент через WhatsApp.',
-  },
-  {
-    q: 'Что происходит, когда заканчивается подписка Про?',
-    a: 'Ваши турниры и данные остаются целыми. Live-табло и создание новых турниров сверх лимита становятся недоступны до продления.',
-  },
-  {
-    q: 'Как оплатить?',
-    a: 'Принимаем оплату через Kaspi Pay и банковские карты. Свяжитесь с нами в WhatsApp — вышлем реквизиты.',
-  },
-  {
-    q: 'Есть ли скидка на год?',
-    a: 'Да. Годовая подписка стоит 44 990 ₸ — это на 25% выгоднее ежемесячной оплаты.',
-  },
-]
-
-export default function PricingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -78,13 +282,13 @@ export default function PricingPage() {
               href="/login"
               className="text-sm font-semibold text-emerald-100 hover:text-white transition-colors"
             >
-              Войти
+              {tx.login}
             </Link>
             <Link
               href="/register"
               className="text-sm font-black bg-white text-emerald-700 px-4 py-1.5 rounded-xl hover:bg-emerald-50 transition-colors shadow-sm"
             >
-              Начать бесплатно
+              {tx.startFree}
             </Link>
           </div>
         </div>
@@ -96,13 +300,13 @@ export default function PricingPage() {
         <section className="py-16 sm:py-20 text-center px-4">
           <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5 mb-6">
             <Zap className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">Тарифы</span>
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">{tx.badge}</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-gray-900 mb-4" style={{ letterSpacing: '-.03em' }}>
-            Простые и честные цены
+            {tx.heroTitle}
           </h1>
           <p className="text-gray-500 text-lg max-w-lg mx-auto">
-            Начните бесплатно. Переходите на Про, когда готовы к большему.
+            {tx.heroSubtitle}
           </p>
         </section>
 
@@ -117,16 +321,16 @@ export default function PricingPage() {
                   <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
                     <Trophy className="w-4 h-4 text-gray-500" />
                   </div>
-                  <span className="font-black text-lg text-gray-900">Старт</span>
+                  <span className="font-black text-lg text-gray-900">{tx.planFree}</span>
                 </div>
                 <div className="flex items-end gap-1 mb-2">
-                  <span className="text-4xl font-black text-gray-900">0 ₸</span>
+                  <span className="text-4xl font-black text-gray-900">{tx.planFreePrice}</span>
                 </div>
-                <p className="text-sm text-gray-400">Всегда бесплатно</p>
+                <p className="text-sm text-gray-400">{tx.planFreeCaption}</p>
               </div>
 
               <ul className="space-y-3 flex-1 mb-8">
-                {FREE_FEATURES.map(f => (
+                {tx.freeFeatures.map(f => (
                   <li key={f.text} className="flex items-start gap-2.5 text-sm">
                     {f.included ? (
                       <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -142,7 +346,7 @@ export default function PricingPage() {
                 href="/register"
                 className="block text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-black py-3 rounded-xl transition-colors text-sm"
               >
-                Начать бесплатно
+                {tx.startFree}
               </Link>
             </div>
 
@@ -154,7 +358,7 @@ export default function PricingPage() {
               {/* Recommended badge */}
               <div className="absolute top-4 right-4">
                 <span className="text-[10px] font-black bg-yellow-400 text-yellow-900 px-2.5 py-1 rounded-full uppercase tracking-wide">
-                  Рекомендуем
+                  {tx.recommended}
                 </span>
               </div>
 
@@ -163,17 +367,17 @@ export default function PricingPage() {
                   <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
                     <Star className="w-4 h-4 text-white" fill="currentColor" />
                   </div>
-                  <span className="font-black text-lg text-white">Про</span>
+                  <span className="font-black text-lg text-white">{tx.planPro}</span>
                 </div>
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="text-4xl font-black text-white">4 990 ₸</span>
-                  <span className="text-emerald-200 text-sm mb-1.5">/ месяц</span>
+                  <span className="text-4xl font-black text-white">{tx.planProPrice}</span>
+                  <span className="text-emerald-200 text-sm mb-1.5">{tx.perMonth}</span>
                 </div>
-                <p className="text-emerald-200 text-sm">44 990 ₸/год · скидка −25%</p>
+                <p className="text-emerald-200 text-sm">{tx.planProCaption}</p>
               </div>
 
               <ul className="space-y-3 flex-1 mb-8">
-                {PRO_FEATURES.map(f => (
+                {tx.proFeatures.map(f => (
                   <li key={f.text} className="flex items-start gap-2.5 text-sm">
                     <Check className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
                     <span className="text-emerald-50">{f.text}</span>
@@ -185,7 +389,7 @@ export default function PricingPage() {
                 href="/checkout"
                 className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 rounded-xl transition-colors text-sm shadow-md"
               >
-                Перейти на Про
+                {tx.ctaGoPro}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -198,16 +402,16 @@ export default function PricingPage() {
                   <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
                     <Building2 className="w-4 h-4 text-purple-600" />
                   </div>
-                  <span className="font-black text-lg text-gray-900">Enterprise</span>
+                  <span className="font-black text-lg text-gray-900">{tx.planEnterprise}</span>
                 </div>
                 <div className="flex items-end gap-1 mb-2">
-                  <span className="text-3xl font-black text-gray-900">По запросу</span>
+                  <span className="text-3xl font-black text-gray-900">{tx.planEnterprisePrice}</span>
                 </div>
-                <p className="text-sm text-gray-400">Для федераций и лиг</p>
+                <p className="text-sm text-gray-400">{tx.planEnterpriseCaption}</p>
               </div>
 
               <ul className="space-y-3 flex-1 mb-8">
-                {ENTERPRISE_FEATURES.map(f => (
+                {tx.enterpriseFeatures.map(f => (
                   <li key={f.text} className="flex items-start gap-2.5 text-sm">
                     <Check className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
                     <span className="text-gray-700">{f.text}</span>
@@ -221,7 +425,7 @@ export default function PricingPage() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl transition-colors text-sm"
               >
-                Связаться с нами
+                {tx.ctaContactUs}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -232,10 +436,10 @@ export default function PricingPage() {
         {/* ── FAQ ────────────────────────────────────────────────────────────── */}
         <section className="max-w-2xl mx-auto px-4 sm:px-6 pb-24">
           <h2 className="text-2xl font-black text-gray-900 text-center mb-10" style={{ letterSpacing: '-.02em' }}>
-            Частые вопросы
+            {tx.faqTitle}
           </h2>
           <div className="space-y-4">
-            {FAQ.map(item => (
+            {tx.faq.map(item => (
               <div key={item.q} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                 <h3 className="font-black text-gray-900 mb-2 text-sm">{item.q}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{item.a}</p>
@@ -251,17 +455,17 @@ export default function PricingPage() {
             style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
           >
             <h2 className="text-2xl font-black mb-3" style={{ letterSpacing: '-.02em' }}>
-              Готовы провести турнир?
+              {tx.ctaTitle}
             </h2>
             <p className="text-emerald-200 text-sm mb-8 max-w-sm mx-auto">
-              Зарегистрируйтесь бесплатно и создайте первый турнир за 2 минуты.
+              {tx.ctaSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/register"
                 className="inline-flex items-center gap-2 bg-white text-emerald-700 font-black px-7 py-3 rounded-xl hover:bg-emerald-50 transition-colors text-sm shadow-md"
               >
-                Начать бесплатно
+                {tx.startFree}
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
@@ -270,7 +474,7 @@ export default function PricingPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 border border-white/40 text-white font-bold px-7 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
               >
-                Связаться с нами
+                {tx.ctaContactUs}
               </Link>
             </div>
           </div>
@@ -281,11 +485,11 @@ export default function PricingPage() {
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="border-t border-gray-200 py-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-          <span>© 2026 Tournable. Все права защищены.</span>
+          <span>{tx.footerLegal}</span>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="hover:text-gray-600 transition-colors">Конфиденциальность</Link>
-            <Link href="/terms" className="hover:text-gray-600 transition-colors">Условия</Link>
-            <Link href="/dashboard" className="hover:text-gray-600 transition-colors">Кабинет</Link>
+            <Link href="/privacy" className="hover:text-gray-600 transition-colors">{tx.footerPrivacy}</Link>
+            <Link href="/terms" className="hover:text-gray-600 transition-colors">{tx.footerTerms}</Link>
+            <Link href="/dashboard" className="hover:text-gray-600 transition-colors">{tx.footerDashboard}</Link>
           </div>
         </div>
       </footer>

@@ -4,15 +4,18 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Archive, Zap, X, Trophy, Crown, ChevronDown, Loader2 } from 'lucide-react'
 import { archiveTournament } from '@/app/actions/tournaments'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
   isPro: boolean
   isEnterprise?: boolean
   activeTournament: { id: string; name: string } | null
   label: string
+  lang?: Lang
 }
 
-export default function NewTournamentButton({ isPro, isEnterprise = false, activeTournament, label }: Props) {
+export default function NewTournamentButton({ isPro, isEnterprise = false, activeTournament, label, lang = 'ru' }: Props) {
+  const T = tx[lang]
   const [showModal, setShowModal] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [archiving, setArchiving] = useState(false)
@@ -83,8 +86,8 @@ export default function NewTournamentButton({ isPro, isEnterprise = false, activ
                 <Trophy size={17} className="text-emerald-600" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-gray-900 text-sm">Турнир</p>
-                <p className="text-xs text-gray-400">Одно соревнование с расписанием</p>
+                <p className="font-bold text-gray-900 text-sm">{T.newTournamentMenuLbl}</p>
+                <p className="text-xs text-gray-400">{T.newTournamentMenuDesc}</p>
               </div>
             </button>
 
@@ -97,10 +100,10 @@ export default function NewTournamentButton({ isPro, isEnterprise = false, activ
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <p className="font-bold text-gray-900 text-sm">Чемпионат</p>
+                  <p className="font-bold text-gray-900 text-sm">{T.newChampionshipMenuLbl}</p>
                   <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 leading-none">ENT</span>
                 </div>
-                <p className="text-xs text-gray-400">Постоянный, с сезонами и игроками</p>
+                <p className="text-xs text-gray-400">{T.newChampionshipMenuDesc}</p>
               </div>
             </button>
           </div>
@@ -119,14 +122,14 @@ export default function NewTournamentButton({ isPro, isEnterprise = false, activ
             </button>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-1">У вас активен турнир</p>
+              <p className="text-sm text-gray-500 mb-1">{T.activeTournamentLbl}</p>
               <p className="font-black text-gray-900 text-base leading-snug">
                 «{activeTournament.name}»
               </p>
             </div>
 
             <p className="text-sm text-gray-600 mb-5">
-              Выберите действие:
+              {T.chooseActionLbl}
             </p>
 
             <div className="space-y-2.5">
@@ -140,9 +143,9 @@ export default function NewTournamentButton({ isPro, isEnterprise = false, activ
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">
-                    {archiving ? 'Архивирование…' : 'Архивировать его'}
+                    {archiving ? T.archivingLbl : T.archiveThisTournamentLbl}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">Турнир будет скрыт, данные сохранятся</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{T.archiveTournamentHint}</p>
                 </div>
               </button>
 
@@ -154,8 +157,8 @@ export default function NewTournamentButton({ isPro, isEnterprise = false, activ
                   <Zap size={17} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-bold text-emerald-800 text-sm">Запустить оба — Pro</p>
-                  <p className="text-xs text-emerald-600 mt-0.5">Безлимитные турниры и все возможности</p>
+                  <p className="font-bold text-emerald-800 text-sm">{T.launchBothProLbl}</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">{T.unlimitedToursAllFeaturesLbl}</p>
                 </div>
               </a>
             </div>

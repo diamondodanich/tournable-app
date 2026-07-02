@@ -164,7 +164,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
@@ -172,6 +172,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   isPro: boolean
   isEnterprise: boolean
   T: TournamentTx
+  lang: Lang
 }) {
   const [showLineup, setShowLineup] = useState(false)
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
@@ -229,6 +230,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
       homeTeam={homeTeam}
       awayTeam={awayTeam}
       onClose={() => setShowLineup(false)}
+      lang={lang}
     />
   ) : null
 
@@ -655,7 +657,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} />)}
           </div>
         </div>
       ))}

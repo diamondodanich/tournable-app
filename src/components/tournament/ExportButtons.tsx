@@ -5,13 +5,16 @@ import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { Download, FileImage } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface ExportButtonsProps {
   elementId: string
   fileName: string
+  lang?: Lang
 }
 
-export default function ExportButtons({ elementId, fileName }: ExportButtonsProps) {
+export default function ExportButtons({ elementId, fileName, lang = 'ru' }: ExportButtonsProps) {
+  const T = tx[lang]
   const [loading, setLoading] = useState<'png' | 'pdf' | null>(null)
 
   function getEl() {
@@ -56,11 +59,11 @@ export default function ExportButtons({ elementId, fileName }: ExportButtonsProp
     <div className="flex gap-2">
       <Button variant="outline" size="sm" onClick={handlePng} disabled={loading !== null} className="text-xs gap-1.5">
         <FileImage size={14} />
-        {loading === 'png' ? 'Экспорт…' : 'PNG'}
+        {loading === 'png' ? T.exporting : 'PNG'}
       </Button>
       <Button variant="outline" size="sm" onClick={handlePdf} disabled={loading !== null} className="text-xs gap-1.5">
         <Download size={14} />
-        {loading === 'pdf' ? 'Экспорт…' : 'PDF'}
+        {loading === 'pdf' ? T.exporting : 'PDF'}
       </Button>
     </div>
   )

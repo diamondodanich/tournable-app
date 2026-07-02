@@ -1243,6 +1243,7 @@ export default function NewTournamentPage() {
               sport={sport}
               currentCoverUrl={coverValue}
               onChange={setCoverValue}
+              lang={lang}
             />
             <p className="text-xs text-gray-400">Баннер в шапке страницы турнира — необязательно</p>
           </div>

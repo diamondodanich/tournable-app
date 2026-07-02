@@ -15,26 +15,28 @@ import TournamentLogoUpload from './TournamentLogoUpload'
 import TournamentCoverPicker from './TournamentCoverPicker'
 import TournamentCoverBanner from './TournamentCoverBanner'
 import { createClient } from '@/lib/supabase/client'
-
-const FORMAT_LABEL: Record<string, string> = {
-  round_robin:    'Круговой',
-  playoff:        'Плей-офф',
-  groups_playoff: 'Группы + Плей-офф',
-  league_playoff: 'Лига + Плей-офф',
-}
+import { tx, type Lang } from '@/lib/i18n'
 
 const TAB_CLASS = `inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold whitespace-nowrap
   text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all
   data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-sm`
 
 export default function SetupTab({
-  tournament, teams, members: initialMembers = [], isOwner = false,
+  tournament, teams, members: initialMembers = [], isOwner = false, lang = 'ru',
 }: {
   tournament: Tournament
   teams: Team[]
   members?: TournamentMember[]
   isOwner?: boolean
+  lang?: Lang
 }) {
+  const T = tx[lang]
+  const FORMAT_LABEL: Record<string, string> = {
+    round_robin:    T.fmtRoundRobin,
+    playoff:        T.fmtPlayoff,
+    groups_playoff: T.fmtGroupsPlayoff,
+    league_playoff: T.fmtLeaguePlayoff,
+  }
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -78,7 +80,7 @@ export default function SetupTab({
     e.preventDefault()
     if (!teamName.trim()) return
     if (teams.some(t => t.name.toLowerCase() === teamName.trim().toLowerCase())) {
-      toast.error('Такая команда уже есть')
+      toast.error(T.teamAlreadyExists)
       return
     }
     setLoading(true)
@@ -91,7 +93,7 @@ export default function SetupTab({
   async function handleRemoveTeam(teamId: string, teamName: string) {
     if (tournament.generated) {
       const ok = window.confirm(
-        `Удалить команду «${teamName}»?\n\nРасписание уже сгенерировано — матчи этой команды станут некорректными. Рекомендуется пересоздать расписание после удаления.`
+        `${T.confirmDeleteTeam(teamName)}\n\n${T.deleteTeamScheduleWarning}`
       )
       if (!ok) return
     }
@@ -99,11 +101,11 @@ export default function SetupTab({
   }
 
   async function handleGenerate() {
-    if (teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
+    if (teams.length < 2) { toast.error(T.minTeamsToGenerate); return }
     setGenerating(true)
     const result = await generateSchedule(tournament.id)
     if (result?.error) toast.error(result.error)
-    else toast.success('Расписание создано!')
+    else toast.success(T.scheduleCreated)
     setGenerating(false)
   }
 
@@ -119,7 +121,7 @@ export default function SetupTab({
     })
     setSavingSettings(false)
     if (result?.error) toast.error(result.error)
-    else toast.success('Настройки сохранены')
+    else toast.success(T.settingsSaved)
   }
 
   async function handleSaveName() {
@@ -127,7 +129,7 @@ export default function SetupTab({
     setSavingName(true)
     const result = await renameTournament(tournament.id, nameValue)
     if (result?.error) toast.error(result.error)
-    else { toast.success('Название обновлено'); setEditingName(false) }
+    else { toast.success(T.nameUpdated); setEditingName(false) }
     setSavingName(false)
   }
 
@@ -137,17 +139,17 @@ export default function SetupTab({
       <div className="overflow-x-auto mb-4 -mx-1 px-1 pb-1">
         <TabsList className="flex h-auto gap-1 bg-gray-100 p-1 rounded-xl w-max">
           <TabsTrigger value="general" className={TAB_CLASS}>
-            <Settings2 size={12} /> Общее
+            <Settings2 size={12} /> {T.setupTabGeneral}
           </TabsTrigger>
           <TabsTrigger value="rules" className={TAB_CLASS}>
-            <Sliders size={12} /> Правила
+            <Sliders size={12} /> {T.setupTabRules}
           </TabsTrigger>
           <TabsTrigger value="teams" className={TAB_CLASS}>
-            <Users size={12} /> Команды ({teams.length})
+            <Users size={12} /> {T.setupTabTeams(teams.length)}
           </TabsTrigger>
           {isOwner && (
             <TabsTrigger value="access" className={TAB_CLASS}>
-              <UserCog size={12} /> Доступ
+              <UserCog size={12} /> {T.setupTabAccess}
               {members.length > 0 && (
                 <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
                   {members.length}
@@ -168,10 +170,11 @@ export default function SetupTab({
               tournamentName={tournament.name}
               logoUrl={tournament.logo_url}
               size={64}
+              lang={lang}
             />
             <div className="flex-1 min-w-0 space-y-3">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Название</p>
+                <p className="text-xs text-gray-400 mb-1">{T.nameLbl}</p>
                 {editingName ? (
                   <div className="flex gap-2">
                     <Input
@@ -197,9 +200,9 @@ export default function SetupTab({
                 )}
               </div>
               <div className="flex gap-4 text-sm text-gray-500">
-                <span><span className="font-medium text-gray-700">Формат:</span> {FORMAT_LABEL[tournament.format] ?? tournament.format}</span>
+                <span><span className="font-medium text-gray-700">{T.formatLbl2}</span> {FORMAT_LABEL[tournament.format] ?? tournament.format}</span>
                 {tournament.format === 'round_robin' && (
-                  <span><span className="font-medium text-gray-700">Кругов:</span> {tournament.num_rounds}</span>
+                  <span><span className="font-medium text-gray-700">{T.roundsLbl2}</span> {tournament.num_rounds}</span>
                 )}
               </div>
             </div>
@@ -210,7 +213,7 @@ export default function SetupTab({
         <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
           <div className="flex items-center gap-2 mb-3">
             <LayoutTemplate size={15} className="text-gray-400" />
-            <p className="text-sm font-bold text-gray-700">Обложка турнира</p>
+            <p className="text-sm font-bold text-gray-700">{T.tournamentCoverLbl}</p>
           </div>
           {tournament.cover_url && (
             <div className="rounded-xl overflow-hidden h-28 sm:h-36">
@@ -221,9 +224,10 @@ export default function SetupTab({
             sport={tournament.sport}
             currentCoverUrl={tournament.cover_url}
             tournamentId={tournament.id}
+            lang={lang}
           />
           {!tournament.cover_url && (
-            <p className="text-xs text-gray-400">Обложка отображается в шапке страницы турнира</p>
+            <p className="text-xs text-gray-400">{T.coverInHeaderHint}</p>
           )}
         </div>
       </TabsContent>
@@ -233,7 +237,7 @@ export default function SetupTab({
         <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-5">
           {/* Periods */}
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Таймы</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{T.periodsLbl2}</p>
             <div className="flex items-center gap-3">
               <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
                 {[1, 2].map(n => (
@@ -244,7 +248,7 @@ export default function SetupTab({
                       matchPeriods === n ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    {n} {n === 1 ? 'тайм' : 'тайма'}
+                    {n} {T.halfWord(n)}
                   </button>
                 ))}
               </div>
@@ -259,14 +263,14 @@ export default function SetupTab({
                     style={{ width: 18, height: 18, left: 2, transform: extraTime ? 'translateX(18px)' : 'translateX(0)' }}
                   />
                 </div>
-                <span className="text-sm text-gray-600">Доп. время</span>
+                <span className="text-sm text-gray-600">{T.extraTimeLbl2}</span>
               </label>
             </div>
           </div>
 
           {/* Duration */}
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Длительность тайма</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{T.durationLbl2}</p>
             <div className="flex items-center gap-2">
               <Input
                 type="number" min={1} max={90}
@@ -274,21 +278,21 @@ export default function SetupTab({
                 onChange={e => setDurationMins(parseInt(e.target.value) || 45)}
                 className="w-20 h-8 text-sm text-center font-mono"
               />
-              <span className="text-sm text-gray-500">минут</span>
+              <span className="text-sm text-gray-500">{T.minutesWord}</span>
             </div>
           </div>
 
           {/* Points */}
           {tournament.format !== 'playoff' && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Система очков</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{T.pointsSystemLbl}</p>
               <div className="flex items-center gap-4">
                 {([
-                  { label: 'Победа', value: pointsWin,  setter: setPointsWin },
-                  { label: 'Ничья',  value: pointsDraw, setter: setPointsDraw },
-                  { label: 'Пораж.', value: pointsLoss, setter: setPointsLoss },
-                ] as const).map(({ label, value, setter }) => (
-                  <div key={label} className="flex flex-col items-center gap-1">
+                  { key: 'win',  label: T.ptsWinLbl,  value: pointsWin,  setter: setPointsWin },
+                  { key: 'draw', label: T.ptsDrawLbl, value: pointsDraw, setter: setPointsDraw },
+                  { key: 'loss', label: T.ptsLossLbl, value: pointsLoss, setter: setPointsLoss },
+                ] as const).map(({ key, label, value, setter }) => (
+                  <div key={key} className="flex flex-col items-center gap-1">
                     <span className="text-xs text-gray-400">{label}</span>
                     <Input
                       type="number" min={0} max={9}
@@ -304,7 +308,7 @@ export default function SetupTab({
 
           <Button onClick={handleSaveSettings} disabled={savingSettings} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
             {savingSettings ? <Loader2 size={13} className="mr-1.5 animate-spin" /> : <Check size={13} className="mr-1.5" />}
-            {savingSettings ? 'Сохраняем…' : 'Сохранить настройки'}
+            {savingSettings ? T.saving : T.saveSettingsBtn}
           </Button>
         </div>
       </TabsContent>
@@ -316,18 +320,18 @@ export default function SetupTab({
             <Input
               value={teamName}
               onChange={e => setTeamName(e.target.value)}
-              placeholder="Название команды…"
+              placeholder={T.teamNamePh}
               maxLength={30}
             />
             <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>
               {loading ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
-              {loading ? 'Добавляем…' : '+ Добавить'}
+              {loading ? T.addingBtn : T.addTeamBtn2}
             </Button>
           </form>
 
           {teams.length === 0 ? (
             <div className="text-center py-8 text-gray-400 border border-dashed border-gray-200 rounded-xl">
-              Добавьте минимум 2 команды для генерации расписания
+              {T.addTeamsHint}
             </div>
           ) : (
             <div className="space-y-2">
@@ -338,6 +342,7 @@ export default function SetupTab({
                     teamName={team.name}
                     tournamentId={tournament.id}
                     logoUrl={team.logo_url}
+                    lang={lang}
                   />
                   <span className="flex-1 font-medium text-sm text-gray-800">{team.name}</span>
                   <button onClick={() => handleRemoveTeam(team.id, team.name)} className="text-gray-300 hover:text-red-500 transition-colors">
@@ -357,7 +362,7 @@ export default function SetupTab({
             size="lg"
           >
             {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-            {generating ? 'Генерируем…' : tournament.generated ? 'Пересоздать расписание' : 'Сгенерировать расписание'}
+            {generating ? T.generatingBtn : tournament.generated ? T.regenerateScheduleBtn : T.generateScheduleBtn}
           </Button>
         )}
       </TabsContent>
@@ -367,7 +372,7 @@ export default function SetupTab({
         <div className="bg-white border border-gray-100 rounded-2xl p-5">
           {members.length === 0 ? (
             <p className="text-sm text-gray-400 py-2">
-              Нет активных редакторов или наблюдателей. Добавьте участников через кнопку «Поделиться».
+              {T.noMembersYet}
             </p>
           ) : (
             <div className="space-y-2">
@@ -376,7 +381,7 @@ export default function SetupTab({
                 const initials = email
                   ? email.slice(0, 2).toUpperCase()
                   : (m.user_id ? m.user_id.slice(0, 2).toUpperCase() : '?')
-                const roleLabel = m.role === 'editor' ? 'Редактор' : 'Наблюдатель'
+                const roleLabel = m.role === 'editor' ? T.roleEditor : T.roleViewer
                 const roleColor = m.role === 'editor'
                   ? 'bg-violet-100 text-violet-700'
                   : 'bg-sky-100 text-sky-700'
@@ -398,7 +403,7 @@ export default function SetupTab({
                         {m.status === 'pending' && (
                           <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
                             <Clock size={10} />
-                            Ожидает
+                            {T.pending}
                           </span>
                         )}
                       </div>
@@ -407,10 +412,10 @@ export default function SetupTab({
                       onClick={async () => {
                         setMembers(prev => prev.filter(x => x.id !== m.id))
                         await removeMember(m.id, tournament.id)
-                        toast.success('Доступ отозван')
+                        toast.success(T.accessRevoked)
                       }}
                       className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
-                      title="Отозвать доступ"
+                      title={T.revokeAccess}
                     >
                       <UserX size={15} />
                     </button>
@@ -425,38 +430,39 @@ export default function SetupTab({
 
     {/* Danger zone */}
     {isOwner && (
-      <DangerZone tournamentId={tournament.id} tournamentName={tournament.name} />
+      <DangerZone tournamentId={tournament.id} tournamentName={tournament.name} lang={lang} />
     )}
     </>
   )
 }
 
-function DangerZone({ tournamentId, tournamentName }: { tournamentId: string; tournamentName: string }) {
+function DangerZone({ tournamentId, tournamentName, lang = 'ru' }: { tournamentId: string; tournamentName: string; lang?: Lang }) {
+  const T = tx[lang]
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   return (
     <div className="mt-6 border border-red-100 rounded-2xl p-4 bg-red-50/40">
-      <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">Опасная зона</p>
+      <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">{T.dangerZoneLbl}</p>
       {!open ? (
         <button
           onClick={() => setOpen(true)}
           className="flex items-center gap-2 text-sm font-semibold text-red-500 hover:text-red-700 transition-colors"
         >
           <Trash2 size={14} />
-          Удалить турнир
+          {T.deleteTournamentBtn}
         </button>
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-red-700 font-medium">
-            «{tournamentName}» будет удалён безвозвратно — все команды, матчи и статистика исчезнут.
+            {T.deleteTournamentWarning(tournamentName)}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setOpen(false)}
               className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Отмена
+              {T.cancel}
             </button>
             <form action={deleteTournament.bind(null, tournamentId)} onSubmit={() => setDeleting(true)}>
               <button
@@ -464,7 +470,7 @@ function DangerZone({ tournamentId, tournamentName }: { tournamentId: string; to
                 disabled={deleting}
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors disabled:opacity-50"
               >
-                {deleting ? 'Удаляем…' : 'Да, удалить'}
+                {deleting ? T.deletingBtn : T.confirmDeleteBtn}
               </button>
             </form>
           </div>

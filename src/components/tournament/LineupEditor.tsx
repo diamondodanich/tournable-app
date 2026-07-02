@@ -9,32 +9,37 @@ import {
   getFixtureLineup, saveLineup, copyLastLineup,
 } from '@/app/actions/lineups'
 import type { TeamPlayer, Team } from '@/types'
+import { tx, type Lang } from '@/lib/i18n'
 
 type Role = 'starter' | 'sub' | null
 
-const POSITIONS = [
-  { value: 'goalkeeper', label: 'ВРТ' },
-  { value: 'defender',   label: 'ЗАЩ' },
-  { value: 'midfielder', label: 'ПЗ' },
-  { value: 'forward',    label: 'НАП' },
-  { value: 'other',      label: '—' },
-]
-const POS_LABEL: Record<string, string> = {
-  goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—',
-}
 const POS_ORDER: Record<string, number> = {
   goalkeeper: 0, defender: 1, midfielder: 2, forward: 3, other: 4,
 }
 
 // ── One team's column ─────────────────────────────────────────────────────────
 function TeamColumn({
-  team, fixtureId, tournamentId, accent,
+  team, fixtureId, tournamentId, accent, lang = 'ru',
 }: {
   team: Team
   fixtureId: string
   tournamentId: string
   accent: string
+  lang?: Lang
 }) {
+  const T = tx[lang]
+
+  const POSITIONS = [
+    { value: 'goalkeeper', label: T.posGK },
+    { value: 'defender',   label: T.posDEF },
+    { value: 'midfielder', label: T.posMID },
+    { value: 'forward',    label: T.posFWD },
+    { value: 'other',      label: T.posNone },
+  ]
+  const POS_LABEL: Record<string, string> = {
+    goalkeeper: T.posGK, defender: T.posDEF, midfielder: T.posMID, forward: T.posFWD, other: T.posNone,
+  }
+
   const [roster, setRoster] = useState<TeamPlayer[]>([])
   const [roles, setRoles] = useState<Record<string, Role>>({})
   const [loading, setLoading] = useState(true)
@@ -80,7 +85,7 @@ function TeamColumn({
   }
 
   function handleAdd() {
-    if (!name.trim()) { toast.error('Введите имя'); return }
+    if (!name.trim()) { toast.error(T.enterNamePrompt); return }
     startTransition(() => {
       void (async () => {
         const res = await addTeamPlayer(team.id, tournamentId, {
@@ -114,7 +119,7 @@ function TeamColumn({
       void (async () => {
         const res = await saveLineup(fixtureId, team.id, tournamentId, entries)
         if (res.error) { toast.error(res.error); return }
-        toast.success(`Состав «${team.name}» сохранён`)
+        toast.success(T.lineupSaved(team.name))
       })()
     })
   }
@@ -129,7 +134,7 @@ function TeamColumn({
         const map: Record<string, Role> = {}
         lineup.filter(l => l.team_id === team.id).forEach(l => { map[l.player_id] = l.role })
         setRoles(map)
-        toast.success(`Скопировано игроков: ${res.copied}`)
+        toast.success(T.playersCopied(res.copied ?? 0))
       })()
     })
   }
@@ -143,7 +148,7 @@ function TeamColumn({
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-gray-900 truncate">{team.name}</p>
-          <p className="text-xs text-gray-400">{starters.length} в старте · {subs.length} запас</p>
+          <p className="text-xs text-gray-400">{T.startersSubsCount(starters.length, subs.length)}</p>
         </div>
       </div>
 
@@ -155,7 +160,7 @@ function TeamColumn({
         <div className="flex-1 flex flex-col gap-3 overflow-y-auto" style={{ maxHeight: '46vh' }}>
           {roster.length === 0 && !adding && (
             <p className="text-xs text-gray-400 text-center py-4">
-              В составе пока нет игроков. Добавьте первого ниже.
+              {T.noPlayersYet}
             </p>
           )}
 
@@ -167,7 +172,7 @@ function TeamColumn({
                 <div key={p.id} className="flex items-center gap-2 group">
                   <button
                     onClick={() => cycleRole(p.id)}
-                    title="Старт / запас / убрать"
+                    title={T.cycleRoleTitle}
                     className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center shrink-0 transition-all border ${
                       role === 'starter'
                         ? 'bg-emerald-500 border-emerald-500 text-white'
@@ -178,7 +183,7 @@ function TeamColumn({
                   >
                     <Shirt className="w-3.5 h-3.5" />
                     <span className="text-[8px] font-black leading-none mt-0.5">
-                      {role === 'starter' ? 'СТАРТ' : role === 'sub' ? 'ЗАП' : '—'}
+                      {role === 'starter' ? T.posStart : role === 'sub' ? T.posSub : T.posNone}
                     </span>
                   </button>
                   <span className="w-6 text-xs font-black text-gray-400 text-right shrink-0">
@@ -206,7 +211,7 @@ function TeamColumn({
               <div className="flex gap-2">
                 <input
                   autoFocus value={name} onChange={e => setName(e.target.value)}
-                  placeholder="Имя игрока"
+                  placeholder={T.playerNamePh}
                   className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 outline-none text-sm focus:border-emerald-400"
                 />
                 <input
@@ -235,7 +240,7 @@ function TeamColumn({
           ) : (
             <button onClick={() => setAdding(true)}
               className="flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600 font-medium border border-dashed border-gray-200 hover:border-emerald-300 rounded-lg py-2 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Добавить игрока
+              <Plus className="w-3.5 h-3.5" /> {T.addPlayerBtn}
             </button>
           )}
         </div>
@@ -245,13 +250,13 @@ function TeamColumn({
       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
         <button onClick={handleCopyLast} disabled={isPending}
           className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
-          <Copy className="w-3.5 h-3.5" /> Прошлый состав
+          <Copy className="w-3.5 h-3.5" /> {T.lastLineupBtn}
         </button>
         <button onClick={handleSave} disabled={isPending}
           className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
           style={{ background: accent }}>
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-          Сохранить состав
+          {T.saveLineupBtn}
         </button>
       </div>
     </div>
@@ -260,14 +265,16 @@ function TeamColumn({
 
 // ── Modal shell ───────────────────────────────────────────────────────────────
 export default function LineupEditor({
-  fixtureId, tournamentId, homeTeam, awayTeam, onClose,
+  fixtureId, tournamentId, homeTeam, awayTeam, onClose, lang = 'ru',
 }: {
   fixtureId: string
   tournamentId: string
   homeTeam: Team | null
   awayTeam: Team | null
   onClose: () => void
+  lang?: Lang
 }) {
+  const T = tx[lang]
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   if (!mounted) return null
@@ -285,8 +292,8 @@ export default function LineupEditor({
               <Users className="w-4 h-4 text-violet-600" />
             </div>
             <div>
-              <h2 className="font-black text-gray-900 text-sm">Составы на матч</h2>
-              <p className="text-xs text-gray-400">Нажмите на майку, чтобы поставить в старт или запас</p>
+              <h2 className="font-black text-gray-900 text-sm">{T.lineupsForMatchTitle}</h2>
+              <p className="text-xs text-gray-400">{T.lineupsHint}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors">
@@ -297,11 +304,11 @@ export default function LineupEditor({
         {/* Body — two team columns */}
         <div className="flex flex-col sm:flex-row gap-5 p-5 overflow-y-auto">
           {homeTeam && (
-            <TeamColumn team={homeTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#059669" />
+            <TeamColumn team={homeTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#059669" lang={lang} />
           )}
           <div className="hidden sm:block w-px bg-gray-100 shrink-0" />
           {awayTeam && (
-            <TeamColumn team={awayTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#7c3aed" />
+            <TeamColumn team={awayTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#7c3aed" lang={lang} />
           )}
         </div>
       </div>

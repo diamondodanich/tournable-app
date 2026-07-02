@@ -5,29 +5,32 @@ import { uploadTeamLogo, removeTeamLogo } from '@/app/actions/logos'
 import { Camera, X } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
   teamId: string
   teamName: string
   tournamentId: string
   logoUrl: string | null
+  lang?: Lang
 }
 
-export default function TeamLogoUpload({ teamId, teamName, tournamentId, logoUrl }: Props) {
+export default function TeamLogoUpload({ teamId, teamName, tournamentId, logoUrl, lang = 'ru' }: Props) {
+  const T = tx[lang]
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) { toast.error('Нужно изображение'); return }
+    if (!file.type.startsWith('image/')) { toast.error(T.needImage); return }
 
     const dataUrl = await resizeToWebP(file, 200)
     const res = await uploadTeamLogo(teamId, tournamentId, dataUrl)
     if (res?.error) toast.error(res.error)
-    else toast.success('Логотип обновлён')
+    else toast.success(T.logoUpdated)
   }
 
   async function handleRemove() {
     await removeTeamLogo(teamId, tournamentId)
-    toast.success('Логотип удалён')
+    toast.success(T.logoRemoved)
   }
 
   return (
@@ -37,7 +40,7 @@ export default function TeamLogoUpload({ teamId, teamName, tournamentId, logoUrl
         type="button"
         onClick={() => inputRef.current?.click()}
         className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 shadow-sm"
-        title="Загрузить логотип"
+        title={T.uploadLogoTitle}
       >
         <Camera size={9} className="text-gray-500" />
       </button>
@@ -46,7 +49,7 @@ export default function TeamLogoUpload({ teamId, teamName, tournamentId, logoUrl
           type="button"
           onClick={handleRemove}
           className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
-          title="Удалить логотип"
+          title={T.removeLogoTitle}
         >
           <X size={9} className="text-white" />
         </button>

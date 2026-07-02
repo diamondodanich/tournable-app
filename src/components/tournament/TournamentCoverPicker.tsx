@@ -5,6 +5,7 @@ import { X, ImageIcon, Trash2, Upload, LayoutTemplate } from 'lucide-react'
 import { toast } from 'sonner'
 import { COVER_THEMES, getThemesForSport, getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
 import { uploadTournamentCover, removeTournamentCover, setTournamentCoverTheme } from '@/app/actions/logos'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
   sport: string | null
@@ -13,9 +14,11 @@ interface Props {
   tournamentId?: string
   // Draft mode (wizard) — provide onChange callback
   onChange?: (value: string | null) => void
+  lang?: Lang
 }
 
-export default function TournamentCoverPicker({ sport, currentCoverUrl, tournamentId, onChange }: Props) {
+export default function TournamentCoverPicker({ sport, currentCoverUrl, tournamentId, onChange, lang = 'ru' }: Props) {
+  const T = tx[lang]
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -28,7 +31,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
       const res = await setTournamentCoverTheme(tournamentId, themeId)
       setSaving(false)
       if (res?.error) { toast.error(res.error); return }
-      toast.success('Тема обложки сохранена')
+      toast.success(T.coverThemeSaved)
     } else {
       onChange?.(`theme:${themeId}`)
     }
@@ -36,14 +39,14 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
   }
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) { toast.error('Нужно изображение'); return }
+    if (!file.type.startsWith('image/')) { toast.error(T.needImage); return }
     const base64 = await resizeToCoverWebP(file)
     if (tournamentId) {
       setSaving(true)
       const res = await uploadTournamentCover(tournamentId, base64)
       setSaving(false)
       if (res?.error) { toast.error(res.error); return }
-      toast.success('Обложка загружена')
+      toast.success(T.coverUploaded)
     } else {
       onChange?.(base64)
     }
@@ -55,7 +58,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
       setSaving(true)
       await removeTournamentCover(tournamentId)
       setSaving(false)
-      toast.success('Обложка удалена')
+      toast.success(T.coverRemoved)
     } else {
       onChange?.(null)
     }
@@ -85,12 +88,12 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
                   ? <img src={currentCoverUrl!} alt="" className="w-full h-full object-cover" />
                   : null}
             </div>
-            <span className="font-medium">Изменить обложку</span>
+            <span className="font-medium">{T.changeCover}</span>
           </>
         ) : (
           <>
             <LayoutTemplate size={15} />
-            <span className="font-medium">Добавить обложку</span>
+            <span className="font-medium">{T.addCover}</span>
           </>
         )}
       </button>
@@ -111,8 +114,8 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-black text-gray-900 text-base">Обложка турнира</p>
-                <p className="text-xs text-gray-400 mt-0.5">Выберите тему или загрузите своё изображение</p>
+                <p className="font-black text-gray-900 text-base">{T.tournamentCoverLbl}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{T.coverHint}</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -129,7 +132,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
                 onClick={() => inputRef.current?.click()}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 text-sm text-gray-600 hover:text-emerald-700 font-medium transition-all"
               >
-                <Upload size={14} /> Загрузить фото
+                <Upload size={14} /> {T.uploadPhoto}
               </button>
               {hasCover && (
                 <button
@@ -137,7 +140,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
                   onClick={handleRemove}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 text-sm text-red-500 hover:text-red-700 font-medium transition-all"
                 >
-                  <Trash2 size={14} /> Удалить обложку
+                  <Trash2 size={14} /> {T.removeCover}
                 </button>
               )}
             </div>
@@ -151,7 +154,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
             />
 
             {/* Theme grid */}
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Темы</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{T.themesLbl}</p>
             <div className="grid grid-cols-3 gap-2">
               {themes.map(theme => {
                 const isActive = currentCoverUrl === `theme:${theme.id}`

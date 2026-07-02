@@ -11,6 +11,7 @@ import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { Trophy, Plus } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getOwnerPlan } from '@/app/actions/billing'
+import type { Lang } from '@/lib/i18n'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -166,6 +167,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
 
   const cookieStore = await cookies()
   const langRaw = cookieStore.get('lang')?.value ?? 'ru'
+  const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
 
   const BADGE_TOOLTIP: Record<string, string> = {
     ru: 'Создайте свой турнир бесплатно',
@@ -242,7 +244,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
             <TabsContent value="fixtures">
-              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
+              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} lang={lang} />
             </TabsContent>
             <TabsContent value="stats">
               <StatsTab teams={teams ?? []} events={allEvents} />
@@ -269,7 +271,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
             </TabsContent>
             <TabsContent value="fixtures">
-              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
+              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} lang={lang} />
             </TabsContent>
             <TabsContent value="playoff">
               <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />
@@ -305,7 +307,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               )}
             </TabsContent>
             <TabsContent value="fixtures">
-              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} />
+              <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} lang={lang} />
             </TabsContent>
             <TabsContent value="playoff">
               <PublicBracket teams={teams ?? []} matches={playoffMatches ?? []} />

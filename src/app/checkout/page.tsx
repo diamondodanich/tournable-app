@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getUserPlan } from '@/app/actions/billing'
 import { CheckoutForm } from '@/components/checkout/CheckoutForm'
@@ -6,6 +7,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
+
+type Lang = 'ru' | 'kz' | 'en'
+
+const T = {
+  ru: {
+    title: 'Оформление тарифа Про',
+    account: 'Кабинет',
+  },
+  kz: {
+    title: 'Про тарифін рәсімдеу',
+    account: 'Кабинет',
+  },
+  en: {
+    title: 'Upgrade to Pro',
+    account: 'Account',
+  },
+} as const
 
 export const metadata: Metadata = {
   title: 'Оформление Про — Tournable',
@@ -26,6 +44,11 @@ export default async function CheckoutPage() {
     redirect('/account')
   }
 
+  const cookieStore = await cookies()
+  const langRaw = cookieStore.get('lang')?.value ?? 'ru'
+  const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
+  const tx = T[lang]
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -41,7 +64,7 @@ export default async function CheckoutPage() {
             className="flex items-center gap-1.5 text-sm font-semibold text-emerald-100 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Кабинет
+            {tx.account}
           </Link>
         </div>
       </header>
@@ -50,12 +73,12 @@ export default async function CheckoutPage() {
 
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-1" style={{ letterSpacing: '-.02em' }}>
-            Оформление тарифа Про
+            {tx.title}
           </h1>
           <p className="text-gray-400 text-sm">{user.email}</p>
         </div>
 
-        <CheckoutForm userEmail={user.email} />
+        <CheckoutForm userEmail={user.email} lang={lang} />
 
       </main>
 

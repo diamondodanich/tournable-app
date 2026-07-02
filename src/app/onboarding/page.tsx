@@ -7,26 +7,88 @@ import { ArrowRight, Trophy, Zap, BarChart2, Share2, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-const FEATURES = [
-  {
-    icon: Zap,
-    title: 'Расписание за 30 секунд',
-    desc: 'Выберите формат, добавьте команды — расписание готово',
+// ─── i18n ────────────────────────────────────────────────────────────────────
+type Lang = 'ru' | 'kz' | 'en'
+
+function getLang(): Lang {
+  if (typeof document === 'undefined') return 'ru'
+  const m = document.cookie.match(/(?:^|;\s*)lang=([^;]+)/)
+  const v = m?.[1]
+  return v === 'kz' || v === 'en' ? v : 'ru'
+}
+
+const T = {
+  ru: {
+    features: [
+      { title: 'Расписание за 30 секунд', desc: 'Выберите формат, добавьте команды — расписание готово' },
+      { title: 'Таблицы и статистика', desc: 'Обновляются автоматически после каждого матча' },
+      { title: 'Поделитесь ссылкой', desc: 'Участники следят за результатами без регистрации' },
+    ],
+    welcomeTitle: 'Добро пожаловать!',
+    welcomeSub1: 'Вы в одном шаге от первого турнира.',
+    welcomeSub2: 'Как вас зовут?',
+    namePh: 'Ваше имя или псевдоним',
+    nameOptional: 'Необязательно — можно пропустить',
+    saving: 'Сохраняем…',
+    continue: 'Продолжить',
+    greatName: (name: string) => `Отлично, ${name}!`,
+    allReady: 'Всё готово!',
+    tagline: 'Tournable умеет всё, что нужно организатору',
+    goingTo: 'Переходим…',
+    createFirst: 'Создать первый турнир',
+    goToAll: 'Перейти ко всем турнирам',
   },
-  {
-    icon: BarChart2,
-    title: 'Таблицы и статистика',
-    desc: 'Обновляются автоматически после каждого матча',
+  kz: {
+    features: [
+      { title: '30 секундта кесте', desc: 'Форматты таңдап, командаларды қосыңыз — кесте дайын' },
+      { title: 'Кестелер мен статистика', desc: 'Әр матчтан кейін автоматты түрде жаңарады' },
+      { title: 'Сілтемемен бөлісіңіз', desc: 'Қатысушылар тіркелусіз нәтижелерді қадағалайды' },
+    ],
+    welcomeTitle: 'Қош келдіңіз!',
+    welcomeSub1: 'Сіз алғашқы турнирге бір қадам жақынсыз.',
+    welcomeSub2: 'Атыңыз кім?',
+    namePh: 'Атыңыз немесе лақап атыңыз',
+    nameOptional: 'Міндетті емес — өткізіп жіберуге болады',
+    saving: 'Сақталуда…',
+    continue: 'Жалғастыру',
+    greatName: (name: string) => `Керемет, ${name}!`,
+    allReady: 'Бәрі дайын!',
+    tagline: 'Tournable ұйымдастырушыға қажеттінің бәрін істей алады',
+    goingTo: 'Өтуде…',
+    createFirst: 'Алғашқы турнирді құру',
+    goToAll: 'Барлық турнирлерге өту',
   },
-  {
-    icon: Share2,
-    title: 'Поделитесь ссылкой',
-    desc: 'Участники следят за результатами без регистрации',
+  en: {
+    features: [
+      { title: 'Schedule in 30 seconds', desc: 'Pick a format, add teams — the schedule is ready' },
+      { title: 'Standings and stats', desc: 'Updated automatically after every match' },
+      { title: 'Share a link', desc: 'Participants follow results without signing up' },
+    ],
+    welcomeTitle: 'Welcome!',
+    welcomeSub1: "You're one step away from your first tournament.",
+    welcomeSub2: "What's your name?",
+    namePh: 'Your name or nickname',
+    nameOptional: 'Optional — you can skip this',
+    saving: 'Saving…',
+    continue: 'Continue',
+    greatName: (name: string) => `Great, ${name}!`,
+    allReady: "You're all set!",
+    tagline: 'Tournable has everything an organizer needs',
+    goingTo: 'Redirecting…',
+    createFirst: 'Create your first tournament',
+    goToAll: 'Go to all tournaments',
   },
-]
+} as const
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const lang = getLang()
+  const t = T[lang]
+  const FEATURES = [
+    { icon: Zap, ...t.features[0] },
+    { icon: BarChart2, ...t.features[1] },
+    { icon: Share2, ...t.features[2] },
+  ]
   const [step, setStep]       = useState<1 | 2>(1)
   const [name, setName]       = useState('')
   const [saving, setSaving]   = useState(false)
@@ -81,10 +143,10 @@ export default function OnboardingPage() {
             </div>
 
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-black text-gray-900">Добро пожаловать!</h1>
+              <h1 className="text-2xl font-black text-gray-900">{t.welcomeTitle}</h1>
               <p className="text-gray-500 text-sm leading-relaxed">
-                Вы в одном шаге от первого турнира.
-                <br />Как вас зовут?
+                {t.welcomeSub1}
+                <br />{t.welcomeSub2}
               </p>
             </div>
 
@@ -93,13 +155,13 @@ export default function OnboardingPage() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleStep1()}
-                placeholder="Ваше имя или псевдоним"
+                placeholder={t.namePh}
                 className="text-base h-12 rounded-xl text-center"
                 autoFocus
                 maxLength={40}
               />
               <p className="text-xs text-gray-400 text-center">
-                Необязательно — можно пропустить
+                {t.nameOptional}
               </p>
             </div>
 
@@ -108,7 +170,7 @@ export default function OnboardingPage() {
               disabled={saving}
               className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-base font-bold rounded-xl"
             >
-              {saving ? 'Сохраняем…' : 'Продолжить'}
+              {saving ? t.saving : t.continue}
               <ArrowRight size={17} className="ml-2" />
             </Button>
           </div>
@@ -123,10 +185,10 @@ export default function OnboardingPage() {
                   <Check size={20} className="text-emerald-600" />
                 </div>
                 <h1 className="text-2xl font-black text-gray-900">
-                  {name.trim() ? `Отлично, ${name.trim()}!` : 'Всё готово!'}
+                  {name.trim() ? t.greatName(name.trim()) : t.allReady}
                 </h1>
                 <p className="text-gray-500 text-sm">
-                  Tournable умеет всё, что нужно организатору
+                  {t.tagline}
                 </p>
               </div>
 
@@ -155,7 +217,7 @@ export default function OnboardingPage() {
                 className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-base font-bold rounded-xl"
               >
                 <Trophy size={17} className="mr-2" />
-                {saving ? 'Переходим…' : 'Создать первый турнир'}
+                {saving ? t.goingTo : t.createFirst}
               </Button>
             </div>
 
@@ -166,7 +228,7 @@ export default function OnboardingPage() {
                 disabled={saving}
                 className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Перейти ко всем турнирам
+                {t.goToAll}
               </button>
             </div>
           </div>

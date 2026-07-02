@@ -85,7 +85,7 @@ export default function GroupStandingsTab({
                   {T.teamsCount(groupTeams.length)}
                 </span>
               </div>
-              <ExportButtons elementId={exportId} fileName={`${slug}-group-${groupName.toLowerCase()}`} />
+              <ExportButtons elementId={exportId} fileName={`${slug}-group-${groupName.toLowerCase()}`} lang={lang} />
             </div>
 
             <div className="overflow-x-auto">

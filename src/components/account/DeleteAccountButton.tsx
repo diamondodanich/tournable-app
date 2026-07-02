@@ -5,9 +5,70 @@ import { useRouter } from 'next/navigation'
 import { deleteAccount } from '@/app/actions/auth'
 import { Trash2, X, Loader2, AlertTriangle } from 'lucide-react'
 
-const CONFIRM_WORD = 'УДАЛИТЬ'
+type Lang = 'ru' | 'kz' | 'en'
 
-export default function DeleteAccountButton({ email }: { email: string }) {
+const CONFIRM_WORDS: Record<Lang, string> = { ru: 'УДАЛИТЬ', kz: 'ЖОЮ', en: 'DELETE' }
+
+const T = {
+  ru: {
+    deleteAccount: 'Удалить аккаунт',
+    confirmTitle: 'Удалить аккаунт навсегда?',
+    confirmDesc: (email: string) => (
+      <>Это действие необратимо. Будут безвозвратно удалены аккаунт{' '}
+        <span className="font-semibold text-gray-700 break-all">{email}</span>,
+        все турниры, команды, расписания и статистика. Восстановить данные будет невозможно.</>
+    ),
+    notConfiguredMsg: 'Автоматическое удаление пока не настроено на сервере. Отправьте запрос — мы удалим аккаунт вручную в течение 24 часов.',
+    sendDeleteRequest: 'Отправить запрос на удаление',
+    enterToConfirm: 'Введите',
+    toConfirm: ', чтобы подтвердить',
+    cancel: 'Отмена',
+    deleting: 'Удаляем…',
+    deleteForever: 'Удалить навсегда',
+    mailSubject: 'Запрос на удаление аккаунта',
+    mailBody: (email: string) => `Прошу удалить мой аккаунт.\n\nEmail: ${email}`,
+  },
+  kz: {
+    deleteAccount: 'Аккаунтты жою',
+    confirmTitle: 'Аккаунтты біржола жою керек пе?',
+    confirmDesc: (email: string) => (
+      <>Бұл әрекетті кері қайтару мүмкін емес. Аккаунт{' '}
+        <span className="font-semibold text-gray-700 break-all">{email}</span>,
+        барлық турнирлер, командалар, кестелер мен статистика біржола жойылады. Деректерді қалпына келтіру мүмкін болмайды.</>
+    ),
+    notConfiguredMsg: 'Автоматты жою серверде әлі бапталмаған. Сұрау жіберіңіз — аккаунтты 24 сағат ішінде қолмен жоямыз.',
+    sendDeleteRequest: 'Жою сұрауын жіберу',
+    enterToConfirm: 'Растау үшін',
+    toConfirm: ' деп жазыңыз',
+    cancel: 'Бас тарту',
+    deleting: 'Жойылуда…',
+    deleteForever: 'Біржола жою',
+    mailSubject: 'Аккаунтты жоюға сұрау',
+    mailBody: (email: string) => `Аккаунтымды жоюды сұраймын.\n\nEmail: ${email}`,
+  },
+  en: {
+    deleteAccount: 'Delete account',
+    confirmTitle: 'Delete account permanently?',
+    confirmDesc: (email: string) => (
+      <>This action is irreversible. The account{' '}
+        <span className="font-semibold text-gray-700 break-all">{email}</span>,
+        all tournaments, teams, schedules and stats will be permanently deleted. Data recovery will not be possible.</>
+    ),
+    notConfiguredMsg: 'Automatic deletion is not yet configured on the server. Send a request — we will delete the account manually within 24 hours.',
+    sendDeleteRequest: 'Send deletion request',
+    enterToConfirm: 'Type',
+    toConfirm: ' to confirm',
+    cancel: 'Cancel',
+    deleting: 'Deleting…',
+    deleteForever: 'Delete forever',
+    mailSubject: 'Account deletion request',
+    mailBody: (email: string) => `Please delete my account.\n\nEmail: ${email}`,
+  },
+} as const
+
+export default function DeleteAccountButton({ email, lang = 'ru' }: { email: string; lang?: Lang }) {
+  const tx = T[lang]
+  const CONFIRM_WORD = CONFIRM_WORDS[lang]
   const router = useRouter()
   const [open, setOpen]       = useState(false)
   const [value, setValue]     = useState('')
@@ -52,29 +113,27 @@ export default function DeleteAccountButton({ email }: { email: string }) {
         <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
           <AlertTriangle className="w-6 h-6 text-red-500" />
         </div>
-        <h3 className="text-lg font-black text-gray-900 mb-1">Удалить аккаунт навсегда?</h3>
+        <h3 className="text-lg font-black text-gray-900 mb-1">{tx.confirmTitle}</h3>
         <p className="text-sm text-gray-500 leading-relaxed mb-5">
-          Это действие необратимо. Будут безвозвратно удалены аккаунт{' '}
-          <span className="font-semibold text-gray-700 break-all">{email}</span>,
-          все турниры, команды, расписания и статистика. Восстановить данные будет невозможно.
+          {tx.confirmDesc(email)}
         </p>
 
         {notConfigured ? (
           <div className="space-y-4">
             <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-700">
-              Автоматическое удаление пока не настроено на сервере. Отправьте запрос — мы удалим аккаунт вручную в течение 24 часов.
+              {tx.notConfiguredMsg}
             </div>
             <a
-              href={`mailto:info@tournable.app?subject=${encodeURIComponent('Запрос на удаление аккаунта')}&body=${encodeURIComponent(`Прошу удалить мой аккаунт.\n\nEmail: ${email}`)}`}
+              href={`mailto:info@tournable.app?subject=${encodeURIComponent(tx.mailSubject)}&body=${encodeURIComponent(tx.mailBody(email))}`}
               className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors"
             >
-              <Trash2 size={15} /> Отправить запрос на удаление
+              <Trash2 size={15} /> {tx.sendDeleteRequest}
             </a>
           </div>
         ) : (
           <>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Введите <span className="font-black text-red-600">{CONFIRM_WORD}</span>, чтобы подтвердить
+              {tx.enterToConfirm} <span className="font-black text-red-600">{CONFIRM_WORD}</span>{tx.toConfirm}
             </label>
             <input
               value={value}
@@ -97,7 +156,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
                 disabled={loading}
                 className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                Отмена
+                {tx.cancel}
               </button>
               <button
                 onClick={handleDelete}
@@ -105,7 +164,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
                 className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors disabled:opacity-40 disabled:hover:bg-red-500 inline-flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                {loading ? 'Удаляем…' : 'Удалить навсегда'}
+                {loading ? tx.deleting : tx.deleteForever}
               </button>
             </div>
           </>
@@ -122,7 +181,7 @@ export default function DeleteAccountButton({ email }: { email: string }) {
         className="inline-flex items-center gap-2 text-red-400 hover:text-red-600 font-semibold text-sm transition-colors"
       >
         <Trash2 className="w-3.5 h-3.5" />
-        Удалить аккаунт
+        {tx.deleteAccount}
       </button>
       {modal}
     </>

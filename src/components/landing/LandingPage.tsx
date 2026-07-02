@@ -14,7 +14,7 @@ type Lang = 'ru' | 'kz' | 'en'
 const T = {
   ru: {
     label: 'RU',
-    nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Все турниры' },
+    nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Все турниры', account: 'Личный кабинет', accountTitle: 'Личный кабинет', menu: 'Меню' },
     hero: {
       badge: 'Для организаторов лиг и турниров',
       h1: ['Счёт у всех — онлайн.', 'Статистика считается сама.', 'Турнир — меньше 1 минуты.'],
@@ -32,6 +32,7 @@ const T = {
         'Полноэкранный режим — проецируйте на телевизор или LED-экран',
         'Достаточно одной ссылки — команды и болельщики следят без регистрации',
       ],
+      imgAlt: 'Tournable LIVE — онлайн-табло',
     },
     stats: {
       h2: ['Конец ручному счёту.', 'Всё считается само.'],
@@ -42,6 +43,7 @@ const T = {
         'Автоматический расчёт очков и разницы мячей',
         'Экспорт итогов в PDF — для печати, чата или соцсетей',
       ],
+      imgAlt: 'Tournable — таблица бомбардиров',
     },
     features: {
       tag: 'Возможности',
@@ -109,7 +111,7 @@ const T = {
         { icon: 'trophy', title: 'Оператор на турнир', desc: 'Наш специалист приедет и возьмёт на себя все результаты — вводит матчи прямо в платформу в реальном времени. Вы ведёте игру — мы за экраном.', price: '19 990 ₸', pricePer: 'в день', badge: null, badgeColor: null },
       ],
     },
-    contact: { h2: 'Есть вопрос? Пишите.', sub: 'Отвечаем быстро. Живые люди, не боты.', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21' },
+    contact: { h2: 'Есть вопрос? Пишите.', sub: 'Отвечаем быстро. Живые люди, не боты.', wa: 'Написать в WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Позвонить', orEmail: 'Или напишите на почту:' },
     cta: { h2: 'Ваш следующий турнир — уже сегодня.', sub: 'Минута на регистрацию. Турнир готов. Участники в шоке от уровня.', btn: 'Начать бесплатно' },
     footer: {
       tagline: 'Создайте первый турнир меньше 1 минуты. Статистика, Live-табло и плей-офф — всё считается само.',
@@ -122,7 +124,7 @@ const T = {
 
   kz: {
     label: 'KZ',
-    nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Барлық турнирлер' },
+    nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Барлық турнирлер', account: 'Жеке кабинет', accountTitle: 'Жеке кабинет', menu: 'Мәзір' },
     hero: {
       badge: 'Лигалар мен турнирлер ұйымдастырушыларына',
       h1: ['Есеп барлығында — онлайн.', 'Статистика өздігінен есептеледі.', 'Турнир — 1 минуттан аз.'],
@@ -140,6 +142,7 @@ const T = {
         'Толық экран режимі — теледидарда немесе LED-экранда проекциялаңыз',
         'Бір сілтеме жеткілікті — тіркелмей қарай алады',
       ],
+      imgAlt: 'Tournable LIVE — онлайн-табло',
     },
     stats: {
       h2: ['Қолмен есептеу артта қалды.', 'Бәрі өздігінен есептеледі.'],
@@ -150,6 +153,7 @@ const T = {
         'Ұпайлар мен доп айырмасын автоматты есептеу',
         'Қорытындыны PDF-ке экспорттау — басып шығаруға, чатқа немесе әлеуметтік желілерге',
       ],
+      imgAlt: 'Tournable — бомбардирлер кестесі',
     },
     features: {
       tag: 'Мүмкіндіктер',
@@ -217,7 +221,7 @@ const T = {
         { icon: 'trophy', title: 'Турниріңізге оператор', desc: 'Маманымыз келіп, барлық матч нәтижелерін тікелей платформаға нақты уақытта енгізеді. Сіз ойынды жүргізесіз — біз экран алдындамыз.', price: '19 990 ₸', pricePer: 'күніне', badge: null, badgeColor: null },
       ],
     },
-    contact: { h2: 'Сұрағыңыз бар ма? Жазыңыз.', sub: 'Жылдам жауап береміз. Тірі адамдар, роботтар емес.', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21' },
+    contact: { h2: 'Сұрағыңыз бар ма? Жазыңыз.', sub: 'Жылдам жауап береміз. Тірі адамдар, роботтар емес.', wa: 'WhatsApp-қа жазу', phone: '+7 (706) 409-20-21', callUs: 'Қоңырау шалу', orEmail: 'Немесе электронды поштамен жазыңыз:' },
     cta: { h2: 'Келесі турниріңіз — бүгін.', sub: 'Тіркелу — бір минут. Турнир дайын. Қатысушылар деңгейден таң қалады.', btn: 'Тегін бастау' },
     footer: {
       tagline: 'Алғашқы турнирді 1 минуттан аз уақытта жасаңыз. Статистика, Live-тақта және плей-офф — бәрі автоматты.',
@@ -230,7 +234,7 @@ const T = {
 
   en: {
     label: 'EN',
-    nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'All tournaments' },
+    nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'All tournaments', account: 'Account', accountTitle: 'Account', menu: 'Menu' },
     hero: {
       badge: 'For league & tournament organisers',
       h1: ['Live scores for everyone.', 'Stats calculate themselves.', 'Tournament in under a minute.'],
@@ -248,6 +252,7 @@ const T = {
         'Full-screen mode — project onto a TV or LED display',
         'One link is enough — teams and fans follow without signing up',
       ],
+      imgAlt: 'Tournable LIVE — online scoreboard',
     },
     stats: {
       h2: ['No more manual counting.', 'Everything calculates itself.'],
@@ -258,6 +263,7 @@ const T = {
         'Automatic points and goal difference calculation',
         'Export full standings to PDF — for print, chat or social media',
       ],
+      imgAlt: 'Tournable — top scorers table',
     },
     features: {
       tag: 'Features',
@@ -325,7 +331,7 @@ const T = {
         { icon: 'trophy', title: 'On-site results operator', desc: 'Our specialist arrives and enters all match results directly into the platform in real time. You run the game — we handle the screen.', price: '19,990 ₸', pricePer: 'per day', badge: null, badgeColor: null },
       ],
     },
-    contact: { h2: 'Got a question? Write to us.', sub: 'Fast responses. Real people, no bots.', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21' },
+    contact: { h2: 'Got a question? Write to us.', sub: 'Fast responses. Real people, no bots.', wa: 'Message on WhatsApp', phone: '+7 (706) 409-20-21', callUs: 'Call us', orEmail: 'Or write to us by email:' },
     cta: { h2: 'Your next tournament starts today.', sub: 'One minute to sign up. Tournament ready. Participants blown away by the level.', btn: 'Start for free' },
     footer: {
       tagline: 'Create your first tournament in under a minute. Stats, live scoreboard and playoff — all automated.',
@@ -447,7 +453,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <Link href="/dashboard" className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
                   {tx.nav.dashboard}
                 </Link>
-                <Link href="/account" className="flex items-center justify-center w-9 h-9 rounded-xl bg-white text-emerald-700 font-black text-sm hover:bg-emerald-50 transition-colors shadow-md" title="Личный кабинет">
+                <Link href="/account" className="flex items-center justify-center w-9 h-9 rounded-xl bg-white text-emerald-700 font-black text-sm hover:bg-emerald-50 transition-colors shadow-md" title={tx.nav.accountTitle}>
                   {userInitials ?? '?'}
                 </Link>
               </div>
@@ -464,7 +470,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
             <button
               onClick={() => setMobileOpen(o => !o)}
               className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
-              aria-label="Меню"
+              aria-label={tx.nav.menu}
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -495,7 +501,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                   </Link>
                   <Link href="/account" onClick={() => setMobileOpen(false)}
                     className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3.5 rounded-xl transition-colors shadow-md text-base">
-                    {userInitials ? `${userInitials} · ` : ''}Личный кабинет
+                    {userInitials ? `${userInitials} · ` : ''}{tx.nav.account}
                   </Link>
                 </div>
               ) : (
@@ -616,7 +622,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
               <div className="absolute -inset-4 rounded-2xl" style={{ background: 'radial-gradient(ellipse at center, rgba(5,150,105,.15) 0%, transparent 70%)' }} />
               <Image
                 src="/screens/led.png"
-                alt="Tournable LIVE — онлайн-табло"
+                alt={tx.live.imgAlt}
                 width={900} height={600}
                 className="w-full rounded-2xl shadow-2xl shadow-black/50"
               />
@@ -635,7 +641,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <div className="absolute -inset-6 bg-emerald-50 rounded-3xl -z-10" />
                 <Image
                   src="/screens/phone.png"
-                  alt="Tournable — таблица бомбардиров"
+                  alt={tx.stats.imgAlt}
                   width={400} height={700}
                   className="w-64 sm:w-72 rounded-2xl shadow-2xl shadow-gray-300/60"
                 />
@@ -973,7 +979,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                   <Phone className="w-7 h-7 text-emerald-400" />
                 </div>
-                <div className="font-black text-2xl text-white">{lang === 'en' ? 'Call us' : lang === 'kz' ? 'Қоңырау шалу' : 'Позвонить'}</div>
+                <div className="font-black text-2xl text-white">{tx.contact.callUs}</div>
               </div>
               <div className="relative z-10 inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors self-start">
                 {tx.contact.phone} <ArrowRight className="w-4 h-4" />
@@ -983,7 +989,7 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
 
           {/* Email line */}
           <p className="text-center mt-8 text-sm text-gray-400">
-            {lang === 'en' ? 'Or write to us by email:' : lang === 'kz' ? 'Немесе электронды поштамен жазыңыз:' : 'Или напишите на почту:'}{' '}
+            {tx.contact.orEmail}{' '}
             <a href="mailto:info@tournable.app" className="text-emerald-600 font-semibold hover:underline">info@tournable.app</a>
           </p>
         </div>

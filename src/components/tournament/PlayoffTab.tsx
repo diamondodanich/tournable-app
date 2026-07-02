@@ -84,12 +84,13 @@ interface PlayoffInlineFormProps {
   form: PlayoffFormState | null
   setForm: React.Dispatch<React.SetStateAction<PlayoffFormState | null>>
   onConfirm: () => void
+  T: TournamentTx
 }
 
-function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFormProps) {
+function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlineFormProps) {
   if (!form || form.teamId !== teamId) return null
   const isGoal      = form.actionType === 'goal'
-  const submitLabel = form.isOwnGoal ? 'АГ' : isGoal ? 'Гол' : form.actionType === 'yellow_card' ? 'ЖК' : 'КК'
+  const submitLabel = form.isOwnGoal ? T.pillOG : isGoal ? T.pillGoal : form.actionType === 'yellow_card' ? T.pillYC : T.pillRC
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
     : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -101,9 +102,9 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
       {/* Action type pills */}
       <div className="flex gap-1">
         {([
-          { v: 'goal' as const,        l: 'Гол' },
-          { v: 'yellow_card' as const, l: 'ЖК'  },
-          { v: 'red_card' as const,    l: 'КК'  },
+          { v: 'goal' as const,        l: T.pillGoal },
+          { v: 'yellow_card' as const, l: T.pillYC   },
+          { v: 'red_card' as const,    l: T.pillRC   },
         ]).map(opt => (
           <button key={opt.v}
             onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
@@ -128,7 +129,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
                 : 'bg-white text-gray-400 border-gray-200 hover:border-red-200 hover:text-red-400'
             }`}
           >
-            АГ
+            {T.pillOG}
           </button>
         )}
       </div>
@@ -139,7 +140,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoal ? 'Автор гола' : 'Игрок'}
+        placeholder={isGoal ? T.scorerPlaceholder : T.playerPlaceholder}
         className="h-7 text-xs bg-white w-full"
       />
 
@@ -149,7 +150,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
           value={form.assister}
           onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
           onKeyDown={e => e.key === 'Enter' && onConfirm()}
-          placeholder="Ассистент (опц.)"
+          placeholder={T.assisterPlaceholder}
           className="h-7 text-xs bg-white w-full"
         />
       )}
@@ -159,7 +160,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
         <Input
           value={form.minute}
           onChange={e => setForm(f => f ? { ...f, minute: e.target.value } : f)}
-          placeholder="мин."
+          placeholder={T.minutePlaceholder}
           type="number" min={1} max={120}
           className="h-7 text-xs bg-white w-14 shrink-0"
         />
@@ -182,7 +183,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm }: PlayoffInlineFo
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro,
+  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro, T,
 }: {
   match: PlayoffMatch
   teams: Team[]
@@ -192,6 +193,7 @@ function PlayoffMatchCard({
   homeLabel?: string   // shown when home_team_id is null (e.g. "A1", "1-е м.")
   awayLabel?: string   // shown when away_team_id is null
   isPro?: boolean
+  T: TournamentTx
 }) {
   const [events, setEvents] = useState<EventEntry[]>(
     match.match_events?.map(e => ({
@@ -263,12 +265,12 @@ function PlayoffMatchCard({
     setStatus('live')
     const result = await startPlayoffMatch(match.id, tournamentId, match.home_team_id, match.away_team_id)
     setStarting(false)
-    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`); return }
+    if (result?.error) { setStatus(prevStatus); toast.error(T.errorPrefix(result.error)); return }
     window.open(`/t/${tournamentId}/live?playoff=${match.id}&home=${match.home_team_id}&away=${match.away_team_id}`, '_blank')
   }
 
   async function handleSave() {
-    if (scoreHome === scoreAway) { toast.error('В плей-офф ничьей быть не может'); return }
+    if (scoreHome === scoreAway) { toast.error(T.playoffNoDraw); return }
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
@@ -277,8 +279,8 @@ function PlayoffMatchCard({
       events.map(e => ({ teamId: e.teamId, playerName: e.playerName, type: e.type, minute: e.minute ? parseInt(e.minute) : undefined })),
     )
     setSaving(false)
-    if (result?.error) { setStatus(prevStatus); toast.error(`Ошибка: ${result.error}`) }
-    else { toast.success('Результат сохранён'); setIsEditing(false) }
+    if (result?.error) { setStatus(prevStatus); toast.error(T.errorPrefix(result.error)) }
+    else { toast.success(T.resultSaved); setIsEditing(false) }
   }
 
   // ── Finished summary view ─────────────────────────────────────────────
@@ -293,13 +295,13 @@ function PlayoffMatchCard({
         {/* Header */}
         <div className="flex items-center justify-between mb-2.5">
           <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-            <Check size={10} className="mr-1" />Сыгран
+            <Check size={10} className="mr-1" />{T.statusPlayed}
           </Badge>
           <button
             onClick={() => setIsEditing(true)}
             className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-full transition-colors"
           >
-            <Pencil size={10} /> Изменить
+            <Pencil size={10} /> {T.btnEdit}
           </button>
         </div>
 
@@ -376,15 +378,15 @@ function PlayoffMatchCard({
       {(isReady || status === 'finished' || status === 'live') && (
         <div className="flex items-center justify-between mb-2.5">
           <div>
-            {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />Сыгран</Badge>}
-            {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />LIVE</Badge>}
-            {status === 'scheduled' && isReady && <Badge className="bg-gray-100 text-gray-500 text-xs">Не начат</Badge>}
+            {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>}
+            {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />{T.statusLive}</Badge>}
+            {status === 'scheduled' && isReady && <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>}
           </div>
           <div className="flex items-center gap-1.5">
             {status === 'live' && (
               <Link href={`/t/${tournamentId}/live?playoff=${match.id}&home=${match.home_team_id}&away=${match.away_team_id}`} target="_blank"
                 className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-full transition-colors">
-                <Radio size={10} /> Табло
+                <Radio size={10} /> {T.btnLiveBoard}
               </Link>
             )}
             {status === 'scheduled' && isReady && (
@@ -395,13 +397,13 @@ function PlayoffMatchCard({
                     : 'text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100'
                 }`}>
                 {isPro ? <Play size={10} /> : <Lock size={10} />}
-                {starting ? 'Запуск…' : isPro ? 'Начать матч' : 'LIVE — Pro'}
+                {starting ? T.btnStarting : isPro ? T.btnStartMatch : T.btnLivePro}
               </button>
             )}
             {status === 'finished' && isEditing && (
               <button onClick={() => setIsEditing(false)}
                 className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-2 py-0.5 rounded-full transition-colors">
-                ← Просмотр
+                {T.btnViewResult}
               </button>
             )}
           </div>
@@ -467,7 +469,7 @@ function PlayoffMatchCard({
                 className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
                   form?.teamId === match.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
                 }`}>
-                <Plus size={10} /> Событие
+                <Plus size={10} /> {T.addEvent}
               </button>
             </div>
 
@@ -491,7 +493,7 @@ function PlayoffMatchCard({
                 className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
                   form?.teamId === match.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
                 }`}>
-                Событие <Plus size={10} />
+                {T.addEvent} <Plus size={10} />
               </button>
             </div>
 
@@ -501,12 +503,12 @@ function PlayoffMatchCard({
           {form && (form.teamId === match.home_team_id || form.teamId === match.away_team_id) && (
             <div className="mt-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Событие для</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{T.eventFor}</span>
                 <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
                   {form.teamId === match.home_team_id ? homeTeam?.name : awayTeam?.name}
                 </span>
               </div>
-              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} />
+              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} />
             </div>
           )}
         </div>
@@ -520,7 +522,7 @@ function PlayoffMatchCard({
             {saving
               ? <Loader2 size={11} className="mr-1 animate-spin" />
               : <Check size={11} className="mr-1" />}
-            {saving ? 'Сохраняем…' : isDone ? 'Обновить' : 'Сохранить'}
+            {saving ? T.saving : isDone ? T.btnUpdate : T.btnSaveResult}
           </Button>
         </div>
       )}
@@ -538,7 +540,7 @@ function PlayoffMatchCard({
  * groups_playoff → "A1", "B2", "C1" …
  * league_playoff → "1-е м.", "2-е м.", "8-е м." …
  */
-function seedLabel(seedIndex: number, format: string, groupsCount: number): string {
+function seedLabel(seedIndex: number, format: string, groupsCount: number, T: TournamentTx): string {
   if (format === 'groups_playoff') {
     const place    = Math.floor(seedIndex / groupsCount) + 1
     const letter   = String.fromCharCode(65 + (seedIndex % groupsCount))  // A, B, C …
@@ -546,7 +548,7 @@ function seedLabel(seedIndex: number, format: string, groupsCount: number): stri
   }
   if (format === 'league_playoff') {
     const n = seedIndex + 1
-    return `${n}-е м.`
+    return T.seedPlace(n)
   }
   return 'TBD'
 }
@@ -583,15 +585,15 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   }
 
   async function handleGenerate() {
-    if (fmt === 'playoff' && teams.length < 2) { toast.error('Нужно минимум 2 команды'); return }
+    if (fmt === 'playoff' && teams.length < 2) { toast.error(T.minTeamsToGenerate); return }
     if (matches.length > 0) {
-      const ok = window.confirm('Пересоздать сетку плей-офф? Все введённые результаты будут удалены.')
+      const ok = window.confirm(T.bracketRegenerateConfirm)
       if (!ok) return
     }
     setGenerating(true)
     const res = await generatePlayoff(tournament.id)
     if (res?.error) toast.error(res.error)
-    else toast.success('Сетка создана!')
+    else toast.success(T.bracketCreated)
     setGenerating(false)
   }
 
@@ -601,8 +603,8 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
           <Trophy size={28} className="text-amber-500" />
         </div>
-        <p className="font-bold text-gray-700 text-lg mb-2">{T.roundFinal}</p>
-        <p className="text-sm text-gray-400 mb-6">{T.noMatchesHint}</p>
+        <p className="font-bold text-gray-700 text-lg mb-2">{T.emptyBracketTitle}</p>
+        <p className="text-sm text-gray-400 mb-6">{T.emptyBracketHint}</p>
         {fmt === 'playoff' && (
           <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
             {generating && <Loader2 size={14} className="mr-2 animate-spin" />}
@@ -639,8 +641,8 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
       const aiIdx = i * 2 + 1
       if (hiIdx < positions.length && aiIdx < positions.length) {
         labelMap.set(m.id, {
-          home: seedLabel(positions[hiIdx], fmt, groupsCount),
-          away: seedLabel(positions[aiIdx], fmt, groupsCount),
+          home: seedLabel(positions[hiIdx], fmt, groupsCount, T),
+          away: seedLabel(positions[aiIdx], fmt, groupsCount, T),
         })
       }
     })
@@ -702,6 +704,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                         homeLabel={labels?.home}
                         awayLabel={labels?.away}
                         isPro={isPro}
+                        T={T}
                       />
                     )
                   })}

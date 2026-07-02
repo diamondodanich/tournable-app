@@ -5,29 +5,32 @@ import { uploadTournamentLogo, removeTournamentLogo } from '@/app/actions/logos'
 import { Camera, X } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
+import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
   tournamentId: string
   tournamentName: string
   logoUrl: string | null
   size?: number
+  lang?: Lang
 }
 
-export default function TournamentLogoUpload({ tournamentId, tournamentName, logoUrl, size = 64 }: Props) {
+export default function TournamentLogoUpload({ tournamentId, tournamentName, logoUrl, size = 64, lang = 'ru' }: Props) {
+  const T = tx[lang]
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) { toast.error('Нужно изображение'); return }
+    if (!file.type.startsWith('image/')) { toast.error(T.needImage); return }
     const dataUrl = await resizeToWebP(file, 200)
     const res = await uploadTournamentLogo(tournamentId, dataUrl)
     if (res?.error) toast.error(res.error)
-    else toast.success('Логотип обновлён')
+    else toast.success(T.logoUpdated)
   }
 
   async function handleRemove(e: React.MouseEvent) {
     e.stopPropagation()
     await removeTournamentLogo(tournamentId)
-    toast.success('Логотип удалён')
+    toast.success(T.logoRemoved)
   }
 
   return (
@@ -36,7 +39,7 @@ export default function TournamentLogoUpload({ tournamentId, tournamentName, log
         type="button"
         onClick={() => inputRef.current?.click()}
         className="block rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-emerald-400 transition-colors"
-        title="Загрузить логотип турнира"
+        title={T.uploadTournamentLogoTitle}
       >
         <TeamAvatar name={tournamentName} logoUrl={logoUrl} size={size} />
       </button>
@@ -52,7 +55,7 @@ export default function TournamentLogoUpload({ tournamentId, tournamentName, log
           type="button"
           onClick={handleRemove}
           className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 shadow"
-          title="Удалить логотип"
+          title={T.removeLogoTitle}
         >
           <X size={10} className="text-white" />
         </button>

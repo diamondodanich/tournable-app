@@ -6,17 +6,52 @@ import { removeSeason, updateSeason } from '@/app/actions/leagues'
 import { Plus, Trash2, ExternalLink } from 'lucide-react'
 import type { Season } from '@/types'
 
+type Lang = 'ru' | 'kz' | 'en'
+
+const T = {
+  ru: {
+    confirmRemove: 'Удалить сезон? Турнир этого сезона тоже будет удалён.',
+    noSeasons: 'Пока нет сезонов. Создайте первый.',
+    openSeason: 'Открыть сезон',
+    active: 'Активный',
+    finished: 'Завершён',
+    addSeason: 'Добавить сезон',
+    hint: 'Новый сезон создаётся как турнир с командами чемпионата — формат и расписание выбираются в мастере.',
+  },
+  kz: {
+    confirmRemove: 'Маусымды жою керек пе? Осы маусымның турнирі де жойылады.',
+    noSeasons: 'Әзірге маусымдар жоқ. Біріншісін жасаңыз.',
+    openSeason: 'Маусымды ашу',
+    active: 'Белсенді',
+    finished: 'Аяқталды',
+    addSeason: 'Маусым қосу',
+    hint: 'Жаңа маусым чемпионат командаларымен турнир ретінде жасалады — формат пен кесте шеберде таңдалады.',
+  },
+  en: {
+    confirmRemove: 'Delete season? The tournament for this season will also be deleted.',
+    noSeasons: 'No seasons yet. Create the first one.',
+    openSeason: 'Open season',
+    active: 'Active',
+    finished: 'Finished',
+    addSeason: 'Add season',
+    hint: 'A new season is created as a tournament with the championship\'s teams — format and schedule are chosen in the wizard.',
+  },
+} as const
+
 export default function SeasonsTab({
   leagueId,
   seasons,
+  lang = 'ru',
 }: {
   leagueId: string
   seasons: Season[]
+  lang?: Lang
 }) {
+  const T_ = T[lang]
   const [isPending, startTransition] = useTransition()
 
   function handleRemove(seasonId: string) {
-    if (!confirm('Удалить сезон? Турнир этого сезона тоже будет удалён.')) return
+    if (!confirm(T_.confirmRemove)) return
     startTransition(() => { void removeSeason(seasonId, leagueId) })
   }
 
@@ -28,7 +63,7 @@ export default function SeasonsTab({
   return (
     <div className="space-y-3">
       {seasons.length === 0 && (
-        <p className="text-sm text-gray-400 py-4 text-center">Пока нет сезонов. Создайте первый.</p>
+        <p className="text-sm text-gray-400 py-4 text-center">{T_.noSeasons}</p>
       )}
 
       {seasons.map(s => (
@@ -40,7 +75,7 @@ export default function SeasonsTab({
                 href={`/dashboard/tournament/${s.tournament_id}`}
                 className="flex items-center gap-1 text-xs text-violet-500 hover:text-violet-700 mt-0.5"
               >
-                <ExternalLink size={10} /> Открыть сезон
+                <ExternalLink size={10} /> {T_.openSeason}
               </Link>
             )}
           </div>
@@ -53,7 +88,7 @@ export default function SeasonsTab({
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             }`}
           >
-            {s.status === 'active' ? 'Активный' : 'Завершён'}
+            {s.status === 'active' ? T_.active : T_.finished}
           </button>
           <button
             onClick={() => handleRemove(s.id)}
@@ -69,10 +104,10 @@ export default function SeasonsTab({
         href={`/dashboard/new?type=championship&league=${leagueId}`}
         className="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-colors py-2.5 rounded-xl mt-2"
       >
-        <Plus size={15} /> Добавить сезон
+        <Plus size={15} /> {T_.addSeason}
       </Link>
       <p className="text-xs text-gray-400 text-center">
-        Новый сезон создаётся как турнир с командами чемпионата — формат и расписание выбираются в мастере.
+        {T_.hint}
       </p>
     </div>
   )

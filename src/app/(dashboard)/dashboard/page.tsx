@@ -146,6 +146,7 @@ export default async function DashboardPage() {
           isEnterprise={isEnterprise}
           activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
           label="Создать"
+          lang={lang}
         />
       </div>
 
@@ -231,7 +232,7 @@ export default async function DashboardPage() {
                 </Link>
                 {/* Delete button sits outside the Link */}
                 <div className="absolute top-3 right-3">
-                  <DeleteTournamentButton id={t.id} name={t.name} />
+                  <DeleteTournamentButton id={t.id} name={t.name} lang={lang} />
                 </div>
               </div>
             )

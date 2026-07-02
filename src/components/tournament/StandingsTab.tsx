@@ -43,7 +43,7 @@ export default function StandingsTab({
       )}
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-500 font-medium">{T.standingsTitle}</span>
-        <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} />
+        <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} lang={lang} />
       </div>
       {tournament && (tournament.points_win !== 3 || tournament.points_draw !== 1 || tournament.points_loss !== 0) && (
         <p className="text-xs text-gray-400">

@@ -38,7 +38,8 @@ export default function CancelSubscriptionButton() {
       <div className="rounded-xl border border-red-100 bg-red-50 p-4 space-y-3">
         <p className="text-sm font-semibold text-red-700">Вы уверены?</p>
         <p className="text-xs text-red-500 leading-relaxed">
-          Доступ к Pro будет немедленно прекращён. Возврат средств не предусмотрен.
+          Автопродление будет отключено. Доступ к Pro сохранится до конца
+          оплаченного периода, дальнейшие списания не производятся.
           Вы сможете снова оформить подписку в любой момент.
         </p>
         {error && <p className="text-xs text-red-600">{error}</p>}

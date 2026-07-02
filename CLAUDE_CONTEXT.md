@@ -97,7 +97,11 @@ Values in `tournaments.sport` column:
 - Webhook: `src/app/api/webhooks/tiptoppay/route.ts` — verifies `Content-HMAC`/`X-Content-HMAC` header (`HMAC-SHA256(rawBody, ApiSecret)`, UTF8, base64), responds `{"code":0}` — field names (`TransactionId`, `AccountId`, `InvoiceId`, `SubscriptionId`, `Data`) and response format confirmed word-for-word against the official TipTop Pay doc (2026-07-01), not inferred from CloudPayments
 - Subscriptions `source` value: `'cloudpayments'` (already allowed by the original 011 migration's check constraint — no new constraint needed)
 - RPC: `record_cloudpayments_subscription` (migration 023) — mirrors `record_freedompay_subscription`, used by `activateProAfterPayment`/`activateEnterpriseAfterPayment` when called with `source: 'cloudpayments'`
-- Recurring payments: supported via `metadata`/`recurrent` object in widget params — not yet wired up (next step once test terminal is validated)
+- Recurring payments WIRED (2026-07-02): widget passes `recurrent: { interval: 'Month', period: 1|12 }` + `userInfo.accountId` (обязателен для рекуррента). Every payment creates an auto-renewing subscription
+- Recurring charges may arrive without Data metadata → webhook falls back to amount→plan mapping (4990/44990/39990/349990 are pairwise distinct). SubscriptionId stored in subscriptions.subscription_id (migration 024 — НЕ применена, выполнить в Supabase!)
+- `cancelSubscription()` (billing.ts): cancels via POST api.tiptoppay.kz/subscriptions/cancel (Basic auth PublicId:ApiSecret), access stays until plan_expires_at (cron downgrades); fallback для ручных выдач — немедленный free
+- Terms 4.2/4.2.1/4.2.2 updated for auto-renewal (было «продление самостоятельно» — БЫЛО НЕВЕРНО для рекуррента)
+- ЛК Recurrent toggle: можно не включать — webhook игнорирует не-Completed статусы; подписка живёт через Pay-уведомления, отмена — через наш API-вызов
 - Onboarding sequence per TipTop manager: анкета → сбор 6 000 ₸ (оферта says 6 000, manager quoted 20 000 — clarify) → банк Береке выдаёт онлайн-терминал (согласие ИП на сбор/обработку данных отправлено) → полная готовность
 
 ## FreedomPay JS SDK (legacy — code kept, not wired into checkout)
@@ -156,7 +160,7 @@ Additional (in Vercel, not needed locally for basic dev):
 - `/privacy` → `src/app/privacy/page.tsx` — Политика конфиденциальности (FreedomPay + Resend как субподрядчики)
 - RegisterForm.tsx: consent text on registration (3 languages)
 - CardPaymentForm.tsx: consent text on payment
-- No auto-renewal: after expiry, cron immediately sets plan to Free
+- Auto-renewal via TipTop Pay recurrent (since 2026-07-02). Cron still downgrades to Free after plan_expires_at — срабатывает только если подписка отменена/списание не прошло (иначе Pay-уведомление продлит план раньше)
 
 ## Pending Tasks (as of 2026-07-01)
 1. TipTop Pay: уточнить сумму сбора (оферта — 6 000 ₸, менеджер называл 20 000 ₸) → оплатить → дождаться выдачи боевого терминала от Береке Банка → добавить `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID`/`TIPTOPPAY_API_SECRET` (prod) в Vercel → онлайн-касса (ОФД) → рекуррентные платежи

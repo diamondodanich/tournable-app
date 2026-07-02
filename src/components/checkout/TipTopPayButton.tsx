@@ -103,9 +103,16 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
         paymentSchema:    'Single',
         // accountId/email must live under userInfo — top-level accountId/email
         // are not part of the widget's CreateIntentCommand shape.
+        // userInfo.accountId is REQUIRED for creating a recurrent subscription.
         userInfo: {
           accountId: order.userId,
           email:     userEmail,
+        },
+        // Auto-renewal: TipTop Pay charges the saved card every 1/12 months.
+        // Initial and regular amounts are the same, so no explicit amount here.
+        recurrent: {
+          interval: 'Month',
+          period:   period === 'annual' ? 12 : 1,
         },
         metadata: {
           user_id:     order.userId,
@@ -143,13 +150,16 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
       )}
 
       <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-        Нажимая «Оплатить», вы подтверждаете согласие с{' '}
+        Нажимая «Оплатить», вы соглашаетесь с{' '}
         <a
           href="/terms"
           className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
         >
           условиями оферты
         </a>
+        {' '}и автоматическим продлением подписки
+        {period === 'annual' ? ' раз в год' : ' раз в месяц'}.
+        Отменить можно в любой момент в настройках.
       </p>
 
       <button

@@ -65,9 +65,20 @@ export async function POST(req: NextRequest) {
     try { metadata = JSON.parse(params.Data) } catch { metadata = {} }
   }
 
-  const userId     = metadata.user_id ?? params.AccountId
-  const planPeriod = metadata.plan_period
-  const planType   = metadata.plan_type ?? 'pro'
+  const userId   = metadata.user_id ?? params.AccountId
+  let planPeriod = metadata.plan_period
+  let planType   = metadata.plan_type ?? 'pro'
+
+  // Recurring charges initiated by TipTop Pay may arrive without our metadata.
+  // The four plan prices are unique, so the amount identifies plan + period.
+  if (!planPeriod || !(planPeriod in PRICES)) {
+    const byAmount = resolvePlanByAmount(parseFloat(params.Amount ?? ''))
+    if (byAmount) {
+      planPeriod = byAmount.period
+      planType   = byAmount.type
+      console.log(`[tiptoppay webhook] plan resolved by amount: ${planType}/${planPeriod}`)
+    }
+  }
 
   if (!userId || !planPeriod || !(planPeriod in PRICES)) {
     console.error('[tiptoppay webhook] missing user_id or plan_period', params)
@@ -108,17 +119,28 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: subErr } = await supabase.from('subscriptions').insert({
-    user_id:     userId,
-    plan:        planType,
-    expires_at:  expiresAt.toISOString(),
-    amount_kzt:  prices[planPeriod as PlanPeriod].amount,
-    source:      'cloudpayments',
-    external_id: params.TransactionId ?? params.SubscriptionId ?? null,
+    user_id:         userId,
+    plan:            planType,
+    expires_at:      expiresAt.toISOString(),
+    amount_kzt:      prices[planPeriod as PlanPeriod].amount,
+    source:          'cloudpayments',
+    external_id:     params.TransactionId ?? null,
+    subscription_id: params.SubscriptionId ?? null,
   })
   if (subErr) console.error('[tiptoppay webhook] subscriptions insert:', subErr)
 
-  console.log(`[tiptoppay webhook] ${planType} activated for ${userId} until ${expiresAt.toISOString()}`)
+  console.log(`[tiptoppay webhook] ${planType} activated for ${userId} until ${expiresAt.toISOString()}` +
+    (params.SubscriptionId ? ` (subscription ${params.SubscriptionId})` : ''))
   return ack()
+}
+
+// The four plan prices are pairwise distinct — safe to map amount → plan.
+function resolvePlanByAmount(amount: number): { type: PlanType; period: PlanPeriod } | null {
+  if (amount === PRICES.monthly.amount)            return { type: 'pro',        period: 'monthly' }
+  if (amount === PRICES.annual.amount)             return { type: 'pro',        period: 'annual'  }
+  if (amount === ENTERPRISE_PRICES.monthly.amount) return { type: 'enterprise', period: 'monthly' }
+  if (amount === ENTERPRISE_PRICES.annual.amount)  return { type: 'enterprise', period: 'annual'  }
+  return null
 }
 
 interface PaymentMetadata {

@@ -139,13 +139,64 @@ export async function activateEnterprise(userId: string): Promise<{ error?: stri
   return {}
 }
 
-// ── Отменяет Pro (сразу переводит на free) ────────────────────────────────────
-export async function cancelSubscription(): Promise<{ error?: string }> {
+// ── Отменяет подписку ─────────────────────────────────────────────────────────
+// С рекуррентными платежами TipTop Pay: отключает автопродление через API,
+// доступ сохраняется до конца оплаченного периода (cron переведёт на free).
+// Для планов без подписки в шлюзе (ручная выдача) — немедленный переход на free.
+export async function cancelSubscription(): Promise<{ error?: string; accessUntil?: string | null }> {
   noStore()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
 
+  // Последняя рекуррентная подписка, записанная вебхуком TipTop Pay
+  const { data: lastSub } = await supabase
+    .from('subscriptions')
+    .select('subscription_id')
+    .eq('user_id', user.id)
+    .eq('source', 'cloudpayments')
+    .not('subscription_id', 'is', null)
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (lastSub?.subscription_id) {
+    const publicId  = process.env.NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID ?? ''
+    const apiSecret = process.env.TIPTOPPAY_API_SECRET ?? ''
+    if (!publicId || !apiSecret) return { error: 'Платёжный модуль не настроен' }
+
+    try {
+      const res = await fetch('https://api.tiptoppay.kz/subscriptions/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + Buffer.from(`${publicId}:${apiSecret}`).toString('base64'),
+        },
+        body: JSON.stringify({ Id: lastSub.subscription_id }),
+        cache: 'no-store',
+      })
+      const json = await res.json().catch(() => null) as { Success?: boolean; Message?: string } | null
+      if (!res.ok || !json?.Success) {
+        console.error('[cancelSubscription] tiptop cancel failed:', res.status, json)
+        return { error: 'Не удалось отключить автопродление. Напишите нам: info@tournable.app' }
+      }
+    } catch (err) {
+      console.error('[cancelSubscription] tiptop cancel error:', err)
+      return { error: 'Не удалось связаться с платёжной системой. Попробуйте позже.' }
+    }
+
+    // Автопродление отключено; доступ остаётся до конца оплаченного периода
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_expires_at')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    console.log(`[cancelSubscription] auto-renewal cancelled for ${user.id} (subscription ${lastSub.subscription_id})`)
+    return { accessUntil: profile?.plan_expires_at ?? null }
+  }
+
+  // Нет подписки в шлюзе (ручная выдача / legacy) — немедленный переход на free
   const { error } = await supabase
     .from('profiles')
     .update({ plan: 'free', plan_expires_at: null, updated_at: new Date().toISOString() })

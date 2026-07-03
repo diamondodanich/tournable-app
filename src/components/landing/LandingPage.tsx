@@ -921,47 +921,40 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
       </section>
 
       {/* ── Additional Services ──────────────────────────────────────────────── */}
-      <section className="py-24 lg:py-28">
+      <section className="py-24 lg:py-28 bg-[#030712]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
-            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4" style={{ letterSpacing: '-.03em' }}>{tx.services.h2}</h2>
+            <h2 className="text-[2rem] sm:text-[2.5rem] font-black tracking-tight mb-4 text-white" style={{ letterSpacing: '-.03em' }}>{tx.services.h2}</h2>
             <p className="text-gray-400 text-lg max-w-xl mx-auto">{tx.services.sub}</p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 gap-6 items-stretch">
             {tx.services.items.map((svc) => (
-              <div key={svc.title} className="relative group bg-white border border-gray-100 rounded-3xl p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden">
-                {/* Subtle bg gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/40 to-transparent pointer-events-none" />
-                {svc.badge && (
-                  <span className="absolute top-5 right-5 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest bg-blue-100 text-blue-600">{svc.badge}</span>
-                )}
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 bg-emerald-50">
-                    {svc.icon === 'video'
-                      ? <Video className="w-6 h-6 text-blue-500" />
-                      : <Trophy className="w-6 h-6 text-emerald-600" />}
-                  </div>
-                  <h3 className="font-black text-xl text-gray-900 mb-3 leading-tight">{svc.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-6">{svc.desc}</p>
-                  {svc.price ? (
-                    <div className="flex items-baseline gap-2 mb-6">
-                      <span className="text-3xl font-black text-emerald-600">{svc.price}</span>
-                      <span className="text-sm text-gray-400 font-medium">{svc.pricePer}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 mb-6">
-                      <Video className="w-4 h-4 text-blue-400" />
-                      <span className="text-sm text-blue-500 font-semibold">{svc.badge}</span>
-                    </div>
-                  )}
-                  <a
-                    href={`https://wa.me/message/YHLE2IFII4MSJ1?text=${encodeURIComponent(`${tx.services.waMessage} — ${svc.title}`)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
-                  >
-                    <IconWhatsApp className="w-4 h-4" /> {tx.services.cta}
-                  </a>
+              <div key={svc.title} className="group bg-white/[0.03] border border-white/[0.08] rounded-3xl p-8 hover:bg-white/[0.06] hover:border-white/[0.15] transition-all duration-200 flex flex-col">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 bg-emerald-500/10 shrink-0">
+                  {svc.icon === 'video'
+                    ? <Video className="w-6 h-6 text-blue-400" />
+                    : <Trophy className="w-6 h-6 text-emerald-400" />}
                 </div>
+                <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                  <h3 className="font-black text-xl text-white leading-tight">{svc.title}</h3>
+                  {svc.badge && (
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest bg-blue-500/15 text-blue-300 shrink-0">{svc.badge}</span>
+                  )}
+                </div>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-1">{svc.desc}</p>
+                {svc.price && (
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-3xl font-black text-emerald-400">{svc.price}</span>
+                    <span className="text-sm text-gray-500 font-medium">{svc.pricePer}</span>
+                  </div>
+                )}
+                <a
+                  href={`https://wa.me/message/YHLE2IFII4MSJ1?text=${encodeURIComponent(`${tx.services.waMessage} — ${svc.title}`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                >
+                  <IconWhatsApp className="w-4 h-4" /> {tx.services.cta}
+                </a>
               </div>
             ))}
           </div>

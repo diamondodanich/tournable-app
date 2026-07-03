@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { MapPin, Users, Trophy, ChevronRight } from 'lucide-react'
 import type { Team, Fixture } from '@/types'
+import { getSportTheme } from '@/lib/sports'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -131,21 +133,30 @@ export default async function LeaguePublicPage({
 
   const sport = league.sport ? SPORT_LABELS[league.sport] : null
   const tabUrl = (t: string) => `?tab=${t}${selectedSeason ? `&season=${selectedSeason.id}` : ''}`
+  const brand = getSportTheme(league.sport).primary
 
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-white">
+    <div className="min-h-screen bg-[#0f0f11] text-white" style={{ ['--brand' as string]: brand } as React.CSSProperties}>
+
+      {/* Brand accent bar */}
+      <div className="h-1 w-full" style={{ background: brand }} />
 
       {/* Header */}
       <div className="border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex items-start gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center text-2xl font-black text-purple-300 shrink-0">
-              {league.name.slice(0, 2).toUpperCase()}
+            <div
+              className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-2xl font-black shrink-0"
+              style={{ background: `${brand}22`, border: `1px solid ${brand}55`, color: brand }}
+            >
+              {league.logo_url
+                ? <Image src={league.logo_url} alt={league.name} width={64} height={64} className="w-full h-full object-cover" unoptimized />
+                : league.name.slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1">
               <h1 className="text-2xl font-black leading-tight">{league.name}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                {sport && <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-900/50 text-purple-300 border border-purple-500/30">{sport}</span>}
+                {sport && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: `${brand}22`, color: brand, border: `1px solid ${brand}44` }}>{sport}</span>}
                 {league.city && <span className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10} /> {league.city}</span>}
                 <span className="flex items-center gap-1 text-xs text-white/40"><Users size={10} /> {leagueTeams.length} команд</span>
                 <span className="flex items-center gap-1 text-xs text-white/40"><Trophy size={10} /> {allSeasons.length} сезонов</span>
@@ -163,7 +174,8 @@ export default async function LeaguePublicPage({
             <span className="text-xs text-white/30 shrink-0 mr-1">Сезон:</span>
             {allSeasons.map(s => (
               <Link key={s.id} href={`?tab=${tab}&season=${s.id}`}
-                className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${s.id === selectedSeason?.id ? 'bg-purple-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}>
+                style={s.id === selectedSeason?.id ? { background: brand, color: '#fff' } : undefined}
+                className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${s.id === selectedSeason?.id ? '' : 'text-white/50 hover:text-white hover:bg-white/10'}`}>
                 {s.name}
                 {s.status === 'active' && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 align-middle" />}
               </Link>
@@ -177,7 +189,8 @@ export default async function LeaguePublicPage({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex gap-1">
           {[['table','Таблица'],['matches','Матчи'],['teams','Команды'],['scorers','Бомбардиры']].map(([id, label]) => (
             <Link key={id} href={tabUrl(id)}
-              className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? 'border-purple-500 text-purple-400' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+              style={tab === id ? { borderColor: brand, color: brand } : undefined}
+              className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? '' : 'border-transparent text-white/40 hover:text-white/70'}`}>
               {label}
             </Link>
           ))}
@@ -202,7 +215,7 @@ export default async function LeaguePublicPage({
                     <th className="text-center py-2 px-2">П</th>
                     <th className="text-center py-2 px-2">Мячи</th>
                     <th className="text-center py-2 px-2">+/-</th>
-                    <th className="text-center py-2 px-3 text-purple-400">О</th>
+                    <th className="text-center py-2 px-3" style={{ color: brand }}>О</th>
                   </tr></thead>
                   <tbody>
                     {standings.map((row, i) => (

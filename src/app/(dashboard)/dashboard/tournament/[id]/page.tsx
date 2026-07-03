@@ -396,15 +396,27 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
-        {/* Title */}
-        <div style={{ marginBottom: '28px', borderBottom: '3px solid #059669', paddingBottom: '14px' }}>
-          <p style={{ fontSize: '22px', fontWeight: 800, color: '#111827', margin: 0 }}>{tournament.name}</p>
-          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-            Полный отчёт · {new Date().toLocaleDateString('ru-RU')} · {t.length} команд
-            {isRoundRobin
-              ? ` · ${f.filter((x: Fixture) => x.played && !x.is_bye).length} сыграно`
-              : ` · ${pm.filter((m: any) => m.winner_id).length} матчей сыграно`}
-          </p>
+        {/* Title — branded with sport colour + tournament logo */}
+        <div style={{ marginBottom: '28px', borderBottom: `3px solid ${sportTheme.primary}`, paddingBottom: '14px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {tournament.logo_url && (
+            <img
+              src={tournament.logo_url}
+              alt=""
+              width={52}
+              height={52}
+              style={{ width: '52px', height: '52px', borderRadius: '12px', objectFit: 'cover', border: `1px solid ${sportTheme.primary}44`, flexShrink: 0 }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '22px', fontWeight: 800, color: '#111827', margin: 0 }}>{tournament.name}</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Полный отчёт · {new Date().toLocaleDateString('ru-RU')} · {t.length} команд
+              {isRoundRobin
+                ? ` · ${f.filter((x: Fixture) => x.played && !x.is_bye).length} сыграно`
+                : ` · ${pm.filter((m: any) => m.winner_id).length} матчей сыграно`}
+            </p>
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '-0.02em', color: sportTheme.primary, flexShrink: 0 }}>TOURNABLE</span>
         </div>
 
         {isRoundRobin ? (

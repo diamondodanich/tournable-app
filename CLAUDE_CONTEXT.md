@@ -103,6 +103,7 @@ Values in `tournaments.sport` column:
 - Terms 4.2/4.2.1/4.2.2 updated for auto-renewal (было «продление самостоятельно» — БЫЛО НЕВЕРНО для рекуррента)
 - ЛК Recurrent toggle: можно не включать — webhook игнорирует не-Completed статусы; подписка живёт через Pay-уведомления, отмена — через наш API-вызов
 - Onboarding sequence per TipTop manager: анкета → сбор 6 000 ₸ (оферта says 6 000, manager quoted 20 000 — clarify) → банк Береке выдаёт онлайн-терминал (согласие ИП на сбор/обработку данных отправлено) → полная готовность
+- Foreign-issued cards: first 2 months KZ-only, then TipTop opens international payments (fixed timeline per manager) — check status ~2 months after go-live. FreedomPay's equivalent condition ("confirm stable turnover") is vague/bank-discretion — one of the reasons we stayed on TipTop over FreedomPay's slightly lower 3.6% vs 3.9% commission (2026-07-02 comparison: switching cost + FreedomPay's own prod token still pending outweighed the ~0.3% commission delta at our volume)
 
 ## FreedomPay JS SDK (legacy — code kept, not wired into checkout)
 - MID: 586535, test token: `OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP`

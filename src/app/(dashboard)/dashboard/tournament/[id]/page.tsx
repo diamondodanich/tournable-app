@@ -282,10 +282,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
   const fmt = tournament.format ?? 'round_robin'
-  const showFixturesTab       = fmt !== 'playoff'                                         // round_robin, groups_playoff, league_playoff
-  const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || !tournament.format
+  const showFixturesTab       = fmt !== 'playoff'                                         // round_robin, groups_playoff, league_playoff, swiss
+  const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || fmt === 'swiss' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
-  const showPlayoffTab        = fmt !== 'round_robin'                                    // playoff, groups_playoff, league_playoff
+  const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss'                 // playoff, groups_playoff, league_playoff
   const fixturesTabLabel = T.tabFixtures
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
@@ -342,7 +342,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     }
   }
 
-  if (isRoundRobin && f.length > 0 && f.filter((x: Fixture) => !x.is_bye).every((x: Fixture) => x.played)) {
+  // Swiss champion only once every planned round is generated AND played
+  const swissAllDone = fmt === 'swiss'
+    && f.length > 0
+    && f.filter((x: Fixture) => !x.is_bye).every((x: Fixture) => x.played)
+    && f.reduce((m: number, x: Fixture) => Math.max(m, x.matchday), 0) >= (tournament.num_rounds ?? 0)
+
+  if ((isRoundRobin || swissAllDone) && f.length > 0 && f.filter((x: Fixture) => !x.is_bye).every((x: Fixture) => x.played)) {
     // Simple standings: accumulate points
     const pWin  = tournament.points_win  ?? 3
     const pDraw = tournament.points_draw ?? 1
@@ -670,7 +676,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
-            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} lang={lang} />
+            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} />
           </TabsContent>
         )}
         {showGroupStandingsTab && (

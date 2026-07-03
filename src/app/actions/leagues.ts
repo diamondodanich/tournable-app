@@ -267,7 +267,7 @@ type ChampSettings = {
 
 export async function createChampionshipWithSetup(
   name: string,
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss',
   numRounds: number,
   teamNames: string[],
   seasonName: string,
@@ -422,7 +422,7 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
 // Add a new season to an existing championship, reusing its persistent teams.
 export async function addSeasonWithSetup(
   leagueId: string,
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss',
   numRounds: number,
   teamNames: string[],
   seasonName: string,

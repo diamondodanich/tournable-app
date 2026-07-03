@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2,
+  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2, Shuffle,
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
@@ -258,13 +258,14 @@ const T = {
   },
 }
 
-type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
+type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
 
 const FORMATS: { value: Format; icon: React.ElementType }[] = [
   { value: 'round_robin',    icon: RotateCcw },
   { value: 'playoff',        icon: Trophy    },
   { value: 'groups_playoff', icon: Layers    },
   { value: 'league_playoff', icon: Crown     },
+  { value: 'swiss',          icon: Shuffle   },
 ]
 
 const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
@@ -272,6 +273,7 @@ const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
   playoff:        { ru: 'Плей-офф',              kz: 'Плей-офф',                en: 'Playoff' },
   groups_playoff: { ru: 'Групповой + Плей-офф',  kz: 'Топтар + Плей-офф',       en: 'Groups + Playoff' },
   league_playoff: { ru: 'Лига + Плей-офф',       kz: 'Лига + Плей-офф',         en: 'League + Playoff' },
+  swiss:          { ru: 'Швейцарская система',   kz: 'Швейцариялық жүйе',       en: 'Swiss system' },
 }
 
 const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
@@ -279,6 +281,7 @@ const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   playoff:        { ru: 'Сетка на выбывание. Идеально для кубков и разовых турниров.',               kz: 'Жою сеткасы. Кубоктар мен бір реттік турнирлерге өте қолайлы.',         en: 'Elimination bracket. Perfect for cups and single-event tournaments.' },
   groups_playoff: { ru: 'Командки делятся на группы, потом лучшие встречаются в плей-офф.',          kz: 'Командалар топтарға бөлінеді, содан кейін үздіктер плей-оффта кездеседі.', en: 'Teams split into groups, then the best meet in a playoff bracket.' },
   league_playoff: { ru: 'Все играют в единой таблице, топ команды выходят в плей-офф.',             kz: 'Барлығы бір кестеде ойнайды, үздік командалар плей-оффқа шығады.',      en: 'All teams play in one table, top teams advance to playoff bracket.' },
+  swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Тұрлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
 }
 
 // ─── Image helpers ────────────────────────────────────────────────────────────
@@ -459,6 +462,7 @@ export default function NewTournamentPage() {
     if (newFormat === 'league_playoff') { setNumRounds(5); setTeamsAdvance(8) }
     if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
     if (newFormat === 'playoff')        { setNumRounds(1) }
+    if (newFormat === 'swiss')          { setNumRounds(5); setSeedingMode('seeded') }
   }
 
   // Pick a sport subtype: store its value, apply match defaults and the sport's
@@ -525,7 +529,9 @@ export default function NewTournamentPage() {
     ['--spr' as string]: isChampionship ? 'rgba(124,58,237,0.15)' : theme.ringRgba,
   } as React.CSSProperties
   // Formats ordered & filtered to those practised in the chosen sport.
-  const sportFormats: Format[] = subtype?.formats ?? ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
+  // Swiss is offered for every sport (chess, esports, large fields), appended if not already present.
+  const baseSportFormats: Format[] = subtype?.formats ?? ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
+  const sportFormats: Format[] = baseSportFormats.includes('swiss') ? baseSportFormats : [...baseSportFormats, 'swiss']
   // Settings labels driven by the chosen subtype.
   const periodLabelTxt   = subtype?.periodLabel[lang]   ?? tx.periodsLbl
   const durationLabelTxt = subtype?.durationLabel[lang] ?? tx.durationLbl
@@ -537,6 +543,7 @@ export default function NewTournamentPage() {
   function minTeamsRequired(): number {
     if (format === 'playoff') return 4
     if (format === 'groups_playoff') return groupsCount * 3
+    if (format === 'swiss') return 4
     return 2 // round_robin, league_playoff
   }
 
@@ -901,6 +908,29 @@ export default function NewTournamentPage() {
                   <p className="text-sm text-gray-500 leading-relaxed mb-5">{fmtDesc(sheetFormat)}</p>
 
                   {/* Format-specific options */}
+                  {sheetFormat === 'swiss' && (
+                    <div className="space-y-1.5 mb-5">
+                      <label className="text-sm font-bold text-gray-700">
+                        {lang === 'en' ? 'Number of rounds' : lang === 'kz' ? 'Тұрлар саны' : 'Количество туров'}
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[3, 4, 5, 6, 7, 8].map(v => (
+                          <button key={v} type="button" onClick={() => setNumRounds(v)}
+                            style={numRounds === v ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
+                            className={`py-2.5 px-3 rounded-xl border text-center text-sm transition-all ${
+                              numRounds === v ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            }`}>
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 pt-1">
+                        {lang === 'en' ? 'Round 1 is generated now; pair each next round after the current one finishes.'
+                          : lang === 'kz' ? '1-тур қазір жасалады; келесі тұрды ағымдағысы аяқталған соң құрасыз.'
+                          : 'Первый тур создаётся сразу; следующий генерируется после завершения текущего.'}
+                      </p>
+                    </div>
+                  )}
                   {sheetFormat === 'round_robin' && (
                     <div className="space-y-1.5 mb-5">
                       <label className="text-sm font-bold text-gray-700">{tx.roundsLbl}</label>

@@ -65,7 +65,7 @@ export async function createTournament(formData: FormData) {
 
 export async function createTournamentWithSetup(
   name: string,
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff',
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss',
   numRounds: number,
   teamNames: string[],
   settings?: {
@@ -183,6 +183,16 @@ export async function createTournamentWithSetup(
     ])
   }
 
+  if (format === 'swiss' && teamIds.length >= 2) {
+    // Swiss: only round 1 is generated upfront (top-half vs bottom-half seeding).
+    // Later rounds are paired by standings via generateNextSwissRound.
+    const fixtures = buildSwissRound1(t.id, teamIds)
+    await Promise.all([
+      supabase.from('fixtures').insert(fixtures),
+      supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
+    ])
+  }
+
   if (format === 'playoff' && teamIds.length >= 2) {
     // Auto-generate fair seeded bracket immediately on creation.
     // Pre-assign UUIDs so winner_to_match links resolve in a SINGLE insert
@@ -218,6 +228,124 @@ export async function createTournamentWithSetup(
 
   revalidatePath('/dashboard')
   return { id: t.id, teamIds }
+}
+
+// ── Swiss system ──────────────────────────────────────────────────────────────
+// Round 1: seeded top-half vs bottom-half (strong plays a mid team). teamIds
+// arrive already ordered by the wizard's seeding.
+function buildSwissRound1(tournamentId: string, teamIds: string[]) {
+  const rows: Record<string, unknown>[] = []
+  const n = teamIds.length
+  const half = Math.floor(n / 2)
+  const paired = new Set<number>()
+  for (let i = 0; i < half; i++) {
+    const h = teamIds[i]
+    const a = teamIds[i + half]
+    paired.add(i); paired.add(i + half)
+    rows.push({ tournament_id: tournamentId, matchday: 1, round: 1, cycle_round: 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
+  }
+  // Odd team out → bye (no points in standings; even counts recommended for Swiss)
+  if (n % 2 === 1) {
+    const leftover = teamIds.find((_, i) => !paired.has(i))
+    if (leftover) rows.push({ tournament_id: tournamentId, matchday: 1, round: 1, cycle_round: 1, home_team_id: leftover, away_team_id: null, is_bye: true, played: false })
+  }
+  return rows
+}
+
+// Pair the next Swiss round by current standings, avoiding rematches.
+export async function generateNextSwissRound(tournamentId: string): Promise<{ error?: string; round?: number }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('user_id, format, num_rounds, points_win, points_draw, points_loss')
+    .eq('id', tournamentId)
+    .maybeSingle()
+  if (!tournament) return { error: 'Турнир не найден' }
+  if (tournament.format !== 'swiss') return { error: 'Не швейцарская система' }
+
+  // Owner or accepted editor
+  if (tournament.user_id !== user.id) {
+    const { data: member } = await supabase
+      .from('tournament_members').select('role')
+      .eq('tournament_id', tournamentId).eq('user_id', user.id)
+      .eq('status', 'accepted').eq('role', 'editor').maybeSingle()
+    if (!member) return { error: 'Нет доступа' }
+  }
+
+  const [{ data: teams }, { data: fixtures }] = await Promise.all([
+    supabase.from('teams').select('id').eq('tournament_id', tournamentId),
+    supabase.from('fixtures').select('matchday, home_team_id, away_team_id, home_score, away_score, played, is_bye').eq('tournament_id', tournamentId),
+  ])
+  const allFixtures = fixtures ?? []
+  const teamIds = (teams ?? []).map(t => t.id)
+  if (teamIds.length < 2) return { error: 'Недостаточно команд' }
+
+  const totalRounds = tournament.num_rounds ?? 5
+  const maxMd = allFixtures.reduce((m, f) => Math.max(m, f.matchday), 0)
+  if (maxMd >= totalRounds) return { error: 'Все туры уже сгенерированы' }
+  const lastRound = allFixtures.filter(f => f.matchday === maxMd)
+  if (lastRound.some(f => !f.is_bye && !f.played)) return { error: 'Сначала доиграйте текущий тур' }
+
+  // Standings from played non-bye fixtures
+  const PW = tournament.points_win ?? 3, PD = tournament.points_draw ?? 1, PL = tournament.points_loss ?? 0
+  const pts = new Map<string, number>(), gd = new Map<string, number>(), gf = new Map<string, number>()
+  teamIds.forEach(id => { pts.set(id, 0); gd.set(id, 0); gf.set(id, 0) })
+  for (const f of allFixtures) {
+    if (!f.played || f.is_bye || !f.home_team_id || !f.away_team_id) continue
+    const hs = f.home_score ?? 0, as = f.away_score ?? 0
+    gf.set(f.home_team_id, (gf.get(f.home_team_id) ?? 0) + hs)
+    gf.set(f.away_team_id, (gf.get(f.away_team_id) ?? 0) + as)
+    gd.set(f.home_team_id, (gd.get(f.home_team_id) ?? 0) + hs - as)
+    gd.set(f.away_team_id, (gd.get(f.away_team_id) ?? 0) + as - hs)
+    if (hs > as) { pts.set(f.home_team_id, (pts.get(f.home_team_id) ?? 0) + PW); pts.set(f.away_team_id, (pts.get(f.away_team_id) ?? 0) + PL) }
+    else if (hs < as) { pts.set(f.away_team_id, (pts.get(f.away_team_id) ?? 0) + PW); pts.set(f.home_team_id, (pts.get(f.home_team_id) ?? 0) + PL) }
+    else { pts.set(f.home_team_id, (pts.get(f.home_team_id) ?? 0) + PD); pts.set(f.away_team_id, (pts.get(f.away_team_id) ?? 0) + PD) }
+  }
+
+  // Pairs already played (both orders) + teams that already had a bye
+  const playedPairs = new Set<string>()
+  const hadBye = new Set<string>()
+  for (const f of allFixtures) {
+    if (f.is_bye && f.home_team_id) { hadBye.add(f.home_team_id); continue }
+    if (f.home_team_id && f.away_team_id) {
+      playedPairs.add([f.home_team_id, f.away_team_id].sort().join('|'))
+    }
+  }
+
+  const sorted = [...teamIds].sort((a, b) =>
+    (pts.get(b)! - pts.get(a)!) || (gd.get(b)! - gd.get(a)!) || (gf.get(b)! - gf.get(a)!) || a.localeCompare(b)
+  )
+
+  const newRows: Record<string, unknown>[] = []
+  const nextMd = maxMd + 1
+  const pool = [...sorted]
+
+  // Odd → give a bye to the lowest-ranked team that hasn't had one
+  if (pool.length % 2 === 1) {
+    let byeTeam: string | null = null
+    for (let i = pool.length - 1; i >= 0; i--) { if (!hadBye.has(pool[i])) { byeTeam = pool[i]; break } }
+    if (!byeTeam) byeTeam = pool[pool.length - 1]
+    pool.splice(pool.indexOf(byeTeam), 1)
+    newRows.push({ tournament_id: tournamentId, matchday: nextMd, round: nextMd, cycle_round: 1, home_team_id: byeTeam, away_team_id: null, is_bye: true, played: false })
+  }
+
+  // Greedy pairing: strongest available vs strongest available not-yet-played
+  while (pool.length > 0) {
+    const a = pool.shift()!
+    let idx = pool.findIndex(b => !playedPairs.has([a, b].sort().join('|')))
+    if (idx === -1) idx = 0 // unavoidable rematch (small fields, late rounds)
+    const b = pool.splice(idx, 1)[0]
+    newRows.push({ tournament_id: tournamentId, matchday: nextMd, round: nextMd, cycle_round: 1, home_team_id: a, away_team_id: b, is_bye: false, played: false })
+  }
+
+  const { error } = await supabase.from('fixtures').insert(newRows)
+  if (error) return { error: error.message }
+
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return { round: nextMd }
 }
 
 function buildRoundRobinFixtures(

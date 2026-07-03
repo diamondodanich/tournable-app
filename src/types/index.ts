@@ -4,7 +4,7 @@ export type Tournament = {
   name: string
   num_rounds: number
   generated: boolean
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
   logo_url: string | null
   // Multi-format fields
   groups_count: number | null   // groups_playoff: number of groups

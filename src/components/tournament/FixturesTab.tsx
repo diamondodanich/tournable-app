@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tournament, Team, Fixture } from '@/types'
-import { saveFixtureResult, startFixture } from '@/app/actions/tournaments'
+import { saveFixtureResult, startFixture, generateNextSwissRound } from '@/app/actions/tournaments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users, Shuffle } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import LineupEditor from './LineupEditor'
@@ -528,16 +529,19 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, isEnterprise = false, lang = 'ru' }: {
+export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, isEnterprise = false, isOwner = false, lang = 'ru' }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
   isPro?: boolean
   isEnterprise?: boolean
+  isOwner?: boolean
   lang?: Lang
 }) {
   const T = tx[lang]
+  const router = useRouter()
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
+  const [swissGen, setSwissGen] = useState(false)
 
   const hasUpcoming = initialFixtures.some(f => !f.is_bye && f.home_team_id && f.away_team_id && !f.played)
   const [subTab, setSubTab] = useState<'upcoming' | 'results'>(hasUpcoming ? 'upcoming' : 'results')
@@ -590,8 +594,52 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
 
   const showCycleLabel = tournament.format === 'round_robin' || tournament.format === 'league_playoff' || !tournament.format
 
+  // ── Swiss: progressive round generation ─────────────────────────────────────
+  const isSwiss = tournament.format === 'swiss'
+  const maxMatchday = fixtures.reduce((m, f) => Math.max(m, f.matchday), 0)
+  const lastRoundComplete = fixtures.filter(f => f.matchday === maxMatchday).every(f => isByeFixture(f) || f.played)
+  const swissRoundsLeft = isSwiss ? (tournament.num_rounds ?? 0) - maxMatchday : 0
+  const swissT = {
+    ru: { next: 'Сгенерировать следующий тур', gen: 'Генерируем…', finishFirst: 'Доиграйте текущий тур, чтобы открыть следующий', allDone: 'Все туры сыграны — победитель в таблице', progress: `Тур ${maxMatchday} из ${tournament.num_rounds ?? maxMatchday}`, done: 'Тур создан' },
+    kz: { next: 'Келесі тұрды жасау', gen: 'Жасалуда…', finishFirst: 'Келесіні ашу үшін ағымдағы тұрды аяқтаңыз', allDone: 'Барлық тұр ойналды — жеңімпаз кестеде', progress: `${maxMatchday} / ${tournament.num_rounds ?? maxMatchday} тұр`, done: 'Тұр жасалды' },
+    en: { next: 'Generate next round', gen: 'Generating…', finishFirst: 'Finish the current round to unlock the next', allDone: 'All rounds played — winner is in the table', progress: `Round ${maxMatchday} of ${tournament.num_rounds ?? maxMatchday}`, done: 'Round created' },
+  }[lang]
+
+  async function handleSwissNext() {
+    setSwissGen(true)
+    const res = await generateNextSwissRound(tournament.id)
+    setSwissGen(false)
+    if (res?.error) toast.error(res.error)
+    else { toast.success(swissT.done); router.refresh() }
+  }
+
   return (
     <div className="space-y-4">
+      {isSwiss && isOwner && (
+        <div className="flex items-center justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Shuffle size={16} className="text-indigo-500 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-indigo-800">{swissT.progress}</p>
+              {swissRoundsLeft <= 0
+                ? <p className="text-xs text-indigo-500">{swissT.allDone}</p>
+                : !lastRoundComplete
+                  ? <p className="text-xs text-indigo-500">{swissT.finishFirst}</p>
+                  : null}
+            </div>
+          </div>
+          {swissRoundsLeft > 0 && (
+            <button
+              onClick={handleSwissNext}
+              disabled={swissGen || !lastRoundComplete}
+              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 px-3.5 py-2 rounded-lg transition-colors">
+              {swissGen ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              {swissGen ? swissT.gen : swissT.next}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Sub-tabs */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         <button

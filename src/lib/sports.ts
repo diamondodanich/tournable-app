@@ -9,7 +9,7 @@ import type { ElementType } from 'react'
 import { Volleyball, HelpCircle } from 'lucide-react'
 import { SoccerBall, BasketballBall, HockeyPuck } from '@/components/icons/sport-icons'
 
-export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff'
+export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
 export type Lang = 'ru' | 'kz' | 'en'
 
 export interface SportTheme {

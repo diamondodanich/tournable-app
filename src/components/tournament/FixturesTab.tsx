@@ -164,7 +164,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang, onSaved }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
@@ -173,6 +173,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   isEnterprise: boolean
   T: TournamentTx
   lang: Lang
+  onSaved?: () => void
 }) {
   const [showLineup, setShowLineup] = useState(false)
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
@@ -279,7 +280,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
     )
     setSaving(false)
     if (result?.error) { setStatus(prevStatus); toast.error(T.errorPrefix(result.error)) }
-    else { toast.success(T.resultSaved); setIsEditing(false); setSavedH(hs); setSavedA(as_) }
+    else { toast.success(T.resultSaved); setIsEditing(false); setSavedH(hs); setSavedA(as_); onSaved?.() }
   }
 
   if (fixture.is_bye || !fixture.home_team_id || !fixture.away_team_id) {
@@ -546,17 +547,32 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const hasUpcoming = initialFixtures.some(f => !f.is_bye && f.home_team_id && f.away_team_id && !f.played)
   const [subTab, setSubTab] = useState<'upcoming' | 'results'>(hasUpcoming ? 'upcoming' : 'results')
 
-  // Realtime sync: update fixtures when another user saves results
+  // Keep local state in sync with fresh server data after router.refresh()
+  // (useState ignores changed initial values, so an explicit effect is needed).
+  // This is what makes saving a result / generating a new Swiss round update the
+  // UI immediately without a manual page reload.
+  useEffect(() => { setFixtures(initialFixtures) }, [initialFixtures])
+
+  // Realtime sync: reflect other users' saves (UPDATE), newly generated rounds
+  // (INSERT) and bracket regeneration (DELETE) without a page reload.
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
       .channel(`fixtures_${tournament.id}`)
       .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'fixtures',
+        event: '*', schema: 'public', table: 'fixtures',
         filter: `tournament_id=eq.${tournament.id}`,
       }, payload => {
-        const updated = payload.new as Fixture
-        setFixtures(prev => prev.map(f => f.id === updated.id ? { ...f, ...updated } : f))
+        if (payload.eventType === 'INSERT') {
+          const added = payload.new as Fixture
+          setFixtures(prev => prev.some(f => f.id === added.id) ? prev : [...prev, added])
+        } else if (payload.eventType === 'DELETE') {
+          const removed = payload.old as { id: string }
+          setFixtures(prev => prev.filter(f => f.id !== removed.id))
+        } else {
+          const updated = payload.new as Fixture
+          setFixtures(prev => prev.map(f => f.id === updated.id ? { ...f, ...updated } : f))
+        }
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -601,7 +617,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const swissRoundsLeft = isSwiss ? (tournament.num_rounds ?? 0) - maxMatchday : 0
   const swissT = {
     ru: { next: 'Сгенерировать следующий тур', gen: 'Генерируем…', finishFirst: 'Доиграйте текущий тур, чтобы открыть следующий', allDone: 'Все туры сыграны — победитель в таблице', progress: `Тур ${maxMatchday} из ${tournament.num_rounds ?? maxMatchday}`, done: 'Тур создан' },
-    kz: { next: 'Келесі тұрды жасау', gen: 'Жасалуда…', finishFirst: 'Келесіні ашу үшін ағымдағы тұрды аяқтаңыз', allDone: 'Барлық тұр ойналды — жеңімпаз кестеде', progress: `${maxMatchday} / ${tournament.num_rounds ?? maxMatchday} тұр`, done: 'Тұр жасалды' },
+    kz: { next: 'Келесі турды жасау', gen: 'Жасалуда…', finishFirst: 'Келесіні ашу үшін ағымдағы турды аяқтаңыз', allDone: 'Барлық тур ойналды — жеңімпаз кестеде', progress: `${maxMatchday} / ${tournament.num_rounds ?? maxMatchday} тур`, done: 'Тур жасалды' },
     en: { next: 'Generate next round', gen: 'Generating…', finishFirst: 'Finish the current round to unlock the next', allDone: 'All rounds played — winner is in the table', progress: `Round ${maxMatchday} of ${tournament.num_rounds ?? maxMatchday}`, done: 'Round created' },
   }[lang]
 
@@ -689,7 +705,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} onSaved={() => router.refresh()} />)}
           </div>
         </div>
       ))}

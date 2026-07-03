@@ -245,7 +245,7 @@ export function CheckoutForm({ userEmail, lang = 'ru' }: Props) {
         {/* Card payment */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-black text-gray-900 mb-4">{tx.cardPayment}</h2>
-          <TipTopPayButton period={period} amount={plan.price} userEmail={userEmail} />
+          <TipTopPayButton period={period} amount={plan.price} userEmail={userEmail} lang={lang} />
         </div>
 
         {/* WhatsApp fallback */}

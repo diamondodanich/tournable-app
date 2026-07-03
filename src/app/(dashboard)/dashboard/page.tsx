@@ -7,6 +7,7 @@ import { Plus, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink,
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import NewTournamentButton from '@/components/tournament/NewTournamentButton'
+import DashboardTour from '@/components/dashboard/DashboardTour'
 
 export const dynamic = 'force-dynamic'
 
@@ -123,7 +124,7 @@ export default async function DashboardPage() {
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
 
-  const [plan, { data: tournaments }, { data: memberRows }, { data: showcaseTournaments }, { data: championships }] = await Promise.all([
+  const [plan, { data: tournaments }, { data: memberRows }, { data: showcaseTournaments }, { data: championships }, { data: seasonRows }] = await Promise.all([
     getUserPlan(),
     supabase
       .from('tournaments')
@@ -151,6 +152,12 @@ export default async function DashboardPage() {
       .select('id, name, slug, sport, logo_url, seasons(count), league_teams(count)')
       .eq('owner_id', user!.id)
       .order('created_at', { ascending: false }),
+    // Season→tournament links for this user's championships, so we can hide those
+    // season-tournaments from the standalone tournaments list below.
+    supabase
+      .from('seasons')
+      .select('tournament_id, leagues!inner(owner_id)')
+      .eq('leagues.owner_id', user!.id),
   ])
 
   const isPro = plan === 'pro' || plan === 'enterprise'
@@ -161,12 +168,23 @@ export default async function DashboardPage() {
     .filter((m: any) => m.tournaments && !invitedIds.has(m.tournament_id) && !m.tournaments.deleted_at)
     .map((m: any) => ({ ...m.tournaments, _role: m.role as string })) as (TournamentWithCount & { _role: string })[]
 
-  const list = (tournaments ?? []) as TournamentWithCount[]
+  // Tournaments that belong to a championship season live under the championship,
+  // not in the standalone list — filter them out so they don't appear twice.
+  const seasonTournamentIds = new Set(
+    (seasonRows ?? []).map((s: any) => s.tournament_id).filter(Boolean) as string[]
+  )
+  const list = (tournaments ?? []).filter(
+    (t: TournamentWithCount) => !seasonTournamentIds.has(t.id)
+  ) as TournamentWithCount[]
   // First active (generated) tournament — used by NewTournamentButton modal
   const firstActive = list.find(t => t.generated) ?? list[0] ?? null
 
+  const tourSeen = Boolean((user?.user_metadata as { dashboard_tour_seen?: boolean } | undefined)?.dashboard_tour_seen)
+
   return (
     <div>
+      <DashboardTour plan={plan} lang={lang} initialSeen={tourSeen} />
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-black text-gray-900">{tx.title}</h1>

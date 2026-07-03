@@ -90,6 +90,7 @@ const T = {
     seedingSeededDesc: 'Сильные команды попадают в разные части сетки',
     ratingLabel: 'Сила',
     matchesHint: (teams: number, matches: number) => `${teams} команд — ${matches} матч${matches === 1 ? '' : matches <= 4 ? 'а' : 'ей'}`,
+    swissHint: (teams: number, rounds: number) => `${teams} команд — ${rounds} тур${rounds === 1 ? '' : rounds <= 4 ? 'а' : 'ов'}`,
     scheduleHint: (matches: number) => `Расписание из ${matches} матч${matches === 1 ? 'а' : 'ей'} сгенерируется автоматически`,
     summary: { format: 'Формат', teams: 'команд', periods: 'Таймы', pts: 'Очки' },
     planLimit: {
@@ -159,6 +160,7 @@ const T = {
     seedingSeededDesc: 'Күшті командалар торлар/топтар бойынша бөлінеді',
     ratingLabel: 'Күш',
     matchesHint: (teams: number, matches: number) => `${teams} команда — ${matches} матч`,
+    swissHint: (teams: number, rounds: number) => `${teams} команда — ${rounds} тур`,
     scheduleHint: (matches: number) => `${matches} матчтан тұратын кесте автоматты жасалады`,
     summary: { format: 'Формат', teams: 'команда', periods: 'Таймдар', pts: 'Ұпайлар' },
     planLimit: {
@@ -225,6 +227,7 @@ const T = {
     seedingSeededDesc: 'Stronger teams are placed in different brackets or groups',
     ratingLabel: 'Strength',
     matchesHint: (teams: number, matches: number) => `${teams} teams — ${matches} match${matches === 1 ? '' : 'es'}`,
+    swissHint: (teams: number, rounds: number) => `${teams} teams — ${rounds} round${rounds === 1 ? '' : 's'}`,
     scheduleHint: (matches: number) => `Schedule of ${matches} match${matches === 1 ? '' : 'es'} will generate automatically`,
     summary: { format: 'Format', teams: 'teams', periods: 'Periods', pts: 'Points' },
     planLimit: {
@@ -281,7 +284,7 @@ const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   playoff:        { ru: 'Сетка на выбывание. Идеально для кубков и разовых турниров.',               kz: 'Жою сеткасы. Кубоктар мен бір реттік турнирлерге өте қолайлы.',         en: 'Elimination bracket. Perfect for cups and single-event tournaments.' },
   groups_playoff: { ru: 'Командки делятся на группы, потом лучшие встречаются в плей-офф.',          kz: 'Командалар топтарға бөлінеді, содан кейін үздіктер плей-оффта кездеседі.', en: 'Teams split into groups, then the best meet in a playoff bracket.' },
   league_playoff: { ru: 'Все играют в единой таблице, топ команды выходят в плей-офф.',             kz: 'Барлығы бір кестеде ойнайды, үздік командалар плей-оффқа шығады.',      en: 'All teams play in one table, top teams advance to playoff bracket.' },
-  swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Тұрлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
+  swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Турлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
 }
 
 // ─── Image helpers ────────────────────────────────────────────────────────────
@@ -625,6 +628,7 @@ export default function NewTournamentPage() {
     if (format === 'playoff')        return tx.playoffHint(filledTeams.length)
     if (format === 'groups_playoff') return tx.groupsHint(filledTeams.length, groupsCount)
     if (format === 'league_playoff') return tx.leagueHint(filledTeams.length)
+    if (format === 'swiss')          return tx.swissHint(filledTeams.length, numRounds)
     return tx.matchesHint(filledTeams.length, matchCount)
   })()
 
@@ -913,7 +917,7 @@ export default function NewTournamentPage() {
                   {sheetFormat === 'swiss' && (
                     <div className="space-y-1.5 mb-5">
                       <label className="text-sm font-bold text-gray-700">
-                        {lang === 'en' ? 'Number of rounds' : lang === 'kz' ? 'Тұрлар саны' : 'Количество туров'}
+                        {lang === 'en' ? 'Number of rounds' : lang === 'kz' ? 'Турлар саны' : 'Количество туров'}
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         {[3, 4, 5, 6, 7, 8].map(v => (
@@ -928,7 +932,7 @@ export default function NewTournamentPage() {
                       </div>
                       <p className="text-xs text-gray-400 pt-1">
                         {lang === 'en' ? 'Round 1 is generated now; pair each next round after the current one finishes.'
-                          : lang === 'kz' ? '1-тур қазір жасалады; келесі тұрды ағымдағысы аяқталған соң құрасыз.'
+                          : lang === 'kz' ? '1-тур қазір жасалады; келесі турды ағымдағысы аяқталған соң құрасыз.'
                           : 'Первый тур создаётся сразу; следующий генерируется после завершения текущего.'}
                       </p>
                     </div>

@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation'
 import { getUserPlan } from '@/app/actions/billing'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User } from 'lucide-react'
 import LangSwitcher from '@/components/dashboard/LangSwitcher'
+import AccountMenu from '@/components/dashboard/AccountMenu'
 import SupportWidget from '@/components/landing/SupportWidget'
 import InstallPrompt from '@/components/InstallPrompt'
 
@@ -51,11 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const langRaw = cookieStore.get('lang')?.value ?? 'ru'
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
-  const isPro = plan === 'pro'
-  const isEnterprise = plan === 'enterprise'
-
-  const initials = user.email?.slice(0, 2).toUpperCase() ?? '??'
-  const emailShort = user.email?.split('@')[0] ?? ''
+  const displayName = (user.user_metadata as { display_name?: string } | undefined)?.display_name
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
@@ -101,39 +97,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </Link>
           </nav>
 
-          {/* Right: lang switcher + profile + sign out */}
+          {/* Right: lang switcher + account menu (multi-account switcher) */}
           <div className="flex items-center gap-2">
             <LangSwitcher current={lang} />
-            <Link
-              href="/account"
-              className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"
-            >
-              {/* Avatar with user icon badge */}
-              <div className="relative shrink-0">
-                <div className="w-7 h-7 rounded-full bg-white/25 ring-1 ring-white/40 flex items-center justify-center text-[11px] font-black text-white">
-                  {initials}
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border border-emerald-700 flex items-center justify-center">
-                  <User size={7} className="text-emerald-900" />
-                </div>
-              </div>
-              {/* Label + email */}
-              <div className="hidden sm:flex flex-col leading-none">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[10px] text-emerald-300 font-semibold">{tx.account}</span>
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none ${
-                    isEnterprise
-                      ? 'bg-purple-400 text-purple-950'
-                      : isPro
-                        ? 'bg-amber-400 text-amber-900'
-                        : 'bg-white/20 text-emerald-100'
-                  }`}>
-                    {isEnterprise ? 'ENT' : isPro ? 'PRO' : 'FREE'}
-                  </span>
-                </div>
-                <span className="text-xs text-white font-bold max-w-[110px] truncate">{emailShort}</span>
-              </div>
-            </Link>
+            <AccountMenu
+              lang={lang}
+              currentId={user.id}
+              email={user.email ?? ''}
+              name={displayName}
+              plan={plan}
+            />
           </div>
         </div>
       </header>

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ArrowLeft } from 'lucide-react'
 import OAuthButtons from '@/components/auth/OAuthButtons'
 
 type Lang = 'ru' | 'kz' | 'en'
@@ -21,6 +22,7 @@ const T = {
     btn: 'Войти', btnLoading: 'Входим…',
     noAccount: 'Нет аккаунта?', registerLink: 'Зарегистрируйтесь бесплатно',
     registerHref: '/register',
+    backHome: 'На главную',
   },
   kz: {
     tagline: 'Кәсіби турнирлер — телефоныңызда',
@@ -31,6 +33,7 @@ const T = {
     btn: 'Кіру', btnLoading: 'Кіруде…',
     noAccount: 'Аккаунт жоқ па?', registerLink: 'Тегін тіркелу',
     registerHref: '/register?lang=kz',
+    backHome: 'Басты бетке',
   },
   en: {
     tagline: 'Professional tournaments — at your fingertips',
@@ -41,6 +44,7 @@ const T = {
     btn: 'Sign in', btnLoading: 'Signing in…',
     noAccount: "Don't have an account?", registerLink: 'Create one free',
     registerHref: '/register?lang=en',
+    backHome: 'Back to home',
   },
 } as const
 
@@ -73,6 +77,15 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
         <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#047857,#10b981)' }} />
 
         <div className="p-8">
+          {/* Back to home */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-emerald-600 transition-colors mb-6"
+          >
+            <ArrowLeft size={14} />
+            {tx.backHome}
+          </Link>
+
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <Image src="/logo-green.png" alt="Tournable" width={44} height={44} className="w-11 h-11 object-contain" />

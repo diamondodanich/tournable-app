@@ -24,11 +24,14 @@ declare global {
   }
 }
 
+type Lang = 'ru' | 'kz' | 'en'
+
 interface Props {
   period:     PlanPeriod
   amount:     number
   userEmail?: string
   planType?:  PlanType
+  lang?:      Lang
 }
 
 const GRADIENTS: Record<PlanType, string> = {
@@ -36,7 +39,56 @@ const GRADIENTS: Record<PlanType, string> = {
   enterprise: 'linear-gradient(135deg,#7c3aed,#a855f7)',
 }
 
-export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }: Props) {
+const T = {
+  ru: {
+    notConfigured: 'Платёжный модуль не настроен: отсутствует идентификатор терминала. Напишите нам — мы быстро поможем.',
+    activatedNoPlan: (e: string) => `Оплата прошла, но план не активировался: ${e}`,
+    paymentFailed: 'Платёж не прошёл',
+    openFailed: 'Не удалось открыть платёжную форму. Попробуйте ещё раз.',
+    payError: 'Ошибка при оплате',
+    scriptFailed: 'Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.',
+    consentPre: 'Нажимая «Оплатить», вы соглашаетесь с',
+    offerLink: 'условиями оферты',
+    consentMid: 'и автоматическим продлением подписки',
+    everyYear: ' раз в год', everyMonth: ' раз в месяц',
+    consentPost: '. Отменить можно в любой момент в настройках.',
+    processing: 'Обработка...', pay: 'Оплатить',
+    secured: 'Защищено · PCI DSS · 3D Secure',
+  },
+  kz: {
+    notConfigured: 'Төлем модулі бапталмаған: терминал идентификаторы жоқ. Бізге жазыңыз — тез көмектесеміз.',
+    activatedNoPlan: (e: string) => `Төлем өтті, бірақ жоспар белсендірілмеді: ${e}`,
+    paymentFailed: 'Төлем өтпеді',
+    openFailed: 'Төлем формасын ашу мүмкін болмады. Қайта көріңіз.',
+    payError: 'Төлем кезінде қате',
+    scriptFailed: 'Төлем модулін жүктеу мүмкін болмады. Бетті жаңартып көріңіз.',
+    consentPre: '«Төлеу» батырмасын басу арқылы сіз',
+    offerLink: 'оферта шарттарымен',
+    consentMid: 'және жазылымның автоматты ұзартылуымен келісесіз',
+    everyYear: ' жылына бір рет', everyMonth: ' айына бір рет',
+    consentPost: '. Кез келген уақытта баптаулардан бас тартуға болады.',
+    processing: 'Өңделуде...', pay: 'Төлеу',
+    secured: 'Қорғалған · PCI DSS · 3D Secure',
+  },
+  en: {
+    notConfigured: 'Payment module is not configured: terminal ID is missing. Message us — we’ll help quickly.',
+    activatedNoPlan: (e: string) => `Payment went through, but the plan wasn’t activated: ${e}`,
+    paymentFailed: 'Payment failed',
+    openFailed: 'Could not open the payment form. Please try again.',
+    payError: 'Payment error',
+    scriptFailed: 'Could not load the payment module. Please refresh the page.',
+    consentPre: 'By clicking “Pay” you agree to the',
+    offerLink: 'terms of the offer',
+    consentMid: 'and to automatic subscription renewal',
+    everyYear: ' once a year', everyMonth: ' once a month',
+    consentPost: '. You can cancel anytime in settings.',
+    processing: 'Processing...', pay: 'Pay',
+    secured: 'Secured · PCI DSS · 3D Secure',
+  },
+} as const
+
+export function TipTopPayButton({ period, amount, userEmail, planType = 'pro', lang = 'ru' }: Props) {
+  const tx = T[lang]
   const [scriptReady, setScriptReady] = useState(false)
   const [scriptError, setScriptError] = useState(false)
   const [isPending, setIsPending]     = useState(false)
@@ -58,7 +110,7 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
     if (!window.tiptop) return
 
     if (!PUBLIC_ID) {
-      setError('Платёжный модуль не настроен: отсутствует идентификатор терминала. Напишите нам — мы быстро поможем.')
+      setError(tx.notConfigured)
       return
     }
 
@@ -81,13 +133,13 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
 
           setIsPending(false)
           if ('error' in activation) {
-            setError(`Оплата прошла, но план не активировался: ${activation.error}`)
+            setError(tx.activatedNoPlan(activation.error))
             return
           }
           window.location.href = '/checkout/success'
         } else if (result.status === 'fail' || result.status === 'reject') {
           setIsPending(false)
-          setError(result.message ?? 'Платёж не прошёл')
+          setError(result.message ?? tx.paymentFailed)
         } else {
           // 'cancel' — user closed the widget without paying
           setIsPending(false)
@@ -121,14 +173,14 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
         },
       }).catch((err: unknown) => {
         setIsPending(false)
-        setError(err instanceof Error ? err.message : 'Не удалось открыть платёжную форму. Попробуйте ещё раз.')
+        setError(err instanceof Error ? err.message : tx.openFailed)
       })
 
       // The widget overlay is open now — stop the button spinner so the page
       // doesn't look stuck behind it. oncomplete drives the rest.
       setIsPending(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при оплате')
+      setError(err instanceof Error ? err.message : tx.payError)
       setIsPending(false)
     }
   }
@@ -136,7 +188,7 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
   if (scriptError) {
     return (
       <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-        Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.
+        {tx.scriptFailed}
       </div>
     )
   }
@@ -150,16 +202,15 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
       )}
 
       <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-        Нажимая «Оплатить», вы соглашаетесь с{' '}
+        {tx.consentPre}{' '}
         <a
           href="/terms"
           className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
         >
-          условиями оферты
+          {tx.offerLink}
         </a>
-        {' '}и автоматическим продлением подписки
-        {period === 'annual' ? ' раз в год' : ' раз в месяц'}.
-        Отменить можно в любой момент в настройках.
+        {' '}{tx.consentMid}
+        {period === 'annual' ? tx.everyYear : tx.everyMonth}{tx.consentPost}
       </p>
 
       <button
@@ -169,12 +220,12 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro' }:
         style={{ background: GRADIENTS[planType] }}
       >
         {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-        {isPending ? 'Обработка...' : 'Оплатить'}
+        {isPending ? tx.processing : tx.pay}
       </button>
 
       <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
         <ShieldCheck className="w-3 h-3" />
-        <span>Защищено · PCI DSS · 3D Secure</span>
+        <span>{tx.secured}</span>
       </div>
 
       {/* Payment system logos */}

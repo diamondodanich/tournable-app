@@ -1,7 +1,7 @@
 'use client'
 
 import { Tournament, TournamentMember } from '@/types'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
 import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
@@ -15,9 +15,14 @@ interface Props {
   isPro?: boolean
   members?: TournamentMember[]
   lang?: Lang
+  /** Where the header gear links to. Defaults to the tournament's own settings page. */
+  settingsHref?: string
+  /** Override the "back" link (label + href) — used when embedded in a championship. */
+  backHref?: string
+  backLabel?: string
 }
 
-export default function TournamentHeader({ tournament, isOwner = true, isPro = false, members = [], lang = 'ru' }: Props) {
+export default function TournamentHeader({ tournament, isOwner = true, isPro = false, members = [], lang = 'ru', settingsHref, backHref, backLabel }: Props) {
   const T = tx[lang]
   const theme = getSportTheme(tournament.sport)
   const publicUrl = typeof window !== 'undefined'
@@ -29,6 +34,7 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
     playoff:        T.fmtPlayoff,
     groups_playoff: T.fmtGroupsPlayoff,
     league_playoff: T.fmtLeaguePlayoff,
+    swiss:          T.fmtSwiss,
   }
 
   const formatDesc = (() => {
@@ -58,12 +64,12 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
 
       {/* Back link — prominent */}
       <Link
-        href="/dashboard"
+        href={backHref ?? '/dashboard'}
         style={{ color: theme.primary }}
         className="inline-flex items-center gap-1.5 text-sm font-semibold hover:opacity-80 mb-3 mt-1 transition-opacity group"
       >
         <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
-        {T.allTournaments}
+        {backLabel ?? T.allTournaments}
       </Link>
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -106,6 +112,17 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
             </div>
           )}
 
+          {isOwner && (
+            <Link
+              href={settingsHref ?? `/dashboard/tournament/${tournament.id}/settings`}
+              aria-label={T.tabSetup}
+              title={T.tabSetup}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            >
+              <Settings size={15} />
+              <span className="hidden sm:inline">{T.tabSetup}</span>
+            </Link>
+          )}
         </div>
       </div>
       </div>

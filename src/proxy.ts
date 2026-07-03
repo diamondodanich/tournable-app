@@ -35,8 +35,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Logged-in user on auth page → redirect to next if present, otherwise dashboard
-  if (user && isAuthPage) {
+  // Logged-in user on auth page → redirect away, UNLESS this is the multi-account
+  // "add account" flow (?add=1), where we intentionally let them reach /login while
+  // still signed in so the previous account stays switchable afterwards.
+  const isAddFlow = request.nextUrl.searchParams.get('add') === '1'
+  if (user && isAuthPage && !isAddFlow) {
     const next = request.nextUrl.searchParams.get('next')
     const target = next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
     return NextResponse.redirect(new URL(target, request.url))

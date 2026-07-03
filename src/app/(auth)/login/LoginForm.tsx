@@ -23,6 +23,8 @@ const T = {
     noAccount: 'Нет аккаунта?', registerLink: 'Зарегистрируйтесь бесплатно',
     registerHref: '/register',
     backHome: 'На главную',
+    addBack: 'Отмена',
+    addBanner: 'Добавление аккаунта — войдите в другой аккаунт. Текущий останется, между ними можно переключаться.',
   },
   kz: {
     tagline: 'Кәсіби турнирлер — телефоныңызда',
@@ -34,6 +36,8 @@ const T = {
     noAccount: 'Аккаунт жоқ па?', registerLink: 'Тегін тіркелу',
     registerHref: '/register?lang=kz',
     backHome: 'Басты бетке',
+    addBack: 'Бас тарту',
+    addBanner: 'Аккаунт қосу — басқа аккаунтқа кіріңіз. Ағымдағысы қалады, олардың арасында ауысуға болады.',
   },
   en: {
     tagline: 'Professional tournaments — at your fingertips',
@@ -45,10 +49,12 @@ const T = {
     noAccount: "Don't have an account?", registerLink: 'Create one free',
     registerHref: '/register?lang=en',
     backHome: 'Back to home',
+    addBack: 'Cancel',
+    addBanner: 'Adding an account — sign in to another account. The current one stays; you can switch between them.',
   },
 } as const
 
-export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: string }) {
+export default function LoginForm({ lang, next = '', add = false }: { lang: Lang; next?: string; add?: boolean }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
@@ -77,14 +83,20 @@ export default function LoginForm({ lang, next = '' }: { lang: Lang; next?: stri
         <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#047857,#10b981)' }} />
 
         <div className="p-8">
-          {/* Back to home */}
+          {/* Back to home / cancel add-account */}
           <Link
-            href="/"
+            href={add ? '/dashboard' : '/'}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-emerald-600 transition-colors mb-6"
           >
             <ArrowLeft size={14} />
-            {tx.backHome}
+            {add ? tx.addBack : tx.backHome}
           </Link>
+
+          {add && (
+            <div className="mb-5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 leading-relaxed">
+              {tx.addBanner}
+            </div>
+          )}
 
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">

@@ -632,7 +632,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   return (
     <div className="space-y-4">
       {isSwiss && isOwner && (
-        <div className="flex items-center justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <Shuffle size={16} className="text-indigo-500 shrink-0" />
             <div className="min-w-0">
@@ -648,7 +648,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             <button
               onClick={handleSwissNext}
               disabled={swissGen || !lastRoundComplete}
-              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 px-3.5 py-2 rounded-lg transition-colors">
+              className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 px-3.5 py-2.5 sm:py-2 rounded-lg transition-colors">
               {swissGen ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               {swissGen ? swissT.gen : swissT.next}
             </button>

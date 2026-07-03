@@ -36,6 +36,7 @@ export default function SetupTab({
     playoff:        T.fmtPlayoff,
     groups_playoff: T.fmtGroupsPlayoff,
     league_playoff: T.fmtLeaguePlayoff,
+    swiss:          T.fmtSwiss,
   }
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)

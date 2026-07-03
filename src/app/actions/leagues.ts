@@ -420,6 +420,73 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
     .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player))
 }
 
+// Quick "add season" — no wizard. Clones the latest season's format/settings and
+// the championship's persistent teams into a brand-new season, then returns the new
+// tournament id so the client can open it. This is the championship model: the user
+// configured everything once; a new season just re-runs it.
+function nextSeasonName(existing: string[]): string {
+  // If the newest looks like "Сезон N" / "Season N", bump the number; else count+1.
+  const nums = existing
+    .map(n => n.match(/(\d+)\s*$/)?.[1])
+    .filter(Boolean)
+    .map(Number)
+  const next = (nums.length ? Math.max(...nums) : existing.length) + 1
+  return `Сезон ${next}`
+}
+
+export async function addSeasonQuick(leagueId: string): Promise<{ tournamentId?: string; error?: string }> {
+  const { error: authErr, supabase, userId } = await requireEnterprise()
+  if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
+
+  const { data: league } = await supabase.from('leagues').select('name, owner_id, sport').eq('id', leagueId).single()
+  if (!league || league.owner_id !== userId) return { error: 'Нет доступа' }
+
+  // Newest season's tournament = the template for format + rules.
+  const { data: seasons } = await supabase
+    .from('seasons')
+    .select('name, tournament_id, created_at')
+    .eq('league_id', leagueId)
+    .order('created_at', { ascending: false })
+
+  const latest = (seasons ?? []).find(s => s.tournament_id) ?? null
+  let format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' = 'round_robin'
+  let numRounds = 1
+  let settings: ChampSettings = { sport: league.sport ?? undefined }
+
+  if (latest?.tournament_id) {
+    const { data: tmpl } = await supabase.from('tournaments').select('*').eq('id', latest.tournament_id).single()
+    if (tmpl) {
+      format = (tmpl.format ?? 'round_robin') as typeof format
+      numRounds = tmpl.num_rounds ?? 1
+      settings = {
+        matchPeriods: tmpl.match_periods ?? undefined,
+        extraTime: tmpl.extra_time ?? undefined,
+        matchDurationMins: tmpl.match_duration_mins ?? undefined,
+        pointsWin: tmpl.points_win ?? undefined,
+        pointsDraw: tmpl.points_draw ?? undefined,
+        pointsLoss: tmpl.points_loss ?? undefined,
+        groupsCount: tmpl.groups_count ?? undefined,
+        teamsAdvance: tmpl.teams_advance ?? undefined,
+        sport: tmpl.sport ?? league.sport ?? undefined,
+        playoffBestOf: (tmpl as { playoff_best_of?: number }).playoff_best_of ?? undefined,
+      }
+    }
+  }
+
+  const teams = await getChampionshipTeams(leagueId)
+  const teamNames = teams.map(t => t.name)
+  if (teamNames.length < 2) return { error: 'Сначала добавьте минимум 2 команды в настройках чемпионата' }
+
+  const seasonName = nextSeasonName((seasons ?? []).map(s => s.name))
+
+  // Mark previous seasons finished so only the newest is "active" (Flashscore model).
+  await supabase.from('seasons').update({ status: 'finished' }).eq('league_id', leagueId).eq('status', 'active')
+
+  const res = await addSeasonWithSetup(leagueId, format, numRounds, teamNames, seasonName, settings)
+  if (res.error) return { error: res.error }
+  return { tournamentId: res.tournamentId }
+}
+
 // Add a new season to an existing championship, reusing its persistent teams.
 export async function addSeasonWithSetup(
   leagueId: string,

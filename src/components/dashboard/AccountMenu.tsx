@@ -104,16 +104,24 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
     if (acc.id === currentId || busy) return
     setBusy(acc.id)
     const supabase = createClient()
+    // Snapshot the live session so we can restore it if the target is stale —
+    // a failed setSession must never leave the user logged out of everything.
+    const { data: { session: current } } = await supabase.auth.getSession()
     const { error } = await supabase.auth.setSession({
       access_token: acc.access_token,
       refresh_token: acc.refresh_token,
     })
     if (error) {
       removeAccount(acc.id)
+      if (current) {
+        await supabase.auth.setSession({
+          access_token: current.access_token,
+          refresh_token: current.refresh_token,
+        })
+      }
       setAccounts(getAccounts())
       setBusy(null)
       alert(tx.sessionExpired)
-      window.location.href = '/login?add=1'
       return
     }
     window.location.href = '/dashboard'
@@ -122,10 +130,24 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
   async function addAccount() {
     if (busy) return
     setBusy('add')
+    // Store the current account's freshest tokens before leaving, so it can be
+    // switched back to after the new one signs in.
     const supabase = createClient()
-    // Local sign-out clears the active cookie so /login is reachable; the current
-    // account stays in localStorage and can be switched back to afterwards.
-    await supabase.auth.signOut({ scope: 'local' })
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      upsertAccount({
+        id: session.user.id,
+        email: session.user.email ?? email,
+        name: (session.user.user_metadata?.display_name as string | undefined) ?? name,
+        plan,
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        updatedAt: Date.now(),
+      })
+    }
+    // Do NOT sign out — the proxy allows /login?add=1 while authenticated. Signing
+    // in as another account overwrites the active cookie; the current account keeps
+    // a valid stored session (never revoked) so it stays switchable afterwards.
     window.location.href = '/login?add=1'
   }
 

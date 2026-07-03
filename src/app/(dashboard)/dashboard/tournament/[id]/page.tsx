@@ -6,9 +6,10 @@ import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import SetupTab from '@/components/tournament/SetupTab'
 import TournamentHeader from '@/components/tournament/TournamentHeader'
+import ChampionshipSeasonBar from '@/components/championship/ChampionshipSeasonBar'
 import StandingsTable from '@/components/tournament/StandingsTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
-import { Settings2, CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucide-react'
+import { CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
 import { getSportTheme } from '@/lib/sports'
@@ -255,8 +256,9 @@ const SECTION = (n: number, title: string, color: string) => ({
   box: { border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' },
 })
 
-export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TournamentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params
+  const { tab: tabParam } = await searchParams
   const supabase = await createClient()
   const cookieStore = await cookies()
   const lang = getLang(cookieStore.get('lang')?.value)
@@ -288,7 +290,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss'                 // playoff, groups_playoff, league_playoff
   const fixturesTabLabel = T.tabFixtures
 
-  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }] = await Promise.all([
+  const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }, { data: seasonRow }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', id).order('matchday'),
     // select without match_events join — works even before migration 009 is applied
@@ -297,8 +299,28 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     isOwner
       ? supabase.from('tournament_members').select('*').eq('tournament_id', id).order('created_at')
       : Promise.resolve({ data: [] as TournamentMember[] }),
+    // Is this tournament a championship season? If so we swap in the season bar header.
+    supabase.from('seasons').select('id, league_id, leagues(id, name, slug, sport, logo_url, owner_id)').eq('tournament_id', id).maybeSingle(),
   ])
   const members = (membersRaw ?? []) as TournamentMember[]
+
+  // Championship-season context: the league (championship) + all its seasons.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const season = seasonRow as any
+  const champLeague = season?.leagues ?? null
+  let champSeasons: { id: string; name: string; status: string; tournament_id: string | null; format: string | null }[] = []
+  if (champLeague) {
+    const { data: cs } = await supabase
+      .from('seasons')
+      .select('id, name, status, tournament_id, tournaments(format)')
+      .eq('league_id', season.league_id)
+      .order('created_at', { ascending: false })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    champSeasons = (cs ?? []).map((s: any) => ({
+      id: s.id, name: s.name, status: s.status, tournament_id: s.tournament_id,
+      format: s.tournaments?.format ?? null,
+    }))
+  }
 
   // Separately fetch playoff match events (requires migration 009 — falls back to [] if not yet applied)
   const pmIds = (playoffMatches ?? []).map((m: { id: string }) => m.id)
@@ -322,10 +344,20 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     ...(pmEvents ?? []),
   ]
 
-  const defaultTab = tournament.generated
-    ? (fmt === 'playoff' ? 'playoff' : 'fixtures')
-    : 'setup'
-  // For groups_playoff: also include group-standings in generated state (covered by 'fixtures' default)
+  // Default tab when generated. A ?tab= param (used when landing from a championship)
+  // overrides it, so a season can open straight on its table / groups / league stage.
+  const validTabs = new Set(
+    [
+      showFixturesTab && 'fixtures',
+      showGroupStandingsTab && 'group-standings',
+      showStandingsTab && 'standings',
+      showPlayoffTab && 'playoff',
+      'stats',
+    ].filter(Boolean) as string[],
+  )
+  const defaultTab = (tabParam && validTabs.has(tabParam))
+    ? tabParam
+    : (fmt === 'playoff' ? 'playoff' : 'fixtures')
 
   // ── Champion detection ────────────────────────────────────────────────────
   let champion: Team | null = null
@@ -390,8 +422,22 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
-      <TournamentHeader tournament={tournament} isOwner={isOwner} isPro={isPro} members={members} lang={lang} />
+      {champLeague ? (
+        <ChampionshipSeasonBar
+          league={{ id: champLeague.id, name: champLeague.name, slug: champLeague.slug, sport: champLeague.sport, logo_url: champLeague.logo_url }}
+          seasons={champSeasons}
+          currentSeasonId={season.id}
+          lang={lang}
+          isOwner={isOwner}
+        />
+      ) : (
+        <TournamentHeader tournament={tournament} isOwner={isOwner} isPro={isPro} members={members} lang={lang} />
+      )}
 
+      {!tournament.generated ? (
+        <SetupTab tournament={tournament} teams={t} members={isOwner ? members : []} isOwner={isOwner} lang={lang} />
+      ) : (
+      <>
       {/* Hidden off-screen container for full PDF export */}
       <div
         id="full-report-export"
@@ -591,14 +637,6 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             <div className="flex-1 overflow-x-auto scrollbar-hide px-2 py-2">
               <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
 
-                <TabsTrigger value="setup"
-                  className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
-                    text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                    data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
-                  <Settings2 size={13} className="shrink-0" />
-                  <span>{T.tabSetup}</span>
-                </TabsTrigger>
-
                 {showFixturesTab && (
                   <TabsTrigger value="fixtures"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
@@ -671,9 +709,6 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         )}
 
         {/* Tab content */}
-        <TabsContent value="setup" className="mt-0 pt-5">
-          <SetupTab tournament={tournament} teams={t} members={isOwner ? members : []} isOwner={isOwner} lang={lang} />
-        </TabsContent>
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
             <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} />
@@ -705,6 +740,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} />
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   )
 }

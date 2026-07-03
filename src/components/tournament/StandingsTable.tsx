@@ -5,7 +5,12 @@ import { tx, type Lang } from '@/lib/i18n'
 
 type PointsConfig = { win?: number; draw?: number; loss?: number }
 
-export function computeStandings(teams: Team[], fixtures: Fixture[], pts: PointsConfig = {}): StandingRow[] {
+export function computeStandings(
+  teams: Team[],
+  fixtures: Fixture[],
+  pts: PointsConfig = {},
+  opts: { byeWin?: boolean } = {},
+): StandingRow[] {
   const PW = pts.win  ?? 3
   const PD = pts.draw ?? 1
   const PL = pts.loss ?? 0
@@ -17,9 +22,16 @@ export function computeStandings(teams: Team[], fixtures: Fixture[], pts: Points
   const idx = (id: string) => rows.findIndex(r => r.teamId === id)
 
   fixtures
-    .filter(f => f.played && !f.is_bye)
+    // Swiss byes count as a win (Wikipedia rule); other formats ignore byes.
+    .filter(f => (f.played && !f.is_bye) || (opts.byeWin === true && f.is_bye && !!f.home_team_id))
     .sort((a, b) => a.matchday - b.matchday)
     .forEach(f => {
+      if (f.is_bye) {
+        const h = idx(f.home_team_id!)
+        if (h < 0) return
+        rows[h].GP++; rows[h].W++; rows[h].Pts += PW; rows[h].form.push('W')
+        return
+      }
       const h = idx(f.home_team_id!), a = idx(f.away_team_id!)
       if (h < 0 || a < 0) return
       rows[h].GP++; rows[a].GP++
@@ -46,7 +58,7 @@ const FORM_COLORS = { W: 'bg-emerald-500', D: 'bg-amber-500', L: 'bg-red-500' }
 
 export default function StandingsTable({
   teams, fixtures, pointsWin, pointsDraw, pointsLoss,
-  playoffZone, lang = 'ru',
+  playoffZone, byeWin = false, onTeamClick, lang = 'ru',
 }: {
   teams: Team[]
   fixtures: Fixture[]
@@ -54,11 +66,13 @@ export default function StandingsTable({
   pointsDraw?: number
   pointsLoss?: number
   playoffZone?: number
+  byeWin?: boolean
+  onTeamClick?: (teamId: string) => void
   lang?: Lang
 }) {
   const T = tx[lang]
   const FORM_LABELS = { W: T.formW, D: T.formD, L: T.formL }
-  const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss })
+  const rows = computeStandings(teams, fixtures, { win: pointsWin, draw: pointsDraw, loss: pointsLoss }, { byeWin })
 
   return (
     <div className="overflow-x-auto">
@@ -96,7 +110,16 @@ export default function StandingsTable({
                 <TableCell className="font-bold text-gray-900">
                   <div className="flex items-center gap-2">
                     <TeamAvatar name={r.name} logoUrl={r.logoUrl} size={22} />
-                    <span>{r.name}</span>
+                    {onTeamClick ? (
+                      <button
+                        onClick={() => onTeamClick(r.teamId)}
+                        className="text-left hover:text-violet-600 hover:underline decoration-dotted underline-offset-2 transition-colors"
+                      >
+                        {r.name}
+                      </button>
+                    ) : (
+                      <span>{r.name}</span>
+                    )}
                     {isInZone && (
                       <span className="ml-auto shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400" title="Выходит в плей-офф" />
                     )}

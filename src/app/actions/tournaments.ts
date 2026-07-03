@@ -307,6 +307,8 @@ export async function generateNextSwissRound(tournamentId: string): Promise<{ er
   const pts = new Map<string, number>(), gd = new Map<string, number>(), gf = new Map<string, number>()
   teamIds.forEach(id => { pts.set(id, 0); gd.set(id, 0); gf.set(id, 0) })
   for (const f of allFixtures) {
+    // Swiss byes score as a win (Wikipedia rule) so a bye team keeps its ranking.
+    if (f.is_bye && f.home_team_id) { pts.set(f.home_team_id, (pts.get(f.home_team_id) ?? 0) + PW); continue }
     if (!f.played || f.is_bye || !f.home_team_id || !f.away_team_id) continue
     const hs = f.home_score ?? 0, as = f.away_score ?? 0
     gf.set(f.home_team_id, (gf.get(f.home_team_id) ?? 0) + hs)

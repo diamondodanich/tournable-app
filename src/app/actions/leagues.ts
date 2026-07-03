@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createTournamentWithSetup } from './tournaments'
+import { seasonName as computeSeasonName, type SeasonPeriod } from '@/lib/seasons'
 
 // ─── Slug generation (same transliteration as tournaments) ────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -210,6 +211,51 @@ export async function removeLeagueTeam(teamId: string, leagueId: string): Promis
   return {}
 }
 
+// ── Squad (formation editor) ──────────────────────────────────────────────────
+// Reads / replaces a championship team's whole roster in one shot — used by the
+// simulator-style formation editor opened from the standings table.
+export async function getSquad(leagueTeamId: string): Promise<{ name: string; number: number | null; position: string }[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('players')
+    .select('name, number, position')
+    .eq('league_team_id', leagueTeamId)
+    .order('number', { nullsFirst: false })
+  return (data ?? []) as { name: string; number: number | null; position: string }[]
+}
+
+export async function saveSquad(
+  leagueTeamId: string,
+  leagueId: string,
+  players: { name: string; number: number | null; position: string }[],
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { data: league } = await supabase.from('leagues').select('owner_id').eq('id', leagueId).single()
+  if (!league || league.owner_id !== user.id) return { error: 'Нет доступа' }
+
+  await supabase.from('players').delete().eq('league_team_id', leagueTeamId)
+
+  const rows = players
+    .filter(p => p.name.trim())
+    .map(p => ({
+      league_team_id: leagueTeamId,
+      name: p.name.trim(),
+      number: p.number ?? null,
+      position: p.position || 'other',
+    }))
+
+  if (rows.length > 0) {
+    const { error } = await supabase.from('players').insert(rows)
+    if (error) return { error: error.message }
+  }
+
+  revalidatePath(`/dashboard/leagues/${leagueId}`)
+  return {}
+}
+
 // ── Players ───────────────────────────────────────────────────────────────────
 
 export async function addPlayer(
@@ -264,6 +310,7 @@ type ChampSettings = {
   teamsAdvance?: number
   sport?: string
   playoffBestOf?: number
+  seasonPeriod?: string
 }
 
 export async function createChampionshipWithSetup(
@@ -291,6 +338,12 @@ export async function createChampionshipWithSetup(
     is_public: true,
   })
   if (lErr) return { error: lErr.message }
+
+  // Store season periodicity (migration 027) — best-effort so an unapplied migration
+  // doesn't break championship creation.
+  if (settings?.seasonPeriod) {
+    await supabase.from('leagues').update({ season_period: settings.seasonPeriod }).eq('id', leagueId)
+  }
 
   // 2. Create the first season as a full tournament (reuse wizard engine)
   const t = await createTournamentWithSetup(name, format, numRounds, teamNames, settings)
@@ -424,21 +477,11 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
 // the championship's persistent teams into a brand-new season, then returns the new
 // tournament id so the client can open it. This is the championship model: the user
 // configured everything once; a new season just re-runs it.
-function nextSeasonName(existing: string[]): string {
-  // If the newest looks like "Сезон N" / "Season N", bump the number; else count+1.
-  const nums = existing
-    .map(n => n.match(/(\d+)\s*$/)?.[1])
-    .filter(Boolean)
-    .map(Number)
-  const next = (nums.length ? Math.max(...nums) : existing.length) + 1
-  return `Сезон ${next}`
-}
-
-export async function addSeasonQuick(leagueId: string): Promise<{ tournamentId?: string; error?: string }> {
+export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' = 'ru'): Promise<{ tournamentId?: string; error?: string }> {
   const { error: authErr, supabase, userId } = await requireEnterprise()
   if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
 
-  const { data: league } = await supabase.from('leagues').select('name, owner_id, sport').eq('id', leagueId).single()
+  const { data: league } = await supabase.from('leagues').select('name, owner_id, sport, season_period, created_at').eq('id', leagueId).single()
   if (!league || league.owner_id !== userId) return { error: 'Нет доступа' }
 
   // Newest season's tournament = the template for format + rules.
@@ -477,12 +520,15 @@ export async function addSeasonQuick(leagueId: string): Promise<{ tournamentId?:
   const teamNames = teams.map(t => t.name)
   if (teamNames.length < 2) return { error: 'Сначала добавьте минимум 2 команды в настройках чемпионата' }
 
-  const seasonName = nextSeasonName((seasons ?? []).map(s => s.name))
+  // Logical next name from the championship's periodicity (migration 027).
+  const period = ((league as { season_period?: string }).season_period as SeasonPeriod) ?? 'seasonal'
+  const anchor = (league as { created_at?: string }).created_at ?? new Date().toISOString()
+  const newName = computeSeasonName(period, anchor, (seasons ?? []).length, lang)
 
   // Mark previous seasons finished so only the newest is "active" (Flashscore model).
   await supabase.from('seasons').update({ status: 'finished' }).eq('league_id', leagueId).eq('status', 'active')
 
-  const res = await addSeasonWithSetup(leagueId, format, numRounds, teamNames, seasonName, settings)
+  const res = await addSeasonWithSetup(leagueId, format, numRounds, teamNames, newName, settings)
   if (res.error) return { error: res.error }
   return { tournamentId: res.tournamentId }
 }

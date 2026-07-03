@@ -355,9 +355,12 @@ export default async function TournamentPage({ params, searchParams }: { params:
       'stats',
     ].filter(Boolean) as string[],
   )
-  const defaultTab = (tabParam && validTabs.has(tabParam))
-    ? tabParam
-    : (fmt === 'playoff' ? 'playoff' : 'fixtures')
+  // Table-first: default to standings / groups / league stage, then playoff, then fixtures.
+  const tableDefault = showGroupStandingsTab ? 'group-standings'
+    : showStandingsTab ? 'standings'
+    : showPlayoffTab ? 'playoff'
+    : 'fixtures'
+  const defaultTab = (tabParam && validTabs.has(tabParam)) ? tabParam : tableDefault
 
   // ── Champion detection ────────────────────────────────────────────────────
   let champion: Team | null = null
@@ -403,6 +406,12 @@ export default async function TournamentPage({ params, searchParams }: { params:
         if (x.away_team_id) pts.set(x.away_team_id, (pts.get(x.away_team_id) ?? 0) + pDraw)
       }
     })
+    // Swiss: byes count as a win (Wikipedia rule)
+    if (fmt === 'swiss') {
+      f.filter((x: Fixture) => x.is_bye && x.home_team_id).forEach((x: Fixture) => {
+        pts.set(x.home_team_id!, (pts.get(x.home_team_id!) ?? 0) + pWin)
+      })
+    }
     const sorted = [...t].sort((a: Team, b: Team) =>
       ((pts.get(b.id) ?? 0) - (pts.get(a.id) ?? 0)) || ((gd.get(b.id) ?? 0) - (gd.get(a.id) ?? 0))
     )
@@ -419,6 +428,14 @@ export default async function TournamentPage({ params, searchParams }: { params:
   const s7 = SECTION(7, '', '#dc2626')
 
   const sportTheme = getSportTheme(tournament.sport)
+
+  // Championship season + owner → team names in the standings open the squad editor.
+  const squadEdit = (champLeague && isOwner)
+    ? { leagueId: champLeague.id as string, brand: sportTheme.primary }
+    : undefined
+  const leagueTeamMap: Record<string, string | null> = Object.fromEntries(
+    t.map((tm: Team) => [tm.id, (tm as { league_team_id?: string | null }).league_team_id ?? null]),
+  )
 
   return (
     <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
@@ -637,21 +654,6 @@ export default async function TournamentPage({ params, searchParams }: { params:
             <div className="flex-1 overflow-x-auto scrollbar-hide px-2 py-2">
               <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
 
-                {showFixturesTab && (
-                  <TabsTrigger value="fixtures"
-                    className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
-                      text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
-                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
-                    <CalendarDays size={13} className="shrink-0" />
-                    <span>{fixturesTabLabel}</span>
-                    {f.filter((x: Fixture) => !x.is_bye).length > 0 && (
-                      <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                        {f.filter((x: Fixture) => !x.is_bye).length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                )}
-
                 {showGroupStandingsTab && (
                   <TabsTrigger value="group-standings"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
@@ -669,6 +671,21 @@ export default async function TournamentPage({ params, searchParams }: { params:
                       data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
                     <BarChart2 size={13} className="shrink-0" />
                     <span>{fmt === 'league_playoff' ? T.tabLeagueStage : T.tabStandings}</span>
+                  </TabsTrigger>
+                )}
+
+                {showFixturesTab && (
+                  <TabsTrigger value="fixtures"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
+                      text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
+                    <CalendarDays size={13} className="shrink-0" />
+                    <span>{fixturesTabLabel}</span>
+                    {f.filter((x: Fixture) => !x.is_bye).length > 0 && (
+                      <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                        {f.filter((x: Fixture) => !x.is_bye).length}
+                      </span>
+                    )}
                   </TabsTrigger>
                 )}
 
@@ -721,7 +738,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
         )}
         {showStandingsTab && (
           <TabsContent value="standings" className="mt-0 pt-5">
-            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} />
+            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} squadEdit={squadEdit} leagueTeamMap={leagueTeamMap} />
           </TabsContent>
         )}
         {showPlayoffTab && (

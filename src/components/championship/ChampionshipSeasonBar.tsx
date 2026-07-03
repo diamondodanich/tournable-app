@@ -19,14 +19,23 @@ const T = {
   ru: {
     back: 'Все турниры', allSeasons: 'Все сезоны', addSeason: 'Добавить сезон',
     active: 'Активный', settings: 'Настройки', adding: 'Создаём сезон…', switch: 'Сменить сезон',
+    confirmTitle: 'Новый сезон',
+    confirmQuestion: 'Оставить тот же формат и команды текущего сезона? Мы сразу сгенерируем таблицу и матчи.',
+    keepYes: 'Да, оставить и создать', keepChange: 'Изменить формат/команды', cancel: 'Отмена',
   },
   kz: {
     back: 'Барлық турнирлер', allSeasons: 'Барлық маусымдар', addSeason: 'Маусым қосу',
     active: 'Белсенді', settings: 'Баптаулар', adding: 'Маусым жасалуда…', switch: 'Маусымды ауыстыру',
+    confirmTitle: 'Жаңа маусым',
+    confirmQuestion: 'Ағымдағы маусымның форматы мен командаларын қалдырамыз ба? Кесте мен матчтарды бірден жасаймыз.',
+    keepYes: 'Иә, қалдырып жасау', keepChange: 'Форматты/командаларды өзгерту', cancel: 'Бас тарту',
   },
   en: {
     back: 'All tournaments', allSeasons: 'All seasons', addSeason: 'Add season',
     active: 'Active', settings: 'Settings', adding: 'Creating season…', switch: 'Switch season',
+    confirmTitle: 'New season',
+    confirmQuestion: 'Keep the same format and teams as the current season? We’ll generate the table and matches right away.',
+    keepYes: 'Yes, keep and create', keepChange: 'Change format/teams', cancel: 'Cancel',
   },
 } as const
 
@@ -48,6 +57,7 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
   const theme = getSportTheme(league.sport)
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [confirmAdd, setConfirmAdd] = useState(false)
 
   // currentSeasonId === null → "All seasons" mode (championship overview page).
   const allSeasonsMode = currentSeasonId === null
@@ -60,13 +70,23 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
     router.push(`/dashboard/tournament/${s.tournament_id}?tab=${tableTab(s.format)}`)
   }
 
-  async function handleAdd() {
+  function openAddConfirm() {
     setOpen(false)
+    setConfirmAdd(true)
+  }
+
+  async function handleKeepAndCreate() {
+    setConfirmAdd(false)
     setAdding(true)
-    const res = await addSeasonQuick(league.id)
+    const res = await addSeasonQuick(league.id, lang)
     setAdding(false)
     if (res.error) { toast.error(res.error); return }
     if (res.tournamentId) router.push(`/dashboard/tournament/${res.tournamentId}?tab=standings`)
+  }
+
+  function handleChangeSetup() {
+    setConfirmAdd(false)
+    router.push(`/dashboard/new?type=championship&league=${league.id}`)
   }
 
   return (
@@ -124,7 +144,7 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
                     </Link>
 
                     {isOwner && (
-                      <button onClick={handleAdd}
+                      <button onClick={openAddConfirm}
                         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 transition-colors text-sm font-bold"
                         style={{ color: theme.primary }}>
                         <Plus size={15} /> {tx.addSeason}
@@ -146,6 +166,34 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
           </Link>
         )}
       </div>
+
+      {confirmAdd && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setConfirmAdd(false)} />
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 text-gray-900">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `${theme.primary}18` }}>
+              <Plus size={22} style={{ color: theme.primary }} />
+            </div>
+            <h3 className="text-lg font-black mb-2">{tx.confirmTitle}</h3>
+            <p className="text-sm text-gray-500 leading-relaxed mb-5">{tx.confirmQuestion}</p>
+            <div className="space-y-2">
+              <button onClick={handleKeepAndCreate}
+                className="w-full text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-opacity hover:opacity-90"
+                style={{ background: theme.primary }}>
+                {tx.keepYes}
+              </button>
+              <button onClick={handleChangeSetup}
+                className="w-full font-bold text-sm px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+                {tx.keepChange}
+              </button>
+              <button onClick={() => setConfirmAdd(false)}
+                className="w-full text-sm font-medium text-gray-400 hover:text-gray-600 py-1.5 transition-colors">
+                {tx.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

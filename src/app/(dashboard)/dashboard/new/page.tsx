@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTournamentWithSetup } from '@/app/actions/tournaments'
 import { createChampionshipWithSetup, addSeasonWithSetup, getChampionshipTeams } from '@/app/actions/leagues'
+import { SEASON_PERIOD_OPTIONS, seasonName as buildSeasonName, type SeasonPeriod } from '@/lib/seasons'
 import { getUserPlanAndAdmin } from '@/app/actions/billing'
 import { uploadTournamentLogo, uploadTeamLogo, uploadTournamentCover, setTournamentCoverTheme, uploadLeagueLogo } from '@/app/actions/logos'
 import { Button } from '@/components/ui/button'
@@ -444,8 +445,8 @@ export default function NewTournamentPage() {
     })
   }, [])
 
-  // First-season name (championship mode only)
-  const [seasonName, setSeasonName] = useState('Сезон 2025/26')
+  // Championship season periodicity — drives auto season naming (championship mode)
+  const [seasonPeriod, setSeasonPeriod] = useState<SeasonPeriod>('seasonal')
 
   // Step 1
   const [name, setName]           = useState('')
@@ -652,6 +653,7 @@ export default function NewTournamentPage() {
       pointsWin, pointsDraw, pointsLoss,
       groupsCount, teamsAdvance, sport,
       playoffBestOf: format === 'round_robin' || format === 'swiss' ? 1 : playoffBestOf,
+      seasonPeriod,
     }
 
     // Add-season mode: create a new season (tournament) inside an existing championship
@@ -676,7 +678,8 @@ export default function NewTournamentPage() {
 
     // Championship mode: create league + first season, then go to the championship page
     if (isChampionship) {
-      const res = await createChampionshipWithSetup(name, format, numRounds, orderedNames, seasonName, settings)
+      const firstSeasonName = buildSeasonName(seasonPeriod, new Date().toISOString(), 0, lang)
+      const res = await createChampionshipWithSetup(name, format, numRounds, orderedNames, firstSeasonName, settings)
       if (res.error) { setError(res.error); setLoading(false); return }
       const newLeagueId = res.leagueId!
       const tournamentId = res.tournamentId!
@@ -1270,12 +1273,36 @@ export default function NewTournamentPage() {
             </div>
           )}
 
-          {/* Championship: first season name (not in add-season mode — there the name field is the season) */}
+          {/* Championship: season periodicity — season names are auto-generated and continue logically */}
           {isChampionship && !isAddSeason && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">{champTx.seasonLbl}</label>
-              <Input value={seasonName} onChange={e => setSeasonName(e.target.value)}
-                placeholder={champTx.seasonPh} maxLength={40} className="text-base" />
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">
+                {lang === 'en' ? 'Season periodicity' : lang === 'kz' ? 'Маусым кезеңділігі' : 'Периодичность сезонов'}
+              </label>
+              <p className="text-xs text-gray-400">
+                {lang === 'en' ? 'Season names are generated automatically and continue in sequence.'
+                  : lang === 'kz' ? 'Маусым атаулары автоматты жасалып, ретімен жалғасады.'
+                  : 'Названия сезонов создаются автоматически и продолжаются по порядку.'}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {SEASON_PERIOD_OPTIONS.map(opt => {
+                  const active = seasonPeriod === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSeasonPeriod(opt.value)}
+                      className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
+                        active ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
+                      style={active ? { borderColor: 'var(--sp)', background: 'var(--spl)', color: 'var(--sp)' } : undefined}
+                    >
+                      <span className="block text-sm">{opt.label[lang]}</span>
+                      <span className="block text-[11px] text-gray-400 mt-0.5">{opt.example(lang)}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 

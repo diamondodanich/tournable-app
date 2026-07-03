@@ -263,6 +263,7 @@ type ChampSettings = {
   groupsCount?: number
   teamsAdvance?: number
   sport?: string
+  playoffBestOf?: number
 }
 
 export async function createChampionshipWithSetup(

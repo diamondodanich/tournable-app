@@ -78,6 +78,7 @@ export async function createTournamentWithSetup(
     groupsCount?: number
     teamsAdvance?: number
     sport?: string
+    playoffBestOf?: number
   }
 ): Promise<{ id?: string; teamIds?: string[]; error?: string }> {
   const supabase = await createClient()
@@ -146,6 +147,13 @@ export async function createTournamentWithSetup(
       .from('teams').insert(teamsWithGroups).select('id, group_name')
     if (teamsErr) return { error: teamsErr.message }
     teamIds = (insertedTeams ?? []).map((r: { id: string }) => r.id)
+  }
+
+  // Best-effort: store the playoff series length (migration 025). Silently no-ops
+  // if the column isn't present yet, so tournament creation never breaks.
+  const bestOf = settings?.playoffBestOf ?? 1
+  if (bestOf > 1) {
+    await supabase.from('tournaments').update({ playoff_best_of: bestOf }).eq('id', t.id)
   }
 
   // ── Generate schedule ────────────────────────────────────────────────────
@@ -224,6 +232,11 @@ export async function createTournamentWithSetup(
       supabase.from('playoff_matches').insert(rows),
       supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
     ])
+  }
+
+  // Best-effort: apply the series length to every generated bracket match (migration 025).
+  if (bestOf > 1) {
+    await supabase.from('playoff_matches').update({ best_of: bestOf }).eq('tournament_id', t.id)
   }
 
   revalidatePath('/dashboard')

@@ -493,6 +493,7 @@ export default function NewTournamentPage() {
   const [matchPeriods, setMatchPeriods]     = useState(2)
   const [extraTime, setExtraTime]           = useState(false)
   const [durationMins, setDurationMins]     = useState(45)
+  const [playoffBestOf, setPlayoffBestOf]   = useState(1)   // best-of-N for playoff series
   const [pointsWin, setPointsWin]           = useState(3)
   const [pointsDraw, setPointsDraw]         = useState(1)
   const [pointsLoss, setPointsLoss]         = useState(0)
@@ -646,6 +647,7 @@ export default function NewTournamentPage() {
       matchPeriods, extraTime, matchDurationMins: durationMins,
       pointsWin, pointsDraw, pointsLoss,
       groupsCount, teamsAdvance, sport,
+      playoffBestOf: format === 'round_robin' || format === 'swiss' ? 1 : playoffBestOf,
     }
 
     // Add-season mode: create a new season (tournament) inside an existing championship
@@ -1159,6 +1161,33 @@ export default function NewTournamentPage() {
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">{tx.step3.sub}</p>
           </div>
+
+          {/* Best-of-N playoff series (basketball, volleyball, hockey, esports) */}
+          {(format === 'playoff' || format === 'groups_playoff' || format === 'league_playoff') && (
+            <div className="space-y-2 border-b border-gray-100 pb-5">
+              <label className="text-sm font-black text-gray-800">
+                {lang === 'en' ? 'Playoff series' : lang === 'kz' ? 'Плей-офф сериясы' : 'Серия в плей-офф'}
+              </label>
+              <p className="text-xs text-gray-400">
+                {lang === 'en' ? 'How many games decide each knockout tie.'
+                  : lang === 'kz' ? 'Әр жұп неше ойынмен шешіледі.'
+                  : 'Сколько игр решают каждую пару навылет.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[1, 3, 5, 7].map(v => (
+                  <button key={v} type="button" onClick={() => setPlayoffBestOf(v)}
+                    style={playoffBestOf === v ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
+                    className={`px-3.5 py-2 rounded-xl border text-sm font-bold transition-all ${
+                      playoffBestOf === v ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}>
+                    {v === 1
+                      ? (lang === 'en' ? 'Single game' : lang === 'kz' ? 'Бір ойын' : 'Один матч')
+                      : (lang === 'en' ? `Best of ${v}` : lang === 'kz' ? `${v} ойыннан` : `До ${Math.ceil(v / 2)} побед (Bo${v})`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Format-specific settings (moved here so team count is known) */}
           {format === 'league_playoff' && (

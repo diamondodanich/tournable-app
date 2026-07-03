@@ -56,6 +56,12 @@ export async function generatePlayoff(tournamentId: string) {
     }
   }
 
+  // Carry the tournament's best-of setting onto the regenerated bracket (migration 025).
+  // Best-effort: ignored if the column isn't present yet.
+  const { data: tt } = await supabase.from('tournaments').select('playoff_best_of').eq('id', tournamentId).maybeSingle()
+  const bo = (tt as { playoff_best_of?: number } | null)?.playoff_best_of ?? 1
+  if (bo > 1) await supabase.from('playoff_matches').update({ best_of: bo }).eq('tournament_id', tournamentId)
+
   await supabase.from('tournaments').update({ generated: true }).eq('id', tournamentId)
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }

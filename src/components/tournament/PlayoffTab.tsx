@@ -267,8 +267,17 @@ function PlayoffMatchCard({
     window.open(`/t/${tournamentId}/live?playoff=${match.id}&home=${match.home_team_id}&away=${match.away_team_id}`, '_blank')
   }
 
+  // Best-of-N series: home_score/away_score are GAMES WON; winner needs winTarget wins
+  const bestOf = match.best_of ?? 1
+  const winTarget = Math.ceil(bestOf / 2)
+  const isSeries = bestOf > 1
+
   async function handleSave() {
     if (scoreHome === scoreAway) { toast.error(T.playoffNoDraw); return }
+    if (isSeries && Math.max(scoreHome, scoreAway) !== winTarget) {
+      toast.error(T.seriesNeedsClinch(winTarget))
+      return
+    }
     const prevStatus = status
     setStatus('finished')
     setSaving(true)
@@ -371,10 +380,11 @@ function PlayoffMatchCard({
       {/* ── Header (only shown when match has teams or is in progress) ── */}
       {(isReady || status === 'finished' || status === 'live') && (
         <div className="flex items-center justify-between mb-2.5">
-          <div>
+          <div className="flex items-center gap-1.5">
             {status === 'finished' && <Badge className="bg-emerald-100 text-emerald-700 text-xs"><Check size={10} className="mr-1" />{T.statusPlayed}</Badge>}
             {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />{T.statusLive}</Badge>}
             {status === 'scheduled' && isReady && <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>}
+            {isSeries && <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 leading-none">Bo{bestOf}</span>}
           </div>
           <div className="flex items-center gap-1.5">
             {status === 'live' && (

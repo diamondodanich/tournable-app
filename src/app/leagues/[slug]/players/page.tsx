@@ -1,10 +1,22 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getChampionshipPlayerStats } from '@/app/actions/leagues'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
+
+type Lang = 'ru' | 'kz' | 'en'
+async function getLang(): Promise<Lang> {
+  const v = (await cookies()).get('lang')?.value
+  return v === 'kz' || v === 'en' ? v : 'ru'
+}
+const PT = {
+  ru: { title: 'Игроки', players: 'игроков', noSquad: 'Состав не заполнен', noTeams: 'Команды не добавлены', leaders: 'Лидеры за всю историю', player: 'Игрок', goals: 'Голы', assists: 'Ассисты', seasonsN: (n: number) => `сезонов: ${n}`, pos: { goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—' } },
+  kz: { title: 'Ойыншылар', players: 'ойыншы', noSquad: 'Құрам толтырылмаған', noTeams: 'Командалар қосылмаған', leaders: 'Барлық тарих көшбасшылары', player: 'Ойыншы', goals: 'Голдар', assists: 'Ассисттер', seasonsN: (n: number) => `маусым: ${n}`, pos: { goalkeeper: 'ҚҚ', defender: 'ҚОРҒ', midfielder: 'ЖШ', forward: 'ШАБ', other: '—' } },
+  en: { title: 'Players', players: 'players', noSquad: 'Squad not filled', noTeams: 'No teams added', leaders: 'All-time leaders', player: 'Player', goals: 'Goals', assists: 'Assists', seasonsN: (n: number) => `seasons: ${n}`, pos: { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD', other: '—' } },
+} as const
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const supabase = await createClient()
@@ -31,9 +43,8 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
   ])
   const allTimeLeaders = allTimeStats.filter(s => s.goals > 0 || s.assists > 0).slice(0, 10)
 
-  const POSITION_LABELS: Record<string, string> = {
-    goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—',
-  }
+  const tx = PT[await getLang()]
+  const POSITION_LABELS: Record<string, string> = tx.pos
 
   return (
     <div className="min-h-screen bg-[#0f0f11] text-white">
@@ -42,7 +53,7 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
           <Link href={`/leagues/${slug}`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-3 inline-block">
             ← {league.name}
           </Link>
-          <h1 className="text-2xl font-black">Игроки</h1>
+          <h1 className="text-2xl font-black">{tx.title}</h1>
         </div>
       </div>
 
@@ -52,18 +63,18 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
-              <h2 className="font-black text-white text-sm uppercase tracking-widest">Лидеры за всю историю</h2>
+              <h2 className="font-black text-white text-sm uppercase tracking-widest">{tx.leaders}</h2>
             </div>
             <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
               <div className="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
-                <span>#</span><span>Игрок</span><span className="text-center">Голы</span><span className="text-center">Ассисты</span>
+                <span>#</span><span>{tx.player}</span><span className="text-center">{tx.goals}</span><span className="text-center">{tx.assists}</span>
               </div>
               {allTimeLeaders.map((s, i) => (
                 <div key={`${s.teamName}|${s.player}`} className={`grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`}>
                   <span className={`text-xs font-black ${i === 0 ? 'text-purple-300' : 'text-white/30'}`}>{i + 1}</span>
                   <span className="min-w-0">
                     <span className="text-sm font-bold text-white/90 truncate block">{s.player}</span>
-                    <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · сезонов: ${s.seasons}` : ''}</span>
+                    <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · ${tx.seasonsN(s.seasons)}` : ''}</span>
                   </span>
                   <span className="text-center text-sm font-black text-purple-300 tabular-nums">{s.goals}</span>
                   <span className="text-center text-sm text-white/50 tabular-nums">{s.assists}</span>
@@ -82,7 +93,7 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
               <Link href={`/leagues/${slug}/teams/${team.slug}`} className="font-black text-white hover:text-purple-300 transition-colors">
                 {team.name}
               </Link>
-              <span className="text-xs text-white/30">{team.players?.length ?? 0} игроков</span>
+              <span className="text-xs text-white/30">{team.players?.length ?? 0} {tx.players}</span>
             </div>
             {(team.players ?? []).length > 0 ? (
               <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
@@ -101,13 +112,13 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-white/30 pl-9">Состав не заполнен</p>
+              <p className="text-xs text-white/30 pl-9">{tx.noSquad}</p>
             )}
           </div>
         ))}
 
         {(teams ?? []).length === 0 && (
-          <p className="text-center py-12 text-white/30">Команды не добавлены</p>
+          <p className="text-center py-12 text-white/30">{tx.noTeams}</p>
         )}
       </div>
     </div>

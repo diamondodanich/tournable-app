@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,12 +10,51 @@ import { getSportTheme } from '@/lib/sports'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
-const SPORT_LABELS: Record<string, string> = {
-  football: 'Футбол', futsal: 'Футзал', efootball: 'Киберфутбол',
-  basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибербаскетбол',
-  volleyball: 'Волейбол', beach_volleyball: 'Пляжный волейбол',
-  hockey: 'Хоккей', other: 'Другое',
+type Lang = 'ru' | 'kz' | 'en'
+
+async function getLang(): Promise<Lang> {
+  const v = (await cookies()).get('lang')?.value
+  return v === 'kz' || v === 'en' ? v : 'ru'
 }
+
+const SPORT_LABELS: Record<Lang, Record<string, string>> = {
+  ru: { football: 'Футбол', futsal: 'Футзал', efootball: 'Киберфутбол', basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибербаскетбол', volleyball: 'Волейбол', beach_volleyball: 'Пляжный волейбол', hockey: 'Хоккей', other: 'Другое' },
+  kz: { football: 'Футбол', futsal: 'Футзал', efootball: 'Кибер футбол', basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибер баскетбол', volleyball: 'Волейбол', beach_volleyball: 'Пляжды волейбол', hockey: 'Хоккей', other: 'Басқа' },
+  en: { football: 'Football', futsal: 'Futsal', efootball: 'eFootball', basketball: 'Basketball', streetball: 'Streetball', ebasketball: 'eBasketball', volleyball: 'Volleyball', beach_volleyball: 'Beach volleyball', hockey: 'Hockey', other: 'Other' },
+}
+
+const T = {
+  ru: {
+    teams: 'команд', seasons: 'сезонов', season: 'Сезон:',
+    tabs: { table: 'Таблица', matches: 'Матчи', teamsTab: 'Команды', scorers: 'Бомбардиры' },
+    colP: 'И', colW: 'В', colD: 'Н', colL: 'П', colGoals: 'Мячи', colGD: '+/-', colPts: 'О',
+    noMatchesYet: 'Матчи ещё не сыграны', noSeasonTournament: 'Турнир для этого сезона не привязан',
+    upcoming: 'Предстоящие', results: 'Результаты', noMatches: 'Матчей пока нет', allMatches: 'Все матчи турнира →',
+    noTeams: 'Команды ещё не добавлены',
+    player: 'Игрок', team: 'Команда', goals: 'Голы', noGoals: 'Голов ещё нет', noTournament: 'Турнир не привязан',
+    createLeague: 'Создать свою лигу →',
+  },
+  kz: {
+    teams: 'команда', seasons: 'маусым', season: 'Маусым:',
+    tabs: { table: 'Кесте', matches: 'Матчтар', teamsTab: 'Командалар', scorers: 'Голдаушылар' },
+    colP: 'О', colW: 'Ж', colD: 'Т', colL: 'Ұ', colGoals: 'Голдар', colGD: '+/-', colPts: 'Ұп',
+    noMatchesYet: 'Матчтар әлі өткен жоқ', noSeasonTournament: 'Бұл маусымға турнир байланбаған',
+    upcoming: 'Алдағы', results: 'Нәтижелер', noMatches: 'Матчтар әлі жоқ', allMatches: 'Турнирдің барлық матчтары →',
+    noTeams: 'Командалар әлі қосылмаған',
+    player: 'Ойыншы', team: 'Команда', goals: 'Голдар', noGoals: 'Голдар әлі жоқ', noTournament: 'Турнир байланбаған',
+    createLeague: 'Өз лигаңды құру →',
+  },
+  en: {
+    teams: 'teams', seasons: 'seasons', season: 'Season:',
+    tabs: { table: 'Table', matches: 'Matches', teamsTab: 'Teams', scorers: 'Top scorers' },
+    colP: 'P', colW: 'W', colD: 'D', colL: 'L', colGoals: 'Goals', colGD: '+/-', colPts: 'Pts',
+    noMatchesYet: 'No matches played yet', noSeasonTournament: 'No tournament linked to this season',
+    upcoming: 'Upcoming', results: 'Results', noMatches: 'No matches yet', allMatches: 'All tournament matches →',
+    noTeams: 'No teams added yet',
+    player: 'Player', team: 'Team', goals: 'Goals', noGoals: 'No goals yet', noTournament: 'No tournament linked',
+    createLeague: 'Create your own league →',
+  },
+} as const
 
 type StandingRow = { teamId: string; name: string; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }
 
@@ -52,7 +92,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const { data: l } = await supabase.from('leagues').select('name, description, sport, city, meta_title, meta_description').eq('slug', slug).eq('is_public', true).maybeSingle()
   if (!l) return { title: 'Лига не найдена' }
-  const sport = l.sport ? SPORT_LABELS[l.sport] : null
+  const sport = l.sport ? SPORT_LABELS[await getLang()][l.sport] : null
   const title = l.meta_title ?? `${l.name}${sport ? ` — ${sport}` : ''}${l.city ? ` (${l.city})` : ''}`
   const description = l.meta_description ?? l.description ?? `Турнирная таблица, команды и история сезонов — ${l.name}.`
   return {
@@ -131,7 +171,9 @@ export default async function LeaguePublicPage({
     }
   }
 
-  const sport = league.sport ? SPORT_LABELS[league.sport] : null
+  const lang = await getLang()
+  const tx = T[lang]
+  const sport = league.sport ? SPORT_LABELS[lang][league.sport] : null
   const tabUrl = (t: string) => `?tab=${t}${selectedSeason ? `&season=${selectedSeason.id}` : ''}`
   const brand = getSportTheme(league.sport).primary
 
@@ -158,8 +200,8 @@ export default async function LeaguePublicPage({
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 {sport && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: `${brand}22`, color: brand, border: `1px solid ${brand}44` }}>{sport}</span>}
                 {league.city && <span className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10} /> {league.city}</span>}
-                <span className="flex items-center gap-1 text-xs text-white/40"><Users size={10} /> {leagueTeams.length} команд</span>
-                <span className="flex items-center gap-1 text-xs text-white/40"><Trophy size={10} /> {allSeasons.length} сезонов</span>
+                <span className="flex items-center gap-1 text-xs text-white/40"><Users size={10} /> {leagueTeams.length} {tx.teams}</span>
+                <span className="flex items-center gap-1 text-xs text-white/40"><Trophy size={10} /> {allSeasons.length} {tx.seasons}</span>
               </div>
               {league.description && <p className="text-sm text-white/50 mt-2 max-w-xl">{league.description}</p>}
             </div>
@@ -171,7 +213,7 @@ export default async function LeaguePublicPage({
       {allSeasons.length > 1 && (
         <div className="border-b border-white/10 bg-white/[0.02]">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto">
-            <span className="text-xs text-white/30 shrink-0 mr-1">Сезон:</span>
+            <span className="text-xs text-white/30 shrink-0 mr-1">{tx.season}</span>
             {allSeasons.map(s => (
               <Link key={s.id} href={`?tab=${tab}&season=${s.id}`}
                 style={s.id === selectedSeason?.id ? { background: brand, color: '#fff' } : undefined}
@@ -187,7 +229,7 @@ export default async function LeaguePublicPage({
       {/* Tabs */}
       <div className="border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex gap-1">
-          {[['table','Таблица'],['matches','Матчи'],['teams','Команды'],['scorers','Бомбардиры']].map(([id, label]) => (
+          {[['table',tx.tabs.table],['matches',tx.tabs.matches],['teams',tx.tabs.teamsTab],['scorers',tx.tabs.scorers]].map(([id, label]) => (
             <Link key={id} href={tabUrl(id)}
               style={tab === id ? { borderColor: brand, color: brand } : undefined}
               className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? '' : 'border-transparent text-white/40 hover:text-white/70'}`}>
@@ -202,20 +244,20 @@ export default async function LeaguePublicPage({
 
         {tab === 'table' && (
           standings.length === 0
-            ? <p className="text-center py-12 text-white/30">{tournamentId ? 'Матчи ещё не сыграны' : 'Турнир для этого сезона не привязан'}</p>
+            ? <p className="text-center py-12 text-white/30">{tournamentId ? tx.noMatchesYet : tx.noSeasonTournament}</p>
             : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="text-white/30 text-xs">
                     <th className="text-left py-2 pl-4 w-8">#</th>
-                    <th className="text-left py-2">Команда</th>
-                    <th className="text-center py-2 px-2">И</th>
-                    <th className="text-center py-2 px-2">В</th>
-                    <th className="text-center py-2 px-2">Н</th>
-                    <th className="text-center py-2 px-2">П</th>
-                    <th className="text-center py-2 px-2">Мячи</th>
-                    <th className="text-center py-2 px-2">+/-</th>
-                    <th className="text-center py-2 px-3" style={{ color: brand }}>О</th>
+                    <th className="text-left py-2">{tx.team}</th>
+                    <th className="text-center py-2 px-2">{tx.colP}</th>
+                    <th className="text-center py-2 px-2">{tx.colW}</th>
+                    <th className="text-center py-2 px-2">{tx.colD}</th>
+                    <th className="text-center py-2 px-2">{tx.colL}</th>
+                    <th className="text-center py-2 px-2">{tx.colGoals}</th>
+                    <th className="text-center py-2 px-2">{tx.colGD}</th>
+                    <th className="text-center py-2 px-3" style={{ color: brand }}>{tx.colPts}</th>
                   </tr></thead>
                   <tbody>
                     {standings.map((row, i) => (
@@ -241,23 +283,23 @@ export default async function LeaguePublicPage({
           <div className="space-y-6">
             {upcomingFixtures.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">Предстоящие</p>
+                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.upcoming}</p>
                 <div className="space-y-1">{upcomingFixtures.map(f => <FixtureRow key={f.id} fixture={f} />)}</div>
               </div>
             )}
             {recentFixtures.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">Результаты</p>
+                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.results}</p>
                 <div className="space-y-1">{recentFixtures.map(f => <FixtureRow key={f.id} fixture={f} played />)}</div>
               </div>
             )}
             {upcomingFixtures.length === 0 && recentFixtures.length === 0 && (
-              <p className="text-center py-12 text-white/30">Матчей пока нет</p>
+              <p className="text-center py-12 text-white/30">{tx.noMatches}</p>
             )}
             {tournamentId && (
               <div className="text-center pt-2">
                 <Link href={`/t/${tournamentId}`} target="_blank" className="text-sm text-purple-400 hover:text-purple-300 font-medium">
-                  Все матчи турнира →
+                  {tx.allMatches}
                 </Link>
               </div>
             )}
@@ -266,7 +308,7 @@ export default async function LeaguePublicPage({
 
         {tab === 'teams' && (
           leagueTeams.length === 0
-            ? <p className="text-center py-12 text-white/30">Команды ещё не добавлены</p>
+            ? <p className="text-center py-12 text-white/30">{tx.noTeams}</p>
             : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {leagueTeams.map(t => (
@@ -289,14 +331,14 @@ export default async function LeaguePublicPage({
 
         {tab === 'scorers' && (
           scorers.length === 0
-            ? <p className="text-center py-12 text-white/30">{tournamentId ? 'Голов ещё нет' : 'Турнир не привязан'}</p>
+            ? <p className="text-center py-12 text-white/30">{tournamentId ? tx.noGoals : tx.noTournament}</p>
             : (
               <table className="w-full text-sm">
                 <thead><tr className="text-white/30 text-xs">
                   <th className="text-left py-2 pl-4 w-8">#</th>
-                  <th className="text-left py-2">Игрок</th>
-                  <th className="text-left py-2 text-white/40">Команда</th>
-                  <th className="text-center py-2 px-4 text-purple-400 font-black">Голы</th>
+                  <th className="text-left py-2">{tx.player}</th>
+                  <th className="text-left py-2 text-white/40">{tx.team}</th>
+                  <th className="text-center py-2 px-4 font-black" style={{ color: brand }}>{tx.goals}</th>
                 </tr></thead>
                 <tbody>
                   {scorers.map((s, i) => (
@@ -317,7 +359,7 @@ export default async function LeaguePublicPage({
       <div className="border-t border-white/5 mt-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
           <Link href="/" className="text-xs text-white/20 hover:text-white/40 font-black tracking-wider">TOURNABLE</Link>
-          <Link href="/register" className="text-xs text-purple-400 hover:text-purple-300 font-medium">Создать свою лигу →</Link>
+          <Link href="/register" className="text-xs text-purple-400 hover:text-purple-300 font-medium">{tx.createLeague}</Link>
         </div>
       </div>
     </div>

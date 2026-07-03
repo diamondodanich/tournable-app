@@ -1,11 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-const POSITION_LABELS: Record<string, string> = {
-  goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—',
+type Lang = 'ru' | 'kz' | 'en'
+async function getLang(): Promise<Lang> {
+  const v = (await cookies()).get('lang')?.value
+  return v === 'kz' || v === 'en' ? v : 'ru'
 }
+const TT = {
+  ru: { squad: 'Состав', noSquad: 'Состав не заполнен', history: 'История сезонов', noData: 'Нет данных', games: 'игр', w: 'В', d: 'Н', l: 'П', pts: 'очков', pos: { goalkeeper: 'ВРТ', defender: 'ЗАЩ', midfielder: 'ПЗ', forward: 'НАП', other: '—' } as Record<string, string> },
+  kz: { squad: 'Құрам', noSquad: 'Құрам толтырылмаған', history: 'Маусымдар тарихы', noData: 'Дерек жоқ', games: 'ойын', w: 'Ж', d: 'Т', l: 'Ұ', pts: 'ұпай', pos: { goalkeeper: 'ҚҚ', defender: 'ҚОРҒ', midfielder: 'ЖШ', forward: 'ШАБ', other: '—' } as Record<string, string> },
+  en: { squad: 'Squad', noSquad: 'Squad not filled', history: 'Season history', noData: 'No data', games: 'games', w: 'W', d: 'D', l: 'L', pts: 'pts', pos: { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD', other: '—' } as Record<string, string> },
+} as const
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; teamSlug: string }> }): Promise<Metadata> {
   const supabase = await createClient()
@@ -35,6 +43,8 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
   const team = teamRaw as any
   const league = team.leagues
   const players = (team.players ?? []) as any[]
+  const tx = TT[await getLang()]
+  const POSITION_LABELS = tx.pos
 
   // Fetch season history
   const { data: seasons } = await supabase
@@ -99,9 +109,9 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
 
         {/* Roster */}
         <div>
-          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">Состав ({players.length})</p>
+          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.squad} ({players.length})</p>
           {players.length === 0 ? (
-            <p className="text-sm text-white/30">Состав не заполнен</p>
+            <p className="text-sm text-white/30">{tx.noSquad}</p>
           ) : (
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               {players.sort((a: any, b: any) => (a.number ?? 99) - (b.number ?? 99)).map((p: any, i: number) => (
@@ -121,9 +131,9 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
 
         {/* History */}
         <div>
-          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">История сезонов</p>
+          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.history}</p>
           {history.length === 0 ? (
-            <p className="text-sm text-white/30">Нет данных</p>
+            <p className="text-sm text-white/30">{tx.noData}</p>
           ) : (
             <div className="space-y-2">
               {history.map(record => (
@@ -139,11 +149,11 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/40">
-                    <span>{record.GP} игр</span>
-                    <span className="text-emerald-400">{record.W}В</span>
-                    <span>{record.D}Н</span>
-                    <span className="text-red-400">{record.L}П</span>
-                    <span className="ml-auto font-black text-white">{record.Pts} очков</span>
+                    <span>{record.GP} {tx.games}</span>
+                    <span className="text-emerald-400">{record.W}{tx.w}</span>
+                    <span>{record.D}{tx.d}</span>
+                    <span className="text-red-400">{record.L}{tx.l}</span>
+                    <span className="ml-auto font-black text-white">{record.Pts} {tx.pts}</span>
                   </div>
                 </div>
               ))}

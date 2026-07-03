@@ -1,12 +1,37 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-const POSITION_LABELS: Record<string, string> = {
-  goalkeeper: 'Вратарь', defender: 'Защитник',
-  midfielder: 'Полузащитник', forward: 'Нападающий', other: '—',
+type Lang = 'ru' | 'kz' | 'en'
+async function getLang(): Promise<Lang> {
+  const v = (await cookies()).get('lang')?.value
+  return v === 'kz' || v === 'en' ? v : 'ru'
 }
+const PT = {
+  ru: {
+    players: 'Игроки', seasonsWord: (n: number) => `${n} ${n === 1 ? 'сезон' : n < 5 ? 'сезона' : 'сезонов'}`,
+    allTime: 'За всю историю', goals: 'Голы', assists: 'Передачи', yellow: 'Жёлтые', red: 'Красные',
+    bySeason: 'По сезонам', season: 'Сезон', pas: 'Пас', yc: 'ЖК', rc: 'КК',
+    recent: 'Последние события', evGoal: 'Гол', evAssist: 'Пас', round: 'тур', noStats: 'У игрока пока нет статистики по матчам.',
+    pos: { goalkeeper: 'Вратарь', defender: 'Защитник', midfielder: 'Полузащитник', forward: 'Нападающий', other: '—' } as Record<string, string>,
+  },
+  kz: {
+    players: 'Ойыншылар', seasonsWord: (n: number) => `${n} маусым`,
+    allTime: 'Барлық тарих', goals: 'Голдар', assists: 'Ассисттер', yellow: 'Сары', red: 'Қызыл',
+    bySeason: 'Маусымдар бойынша', season: 'Маусым', pas: 'Ассист', yc: 'СК', rc: 'ҚК',
+    recent: 'Соңғы оқиғалар', evGoal: 'Гол', evAssist: 'Ассист', round: 'тур', noStats: 'Ойыншыда әзірге матч статистикасы жоқ.',
+    pos: { goalkeeper: 'Қақпашы', defender: 'Қорғаушы', midfielder: 'Жартылай қорғаушы', forward: 'Шабуылшы', other: '—' } as Record<string, string>,
+  },
+  en: {
+    players: 'Players', seasonsWord: (n: number) => `${n} season${n === 1 ? '' : 's'}`,
+    allTime: 'All time', goals: 'Goals', assists: 'Assists', yellow: 'Yellow', red: 'Red',
+    bySeason: 'By season', season: 'Season', pas: 'Ast', yc: 'YC', rc: 'RC',
+    recent: 'Recent events', evGoal: 'Goal', evAssist: 'Assist', round: 'round', noStats: 'No match statistics for this player yet.',
+    pos: { goalkeeper: 'Goalkeeper', defender: 'Defender', midfielder: 'Midfielder', forward: 'Forward', other: '—' } as Record<string, string>,
+  },
+} as const
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; playerId: string }> }): Promise<Metadata> {
   const supabase = await createClient()
@@ -46,6 +71,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const leagueTeam = (player as any).league_teams
   const league = leagueTeam?.leagues
   if (!league || league.slug !== slug) notFound()
+
+  const tx = PT[await getLang()]
 
   // Seasons of this championship (id → name)
   const { data: seasons } = await supabase
@@ -102,7 +129,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <div className="border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
           <Link href={`/leagues/${slug}/players`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">
-            ← Игроки {league.name}
+            ← {tx.players} · {league.name}
           </Link>
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 rounded-2xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center shrink-0">
@@ -117,10 +144,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   {leagueTeam.name}
                 </Link>
                 {player.position && player.position !== 'other' && (
-                  <span className="text-xs text-white/30">· {POSITION_LABELS[player.position]}</span>
+                  <span className="text-xs text-white/30">· {tx.pos[player.position]}</span>
                 )}
                 {seasonsPlayed > 0 && (
-                  <span className="text-xs text-white/30">· {seasonsPlayed} {seasonsPlayed === 1 ? 'сезон' : seasonsPlayed < 5 ? 'сезона' : 'сезонов'}</span>
+                  <span className="text-xs text-white/30">· {tx.seasonsWord(seasonsPlayed)}</span>
                 )}
               </div>
             </div>
@@ -130,13 +157,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Career totals */}
-        <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">За всю историю</p>
+        <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.allTime}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
-            { label: 'Голы', value: goals, color: 'text-emerald-400' },
-            { label: 'Передачи', value: assists, color: 'text-blue-400' },
-            { label: 'Жёлтые', value: yellowCards, color: 'text-yellow-400' },
-            { label: 'Красные', value: redCards, color: 'text-red-400' },
+            { label: tx.goals, value: goals, color: 'text-emerald-400' },
+            { label: tx.assists, value: assists, color: 'text-blue-400' },
+            { label: tx.yellow, value: yellowCards, color: 'text-yellow-400' },
+            { label: tx.red, value: redCards, color: 'text-red-400' },
           ].map(stat => (
             <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
@@ -148,16 +175,16 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {/* Per-season breakdown */}
         {seasonStats.length > 0 && (
           <div className="mb-8">
-            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">По сезонам</p>
+            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.bySeason}</p>
             <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden overflow-x-auto">
               <table className="w-full text-sm min-w-[360px]">
                 <thead>
                   <tr className="text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
-                    <th className="text-left px-4 py-2.5">Сезон</th>
-                    <th className="text-center px-2 py-2.5 w-14">Голы</th>
-                    <th className="text-center px-2 py-2.5 w-14">Пас</th>
-                    <th className="text-center px-2 py-2.5 w-12">ЖК</th>
-                    <th className="text-center px-2 py-2.5 w-12">КК</th>
+                    <th className="text-left px-4 py-2.5">{tx.season}</th>
+                    <th className="text-center px-2 py-2.5 w-14">{tx.goals}</th>
+                    <th className="text-center px-2 py-2.5 w-14">{tx.pas}</th>
+                    <th className="text-center px-2 py-2.5 w-12">{tx.yc}</th>
+                    <th className="text-center px-2 py-2.5 w-12">{tx.rc}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -179,7 +206,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         {/* Recent events */}
         {events.length > 0 && (
           <div>
-            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">Последние события</p>
+            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.recent}</p>
             <div className="space-y-1">
               {events.slice(0, 20).map((e, i) => (
                 <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 text-sm">
@@ -189,12 +216,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     : e.type === 'yellow_card' ? 'bg-yellow-900/60 text-yellow-400'
                     : 'bg-red-900/60 text-red-400'
                   }`}>
-                    {e.type === 'goal' ? 'Гол' : e.type === 'assist' ? 'Пас' : e.type === 'yellow_card' ? 'ЖК' : 'КК'}
+                    {e.type === 'goal' ? tx.evGoal : e.type === 'assist' ? tx.evAssist : e.type === 'yellow_card' ? tx.yc : tx.rc}
                   </span>
                   {e.minute != null && <span className="text-xs text-white/30 shrink-0">{e.minute}&apos;</span>}
                   <span className="flex-1 text-white/50 text-xs truncate">
                     {e.fixtures?.tournaments?.name ?? ''}
-                    {e.fixtures?.matchday != null ? ` — тур ${e.fixtures.matchday}` : ''}
+                    {e.fixtures?.matchday != null ? ` — ${tx.round} ${e.fixtures.matchday}` : ''}
                   </span>
                 </div>
               ))}
@@ -203,7 +230,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         )}
 
         {events.length === 0 && (
-          <p className="text-center py-12 text-white/30 text-sm">У игрока пока нет статистики по матчам.</p>
+          <p className="text-center py-12 text-white/30 text-sm">{tx.noStats}</p>
         )}
       </div>
     </div>

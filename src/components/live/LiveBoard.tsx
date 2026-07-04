@@ -860,7 +860,7 @@ export default function LiveBoard({
                 className="flex-1 py-3 rounded-2xl bg-emerald-900/40 border border-emerald-800/60 text-emerald-500 text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-emerald-800/40"
               >
                 <Play size={15} />
-                Начните матч для записи событий
+                Начать
               </button>
             )
           })()}

@@ -214,21 +214,29 @@ export async function removeLeagueTeam(teamId: string, leagueId: string): Promis
 // ── Squad (formation editor) ──────────────────────────────────────────────────
 // Reads / replaces a championship team's whole roster in one shot — used by the
 // simulator-style formation editor opened from the standings table.
-export async function getSquad(leagueTeamId: string): Promise<{ name: string; number: number | null; position: string }[]> {
+export type SquadPlayer = { name: string; number: number | null; position: string; photo_url: string | null }
+
+export async function getSquad(leagueTeamId: string): Promise<SquadPlayer[]> {
   const supabase = await createClient()
+  // select('*') so photo_url is optional (works before migration 028 is applied).
   const { data } = await supabase
     .from('players')
-    .select('name, number, position')
+    .select('*')
     .eq('league_team_id', leagueTeamId)
     .order('number', { nullsFirst: false })
-  return (data ?? []) as { name: string; number: number | null; position: string }[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((p: any) => ({
+    name: p.name, number: p.number ?? null, position: p.position ?? 'other', photo_url: p.photo_url ?? null,
+  }))
 }
 
+// Replaces the whole roster. Existing photo_urls are preserved (passed back in),
+// and the inserted rows are returned so the client can attach freshly-picked photos.
 export async function saveSquad(
   leagueTeamId: string,
   leagueId: string,
-  players: { name: string; number: number | null; position: string }[],
-): Promise<{ error?: string }> {
+  players: { name: string; number: number | null; position: string; photo_url?: string | null }[],
+): Promise<{ error?: string; inserted?: { id: string; name: string; number: number | null }[] }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Не авторизован' }
@@ -245,15 +253,23 @@ export async function saveSquad(
       name: p.name.trim(),
       number: p.number ?? null,
       position: p.position || 'other',
+      photo_url: p.photo_url ?? null,
     }))
 
+  let inserted: { id: string; name: string; number: number | null }[] = []
   if (rows.length > 0) {
-    const { error } = await supabase.from('players').insert(rows)
-    if (error) return { error: error.message }
+    let res = await supabase.from('players').insert(rows).select('id, name, number')
+    if (res.error) {
+      // Retry without photo_url — column may not exist yet (migration 028 not applied).
+      const bare = rows.map(r => ({ league_team_id: r.league_team_id, name: r.name, number: r.number, position: r.position }))
+      res = await supabase.from('players').insert(bare).select('id, name, number')
+    }
+    if (res.error) return { error: res.error.message }
+    inserted = (res.data ?? []) as { id: string; name: string; number: number | null }[]
   }
 
   revalidatePath(`/dashboard/leagues/${leagueId}`)
-  return {}
+  return { inserted }
 }
 
 // ── Players ───────────────────────────────────────────────────────────────────
@@ -525,9 +541,8 @@ export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' 
   const anchor = (league as { created_at?: string }).created_at ?? new Date().toISOString()
   const newName = computeSeasonName(period, anchor, (seasons ?? []).length, lang)
 
-  // Mark previous seasons finished so only the newest is "active" (Flashscore model).
-  await supabase.from('seasons').update({ status: 'finished' }).eq('league_id', leagueId).eq('status', 'active')
-
+  // Previous seasons are NOT auto-finished — the owner ends a season manually
+  // (button) or it ends when all its matches are played.
   const res = await addSeasonWithSetup(leagueId, format, numRounds, teamNames, newName, settings)
   if (res.error) return { error: res.error }
   return { tournamentId: res.tournamentId }

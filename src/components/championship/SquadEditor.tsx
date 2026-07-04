@@ -2,13 +2,35 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Check, Trash2, Loader2, Shirt, Plus } from 'lucide-react'
+import { X, Check, Trash2, Loader2, Shirt, Plus, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { getSquad, saveSquad } from '@/app/actions/leagues'
+import { uploadPlayerPhoto } from '@/app/actions/logos'
 
 type Lang = 'ru' | 'kz' | 'en'
 type Cat = 'gk' | 'def' | 'mid' | 'fwd' | 'gen'
-type Slot = { name: string; number: string } | null
+type Player = { name: string; number: string; photoUrl?: string | null; photoData?: string | null }
+type Slot = Player | null
+
+// Center-crop an image file to a square webp data URL for a player avatar.
+function fileToAvatar(file: File, size = 256): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = size; c.height = size
+      const ctx = c.getContext('2d')
+      if (!ctx) { reject(new Error('no ctx')); return }
+      const s = Math.min(img.width, img.height)
+      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size)
+      URL.revokeObjectURL(url)
+      resolve(c.toDataURL('image/webp', 0.85))
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
 
 const CAT_POSITION: Record<Cat, string> = {
   gk: 'goalkeeper', def: 'defender', mid: 'midfielder', fwd: 'forward', gen: 'other',
@@ -92,10 +114,12 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
   const [formation, setFormation] = useState(isFootball ? '4-4-2' : isFutsal ? '1-2-1' : 'flat')
   const [rows, setRows] = useState<{ cat: Cat; n: number }[]>(() => rowsFor(sport, isFootball ? '4-4-2' : isFutsal ? '1-2-1' : 'flat'))
   const [assigned, setAssigned] = useState<Slot[]>([])
-  const [bench, setBench] = useState<{ name: string; number: string }[]>([])
+  const [bench, setBench] = useState<Player[]>([])
   const [editing, setEditing] = useState<number | null>(null)
   const [draftName, setDraftName] = useState('')
   const [draftNum, setDraftNum] = useState('')
+  const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null)
+  const [draftPhotoData, setDraftPhotoData] = useState<string | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -116,17 +140,18 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
         const catSlotIdx: Record<Cat, number[]> = { gk: [], def: [], mid: [], fwd: [], gen: [] }
         let idx = 0
         for (const row of r) { for (let i = 0; i < row.n; i++) { catSlotIdx[row.cat].push(idx); idx++ } }
-        const benchOut: { name: string; number: string }[] = []
+        const benchOut: Player[] = []
         const cursor: Record<Cat, number> = { gk: 0, def: 0, mid: 0, fwd: 0, gen: 0 }
         for (const p of sorted) {
           const cat = POSITION_CAT[p.position] ?? 'gen'
           const targetCat = catSlotIdx[cat].length ? cat : 'gen'
           const slotList = catSlotIdx[targetCat]
+          const entry: Player = { name: p.name, number: p.number != null ? String(p.number) : '', photoUrl: p.photo_url }
           if (cursor[targetCat] < slotList.length) {
-            slots[slotList[cursor[targetCat]]] = { name: p.name, number: p.number != null ? String(p.number) : '' }
+            slots[slotList[cursor[targetCat]]] = entry
             cursor[targetCat]++
           } else {
-            benchOut.push({ name: p.name, number: p.number != null ? String(p.number) : '' })
+            benchOut.push(entry)
           }
         }
         setRows(r)
@@ -147,7 +172,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
     const r = rowsFor(sport, f)
     const total = r.reduce((s, row) => s + row.n, 0)
     // Preserve currently placed + bench players, refill new slots in order.
-    const pool = [...assigned.filter(Boolean) as { name: string; number: string }[], ...bench]
+    const pool = [...(assigned.filter(Boolean) as Player[]), ...bench]
     const slots: Slot[] = Array(total).fill(null)
     for (let i = 0; i < Math.min(total, pool.length); i++) slots[i] = pool[i]
     const overflow = pool.slice(total)
@@ -161,26 +186,37 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
     const cur = assigned[slotIdx]
     setDraftName(cur?.name ?? '')
     setDraftNum(cur?.number ?? '')
+    setDraftPhotoUrl(cur?.photoUrl ?? null)
+    setDraftPhotoData(cur?.photoData ?? null)
   }
 
   function commitEditor() {
     if (editing === null) return
     const name = draftName.trim()
-    setAssigned(prev => prev.map((s, i) => i === editing ? (name ? { name, number: draftNum.trim() } : null) : s))
-    setEditing(null); setDraftName(''); setDraftNum('')
+    setAssigned(prev => prev.map((s, i) => i === editing
+      ? (name ? { name, number: draftNum.trim(), photoUrl: draftPhotoUrl, photoData: draftPhotoData } : null)
+      : s))
+    setEditing(null); setDraftName(''); setDraftNum(''); setDraftPhotoUrl(null); setDraftPhotoData(null)
   }
 
   function clearSlot() {
     if (editing === null) return
     setAssigned(prev => prev.map((s, i) => i === editing ? null : s))
-    setEditing(null); setDraftName(''); setDraftNum('')
+    setEditing(null); setDraftName(''); setDraftNum(''); setDraftPhotoUrl(null); setDraftPhotoData(null)
+  }
+
+  async function pickDraftPhoto(file: File) {
+    try { setDraftPhotoData(await fileToAvatar(file)) } catch {}
   }
 
   function addBench() {
     setBench(prev => [...prev, { name: '', number: '' }])
   }
-  function updateBench(i: number, patch: Partial<{ name: string; number: string }>) {
+  function updateBench(i: number, patch: Partial<Player>) {
     setBench(prev => prev.map((b, j) => j === i ? { ...b, ...patch } : b))
+  }
+  async function pickBenchPhoto(i: number, file: File) {
+    try { const data = await fileToAvatar(file); updateBench(i, { photoData: data }) } catch {}
   }
   function removeBench(i: number) {
     setBench(prev => prev.filter((_, j) => j !== i))
@@ -191,24 +227,40 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
     // Map each slot to its category via the rows layout.
     const slotCats: Cat[] = []
     for (const row of rows) for (let i = 0; i < row.n; i++) slotCats.push(row.cat)
-    const players: { name: string; number: number | null; position: string }[] = []
+    type Full = { name: string; number: number | null; position: string; photo_url: string | null; photoData: string | null }
+    const full: Full[] = []
     assigned.forEach((s, i) => {
-      if (s?.name.trim()) players.push({
+      if (s?.name.trim()) full.push({
         name: s.name.trim(),
         number: s.number.trim() ? parseInt(s.number) : null,
         position: CAT_POSITION[slotCats[i] ?? 'gen'],
+        photo_url: s.photoUrl ?? null,
+        photoData: s.photoData ?? null,
       })
     })
     bench.forEach(b => {
-      if (b.name.trim()) players.push({
+      if (b.name.trim()) full.push({
         name: b.name.trim(),
         number: b.number.trim() ? parseInt(b.number) : null,
         position: 'other',
+        photo_url: b.photoUrl ?? null,
+        photoData: b.photoData ?? null,
       })
     })
-    const res = await saveSquad(leagueTeamId, leagueId, players)
+
+    const res = await saveSquad(leagueTeamId, leagueId,
+      full.map(f => ({ name: f.name, number: f.number, position: f.position, photo_url: f.photo_url })))
+    if (res.error) { setSaving(false); toast.error(res.error); return }
+
+    // Attach freshly-picked photos to their new player ids (matched by name + number).
+    const inserted = res.inserted ?? []
+    const used = new Set<number>()
+    await Promise.all(full.filter(f => f.photoData).map(async f => {
+      const idx = inserted.findIndex((r, j) => !used.has(j) && r.name === f.name && (r.number ?? null) === (f.number ?? null))
+      if (idx >= 0) { used.add(idx); await uploadPlayerPhoto(inserted[idx].id, f.photoData!) }
+    }))
+
     setSaving(false)
-    if (res.error) { toast.error(res.error); return }
     toast.success(tx.saved)
     onClose()
   }
@@ -276,9 +328,12 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                       return (
                         <button key={slotIdx} onClick={() => openEditor(slotIdx)}
                           className="flex flex-col items-center gap-1 group">
-                          <span className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black text-white border-2 border-white/70 shadow-md transition-transform group-hover:scale-105"
+                          <span className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black text-white border-2 border-white/70 shadow-md overflow-hidden transition-transform group-hover:scale-105"
                             style={{ background: p ? CAT_COLORS[cat] : 'rgba(255,255,255,0.15)' }}>
-                            {p ? (p.number || p.name.slice(0, 2).toUpperCase()) : <Plus size={16} className="text-white/80" />}
+                            {p?.photoData || p?.photoUrl
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img src={p.photoData || p.photoUrl || ''} alt="" className="w-full h-full object-cover" />
+                              : p ? (p.number || p.name.slice(0, 2).toUpperCase()) : <Plus size={16} className="text-white/80" />}
                           </span>
                           <span className="text-[10px] font-bold text-white/90 max-w-[64px] truncate">
                             {p?.name || ''}
@@ -305,6 +360,14 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
               <div className="space-y-2">
                 {bench.map((b, i) => (
                   <div key={i} className="flex items-center gap-2">
+                    <label className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer">
+                      {b.photoData || b.photoUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={b.photoData || b.photoUrl || ''} alt="" className="w-full h-full object-cover" />
+                        : <Camera size={14} className="text-gray-400" />}
+                      <input type="file" accept="image/*" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) pickBenchPhoto(i, f) }} />
+                    </label>
                     <input value={b.number} onChange={e => updateBench(i, { number: e.target.value })}
                       placeholder={tx.number} type="number"
                       className="w-14 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
@@ -338,14 +401,24 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
         <div className="fixed inset-0 z-[95] flex items-center justify-center p-4" onClick={() => setEditing(null)}>
           <div className="absolute inset-0 bg-gray-900/40" />
           <div className="relative w-full max-w-xs bg-white rounded-2xl shadow-2xl p-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-3">
-              <input autoFocus value={draftNum} onChange={e => setDraftNum(e.target.value)}
-                placeholder={tx.number} type="number"
-                className="w-16 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
-              <input value={draftName} onChange={e => setDraftName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && commitEditor()}
-                placeholder={tx.name}
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />
+            <div className="flex items-center gap-3 mb-3">
+              <label className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer relative">
+                {draftPhotoData || draftPhotoUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={draftPhotoData || draftPhotoUrl || ''} alt="" className="w-full h-full object-cover" />
+                  : <Camera size={18} className="text-gray-400" />}
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickDraftPhoto(f) }} />
+              </label>
+              <div className="flex-1 flex items-center gap-2">
+                <input autoFocus value={draftNum} onChange={e => setDraftNum(e.target.value)}
+                  placeholder={tx.number} type="number"
+                  className="w-14 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
+                <input value={draftName} onChange={e => setDraftName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && commitEditor()}
+                  placeholder={tx.name}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />
+              </div>
             </div>
             <div className="flex gap-2">
               <button onClick={commitEditor}

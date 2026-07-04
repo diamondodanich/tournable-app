@@ -309,17 +309,19 @@ export default async function TournamentPage({ params, searchParams }: { params:
   const season = seasonRow as any
   const champLeague = season?.leagues ?? null
   let champSeasons: { id: string; name: string; status: string; tournament_id: string | null; format: string | null }[] = []
+  // Persistent championship-team id → public slug, for linking standings rows to team pages.
+  const champTeamSlugById = new Map<string, string>()
   if (champLeague) {
-    const { data: cs } = await supabase
-      .from('seasons')
-      .select('id, name, status, tournament_id, tournaments(format)')
-      .eq('league_id', season.league_id)
-      .order('created_at', { ascending: false })
+    const [{ data: cs }, { data: lt }] = await Promise.all([
+      supabase.from('seasons').select('id, name, status, tournament_id, tournaments(format)').eq('league_id', season.league_id).order('created_at', { ascending: false }),
+      supabase.from('league_teams').select('id, slug').eq('league_id', season.league_id),
+    ])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     champSeasons = (cs ?? []).map((s: any) => ({
       id: s.id, name: s.name, status: s.status, tournament_id: s.tournament_id,
       format: s.tournaments?.format ?? null,
     }))
+    for (const row of (lt ?? []) as { id: string; slug: string }[]) champTeamSlugById.set(row.id, row.slug)
   }
 
   // Separately fetch playoff match events (requires migration 009 — falls back to [] if not yet applied)
@@ -429,13 +431,28 @@ export default async function TournamentPage({ params, searchParams }: { params:
 
   const sportTheme = getSportTheme(tournament.sport)
 
-  // Championship season + owner → team names in the standings open the squad editor.
-  const squadEdit = (champLeague && isOwner)
-    ? { leagueId: champLeague.id as string, brand: sportTheme.primary }
+  // Championship season → standings rows link to the public team page.
+  const teamHrefs: Record<string, string> = champLeague
+    ? Object.fromEntries(
+        t.flatMap((tm: Team) => {
+          const ltId = (tm as { league_team_id?: string | null }).league_team_id
+          const slug = ltId ? champTeamSlugById.get(ltId) : undefined
+          return slug ? [[tm.id, `/leagues/${champLeague.slug}/teams/${slug}`]] : []
+        }),
+      )
+    : {}
+  const teamLinkBrand = sportTheme.primary
+  // Championship season: match-card "Состав" edits the persistent team roster.
+  const champSquad = champLeague
+    ? {
+        leagueId: champLeague.id as string,
+        sport: (champLeague.sport ?? null) as string | null,
+        brand: sportTheme.primary,
+        teamLeagueMap: Object.fromEntries(
+          t.map((tm: Team) => [tm.id, (tm as { league_team_id?: string | null }).league_team_id ?? null]),
+        ) as Record<string, string | null>,
+      }
     : undefined
-  const leagueTeamMap: Record<string, string | null> = Object.fromEntries(
-    t.map((tm: Team) => [tm.id, (tm as { league_team_id?: string | null }).league_team_id ?? null]),
-  )
 
   return (
     <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
@@ -728,7 +745,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
         {/* Tab content */}
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
-            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} />
+            <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} champSquad={champSquad} />
           </TabsContent>
         )}
         {showGroupStandingsTab && (
@@ -738,7 +755,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
         )}
         {showStandingsTab && (
           <TabsContent value="standings" className="mt-0 pt-5">
-            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} squadEdit={squadEdit} leagueTeamMap={leagueTeamMap} />
+            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} teamHrefs={teamHrefs} teamLinkBrand={teamLinkBrand} />
           </TabsContent>
         )}
         {showPlayoffTab && (

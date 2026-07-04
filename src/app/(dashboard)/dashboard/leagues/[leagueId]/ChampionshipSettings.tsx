@@ -3,16 +3,14 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Save, Trash2, Settings as SettingsIcon, Users, Layers, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, Save, Trash2, Settings as SettingsIcon, Layers, AlertTriangle } from 'lucide-react'
 import { updateLeague, deleteLeague } from '@/app/actions/leagues'
-import TeamsSquadsTab from './TeamsSquadsTab'
 import SeasonsTab from './SeasonsTab'
 import { getSportTheme } from '@/lib/sports'
-import type { League, Season, LeagueTeam, Player } from '@/types'
+import type { League, Season } from '@/types'
 
-type TeamWithPlayers = LeagueTeam & { players: Player[] }
 type Lang = 'ru' | 'kz' | 'en'
-type SubTab = 'general' | 'teams' | 'seasons' | 'danger'
+type SubTab = 'general' | 'seasons' | 'danger'
 
 const SPORTS: Record<Lang, { value: string; label: string }[]> = {
   ru: [
@@ -41,7 +39,7 @@ const SPORTS: Record<Lang, { value: string; label: string }[]> = {
 const T = {
   ru: {
     back: 'К чемпионату', title: 'Настройки чемпионата',
-    tabs: { general: 'Основное', teams: 'Команды и составы', seasons: 'Сезоны', danger: 'Удаление' },
+    tabs: { general: 'Основное', seasons: 'Сезоны', danger: 'Удаление' },
     nameLabel: 'Название', sportLabel: 'Вид спорта', notSpecified: 'Не указан', cityLabel: 'Город',
     publicLabel: 'Публичная страница', publicHint: 'Виден в поиске и по прямой ссылке',
     save: 'Сохранить', saved: 'Сохранено', enterName: 'Введите название',
@@ -51,7 +49,7 @@ const T = {
   },
   kz: {
     back: 'Чемпионатқа', title: 'Чемпионат баптаулары',
-    tabs: { general: 'Негізгі', teams: 'Командалар мен құрамдар', seasons: 'Маусымдар', danger: 'Жою' },
+    tabs: { general: 'Негізгі', seasons: 'Маусымдар', danger: 'Жою' },
     nameLabel: 'Атауы', sportLabel: 'Спорт түрі', notSpecified: 'Көрсетілмеген', cityLabel: 'Қала',
     publicLabel: 'Ашық бет', publicHint: 'Іздеуден және тікелей сілтемеден көрінеді',
     save: 'Сақтау', saved: 'Сақталды', enterName: 'Атауын енгізіңіз',
@@ -61,7 +59,7 @@ const T = {
   },
   en: {
     back: 'To championship', title: 'Championship settings',
-    tabs: { general: 'General', teams: 'Teams & squads', seasons: 'Seasons', danger: 'Delete' },
+    tabs: { general: 'General', seasons: 'Seasons', danger: 'Delete' },
     nameLabel: 'Name', sportLabel: 'Sport', notSpecified: 'Not specified', cityLabel: 'City',
     publicLabel: 'Public page', publicHint: 'Discoverable in search and via direct link',
     save: 'Save', saved: 'Saved', enterName: 'Enter a name',
@@ -71,10 +69,9 @@ const T = {
   },
 } as const
 
-export default function ChampionshipSettings({ league, seasons, teams, lang = 'ru' }: {
+export default function ChampionshipSettings({ league, seasons, lang = 'ru' }: {
   league: League
   seasons: Season[]
-  teams: TeamWithPlayers[]
   lang?: Lang
 }) {
   const tx = T[lang]
@@ -109,7 +106,6 @@ export default function ChampionshipSettings({ league, seasons, teams, lang = 'r
 
   const TABS: { id: SubTab; label: string; icon: typeof SettingsIcon }[] = [
     { id: 'general', label: tx.tabs.general, icon: SettingsIcon },
-    { id: 'teams', label: tx.tabs.teams, icon: Users },
     { id: 'seasons', label: tx.tabs.seasons, icon: Layers },
     { id: 'danger', label: tx.tabs.danger, icon: AlertTriangle },
   ]
@@ -178,10 +174,6 @@ export default function ChampionshipSettings({ league, seasons, teams, lang = 'r
             <Save size={14} /> {saved ? tx.saved : tx.save}
           </button>
         </div>
-      )}
-
-      {tab === 'teams' && (
-        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} />
       )}
 
       {tab === 'seasons' && (

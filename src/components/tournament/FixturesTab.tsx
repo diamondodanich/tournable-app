@@ -11,6 +11,7 @@ import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users, Shuffle } from 'lu
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import LineupEditor from './LineupEditor'
+import SquadEditor from '@/components/championship/SquadEditor'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
@@ -164,7 +165,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang, onSaved }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang, onSaved, champSquad }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
@@ -174,8 +175,11 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   T: TournamentTx
   lang: Lang
   onSaved?: () => void
+  champSquad?: { leagueId: string; sport: string | null; brand: string; teamLeagueMap: Record<string, string | null> }
 }) {
   const [showLineup, setShowLineup] = useState(false)
+  const [squadPick, setSquadPick] = useState(false)
+  const [squadTeam, setSquadTeam] = useState<{ leagueTeamId: string; name: string } | null>(null)
   const [homeScore, setHomeScore] = useState(fixture.home_score != null ? fixture.home_score.toString() : '0')
   const [awayScore, setAwayScore] = useState(fixture.away_score != null ? fixture.away_score.toString() : '0')
   const [events, setEvents] = useState<EventEntry[]>(
@@ -214,23 +218,65 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
     (e.teamId === fixture.home_team_id && e.type === 'own_goal')
   ).length
 
+  // Championship match: the "Состав" button edits the persistent team roster (same
+  // editor as the team page), syncing everywhere. Standalone Pro tournaments keep
+  // the per-match LineupEditor.
+  const homeLT = champSquad ? (champSquad.teamLeagueMap[fixture.home_team_id ?? ''] ?? null) : null
+  const awayLT = champSquad ? (champSquad.teamLeagueMap[fixture.away_team_id ?? ''] ?? null) : null
+  const isChampSquad = !!champSquad && !fixture.is_bye && (!!homeLT || !!awayLT)
+
   const canLineup = isEnterprise && !fixture.is_bye && !!fixture.home_team_id && !!fixture.away_team_id
-  const lineupBtn = canLineup ? (
-    <button onClick={() => setShowLineup(true)}
+  const lineupBtn = (canLineup || isChampSquad) ? (
+    <button onClick={() => isChampSquad ? setSquadPick(true) : setShowLineup(true)}
       className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors">
       <Users size={11} /> {T.lineupBtn}
     </button>
   ) : null
-  const lineupModal = showLineup ? (
-    <LineupEditor
-      fixtureId={fixture.id}
-      tournamentId={tournamentId}
-      homeTeam={homeTeam}
-      awayTeam={awayTeam}
-      onClose={() => setShowLineup(false)}
-      lang={lang}
-    />
-  ) : null
+  const lineupModal = (
+    <>
+      {showLineup && !isChampSquad && (
+        <LineupEditor
+          fixtureId={fixture.id}
+          tournamentId={tournamentId}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          onClose={() => setShowLineup(false)}
+          lang={lang}
+        />
+      )}
+      {squadPick && isChampSquad && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setSquadPick(false)} />
+          <div className="relative w-full max-w-xs bg-white rounded-2xl shadow-2xl p-5 space-y-2">
+            <p className="font-black text-gray-900 mb-2">{T.lineupBtn}</p>
+            {homeLT && (
+              <button onClick={() => { setSquadTeam({ leagueTeamId: homeLT, name: homeTeam?.name ?? '' }); setSquadPick(false) }}
+                className="w-full text-left font-bold text-sm px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                {homeTeam?.name}
+              </button>
+            )}
+            {awayLT && (
+              <button onClick={() => { setSquadTeam({ leagueTeamId: awayLT, name: awayTeam?.name ?? '' }); setSquadPick(false) }}
+                className="w-full text-left font-bold text-sm px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                {awayTeam?.name}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {squadTeam && champSquad && (
+        <SquadEditor
+          leagueId={champSquad.leagueId}
+          leagueTeamId={squadTeam.leagueTeamId}
+          teamName={squadTeam.name}
+          sport={champSquad.sport}
+          brand={champSquad.brand}
+          lang={lang}
+          onClose={() => setSquadTeam(null)}
+        />
+      )}
+    </>
+  )
 
   function openForm(teamId: string) {
     if (form?.teamId === teamId) { setForm(null); return }
@@ -530,7 +576,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
 // ── FixturesTab ───────────────────────────────────────────────────────────────
 
-export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, isEnterprise = false, isOwner = false, lang = 'ru' }: {
+export default function FixturesTab({ tournament, teams, fixtures: initialFixtures, isPro = false, isEnterprise = false, isOwner = false, lang = 'ru', champSquad }: {
   tournament: Tournament
   teams: Team[]
   fixtures: Fixture[]
@@ -538,6 +584,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   isEnterprise?: boolean
   isOwner?: boolean
   lang?: Lang
+  champSquad?: { leagueId: string; sport: string | null; brand: string; teamLeagueMap: Record<string, string | null> }
 }) {
   const T = tx[lang]
   const router = useRouter()
@@ -705,7 +752,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} onSaved={() => router.refresh()} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} onSaved={() => router.refresh()} champSquad={champSquad} />)}
           </div>
         </div>
       ))}

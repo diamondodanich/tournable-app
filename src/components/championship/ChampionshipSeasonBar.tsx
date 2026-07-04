@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
-  ChevronLeft, ChevronDown, Check, CalendarDays, Settings, Plus, LayoutGrid, Loader2,
+  ChevronLeft, ChevronDown, Check, CalendarDays, Settings, Plus, LayoutGrid, Loader2, Share2,
 } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
 import { addSeasonQuick } from '@/app/actions/leagues'
+import ChampionshipShare from './ChampionshipShare'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -18,21 +19,21 @@ type SeasonLite = { id: string; name: string; status: string; tournament_id: str
 const T = {
   ru: {
     back: 'Все турниры', allSeasons: 'Все сезоны', addSeason: 'Добавить сезон',
-    active: 'Активный', settings: 'Настройки', adding: 'Создаём сезон…', switch: 'Сменить сезон',
+    active: 'Активный', settings: 'Настройки', adding: 'Создаём сезон…', switch: 'Сменить сезон', share: 'Поделиться',
     confirmTitle: 'Новый сезон',
     confirmQuestion: 'Оставить тот же формат и команды текущего сезона? Мы сразу сгенерируем таблицу и матчи.',
     keepYes: 'Да, оставить и создать', keepChange: 'Изменить формат/команды', cancel: 'Отмена',
   },
   kz: {
     back: 'Барлық турнирлер', allSeasons: 'Барлық маусымдар', addSeason: 'Маусым қосу',
-    active: 'Белсенді', settings: 'Баптаулар', adding: 'Маусым жасалуда…', switch: 'Маусымды ауыстыру',
+    active: 'Белсенді', settings: 'Баптаулар', adding: 'Маусым жасалуда…', switch: 'Маусымды ауыстыру', share: 'Бөлісу',
     confirmTitle: 'Жаңа маусым',
     confirmQuestion: 'Ағымдағы маусымның форматы мен командаларын қалдырамыз ба? Кесте мен матчтарды бірден жасаймыз.',
     keepYes: 'Иә, қалдырып жасау', keepChange: 'Форматты/командаларды өзгерту', cancel: 'Бас тарту',
   },
   en: {
     back: 'All tournaments', allSeasons: 'All seasons', addSeason: 'Add season',
-    active: 'Active', settings: 'Settings', adding: 'Creating season…', switch: 'Switch season',
+    active: 'Active', settings: 'Settings', adding: 'Creating season…', switch: 'Switch season', share: 'Share',
     confirmTitle: 'New season',
     confirmQuestion: 'Keep the same format and teams as the current season? We’ll generate the table and matches right away.',
     keepYes: 'Yes, keep and create', keepChange: 'Change format/teams', cancel: 'Cancel',
@@ -58,6 +59,7 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [confirmAdd, setConfirmAdd] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   // currentSeasonId === null → "All seasons" mode (championship overview page).
   const allSeasonsMode = currentSeasonId === null
@@ -157,15 +159,35 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
           </div>
         </div>
 
-        {isOwner && (
-          <Link href={`/dashboard/leagues/${league.id}/settings`}
-            title={tx.settings}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold bg-white/15 hover:bg-white/25 transition-colors shrink-0">
-            <Settings size={15} />
-            <span className="hidden sm:inline">{tx.settings}</span>
-          </Link>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={() => setShareOpen(true)}
+            title={tx.share}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold bg-white/15 hover:bg-white/25 transition-colors">
+            <Share2 size={15} />
+            <span className="hidden sm:inline">{tx.share}</span>
+          </button>
+          {isOwner && (
+            <Link href={`/dashboard/leagues/${league.id}/settings`}
+              title={tx.settings}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold bg-white/15 hover:bg-white/25 transition-colors">
+              <Settings size={15} />
+              <span className="hidden sm:inline">{tx.settings}</span>
+            </Link>
+          )}
+        </div>
       </div>
+
+      {shareOpen && (
+        <ChampionshipShare
+          leagueId={league.id}
+          slug={league.slug}
+          name={league.name}
+          brand={theme.primary}
+          lang={lang}
+          isOwner={isOwner}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       {confirmAdd && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">

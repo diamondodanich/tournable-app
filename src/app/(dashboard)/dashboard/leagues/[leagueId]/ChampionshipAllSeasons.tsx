@@ -5,10 +5,14 @@ import Link from 'next/link'
 import { Layers, Users, BarChart3, Crown, ArrowRight, Loader2, Trophy } from 'lucide-react'
 import ChampionshipSeasonBar from '@/components/championship/ChampionshipSeasonBar'
 import ChampStatsTab from './ChampStatsTab'
+import TeamsSquadsTab from './TeamsSquadsTab'
 import { getChampionshipPlayerStats, type ChampPlayerStat } from '@/app/actions/leagues'
+import type { LeagueTeam, Player } from '@/types'
 
+type TeamWithPlayers = LeagueTeam & { players: Player[] }
 type Lang = 'ru' | 'kz' | 'en'
 type SeasonLite = { id: string; name: string; status: string; tournament_id: string | null; format: string | null }
+type TabId = 'overview' | 'teams' | 'stats'
 
 const T = {
   ru: {
@@ -40,16 +44,17 @@ function tableTab(format: string | null): string {
   return 'standings'
 }
 
-export default function ChampionshipAllSeasons({ league, seasons, teamsCount, playersCount, lang = 'ru', isOwner = false }: {
+export default function ChampionshipAllSeasons({ league, seasons, teams, teamsCount, playersCount, lang = 'ru', isOwner = false }: {
   league: { id: string; name: string; slug: string; sport: string | null; logo_url: string | null }
   seasons: SeasonLite[]
+  teams: TeamWithPlayers[]
   teamsCount: number
   playersCount: number
   lang?: Lang
   isOwner?: boolean
 }) {
   const tx = T[lang]
-  const [tab, setTab] = useState<'overview' | 'stats'>('overview')
+  const [tab, setTab] = useState<TabId>('overview')
   const [stats, setStats] = useState<ChampPlayerStat[] | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
@@ -73,17 +78,18 @@ export default function ChampionshipAllSeasons({ league, seasons, teamsCount, pl
       <ChampionshipSeasonBar league={league} seasons={seasons} currentSeasonId={null} lang={lang} isOwner={isOwner} />
 
       {/* Tabs */}
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         {([
           { id: 'overview' as const, label: tx.tabs.overview, icon: Layers },
+          { id: 'teams' as const, label: tx.teams, icon: Users },
           { id: 'stats' as const, label: tx.tabs.stats, icon: BarChart3 },
         ]).map(t => {
           const Icon = t.icon
           const active = tab === t.id
           return (
             <button key={t.id}
-              onClick={() => t.id === 'stats' ? openStats() : setTab('overview')}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              onClick={() => t.id === 'stats' ? openStats() : setTab(t.id)}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                 active ? 'bg-violet-600 text-white shadow-sm' : 'bg-white text-gray-500 hover:text-violet-600 border border-gray-100'
               }`}>
               <Icon size={14} /> {t.label}
@@ -91,6 +97,10 @@ export default function ChampionshipAllSeasons({ league, seasons, teamsCount, pl
           )
         })}
       </div>
+
+      {tab === 'teams' && (
+        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} />
+      )}
 
       {tab === 'overview' && (
         <div className="space-y-5">

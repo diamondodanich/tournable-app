@@ -85,6 +85,27 @@ export async function uploadLeagueLogo(leagueId: string, base64: string) {
   revalidatePath(`/dashboard/leagues/${leagueId}`)
 }
 
+export async function uploadPlayerPhoto(playerId: string, base64: string): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const blob = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+  if (blob.length > 1_048_576) return { error: 'Файл слишком большой (макс. 1 МБ)' }
+
+  const path = `players/${playerId}.webp`
+  const { error: uploadError } = await supabase.storage.from('logos').upload(path, blob, {
+    contentType: 'image/webp',
+    upsert: true,
+  })
+  if (uploadError) return { error: uploadError.message }
+
+  const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
+  const url = `${publicUrl}?v=${Date.now()}`
+  await supabase.from('players').update({ photo_url: url }).eq('id', playerId)
+  return { url }
+}
+
 export async function uploadTournamentCover(tournamentId: string, base64: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

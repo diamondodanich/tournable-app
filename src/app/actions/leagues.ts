@@ -103,6 +103,18 @@ export async function updateLeague(
   return {}
 }
 
+// Calendar feature toggle. Best-effort — silently no-ops if the calendar_enabled
+// column isn't present yet (migration 030 not applied).
+export async function setCalendarEnabled(leagueId: string, enabled: boolean): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const { data: league } = await supabase.from('leagues').select('owner_id').eq('id', leagueId).single()
+  if (!league || league.owner_id !== user.id) return
+  await supabase.from('leagues').update({ calendar_enabled: enabled }).eq('id', leagueId)
+  revalidatePath(`/dashboard/leagues/${leagueId}`)
+}
+
 export async function deleteLeague(leagueId: string): Promise<void> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -417,11 +429,27 @@ export async function getChampionshipTeams(leagueId: string): Promise<{ name: st
 export type ChampPlayerStat = {
   player: string
   teamName: string
+  teamLogo: string | null
+  photo: string | null
   goals: number
   assists: number
   yellow: number
   red: number
   seasons: number
+}
+
+export type ChampTeamStat = {
+  teamName: string
+  logo: string | null
+  seasons: number
+  GP: number
+  W: number
+  D: number
+  L: number
+  GF: number
+  GA: number
+  GD: number
+  Pts: number
 }
 
 export async function getChampionshipPlayerStats(leagueId: string): Promise<ChampPlayerStat[]> {
@@ -436,10 +464,23 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
 
   const [{ data: seasonTeams }, { data: leagueTeams }, { data: fixtures }, { data: playoffMatches }] = await Promise.all([
     supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
-    supabase.from('league_teams').select('id, name').eq('league_id', leagueId),
+    supabase.from('league_teams').select('id, name, logo_url').eq('league_id', leagueId),
     supabase.from('fixtures').select('id, tournament_id').in('tournament_id', tournamentIds),
     supabase.from('playoff_matches').select('id, tournament_id').in('tournament_id', tournamentIds),
   ])
+
+  // Player photos (best-effort — photo_url is optional before migration 028).
+  const leagueTeamIds = (leagueTeams ?? []).map(lt => lt.id)
+  const { data: rosterPlayers } = leagueTeamIds.length
+    ? await supabase.from('players').select('*').in('league_team_id', leagueTeamIds)
+    : { data: [] as { name: string; league_team_id: string; photo_url?: string | null }[] }
+  // key: `${leagueTeamId}|${name.toLowerCase()}` → photo_url
+  const photoByKey = new Map<string, string | null>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const p of (rosterPlayers ?? []) as any[]) {
+    if (p.league_team_id && p.name) photoByKey.set(`${p.league_team_id}|${String(p.name).toLowerCase()}`, p.photo_url ?? null)
+  }
+  const leagueTeamLogo = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.logo_url ?? null]))
 
   const fixtureIds = (fixtures ?? []).map(f => f.id)
   const playoffIds = (playoffMatches ?? []).map(m => m.id)
@@ -474,7 +515,9 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
     const key = `${teamKey}|${player.toLowerCase()}`
     let row = acc.get(key)
     if (!row) {
-      row = { player, teamName, goals: 0, assists: 0, yellow: 0, red: 0, seasons: 0, seasonSet: new Set() }
+      const teamLogo = info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null
+      const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
+      row = { player, teamName, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, seasons: 0, seasonSet: new Set() }
       acc.set(key, row)
     }
     row.seasonSet.add(info.tournamentId)
@@ -487,6 +530,58 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   return [...acc.values()]
     .map(({ seasonSet, ...r }) => ({ ...r, seasons: seasonSet.size }))
     .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player))
+}
+
+// Team-level statistics across all championship seasons (played matches only).
+export async function getChampionshipTeamStats(leagueId: string): Promise<ChampTeamStat[]> {
+  const supabase = await createClient()
+  const { data: seasons } = await supabase.from('seasons').select('id, tournament_id').eq('league_id', leagueId)
+  const tournamentIds = (seasons ?? []).map(s => s.tournament_id).filter((x): x is string => !!x)
+  if (tournamentIds.length === 0) return []
+
+  const [{ data: seasonTeams }, { data: leagueTeams }, { data: tourns }, { data: fixtures }] = await Promise.all([
+    supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
+    supabase.from('league_teams').select('id, name, logo_url').eq('league_id', leagueId),
+    supabase.from('tournaments').select('id, points_win, points_draw, points_loss').in('id', tournamentIds),
+    supabase.from('fixtures').select('tournament_id, home_team_id, away_team_id, home_score, away_score, played, is_bye').in('tournament_id', tournamentIds),
+  ])
+
+  const teamInfo = new Map<string, { leagueTeamId: string | null; name: string }>()
+  for (const t of seasonTeams ?? []) teamInfo.set(t.id, { leagueTeamId: t.league_team_id, name: t.name })
+  const leagueTeamName = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.name]))
+  const leagueTeamLogo = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.logo_url ?? null]))
+  const cfg = new Map((tourns ?? []).map(t => [t.id, { pw: t.points_win ?? 3, pd: t.points_draw ?? 1, pl: t.points_loss ?? 0 }]))
+
+  type Acc = ChampTeamStat & { seasonSet: Set<string> }
+  const acc = new Map<string, Acc>()
+  function rowFor(seasonTeamId: string): Acc | null {
+    const info = teamInfo.get(seasonTeamId)
+    if (!info) return null
+    const key = info.leagueTeamId ?? `name:${info.name.toLowerCase()}`
+    let r = acc.get(key)
+    if (!r) {
+      r = {
+        teamName: info.leagueTeamId ? (leagueTeamName.get(info.leagueTeamId) ?? info.name) : info.name,
+        logo: info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null,
+        seasons: 0, GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, seasonSet: new Set(),
+      }
+      acc.set(key, r)
+    }
+    return r
+  }
+
+  for (const f of fixtures ?? []) {
+    if (f.is_bye || !f.played || f.home_score == null || f.away_score == null || !f.home_team_id || !f.away_team_id) continue
+    const c = cfg.get(f.tournament_id) ?? { pw: 3, pd: 1, pl: 0 }
+    const home = rowFor(f.home_team_id), away = rowFor(f.away_team_id)
+    const hs = f.home_score, as = f.away_score
+    if (home) { home.seasonSet.add(f.tournament_id); home.GP++; home.GF += hs; home.GA += as; if (hs > as) { home.W++; home.Pts += c.pw } else if (hs === as) { home.D++; home.Pts += c.pd } else { home.L++; home.Pts += c.pl } }
+    if (away) { away.seasonSet.add(f.tournament_id); away.GP++; away.GF += as; away.GA += hs; if (as > hs) { away.W++; away.Pts += c.pw } else if (as === hs) { away.D++; away.Pts += c.pd } else { away.L++; away.Pts += c.pl } }
+  }
+
+  return [...acc.values()]
+    .map(({ seasonSet, ...r }) => ({ ...r, seasons: seasonSet.size, GD: r.GF - r.GA }))
+    .sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF)
 }
 
 // Quick "add season" — no wizard. Clones the latest season's format/settings and

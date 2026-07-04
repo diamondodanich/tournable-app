@@ -32,6 +32,7 @@ const StandingsTab       = dynamic(() => import('@/components/tournament/Standin
 const GroupStandingsTab  = dynamic(() => import('@/components/tournament/GroupStandingsTab'),  { loading: () => <TabSkeleton /> })
 const PlayoffTab         = dynamic(() => import('@/components/tournament/PlayoffTab'),         { loading: () => <TabSkeleton /> })
 const StatsTab           = dynamic(() => import('@/components/tournament/StatsTab'),           { loading: () => <TabSkeleton /> })
+const CalendarTab        = dynamic(() => import('@/components/tournament/CalendarTab'),        { loading: () => <TabSkeleton /> })
 const ExportReportButton = dynamic(() => import('@/components/tournament/ExportReportButton'), {
   loading: () => <div className="h-8 w-44 bg-gray-100 rounded-lg animate-pulse" />,
 })
@@ -300,7 +301,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
       ? supabase.from('tournament_members').select('*').eq('tournament_id', id).order('created_at')
       : Promise.resolve({ data: [] as TournamentMember[] }),
     // Is this tournament a championship season? If so we swap in the season bar header.
-    supabase.from('seasons').select('id, league_id, leagues(id, name, slug, sport, logo_url, owner_id)').eq('tournament_id', id).maybeSingle(),
+    // leagues(*) so optional columns (calendar_enabled) don't break before migration 030.
+    supabase.from('seasons').select('id, league_id, leagues(*)').eq('tournament_id', id).maybeSingle(),
   ])
   const members = (membersRaw ?? []) as TournamentMember[]
 
@@ -348,12 +350,15 @@ export default async function TournamentPage({ params, searchParams }: { params:
 
   // Default tab when generated. A ?tab= param (used when landing from a championship)
   // overrides it, so a season can open straight on its table / groups / league stage.
+  // Calendar tab: championship season with the calendar feature enabled.
+  const calendarEnabled = !!champLeague && !!(champLeague as { calendar_enabled?: boolean }).calendar_enabled && showFixturesTab
   const validTabs = new Set(
     [
       showFixturesTab && 'fixtures',
       showGroupStandingsTab && 'group-standings',
       showStandingsTab && 'standings',
       showPlayoffTab && 'playoff',
+      calendarEnabled && 'calendar',
       'stats',
     ].filter(Boolean) as string[],
   )
@@ -706,6 +711,16 @@ export default async function TournamentPage({ params, searchParams }: { params:
                   </TabsTrigger>
                 )}
 
+                {calendarEnabled && (
+                  <TabsTrigger value="calendar"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
+                      text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
+                    <CalendarDays size={13} className="shrink-0" />
+                    <span>{lang === 'en' ? 'Calendar' : lang === 'kz' ? 'Күнтізбе' : 'Календарь'}</span>
+                  </TabsTrigger>
+                )}
+
                 {showPlayoffTab && (
                   <TabsTrigger value="playoff"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
@@ -748,6 +763,11 @@ export default async function TournamentPage({ params, searchParams }: { params:
             <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} champSquad={champSquad} />
           </TabsContent>
         )}
+        {calendarEnabled && (
+          <TabsContent value="calendar" className="mt-0 pt-5">
+            <CalendarTab fixtures={f} teams={t} tournamentId={tournament.id} isOwner={isOwner} lang={lang} />
+          </TabsContent>
+        )}
         {showGroupStandingsTab && (
           <TabsContent value="group-standings" className="mt-0 pt-5">
             <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} lang={lang} />
@@ -771,7 +791,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
           </TabsContent>
         )}
         <TabsContent value="stats" className="mt-0 pt-5">
-          <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} />
+          <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} hideUpsell={isEnterprise || !!champLeague} />
         </TabsContent>
       </Tabs>
       </>

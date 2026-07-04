@@ -36,7 +36,7 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
   const [{ data: teams }, allTimeStats] = await Promise.all([
     supabase
       .from('league_teams')
-      .select('id, name, slug, players(id, name, number, position)')
+      .select('id, name, slug, players(*)')
       .eq('league_id', league.id)
       .order('name'),
     getChampionshipPlayerStats(league.id),
@@ -72,9 +72,17 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
               {allTimeLeaders.map((s, i) => (
                 <div key={`${s.teamName}|${s.player}`} className={`grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`}>
                   <span className={`text-xs font-black ${i === 0 ? 'text-purple-300' : 'text-white/30'}`}>{i + 1}</span>
-                  <span className="min-w-0">
-                    <span className="text-sm font-bold text-white/90 truncate block">{s.player}</span>
-                    <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · ${tx.seasonsN(s.seasons)}` : ''}</span>
+                  <span className="min-w-0 flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-full overflow-hidden bg-purple-900/50 shrink-0 flex items-center justify-center text-[10px] font-black text-purple-300">
+                      {s.photo
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={s.photo} alt="" className="w-full h-full object-cover" />
+                        : s.player.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="text-sm font-bold text-white/90 truncate block">{s.player}</span>
+                      <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · ${tx.seasonsN(s.seasons)}` : ''}</span>
+                    </span>
                   </span>
                   <span className="text-center text-sm font-black text-purple-300 tabular-nums">{s.goals}</span>
                   <span className="text-center text-sm text-white/50 tabular-nums">{s.assists}</span>
@@ -99,6 +107,12 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
               <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
                 {(team.players as any[]).sort((a, b) => (a.number ?? 99) - (b.number ?? 99)).map((p: any, i: number) => (
                   <div key={p.id} className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`}>
+                    <span className="w-8 h-8 rounded-full overflow-hidden bg-purple-900/50 shrink-0 flex items-center justify-center text-[10px] font-black text-purple-300">
+                      {p.photo_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
+                        : p.name.slice(0, 2).toUpperCase()}
+                    </span>
                     {p.number != null && (
                       <span className="w-6 text-right text-xs font-black text-white/30 shrink-0">{p.number}</span>
                     )}

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, Save, Trash2, Settings as SettingsIcon, Layers, AlertTriangle } from 'lucide-react'
-import { updateLeague, deleteLeague } from '@/app/actions/leagues'
+import { updateLeague, deleteLeague, setCalendarEnabled } from '@/app/actions/leagues'
 import SeasonsTab from './SeasonsTab'
 import { getSportTheme } from '@/lib/sports'
 import type { League, Season } from '@/types'
@@ -42,6 +42,7 @@ const T = {
     tabs: { general: 'Основное', seasons: 'Сезоны', danger: 'Удаление' },
     nameLabel: 'Название', sportLabel: 'Вид спорта', notSpecified: 'Не указан', cityLabel: 'Город',
     publicLabel: 'Публичная страница', publicHint: 'Виден в поиске и по прямой ссылке',
+    calendarLabel: 'Календарь матчей', calendarHint: 'Даты и время матчей, отдельная вкладка «Календарь»',
     save: 'Сохранить', saved: 'Сохранено', enterName: 'Введите название',
     dangerTitle: 'Удалить чемпионат', dangerHint: 'Все сезоны, команды и статистика будут удалены безвозвратно.',
     delete: 'Удалить чемпионат',
@@ -52,6 +53,7 @@ const T = {
     tabs: { general: 'Негізгі', seasons: 'Маусымдар', danger: 'Жою' },
     nameLabel: 'Атауы', sportLabel: 'Спорт түрі', notSpecified: 'Көрсетілмеген', cityLabel: 'Қала',
     publicLabel: 'Ашық бет', publicHint: 'Іздеуден және тікелей сілтемеден көрінеді',
+    calendarLabel: 'Матч күнтізбесі', calendarHint: 'Матч күні мен уақыты, бөлек «Күнтізбе» қойындысы',
     save: 'Сақтау', saved: 'Сақталды', enterName: 'Атауын енгізіңіз',
     dangerTitle: 'Чемпионатты жою', dangerHint: 'Барлық маусымдар, командалар және статистика қайтарымсыз жойылады.',
     delete: 'Чемпионатты жою',
@@ -62,6 +64,7 @@ const T = {
     tabs: { general: 'General', seasons: 'Seasons', danger: 'Delete' },
     nameLabel: 'Name', sportLabel: 'Sport', notSpecified: 'Not specified', cityLabel: 'City',
     publicLabel: 'Public page', publicHint: 'Discoverable in search and via direct link',
+    calendarLabel: 'Match calendar', calendarHint: 'Match dates and times, a separate "Calendar" tab',
     save: 'Save', saved: 'Saved', enterName: 'Enter a name',
     dangerTitle: 'Delete championship', dangerHint: 'All seasons, teams and statistics will be permanently deleted.',
     delete: 'Delete championship',
@@ -84,8 +87,14 @@ export default function ChampionshipSettings({ league, seasons, lang = 'ru' }: {
   const [sport, setSport] = useState(league.sport ?? '')
   const [city, setCity] = useState(league.city ?? '')
   const [isPublic, setIsPublic] = useState(league.is_public)
+  const [calendarOn, setCalendarOn] = useState<boolean>(Boolean((league as { calendar_enabled?: boolean }).calendar_enabled))
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  function toggleCalendar(v: boolean) {
+    setCalendarOn(v)
+    startTransition(() => setCalendarEnabled(league.id, v))
+  }
 
   function handleSave() {
     if (!name.trim()) { setError(tx.enterName); return }
@@ -166,6 +175,14 @@ export default function ChampionshipSettings({ league, seasons, lang = 'ru' }: {
             <span>
               <span className="block text-sm font-bold text-gray-700">{tx.publicLabel}</span>
               <span className="block text-xs text-gray-400">{tx.publicHint}</span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" checked={calendarOn} onChange={e => toggleCalendar(e.target.checked)} className="w-4 h-4 accent-violet-600" />
+            <span>
+              <span className="block text-sm font-bold text-gray-700">{tx.calendarLabel}</span>
+              <span className="block text-xs text-gray-400">{tx.calendarHint}</span>
             </span>
           </label>
           {error && <p className="text-xs text-red-500">{error}</p>}

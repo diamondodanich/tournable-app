@@ -52,12 +52,13 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 export default function StatsTab({
-  teams, events, lang = 'ru', sport,
+  teams, events, lang = 'ru', sport, hideUpsell = false,
 }: {
   teams: Team[]
   events: MatchEvent[]
   lang?: Lang
   sport?: string
+  hideUpsell?: boolean
 }) {
   const T = tx[lang]
   const FILTERS: {
@@ -164,7 +165,9 @@ export default function StatsTab({
         </div>
       )}
 
-      {/* Enterprise preview — season player profiles */}
+      {/* Enterprise preview — season player profiles. Hidden for Enterprise users
+          and inside championships (no locks where the feature is already unlocked). */}
+      {!hideUpsell && (
       <div className="relative rounded-2xl overflow-hidden border border-gray-100 mt-2">
         <div className="select-none pointer-events-none opacity-40 p-4 space-y-2.5" aria-hidden>
           {[['А. Иванов', '18', '12'], ['Б. Петров', '16', '9'], ['В. Сидоров', '14', '7']].map(([name, games, stat]) => (
@@ -195,6 +198,7 @@ export default function StatsTab({
           </Link>
         </div>
       </div>
+      )}
     </div>
   )
 }

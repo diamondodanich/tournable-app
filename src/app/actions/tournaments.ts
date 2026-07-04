@@ -363,6 +363,30 @@ export async function generateNextSwissRound(tournamentId: string): Promise<{ er
   return { round: nextMd }
 }
 
+// Calendar: set a match's date/time. Best-effort — silently no-ops if the
+// scheduled_at column isn't present yet (migration 029 not applied).
+export async function updateFixtureSchedule(
+  fixtureId: string,
+  tournamentId: string,
+  scheduledAt: string | null,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  const { data: t } = await supabase.from('tournaments').select('user_id').eq('id', tournamentId).maybeSingle()
+  if (!t) return { error: 'Не найдено' }
+  if (t.user_id !== user.id) {
+    const { data: m } = await supabase.from('tournament_members').select('role')
+      .eq('tournament_id', tournamentId).eq('user_id', user.id).eq('status', 'accepted').eq('role', 'editor').maybeSingle()
+    if (!m) return { error: 'Нет доступа' }
+  }
+
+  await supabase.from('fixtures').update({ scheduled_at: scheduledAt }).eq('id', fixtureId)
+  revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return {}
+}
+
 function buildRoundRobinFixtures(
   tournamentId: string,
   teamIds: string[],

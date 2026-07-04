@@ -173,7 +173,7 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
   const badge = PLAN_BADGE[plan]
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} data-tour="account">
       <button
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors"

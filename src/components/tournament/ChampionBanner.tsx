@@ -6,6 +6,7 @@ import TeamAvatar from './TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
 import type { Team } from '@/types'
 import { tx, type Lang } from '@/lib/i18n'
+import { APP_URL } from '@/lib/appUrl'
 
 export default function ChampionBanner({
   champion,
@@ -34,10 +35,9 @@ export default function ChampionBanner({
 
   const shareText = `${champion.name} — ${resolvedLabel.toLowerCase()}${tournamentName ? ` «${tournamentName}»` : ''}`
 
-  // Origin is only known in the browser — resolve the public URL lazily at click time.
+  // Always share the canonical apex URL so copied links never carry a www host.
   function getShareUrl() {
-    if (typeof window === 'undefined') return ''
-    return `${window.location.origin}/t/${tournamentId}`
+    return `${APP_URL}/t/${tournamentId}`
   }
 
   async function nativeShare() {

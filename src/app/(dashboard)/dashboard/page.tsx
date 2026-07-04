@@ -8,6 +8,7 @@ import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButt
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import NewTournamentButton from '@/components/tournament/NewTournamentButton'
 import DashboardTour from '@/components/dashboard/DashboardTour'
+import DashboardSearch from '@/components/dashboard/DashboardSearch'
 
 export const dynamic = 'force-dynamic'
 
@@ -190,14 +191,22 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-black text-gray-900">{tx.title}</h1>
           <p className="text-sm text-gray-400 mt-0.5">{tx.subtitle}</p>
         </div>
-        <NewTournamentButton
-          isPro={isPro}
-          isEnterprise={isEnterprise}
-          activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
-          label={tx.createBtn}
-          lang={lang}
-        />
+        <span data-tour="create">
+          <NewTournamentButton
+            isPro={isPro}
+            isEnterprise={isEnterprise}
+            activeTournament={firstActive ? { id: firstActive.id, name: firstActive.name } : null}
+            label={tx.createBtn}
+            lang={lang}
+          />
+        </span>
       </div>
+
+      {(list.length > 0 || champList.length > 0) && (
+        <div className="mb-6" data-tour="search">
+          <DashboardSearch lang={lang} />
+        </div>
+      )}
 
       {list.length === 0 && champList.length === 0 ? (
         <div className="space-y-4">
@@ -296,7 +305,7 @@ export default async function DashboardPage() {
       )}
 
       {champList.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-10" data-tour="championships">
           <div className="flex items-center gap-2 mb-4">
             <Crown size={16} className="text-violet-500" />
             <h2 className="text-base font-black text-gray-700">{tx.championships}</h2>

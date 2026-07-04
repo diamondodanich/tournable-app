@@ -7,6 +7,7 @@ import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
 import { tx, type Lang } from '@/lib/i18n'
+import { APP_URL } from '@/lib/appUrl'
 import TournamentCoverBanner from './TournamentCoverBanner'
 
 interface Props {
@@ -25,9 +26,7 @@ interface Props {
 export default function TournamentHeader({ tournament, isOwner = true, isPro = false, members = [], lang = 'ru', settingsHref, backHref, backLabel }: Props) {
   const T = tx[lang]
   const theme = getSportTheme(tournament.sport)
-  const publicUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/t/${tournament.id}`
-    : `/t/${tournament.id}`
+  const publicUrl = `${APP_URL}/t/${tournament.id}`
 
   const FORMAT_LABEL: Record<string, string> = {
     round_robin:    T.fmtRoundRobin,

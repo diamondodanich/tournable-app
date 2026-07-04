@@ -6,6 +6,7 @@ import CancelSubscriptionButton from './CancelSubscriptionButton'
 import SignOutButton from '@/components/account/SignOutButton'
 import DeleteAccountButton from '@/components/account/DeleteAccountButton'
 import AdminPlanButton from './AdminPlanButton'
+import AccountTabs from './AccountTabs'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
@@ -21,6 +22,7 @@ const T = {
   ru: {
     allTournaments: 'Все турниры',
     title: 'Личный кабинет',
+    tabProfile: 'Профиль', tabSubscription: 'Подписка', tabSettings: 'Настройки аккаунта',
     profile: 'Профиль',
     memberSince: 'Участник с',
     tournamentsCreated: 'турниров создано',
@@ -85,6 +87,7 @@ const T = {
   kz: {
     allTournaments: 'Барлық турнирлер',
     title: 'Жеке кабинет',
+    tabProfile: 'Профиль', tabSubscription: 'Жазылым', tabSettings: 'Аккаунт баптаулары',
     profile: 'Профиль',
     memberSince: 'Тіркелген күні',
     tournamentsCreated: 'турнир жасалды',
@@ -149,6 +152,7 @@ const T = {
   en: {
     allTournaments: 'All tournaments',
     title: 'Account',
+    tabProfile: 'Profile', tabSubscription: 'Subscription', tabSettings: 'Account settings',
     profile: 'Profile',
     memberSince: 'Member since',
     tournamentsCreated: 'tournaments created',
@@ -266,7 +270,8 @@ export default async function AccountPage() {
 
       <h1 className="text-2xl font-black text-gray-900 mb-8">{tx.title}</h1>
 
-      <div className="space-y-4">
+      <AccountTabs tabs={[
+        { id: 'profile', label: tx.tabProfile, content: (<>
 
         {/* ── Profile card ──────────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -325,6 +330,9 @@ export default async function AccountPage() {
             </div>
           </div>
         </div>
+
+        </>) },
+        { id: 'subscription', label: tx.tabSubscription, content: (<>
 
         {/* ── Subscription card ─────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -528,6 +536,9 @@ export default async function AccountPage() {
           </div>
         )}
 
+        </>) },
+        { id: 'settings', label: tx.tabSettings, content: (<>
+
         {/* ── Security card ─────────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-black text-lg text-gray-900 mb-1 flex items-center gap-2">
@@ -562,7 +573,8 @@ export default async function AccountPage() {
           <DeleteAccountButton email={user!.email!} lang={lang} />
         </div>
 
-      </div>
+        </>) },
+      ]} />
     </div>
   )
 }

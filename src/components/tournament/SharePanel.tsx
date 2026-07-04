@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
+import { APP_URL } from '@/lib/appUrl'
 
 interface Props {
   tournamentId: string
@@ -84,7 +85,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
     const res = await createInviteLink(tournamentId, 'editor')
     if (res?.error) { toast.error(res.error); setCreating(false); return }
     if ('token' in res) {
-      setInviteUrl(`${window.location.origin}/invite/${res.token}`)
+      setInviteUrl(`${APP_URL}/invite/${res.token}`)
     }
     setCreating(false)
   }

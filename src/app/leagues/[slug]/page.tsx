@@ -1,12 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import type { Metadata } from 'next'
-import { MapPin, Users, Trophy, ChevronRight } from 'lucide-react'
 import type { Team, Fixture } from '@/types'
 import { getSportTheme } from '@/lib/sports'
+import LeaguePublicView from './LeaguePublicView'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -22,39 +20,6 @@ const SPORT_LABELS: Record<Lang, Record<string, string>> = {
   kz: { football: 'Футбол', futsal: 'Футзал', efootball: 'Кибер футбол', basketball: 'Баскетбол', streetball: 'Стритбол', ebasketball: 'Кибер баскетбол', volleyball: 'Волейбол', beach_volleyball: 'Пляжды волейбол', hockey: 'Хоккей', other: 'Басқа' },
   en: { football: 'Football', futsal: 'Futsal', efootball: 'eFootball', basketball: 'Basketball', streetball: 'Streetball', ebasketball: 'eBasketball', volleyball: 'Volleyball', beach_volleyball: 'Beach volleyball', hockey: 'Hockey', other: 'Other' },
 }
-
-const T = {
-  ru: {
-    teams: 'команд', seasons: 'сезонов', season: 'Сезон:',
-    tabs: { table: 'Таблица', matches: 'Матчи', teamsTab: 'Команды', scorers: 'Бомбардиры' },
-    colP: 'И', colW: 'В', colD: 'Н', colL: 'П', colGoals: 'Мячи', colGD: '+/-', colPts: 'О',
-    noMatchesYet: 'Матчи ещё не сыграны', noSeasonTournament: 'Турнир для этого сезона не привязан',
-    upcoming: 'Предстоящие', results: 'Результаты', noMatches: 'Матчей пока нет', allMatches: 'Все матчи турнира →',
-    noTeams: 'Команды ещё не добавлены',
-    player: 'Игрок', team: 'Команда', goals: 'Голы', noGoals: 'Голов ещё нет', noTournament: 'Турнир не привязан',
-    createLeague: 'Создать свою лигу →',
-  },
-  kz: {
-    teams: 'команда', seasons: 'маусым', season: 'Маусым:',
-    tabs: { table: 'Кесте', matches: 'Матчтар', teamsTab: 'Командалар', scorers: 'Голдаушылар' },
-    colP: 'О', colW: 'Ж', colD: 'Т', colL: 'Ұ', colGoals: 'Голдар', colGD: '+/-', colPts: 'Ұп',
-    noMatchesYet: 'Матчтар әлі өткен жоқ', noSeasonTournament: 'Бұл маусымға турнир байланбаған',
-    upcoming: 'Алдағы', results: 'Нәтижелер', noMatches: 'Матчтар әлі жоқ', allMatches: 'Турнирдің барлық матчтары →',
-    noTeams: 'Командалар әлі қосылмаған',
-    player: 'Ойыншы', team: 'Команда', goals: 'Голдар', noGoals: 'Голдар әлі жоқ', noTournament: 'Турнир байланбаған',
-    createLeague: 'Өз лигаңды құру →',
-  },
-  en: {
-    teams: 'teams', seasons: 'seasons', season: 'Season:',
-    tabs: { table: 'Table', matches: 'Matches', teamsTab: 'Teams', scorers: 'Top scorers' },
-    colP: 'P', colW: 'W', colD: 'D', colL: 'L', colGoals: 'Goals', colGD: '+/-', colPts: 'Pts',
-    noMatchesYet: 'No matches played yet', noSeasonTournament: 'No tournament linked to this season',
-    upcoming: 'Upcoming', results: 'Results', noMatches: 'No matches yet', allMatches: 'All tournament matches →',
-    noTeams: 'No teams added yet',
-    player: 'Player', team: 'Team', goals: 'Goals', noGoals: 'No goals yet', noTournament: 'No tournament linked',
-    createLeague: 'Create your own league →',
-  },
-} as const
 
 type StandingRow = { teamId: string; name: string; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }
 
@@ -97,6 +62,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = l.meta_description ?? l.description ?? `Турнирная таблица, команды и история сезонов — ${l.name}.`
   return {
     title, description,
+    alternates: { canonical: `/leagues/${slug}` },
     openGraph: { title, description, type: 'website', url: `${APP_URL}/leagues/${slug}` },
     twitter: { card: 'summary_large_image', title, description },
   }
@@ -107,11 +73,11 @@ export default async function LeaguePublicPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ tab?: string; season?: string }>
+  searchParams: Promise<{ season?: string }>
 }) {
   const supabase = await createClient()
   const { slug } = await params
-  const { tab = 'table', season: seasonParam } = await searchParams
+  const { season: seasonParam } = await searchParams
 
   const { data: league } = await supabase
     .from('leagues').select('*').eq('slug', slug).eq('is_public', true).maybeSingle()
@@ -129,255 +95,62 @@ export default async function LeaguePublicPage({
   const selectedSeason = seasonParam
     ? allSeasons.find(s => s.id === seasonParam)
     : (activeSeasons[0] ?? allSeasons[0])
-
   const tournamentId = selectedSeason?.tournament_id ?? null
 
-  // Fetch tournament data only when needed
   let standings: StandingRow[] = []
   let scorers: ScorerRow[] = []
-  let recentFixtures: (Fixture & { home_team: Team | null; away_team: Team | null })[] = []
-  let upcomingFixtures: (Fixture & { home_team: Team | null; away_team: Team | null })[] = []
-  let tournamentTeams: Team[] = []
+  let recent: { id: string; homeName: string; awayName: string; homeScore: number | null; awayScore: number | null; played: boolean }[] = []
+  let upcoming: typeof recent = []
 
   if (tournamentId) {
-    const [
-      { data: tournamentData },
-      { data: teamData },
-      { data: fixtureData },
-    ] = await Promise.all([
+    const [{ data: tournamentData }, { data: teamData }, { data: fixtureData }] = await Promise.all([
       supabase.from('tournaments').select('points_win,points_draw,points_loss').eq('id', tournamentId).maybeSingle(),
       supabase.from('teams').select('*').eq('tournament_id', tournamentId),
       supabase.from('fixtures').select('*, home_team:teams!home_team_id(id,name,logo_url), away_team:teams!away_team_id(id,name,logo_url)').eq('tournament_id', tournamentId).eq('is_bye', false).order('matchday'),
     ])
 
-    tournamentTeams = (teamData ?? []) as Team[]
-    const fixtures = (fixtureData ?? []) as (Fixture & { home_team: Team | null; away_team: Team | null })[]
+    const tournamentTeams = (teamData ?? []) as Team[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fixtures = (fixtureData ?? []) as (Fixture & { home_team: any; away_team: any })[]
 
     standings = computeStandings(tournamentTeams, fixtures, tournamentData?.points_win ?? 3, tournamentData?.points_draw ?? 1, tournamentData?.points_loss ?? 0)
 
-    const played = fixtures.filter(f => f.played)
-    const upcoming = fixtures.filter(f => !f.played)
-    recentFixtures = played.slice(-5).reverse()
-    upcomingFixtures = upcoming.slice(0, 5)
+    const toLite = (f: Fixture & { home_team: { name?: string } | null; away_team: { name?: string } | null }) => ({
+      id: f.id, homeName: f.home_team?.name ?? '—', awayName: f.away_team?.name ?? '—',
+      homeScore: f.home_score, awayScore: f.away_score, played: f.played,
+    })
+    recent = fixtures.filter(f => f.played).slice(-5).reverse().map(toLite)
+    upcoming = fixtures.filter(f => !f.played).slice(0, 5).map(toLite)
 
-    if (tab === 'scorers') {
-      const { data: fixtureIds } = await supabase.from('fixtures').select('id').eq('tournament_id', tournamentId)
-      const fids = (fixtureIds ?? []).map((f: any) => f.id as string)
-      if (fids.length > 0) {
-        const { data: eventsData } = await supabase
-          .from('match_events').select('player_name,team_id,type').in('fixture_id', fids)
-        scorers = computeScorers((eventsData ?? []) as any[], tournamentTeams)
-      }
+    // Scorers fetched upfront so switching to the tab is instant.
+    const { data: fixtureIds } = await supabase.from('fixtures').select('id').eq('tournament_id', tournamentId)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fids = (fixtureIds ?? []).map((f: any) => f.id as string)
+    if (fids.length > 0) {
+      const { data: eventsData } = await supabase.from('match_events').select('player_name,team_id,type').in('fixture_id', fids)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      scorers = computeScorers((eventsData ?? []) as any[], tournamentTeams)
     }
   }
 
   const lang = await getLang()
-  const tx = T[lang]
-  const sport = league.sport ? SPORT_LABELS[lang][league.sport] : null
-  const tabUrl = (t: string) => `?tab=${t}${selectedSeason ? `&season=${selectedSeason.id}` : ''}`
+  const sportLabel = league.sport ? SPORT_LABELS[lang][league.sport] ?? null : null
   const brand = getSportTheme(league.sport).primary
 
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-white" style={{ ['--brand' as string]: brand } as React.CSSProperties}>
-
-      {/* Brand accent bar */}
-      <div className="h-1 w-full" style={{ background: brand }} />
-
-      {/* Header */}
-      <div className="border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex items-start gap-5">
-            <div
-              className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-2xl font-black shrink-0"
-              style={{ background: `${brand}22`, border: `1px solid ${brand}55`, color: brand }}
-            >
-              {league.logo_url
-                ? <Image src={league.logo_url} alt={league.name} width={64} height={64} className="w-full h-full object-cover" unoptimized />
-                : league.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl font-black leading-tight">{league.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {sport && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: `${brand}22`, color: brand, border: `1px solid ${brand}44` }}>{sport}</span>}
-                {league.city && <span className="flex items-center gap-1 text-xs text-white/40"><MapPin size={10} /> {league.city}</span>}
-                <span className="flex items-center gap-1 text-xs text-white/40"><Users size={10} /> {leagueTeams.length} {tx.teams}</span>
-                <span className="flex items-center gap-1 text-xs text-white/40"><Trophy size={10} /> {allSeasons.length} {tx.seasons}</span>
-              </div>
-              {league.description && <p className="text-sm text-white/50 mt-2 max-w-xl">{league.description}</p>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Season selector */}
-      {allSeasons.length > 1 && (
-        <div className="border-b border-white/10 bg-white/[0.02]">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto">
-            <span className="text-xs text-white/30 shrink-0 mr-1">{tx.season}</span>
-            {allSeasons.map(s => (
-              <Link key={s.id} href={`?tab=${tab}&season=${s.id}`}
-                style={s.id === selectedSeason?.id ? { background: brand, color: '#fff' } : undefined}
-                className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${s.id === selectedSeason?.id ? '' : 'text-white/50 hover:text-white hover:bg-white/10'}`}>
-                {s.name}
-                {s.status === 'active' && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 align-middle" />}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex gap-1">
-          {[['table',tx.tabs.table],['matches',tx.tabs.matches],['teams',tx.tabs.teamsTab],['scorers',tx.tabs.scorers]].map(([id, label]) => (
-            <Link key={id} href={tabUrl(id)}
-              style={tab === id ? { borderColor: brand, color: brand } : undefined}
-              className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? '' : 'border-transparent text-white/40 hover:text-white/70'}`}>
-              {label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-
-        {tab === 'table' && (
-          standings.length === 0
-            ? <p className="text-center py-12 text-white/30">{tournamentId ? tx.noMatchesYet : tx.noSeasonTournament}</p>
-            : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="text-white/30 text-xs">
-                    <th className="text-left py-2 pl-4 w-8">#</th>
-                    <th className="text-left py-2">{tx.team}</th>
-                    <th className="text-center py-2 px-2">{tx.colP}</th>
-                    <th className="text-center py-2 px-2">{tx.colW}</th>
-                    <th className="text-center py-2 px-2">{tx.colD}</th>
-                    <th className="text-center py-2 px-2">{tx.colL}</th>
-                    <th className="text-center py-2 px-2">{tx.colGoals}</th>
-                    <th className="text-center py-2 px-2">{tx.colGD}</th>
-                    <th className="text-center py-2 px-3" style={{ color: brand }}>{tx.colPts}</th>
-                  </tr></thead>
-                  <tbody>
-                    {standings.map((row, i) => (
-                      <tr key={row.teamId} className="border-t border-white/5 hover:bg-white/[0.03] transition-colors">
-                        <td className="py-3 pl-4 text-white/30 text-xs">{i + 1}</td>
-                        <td className="py-3 font-bold text-white/90">{row.name}</td>
-                        <td className="py-3 px-2 text-center text-white/50">{row.GP}</td>
-                        <td className="py-3 px-2 text-center text-emerald-400 font-bold">{row.W}</td>
-                        <td className="py-3 px-2 text-center text-white/50">{row.D}</td>
-                        <td className="py-3 px-2 text-center text-red-400">{row.L}</td>
-                        <td className="py-3 px-2 text-center text-white/50">{row.GF}:{row.GA}</td>
-                        <td className={`py-3 px-2 text-center text-sm font-bold ${row.GD > 0 ? 'text-emerald-400' : row.GD < 0 ? 'text-red-400' : 'text-white/40'}`}>{row.GD > 0 ? `+${row.GD}` : row.GD}</td>
-                        <td className="py-3 px-3 text-center font-black text-white">{row.Pts}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )
-        )}
-
-        {tab === 'matches' && (
-          <div className="space-y-6">
-            {upcomingFixtures.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.upcoming}</p>
-                <div className="space-y-1">{upcomingFixtures.map(f => <FixtureRow key={f.id} fixture={f} />)}</div>
-              </div>
-            )}
-            {recentFixtures.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.results}</p>
-                <div className="space-y-1">{recentFixtures.map(f => <FixtureRow key={f.id} fixture={f} played />)}</div>
-              </div>
-            )}
-            {upcomingFixtures.length === 0 && recentFixtures.length === 0 && (
-              <p className="text-center py-12 text-white/30">{tx.noMatches}</p>
-            )}
-            {tournamentId && (
-              <div className="text-center pt-2">
-                <Link href={`/t/${tournamentId}`} target="_blank" className="text-sm text-purple-400 hover:text-purple-300 font-medium">
-                  {tx.allMatches}
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === 'teams' && (
-          leagueTeams.length === 0
-            ? <p className="text-center py-12 text-white/30">{tx.noTeams}</p>
-            : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {leagueTeams.map(t => (
-                  <Link key={t.id} href={`/leagues/${slug}/teams/${t.slug}`}>
-                    <div className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-purple-500/30 rounded-xl px-4 py-3 transition-colors">
-                      <div className="w-9 h-9 rounded-lg bg-purple-900/50 flex items-center justify-center text-sm font-black text-purple-300 shrink-0">
-                        {t.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-white truncate">{t.name}</p>
-                        {t.city && <p className="text-xs text-white/40 mt-0.5">{t.city}</p>}
-                      </div>
-                      <ChevronRight size={14} className="text-white/20" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )
-        )}
-
-        {tab === 'scorers' && (
-          scorers.length === 0
-            ? <p className="text-center py-12 text-white/30">{tournamentId ? tx.noGoals : tx.noTournament}</p>
-            : (
-              <table className="w-full text-sm">
-                <thead><tr className="text-white/30 text-xs">
-                  <th className="text-left py-2 pl-4 w-8">#</th>
-                  <th className="text-left py-2">{tx.player}</th>
-                  <th className="text-left py-2 text-white/40">{tx.team}</th>
-                  <th className="text-center py-2 px-4 font-black" style={{ color: brand }}>{tx.goals}</th>
-                </tr></thead>
-                <tbody>
-                  {scorers.map((s, i) => (
-                    <tr key={`${s.name}-${i}`} className="border-t border-white/5 hover:bg-white/[0.03] transition-colors">
-                      <td className="py-3 pl-4 text-white/30 text-xs">{i + 1}</td>
-                      <td className="py-3 font-bold text-white/90">{s.name}</td>
-                      <td className="py-3 text-white/40 text-xs">{s.teamName}</td>
-                      <td className="py-3 px-4 text-center font-black text-white">{s.goals}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-white/5 mt-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="text-xs text-white/20 hover:text-white/40 font-black tracking-wider">TOURNABLE</Link>
-          <Link href="/register" className="text-xs text-purple-400 hover:text-purple-300 font-medium">{tx.createLeague}</Link>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FixtureRow({ fixture, played = false }: { fixture: Fixture & { home_team: Team | null; away_team: Team | null }; played?: boolean }) {
-  const home = fixture.home_team
-  const away = fixture.away_team
-  if (!home || !away) return null
-  return (
-    <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 text-sm">
-      <span className="flex-1 text-right font-bold text-white/80 truncate">{home.name}</span>
-      {played
-        ? <span className="shrink-0 text-sm font-black text-white px-3 py-1 bg-white/10 rounded-lg min-w-[64px] text-center">{fixture.home_score} : {fixture.away_score}</span>
-        : <span className="shrink-0 text-xs font-bold text-white/30 px-2">vs</span>
-      }
-      <span className="flex-1 text-left font-bold text-white/80 truncate">{away.name}</span>
-    </div>
+    <LeaguePublicView
+      league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug }}
+      brand={brand}
+      sportLabel={sportLabel}
+      seasons={allSeasons.map(s => ({ id: s.id, name: s.name, status: s.status }))}
+      selectedSeasonId={selectedSeason?.id ?? null}
+      tournamentId={tournamentId}
+      standings={standings}
+      scorers={scorers}
+      recent={recent}
+      upcoming={upcoming}
+      leagueTeams={leagueTeams}
+      lang={lang}
+    />
   )
 }

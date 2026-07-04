@@ -12,6 +12,7 @@ import { AssistIcon } from '@/components/ui/SportIcon'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { APP_URL } from '@/lib/appUrl'
 import { useFeedback } from '@/hooks/useFeedback'
 import { getSportTheme } from '@/lib/sports'
 
@@ -411,7 +412,7 @@ export default function LiveBoard({
         const HINT_KEY = 'live-share-hint-shown'
         if (!localStorage.getItem(HINT_KEY)) {
           localStorage.setItem(HINT_KEY, '1')
-          const shareUrl = `${window.location.origin}/t/${tournament.id}`
+          const shareUrl = `${APP_URL}/t/${tournament.id}`
           toast.info('Поделитесь Live-табло — участники смогут следить в реальном времени', {
             action: {
               label: 'Поделиться',

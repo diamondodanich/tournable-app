@@ -12,21 +12,21 @@ const T = {
     empty: 'Статистика появится после первых сыгранных матчей.',
     hint: 'Сквозная статистика по всем сезонам чемпионата',
     players: 'Игроки', teams: 'Команды',
-    player: 'Игрок', team: 'Команда', goals: 'Г', assists: 'А', yellow: 'ЖК', red: 'КК', seasons: 'Сез.',
+    player: 'Игрок', team: 'Команда', mp: 'И', goals: 'Г', assists: 'А', yellow: 'ЖК', red: 'КК', seasons: 'Сез.',
     gp: 'И', w: 'В', d: 'Н', l: 'П', gf: 'ЗМ', ga: 'ПМ', gd: '±', pts: 'О', topScorer: 'Лучший бомбардир',
   },
   kz: {
     empty: 'Статистика алғашқы ойналған матчтардан кейін пайда болады.',
     hint: 'Чемпионаттың барлық маусымдары бойынша жиынтық статистика',
     players: 'Ойыншылар', teams: 'Командалар',
-    player: 'Ойыншы', team: 'Команда', goals: 'Г', assists: 'А', yellow: 'СК', red: 'ҚК', seasons: 'Мау.',
+    player: 'Ойыншы', team: 'Команда', mp: 'О', goals: 'Г', assists: 'А', yellow: 'СК', red: 'ҚК', seasons: 'Мау.',
     gp: 'О', w: 'Ж', d: 'Т', l: 'Ұ', gf: 'ЗМ', ga: 'ӨМ', gd: '±', pts: 'Ұп', topScorer: 'Үздік бомбардир',
   },
   en: {
     empty: 'Stats appear after the first matches are played.',
     hint: 'Cumulative statistics across all championship seasons',
     players: 'Players', teams: 'Teams',
-    player: 'Player', team: 'Team', goals: 'G', assists: 'A', yellow: 'YC', red: 'RC', seasons: 'Ssn',
+    player: 'Player', team: 'Team', mp: 'MP', goals: 'G', assists: 'A', yellow: 'YC', red: 'RC', seasons: 'Ssn',
     gp: 'P', w: 'W', d: 'D', l: 'L', gf: 'GF', ga: 'GA', gd: '±', pts: 'Pts', topScorer: 'Top scorer',
   },
 } as const
@@ -118,6 +118,7 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru' }: {
                 <th className="text-left px-3 py-2 w-8">#</th>
                 <th className="text-left px-3 py-2">{tx.player}</th>
                 <th className="text-left px-3 py-2">{tx.team}</th>
+                <SortHead<ChampPlayerStat> label={tx.mp} k="matchesPlayed" sort={pSort} />
                 <SortHead<ChampPlayerStat> label={tx.goals} k="goals" sort={pSort} />
                 <SortHead<ChampPlayerStat> label={tx.assists} k="assists" sort={pSort} />
                 <SortHead<ChampPlayerStat> label={tx.yellow} k="yellow" sort={pSort} />
@@ -146,6 +147,7 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru' }: {
                       <span className="truncate max-w-[120px]">{s.teamName}</span>
                     </div>
                   </td>
+                  <td className="px-2 py-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
                   <td className="px-2 py-2 text-center font-black text-purple-700 tabular-nums">{s.goals}</td>
                   <td className="px-2 py-2 text-center text-gray-600 tabular-nums">{s.assists}</td>
                   <td className="px-2 py-2 text-center tabular-nums">{s.yellow || <span className="text-gray-300">—</span>}</td>

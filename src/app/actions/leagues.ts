@@ -435,6 +435,7 @@ export type ChampPlayerStat = {
   assists: number
   yellow: number
   red: number
+  matchesPlayed: number
   seasons: number
 }
 
@@ -486,13 +487,14 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   const playoffIds = (playoffMatches ?? []).map(m => m.id)
   if (fixtureIds.length === 0 && playoffIds.length === 0) return []
 
+  type EvRow = { team_id: string; player_name: string; type: string; fixture_id?: string | null; playoff_match_id?: string | null }
   const [{ data: fixtureEvents }, { data: playoffEvents }] = await Promise.all([
     fixtureIds.length
-      ? supabase.from('match_events').select('team_id, player_name, type').in('fixture_id', fixtureIds)
-      : Promise.resolve({ data: [] as { team_id: string; player_name: string; type: string }[] }),
+      ? supabase.from('match_events').select('team_id, player_name, type, fixture_id').in('fixture_id', fixtureIds)
+      : Promise.resolve({ data: [] as EvRow[] }),
     playoffIds.length
-      ? supabase.from('match_events').select('team_id, player_name, type').in('playoff_match_id', playoffIds)
-      : Promise.resolve({ data: [] as { team_id: string; player_name: string; type: string }[] }),
+      ? supabase.from('match_events').select('team_id, player_name, type, playoff_match_id').in('playoff_match_id', playoffIds)
+      : Promise.resolve({ data: [] as EvRow[] }),
   ])
 
   // team (season) id → persistent championship team + tournament (season) id
@@ -500,10 +502,10 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   for (const t of seasonTeams ?? []) teamInfo.set(t.id, { leagueTeamId: t.league_team_id, name: t.name, tournamentId: t.tournament_id })
   const leagueTeamName = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.name]))
 
-  type Acc = ChampPlayerStat & { seasonSet: Set<string> }
+  type Acc = ChampPlayerStat & { seasonSet: Set<string>; matchSet: Set<string> }
   const acc = new Map<string, Acc>()
 
-  const events = [...(fixtureEvents ?? []), ...(playoffEvents ?? [])] as { team_id: string; player_name: string; type: string }[]
+  const events = [...(fixtureEvents ?? []), ...(playoffEvents ?? [])] as EvRow[]
   for (const e of events) {
     const info = teamInfo.get(e.team_id)
     if (!info) continue
@@ -517,10 +519,12 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
     if (!row) {
       const teamLogo = info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null
       const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
-      row = { player, teamName, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, seasons: 0, seasonSet: new Set() }
+      row = { player, teamName, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
       acc.set(key, row)
     }
     row.seasonSet.add(info.tournamentId)
+    const matchId = e.fixture_id ?? e.playoff_match_id
+    if (matchId) row.matchSet.add(matchId)
     if (e.type === 'goal') row.goals++
     else if (e.type === 'assist') row.assists++
     else if (e.type === 'yellow_card') row.yellow++
@@ -528,7 +532,7 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   }
 
   return [...acc.values()]
-    .map(({ seasonSet, ...r }) => ({ ...r, seasons: seasonSet.size }))
+    .map(({ seasonSet, matchSet, ...r }) => ({ ...r, seasons: seasonSet.size, matchesPlayed: matchSet.size }))
     .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player))
 }
 

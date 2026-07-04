@@ -59,15 +59,16 @@ const T = {
   },
 } as const
 
-export default function RegisterForm({ lang, next = '' }: { lang: Lang; next?: string }) {
+export default function RegisterForm({ lang, next = '', add = false }: { lang: Lang; next?: string; add?: boolean }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
 
-  const langSuffix = lang !== 'ru' ? `?lang=${lang}` : ''
-  const loginHref = next
-    ? `/login${langSuffix || '?'}${langSuffix ? '&' : ''}next=${encodeURIComponent(next)}`
-    : `/login${langSuffix}`
+  const lp = new URLSearchParams()
+  if (lang !== 'ru') lp.set('lang', lang)
+  if (next) lp.set('next', next)
+  if (add) lp.set('add', '1')
+  const loginHref = `/login${lp.toString() ? `?${lp}` : ''}`
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

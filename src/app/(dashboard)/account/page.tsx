@@ -7,6 +7,8 @@ import SignOutButton from '@/components/account/SignOutButton'
 import DeleteAccountButton from '@/components/account/DeleteAccountButton'
 import AdminPlanButton from './AdminPlanButton'
 import AccountTabs from './AccountTabs'
+import ProfileExtraForm from './ProfileExtraForm'
+import ThemeToggle from './ThemeToggle'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
@@ -331,6 +333,16 @@ export default async function AccountPage() {
           </div>
         </div>
 
+        <ProfileExtraForm
+          lang={lang}
+          initial={{
+            display_name: (user!.user_metadata as { display_name?: string } | undefined)?.display_name ?? '',
+            phone: (user!.user_metadata as { phone?: string } | undefined)?.phone ?? '',
+            country: (user!.user_metadata as { country?: string } | undefined)?.country ?? '',
+            city: (user!.user_metadata as { city?: string } | undefined)?.city ?? '',
+          }}
+        />
+
         </>) },
         { id: 'subscription', label: tx.tabSubscription, content: (<>
 
@@ -538,6 +550,8 @@ export default async function AccountPage() {
 
         </>) },
         { id: 'settings', label: tx.tabSettings, content: (<>
+
+        <ThemeToggle initialDark={cookieStore.get('theme')?.value === 'dark'} lang={lang} />
 
         {/* ── Security card ─────────────────────────────────────────── */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6">

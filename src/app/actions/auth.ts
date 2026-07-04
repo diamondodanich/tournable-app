@@ -64,6 +64,30 @@ export async function changePassword(formData: FormData) {
   return { success: true, wasSet: !hadPassword }
 }
 
+// ── Profile fields (optional, stored in user metadata) ───────────────────────
+export async function updateAccountProfile(fields: {
+  display_name?: string
+  phone?: string
+  country?: string
+  city?: string
+}): Promise<{ success?: true; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Сессия истекла. Войдите заново.' }
+
+  const clean = (v?: string) => (v ?? '').trim().slice(0, 80)
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      display_name: clean(fields.display_name) || null,
+      phone: clean(fields.phone) || null,
+      country: clean(fields.country) || null,
+      city: clean(fields.city) || null,
+    },
+  })
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
 // ── Password reset (forgot password flow) ────────────────────────────────────
 export async function requestPasswordReset(formData: FormData) {
   const email = (formData.get('email') as string | null)?.trim() ?? ''

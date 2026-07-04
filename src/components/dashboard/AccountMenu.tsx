@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { User, ChevronDown, Plus, LogOut, Settings, Check, Loader2 } from 'lucide-react'
+import { User, ChevronDown, Plus, LogOut, Check, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getAccounts, upsertAccount, removeAccount, type StoredAccount } from '@/lib/multiAccount'
 
@@ -198,8 +198,9 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
 
       {open && (
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden text-gray-900 z-50">
-          {/* Current account */}
-          <div className="p-3 flex items-center gap-3 bg-gray-50 border-b border-gray-100">
+          {/* Current account — click opens the account page (ЛК) */}
+          <Link href="/account" onClick={() => setOpen(false)}
+            className="p-3 flex items-center gap-3 bg-gray-50 hover:bg-gray-100 border-b border-gray-100 transition-colors">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-sm font-black text-white shrink-0">
               {initialsOf(email, name)}
             </div>
@@ -210,7 +211,7 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
               plan === 'enterprise' ? 'bg-purple-100 text-purple-700' : plan === 'pro' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
             }`}>{badge.label}</span>
-          </div>
+          </Link>
 
           {/* Other accounts */}
           {others.length > 0 && (
@@ -248,15 +249,6 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
               </span>
               {tx.addAccount}
             </button>
-
-            <Link
-              href="/account"
-              onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
-            >
-              <span className="w-8 h-8 flex items-center justify-center shrink-0"><Settings size={16} className="text-gray-400" /></span>
-              {tx.settings}
-            </Link>
 
             <button
               onClick={signOutCurrent}

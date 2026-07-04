@@ -59,10 +59,11 @@ export default function LoginForm({ lang, next = '', add = false }: { lang: Lang
   const [loading, setLoading] = useState(false)
   const tx = T[lang]
 
-  const langSuffix = lang !== 'ru' ? `?lang=${lang}` : ''
-  const registerHref = next
-    ? `/register${langSuffix || '?'}${langSuffix ? '&' : ''}next=${encodeURIComponent(next)}`
-    : `/register${langSuffix}`
+  const rp = new URLSearchParams()
+  if (lang !== 'ru') rp.set('lang', lang)
+  if (next) rp.set('next', next)
+  if (add) rp.set('add', '1')  // preserve add-account flow so proxy doesn't bounce to the current account
+  const registerHref = `/register${rp.toString() ? `?${rp}` : ''}`
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

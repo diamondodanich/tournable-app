@@ -153,3 +153,31 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ── App dark theme ───────────────────────────────────────────────────────────
+   Scoped: the `.dark` class is applied only on the dashboard shell wrapper, so
+   public pages stay light. We remap the common light utility classes to dark
+   values (no per-component changes needed). */
+.dark { color-scheme: dark; }
+.dark, .dark .bg-gray-50, .dark .bg-gray-50\/80, .dark .bg-gray-50\/50 { background-color: #0e0e12 !important; }
+.dark .bg-white, .dark .bg-white\/95, .dark .bg-white\/90, .dark .bg-white\/80, .dark .bg-white\/70, .dark .bg-white\/60 { background-color: #17171d !important; }
+.dark .bg-gray-100, .dark .hover\:bg-gray-100:hover { background-color: #23232b !important; }
+.dark .bg-gray-200, .dark .hover\:bg-gray-200:hover { background-color: #2d2d37 !important; }
+.dark .hover\:bg-gray-50:hover, .dark .hover\:bg-gray-100:hover { background-color: #23232b !important; }
+
+.dark .text-gray-900 { color: #ececf1 !important; }
+.dark .text-gray-800 { color: #e3e3e9 !important; }
+.dark .text-gray-700 { color: #d2d2da !important; }
+.dark .text-gray-600 { color: #b6b6c0 !important; }
+.dark .text-gray-500 { color: #9c9ca8 !important; }
+.dark .text-gray-400 { color: #7e7e8a !important; }
+.dark .text-gray-300 { color: #5c5c68 !important; }
+
+.dark .border-gray-50, .dark .border-gray-100 { border-color: #26262e !important; }
+.dark .border-gray-200 { border-color: #30303a !important; }
+
+/* Inputs/selects readable in dark */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select { background-color: #15151a !important; color: #ececf1 !important; }
+.dark input::placeholder, .dark textarea::placeholder { color: #6b6b77 !important; }

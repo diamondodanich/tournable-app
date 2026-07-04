@@ -52,8 +52,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const lang: Lang = (['ru', 'kz', 'en'] as Lang[]).includes(langRaw as Lang) ? (langRaw as Lang) : 'ru'
   const tx = T[lang]
   const displayName = (user.user_metadata as { display_name?: string } | undefined)?.display_name
+  const isDark = cookieStore.get('theme')?.value === 'dark'
 
   return (
+    <div className={isDark ? 'dark' : undefined}>
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
 
       {/* ── Background decoration ──────────────────────────────────────── */}
@@ -124,6 +126,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── PWA install prompt (mobile only) ─────────────────────────── */}
       <InstallPrompt />
+    </div>
     </div>
   )
 }

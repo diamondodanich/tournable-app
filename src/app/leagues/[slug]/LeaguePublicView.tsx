@@ -21,7 +21,7 @@ const T = {
     tabs: { table: 'Таблица', matches: 'Матчи', stats: 'Статистика' },
     team: 'Команда', colP: 'И', colW: 'В', colD: 'Н', colL: 'П', colGF: 'ЗМ', colGA: 'ПМ', colGD: '±', colPts: 'О',
     noTable: 'Матчи ещё не сыграны', noSeason: 'Сезон не привязан', upcoming: 'Предстоящие', results: 'Результаты', noMatches: 'Матчей пока нет',
-    players: 'Игроки', teamsTab: 'Команды', player: 'Игрок', goals: 'Г', assists: 'А', yellow: 'ЖК', red: 'КК', ssn: 'Сез.',
+    players: 'Игроки', teamsTab: 'Команды', player: 'Игрок', mp: 'И', goals: 'Г', assists: 'А', yellow: 'ЖК', red: 'КК', ssn: 'Сез.',
     noStats: 'Статистики пока нет', createOwn: 'Создать свой чемпионат', tbd: 'дата не назначена',
   },
   kz: {
@@ -29,7 +29,7 @@ const T = {
     tabs: { table: 'Кесте', matches: 'Матчтар', stats: 'Статистика' },
     team: 'Команда', colP: 'О', colW: 'Ж', colD: 'Т', colL: 'Ұ', colGF: 'ЗМ', colGA: 'ӨМ', colGD: '±', colPts: 'Ұп',
     noTable: 'Матчтар әлі өткен жоқ', noSeason: 'Маусым байланбаған', upcoming: 'Алдағы', results: 'Нәтижелер', noMatches: 'Матчтар әлі жоқ',
-    players: 'Ойыншылар', teamsTab: 'Командалар', player: 'Ойыншы', goals: 'Г', assists: 'А', yellow: 'СК', red: 'ҚК', ssn: 'Мау.',
+    players: 'Ойыншылар', teamsTab: 'Командалар', player: 'Ойыншы', mp: 'О', goals: 'Г', assists: 'А', yellow: 'СК', red: 'ҚК', ssn: 'Мау.',
     noStats: 'Статистика әлі жоқ', createOwn: 'Өз чемпионатыңды құру', tbd: 'күні белгіленбеген',
   },
   en: {
@@ -37,7 +37,7 @@ const T = {
     tabs: { table: 'Table', matches: 'Matches', stats: 'Stats' },
     team: 'Team', colP: 'P', colW: 'W', colD: 'D', colL: 'L', colGF: 'GF', colGA: 'GA', colGD: '±', colPts: 'Pts',
     noTable: 'No matches played yet', noSeason: 'No tournament linked', upcoming: 'Upcoming', results: 'Results', noMatches: 'No matches yet',
-    players: 'Players', teamsTab: 'Teams', player: 'Player', goals: 'G', assists: 'A', yellow: 'YC', red: 'RC', ssn: 'Ssn',
+    players: 'Players', teamsTab: 'Teams', player: 'Player', mp: 'MP', goals: 'G', assists: 'A', yellow: 'YC', red: 'RC', ssn: 'Ssn',
     noStats: 'No stats yet', createOwn: 'Create your own championship', tbd: 'date not set',
   },
 } as const
@@ -242,6 +242,7 @@ export default function LeaguePublicView({
                         <th className="text-left py-2.5 pl-4 w-8">#</th>
                         <th className="text-left py-2.5">{tx.player}</th>
                         <th className="text-left py-2.5">{tx.team}</th>
+                        <Th label={tx.mp} k="matchesPlayed" s={pSort} />
                         <Th label={tx.goals} k="goals" s={pSort} />
                         <Th label={tx.assists} k="assists" s={pSort} />
                         <Th label={tx.yellow} k="yellow" s={pSort} />
@@ -266,6 +267,7 @@ export default function LeaguePublicView({
                             <td className="py-2.5 text-gray-500">
                               <div className="flex items-center gap-1.5 min-w-0"><TeamAvatar name={s.teamName} logoUrl={s.teamLogo} size={18} /><span className="break-words">{s.teamName}</span></div>
                             </td>
+                            <td className="py-2.5 px-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
                             <td className="py-2.5 px-2 text-center font-black tabular-nums" style={{ color: brand }}>{s.goals}</td>
                             <td className="py-2.5 px-2 text-center text-gray-600 tabular-nums">{s.assists}</td>
                             <td className="py-2.5 px-2 text-center tabular-nums">{s.yellow || <span className="text-gray-300">—</span>}</td>

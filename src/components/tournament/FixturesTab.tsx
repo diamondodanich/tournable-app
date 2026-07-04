@@ -124,6 +124,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
       {/* Player name — autoFocus only fires on mount (stable component type) */}
       <Input
         autoFocus
+        list="tournament-players"
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
@@ -134,6 +135,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
       {/* Assister — no autoFocus; typing here no longer steals focus back */}
       {isGoal && !form.isOwnGoal && (
         <Input
+          list="tournament-players"
           value={form.assister}
           onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
           onKeyDown={e => e.key === 'Enter' && onConfirm()}
@@ -640,6 +642,11 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const played = fixtures.filter(f => !isByeFixture(f) && f.played).length
   const total  = fixtures.filter(f => !isByeFixture(f)).length
 
+  // Autocomplete suggestions: every player name already recorded in this tournament.
+  const knownNames = [...new Set(
+    fixtures.flatMap(f => (f.match_events ?? []).map(e => e.player_name.trim())).filter(Boolean),
+  )].sort()
+
   const visibleFixtures = fixtures.filter(f => {
     if (isByeFixture(f)) return false
     return subTab === 'upcoming' ? !f.played : f.played
@@ -678,6 +685,11 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
 
   return (
     <div className="space-y-4">
+      {/* Shared autocomplete source for player-name inputs across all match cards */}
+      <datalist id="tournament-players">
+        {knownNames.map(n => <option key={n} value={n} />)}
+      </datalist>
+
       {isSwiss && isOwner && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
           <div className="flex items-center gap-2.5 min-w-0">

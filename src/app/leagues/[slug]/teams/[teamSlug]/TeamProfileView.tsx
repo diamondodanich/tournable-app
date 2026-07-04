@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Users, BarChart3, CalendarDays, Pencil } from 'lucide-react'
+import { Users, BarChart3, CalendarDays, Pencil, ChevronLeft } from 'lucide-react'
 import SquadEditor from '@/components/championship/SquadEditor'
 
 type Lang = 'ru' | 'kz' | 'en'
@@ -86,7 +86,10 @@ export default function TeamProfileView({
       <div className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ background: `radial-gradient(1000px 260px at 15% -40%, ${brand}, transparent)` }} />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-8">
-          <Link href={`/leagues/${slug}`} className="text-xs text-white/40 hover:text-white/70 font-medium mb-4 inline-block">← {leagueName}</Link>
+          <Link href={`/leagues/${slug}`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-3 py-1.5 mb-4 transition-colors">
+            <ChevronLeft size={15} /> {leagueName}
+          </Link>
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-2xl font-black shrink-0 ring-2"
               style={{ background: `${brand}22`, color: brand, boxShadow: `0 0 40px ${brand}33`, ['--tw-ring-color' as string]: `${brand}66` }}>

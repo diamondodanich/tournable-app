@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Check, Trash2, Loader2, Shirt, Plus, Camera } from 'lucide-react'
 import { toast } from 'sonner'
@@ -120,6 +120,13 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
   const [draftNum, setDraftNum] = useState('')
   const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null)
   const [draftPhotoData, setDraftPhotoData] = useState<string | null>(null)
+  const draftNameRef = useRef<HTMLInputElement>(null)
+
+  // Smart entry: once the number reaches 2 digits, jump to the name field.
+  function onDraftNum(v: string) {
+    setDraftNum(v)
+    if (v.replace(/\D/g, '').length >= 2) draftNameRef.current?.focus()
+  }
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -288,7 +295,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 leading-none">{tx.title}</p>
-              <p className="font-black text-gray-900 truncate">{teamName}</p>
+              <p className="font-black text-gray-900 break-words leading-tight">{teamName}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors"><X size={20} /></button>
@@ -411,10 +418,10 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                   onChange={e => { const f = e.target.files?.[0]; if (f) pickDraftPhoto(f) }} />
               </label>
               <div className="flex-1 flex items-center gap-2">
-                <input autoFocus value={draftNum} onChange={e => setDraftNum(e.target.value)}
+                <input autoFocus value={draftNum} onChange={e => onDraftNum(e.target.value)}
                   placeholder={tx.number} type="number"
                   className="w-14 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
-                <input value={draftName} onChange={e => setDraftName(e.target.value)}
+                <input ref={draftNameRef} value={draftName} onChange={e => setDraftName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && commitEditor()}
                   placeholder={tx.name}
                   className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { APP_URL } from '@/lib/appUrl'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} min-h-full`}>
         {children}
         <Toaster richColors position="bottom-right" />
+        <SpeedInsights />
       </body>
     </html>
   )

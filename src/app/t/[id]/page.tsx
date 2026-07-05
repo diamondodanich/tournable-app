@@ -234,7 +234,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               </div>
             </div>
             <TabsContent value="standings">
-              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
+              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} isPro={ownerIsPro} />
             </TabsContent>
             <TabsContent value="fixtures">
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} lang={lang} />
@@ -261,7 +261,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               </div>
             </div>
             <TabsContent value="standings">
-              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} />
+              <StandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournamentName={tournament.name} tournament={tournament} isPro={ownerIsPro} />
             </TabsContent>
             <TabsContent value="fixtures">
               <PublicFixturesTab tournament={tournament} teams={teams ?? []} fixtures={fixtures ?? []} lang={lang} />
@@ -292,7 +292,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
             </div>
             <TabsContent value="groups">
               {showGroupStandings ? (
-                <GroupStandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournament={tournament} />
+                <GroupStandingsTab teams={teams ?? []} fixtures={fixtures ?? []} tournament={tournament} isPro={ownerIsPro} />
               ) : (
                 <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                   <p className="font-bold text-gray-500">Групповой этап начнётся после старта турнира</p>

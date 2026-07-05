@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { User, Phone, Globe, MapPin, Save, Check } from 'lucide-react'
 import { updateAccountProfile } from '@/app/actions/auth'
+import { COUNTRIES, CITIES } from '@/lib/countries'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -27,27 +28,14 @@ const T = {
   },
 } as const
 
-// Country → dial code, phone mask style, and main cities (for the city dropdown).
 type Mask = 'ru7' | 'generic'
-const COUNTRIES: { name: string; dial: string; mask: Mask; cities: string[] }[] = [
-  { name: 'Казахстан', dial: '7', mask: 'ru7', cities: ['Астана', 'Алматы', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] },
-  { name: 'Россия', dial: '7', mask: 'ru7', cities: ['Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань', 'Нижний Новгород', 'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону'] },
-  { name: 'Кыргызстан', dial: '996', mask: 'generic', cities: ['Бишкек', 'Ош', 'Джалал-Абад', 'Каракол'] },
-  { name: 'Узбекистан', dial: '998', mask: 'generic', cities: ['Ташкент', 'Самарканд', 'Бухара', 'Наманган', 'Андижан'] },
-  { name: 'Азербайджан', dial: '994', mask: 'generic', cities: ['Баку', 'Гянджа', 'Сумгаит'] },
-  { name: 'Грузия', dial: '995', mask: 'generic', cities: ['Тбилиси', 'Батуми', 'Кутаиси'] },
-  { name: 'Türkiye', dial: '90', mask: 'generic', cities: ['İstanbul', 'Ankara', 'İzmir', 'Antalya'] },
-  { name: 'Беларусь', dial: '375', mask: 'generic', cities: ['Минск', 'Гомель', 'Брест'] },
-  { name: 'Украина', dial: '380', mask: 'generic', cities: ['Киев', 'Харьков', 'Одесса', 'Львов'] },
-]
 
 function digitsOnly(s: string) { return s.replace(/\D/g, '') }
 
-function formatPhone(raw: string, dial: string, mask: Mask): string {
-  let d = digitsOnly(raw)
-  if (d.startsWith(dial)) d = d.slice(dial.length)
+// Format NATIONAL digits (no country code) into a display string with dial prefix.
+function formatPhone(nat: string, dial: string, mask: Mask): string {
   if (mask === 'ru7') {
-    d = d.slice(0, 10)
+    const d = nat.slice(0, 10)
     let out = `+${dial}`
     if (d.length) out += ` (${d.slice(0, 3)}`
     if (d.length >= 3) out += `) ${d.slice(3, 6)}`
@@ -55,9 +43,14 @@ function formatPhone(raw: string, dial: string, mask: Mask): string {
     if (d.length >= 8) out += `-${d.slice(8, 10)}`
     return out
   }
-  d = d.slice(0, 12)
+  const d = nat.slice(0, 12)
   const groups = d.match(/.{1,3}/g)
   return `+${dial}${groups ? ' ' + groups.join(' ') : ''}`
+}
+
+function findCountry(name: string) {
+  const n = name.trim().toLowerCase()
+  return COUNTRIES.find(c => c.name.toLowerCase() === n)
 }
 
 export default function ProfileExtraForm({ initial, lang = 'ru' }: {
@@ -72,29 +65,46 @@ export default function ProfileExtraForm({ initial, lang = 'ru' }: {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
-  const activeCountry = COUNTRIES.find(c => c.name.toLowerCase() === country.trim().toLowerCase())
+  const activeCountry = findCountry(country)
   const dial = activeCountry?.dial ?? '7'
-  const mask = activeCountry?.mask ?? 'ru7'
-  const cityOptions = activeCountry?.cities ?? []
+  const mask: Mask = dial === '7' ? 'ru7' : 'generic'
+  const maxNat = mask === 'ru7' ? 10 : 12
+  const cityOptions = CITIES[activeCountry?.name ?? ''] ?? []
 
-  const [phone, setPhone] = useState(() => (initial.phone ?? ''))
+  // Source of truth for the phone = NATIONAL digits (no dial). Display is derived.
+  const [nat, setNat] = useState(() => {
+    const d0 = findCountry(initial.country ?? '')?.dial ?? '7'
+    let d = digitsOnly(initial.phone ?? '')
+    if (d.startsWith(d0)) d = d.slice(d0.length)
+    return d.slice(0, d0 === '7' ? 10 : 12)
+  })
+
+  const phoneDisplay = nat ? formatPhone(nat, dial, mask) : ''
 
   function onPhone(v: string) {
-    // Empty → clear; otherwise mask to the selected country's format.
-    setPhone(digitsOnly(v).length === 0 ? '' : formatPhone(v, dial, mask))
+    let digits = digitsOnly(v)
+    // Display always starts with "+dial", so digitsOnly(v) = dial + national while
+    // the field is non-empty. Strip the dial prefix.
+    if (v.includes('+') && digits.startsWith(dial)) digits = digits.slice(dial.length)
+    else if (digits.length > maxNat && digits.startsWith(dial)) digits = digits.slice(dial.length)
+    // Backspacing over a formatting char removes no digit → drop the trailing digit
+    // so deletion always makes progress.
+    if (v.length < phoneDisplay.length && digits.length === nat.length && digits.length > 0) {
+      digits = digits.slice(0, -1)
+    }
+    setNat(digits.slice(0, maxNat))
   }
+
   function onCountry(v: string) {
     setCountry(v)
     setCity('')  // city depends on country
-    // Re-mask the existing phone to the new country
-    const c = COUNTRIES.find(x => x.name.toLowerCase() === v.trim().toLowerCase())
-    if (c && phone) setPhone(formatPhone(phone, c.dial, c.mask))
+    // national digits are country-agnostic — no need to touch `nat`; display re-masks
   }
 
   function handleSave() {
     setError('')
     startTransition(async () => {
-      const res = await updateAccountProfile({ display_name: name, phone, country, city })
+      const res = await updateAccountProfile({ display_name: name, phone: phoneDisplay, country, city })
       if (res?.error) { setError(res.error); return }
       setSaved(true); setTimeout(() => setSaved(false), 2000)
     })
@@ -124,7 +134,7 @@ export default function ProfileExtraForm({ initial, lang = 'ru' }: {
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">{tx.phone}</label>
           <div className={wrapCls}>
             <Phone size={15} className="text-gray-400 shrink-0" />
-            <input value={phone} onChange={e => onPhone(e.target.value)} placeholder={`+${dial} …`} type="tel" inputMode="tel" className={inputCls} />
+            <input value={phoneDisplay} onChange={e => onPhone(e.target.value)} placeholder={`+${dial} …`} type="tel" inputMode="tel" className={inputCls} />
           </div>
         </div>
 

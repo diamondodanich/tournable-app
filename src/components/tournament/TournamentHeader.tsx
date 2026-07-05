@@ -1,7 +1,7 @@
 'use client'
 
 import { Tournament, TournamentMember } from '@/types'
-import { ArrowLeft, Settings } from 'lucide-react'
+import { ArrowLeft, Settings, Crown } from 'lucide-react'
 import Link from 'next/link'
 import SharePanel from './SharePanel'
 import TeamAvatar from './TeamAvatar'
@@ -89,9 +89,10 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {isOwner && (
-            <div className="flex flex-col items-start gap-1">
+        {isOwner && (
+          <div className="flex flex-col items-stretch sm:items-end gap-1.5">
+            {/* Actions row — Share + Settings aligned on one line */}
+            <div className="flex items-center gap-2">
               <SharePanel
                 tournamentId={tournament.id}
                 tournamentName={tournament.name}
@@ -100,29 +101,28 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
                 isPro={isPro}
                 lang={lang}
               />
-              {!isPro && (
-                <a
-                  href="/pricing"
-                  className="text-[10px] text-gray-400 hover:text-emerald-600 transition-colors leading-none px-0.5 whitespace-nowrap"
-                >
-                  {T.removeBadgeCta}
-                </a>
-              )}
+              <Link
+                href={settingsHref ?? `/dashboard/tournament/${tournament.id}/settings`}
+                aria-label={T.tabSetup}
+                title={T.tabSetup}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              >
+                <Settings size={15} />
+                <span className="hidden sm:inline">{T.tabSetup}</span>
+              </Link>
             </div>
-          )}
 
-          {isOwner && (
-            <Link
-              href={settingsHref ?? `/dashboard/tournament/${tournament.id}/settings`}
-              aria-label={T.tabSetup}
-              title={T.tabSetup}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-            >
-              <Settings size={15} />
-              <span className="hidden sm:inline">{T.tabSetup}</span>
-            </Link>
-          )}
-        </div>
+            {/* Pro upsell — clean pill under the actions, never crammed between buttons */}
+            {!isPro && (
+              <a
+                href="/pricing"
+                className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 hover:bg-amber-100 transition-colors whitespace-nowrap"
+              >
+                <Crown size={11} /> {T.removeBadgeCta}
+              </a>
+            )}
+          </div>
+        )}
       </div>
       </div>
     </div>

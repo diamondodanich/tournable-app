@@ -12,11 +12,13 @@ export default function GroupStandingsTab({
   fixtures,
   tournament,
   lang = 'ru',
+  isPro = false,
 }: {
   teams: Team[]
   fixtures: Fixture[]
   tournament: Tournament
   lang?: Lang
+  isPro?: boolean
 }) {
   const T = tx[lang]
 
@@ -85,7 +87,7 @@ export default function GroupStandingsTab({
                   {T.teamsCount(groupTeams.length)}
                 </span>
               </div>
-              <ExportButtons elementId={exportId} fileName={`${slug}-group-${groupName.toLowerCase()}`} lang={lang} />
+              <ExportButtons elementId={exportId} fileName={`${slug}-group-${groupName.toLowerCase()}`} lang={lang} isPro={isPro} />
             </div>
 
             <div className="overflow-x-auto">

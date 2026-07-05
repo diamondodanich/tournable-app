@@ -1,19 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { Download, FileImage } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
+import { saveImageAsPdf } from '@/lib/reportPdf'
 import { tx, type Lang } from '@/lib/i18n'
 
 interface ExportButtonsProps {
   elementId: string
   fileName: string
   lang?: Lang
+  isPro?: boolean
 }
 
-export default function ExportButtons({ elementId, fileName, lang = 'ru' }: ExportButtonsProps) {
+export default function ExportButtons({ elementId, fileName, lang = 'ru', isPro = false }: ExportButtonsProps) {
   const T = tx[lang]
   const [loading, setLoading] = useState<'png' | 'pdf' | null>(null)
 
@@ -44,12 +45,7 @@ export default function ExportButtons({ elementId, fileName, lang = 'ru' }: Expo
       img.src = dataUrl
       await new Promise<void>(r => { img.onload = () => r() })
 
-      const mmW = (img.width / 2) * 0.264583
-      const mmH = (img.height / 2) * 0.264583
-      const orientation = mmW > mmH ? 'landscape' : 'portrait'
-      const pdf = new jsPDF({ orientation, unit: 'mm', format: [mmW, mmH] })
-      pdf.addImage(dataUrl, 'PNG', 0, 0, mmW, mmH)
-      pdf.save(`${fileName}.pdf`)
+      saveImageAsPdf(dataUrl, img.width, img.height, isPro, fileName)
     } finally {
       setLoading(null)
     }

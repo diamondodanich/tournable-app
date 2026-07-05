@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { FileDown, Loader2 } from 'lucide-react'
 import { captureNoPng } from '@/lib/exportCapture'
+import { saveImageAsPdf } from '@/lib/reportPdf'
 import { toast } from 'sonner'
 import { tx, type Lang } from '@/lib/i18n'
 
@@ -31,21 +31,7 @@ export default function ExportReportButton({ fileName, isPro = false, lang = 'ru
       img.src = dataUrl
       await new Promise<void>(r => { img.onload = () => r() })
 
-      const mmW = (img.width / 2) * 0.264583
-      const mmH = (img.height / 2) * 0.264583
-      if (mmW <= 0 || mmH <= 0) return
-
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmW, mmH] })
-      pdf.addImage(dataUrl, 'PNG', 0, 0, mmW, mmH)
-
-      if (!isPro) {
-        pdf.setFontSize(9)
-        pdf.setTextColor(180, 180, 180)
-        pdf.setFont('helvetica', 'italic')
-        pdf.text('tournable.app', mmW - 3, mmH - 3, { align: 'right' })
-      }
-
-      pdf.save(`${fileName}.pdf`)
+      saveImageAsPdf(dataUrl, img.width, img.height, isPro, fileName)
 
       if (!isPro) {
         toast.info(T.pdfDownloaded, {

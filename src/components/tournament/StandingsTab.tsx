@@ -16,7 +16,7 @@ const TEAM_HINT: Record<Lang, string> = {
 
 export default function StandingsTab({
   teams, fixtures, tournamentName = 'Турнир', tournament, lang = 'ru',
-  teamHrefs, teamLinkBrand,
+  teamHrefs, teamLinkBrand, isPro = false,
 }: {
   teams: Team[]
   fixtures: Fixture[]
@@ -25,6 +25,7 @@ export default function StandingsTab({
   lang?: Lang
   teamHrefs?: Record<string, string>
   teamLinkBrand?: string
+  isPro?: boolean
 }) {
   const T = tx[lang]
   const router = useRouter()
@@ -67,7 +68,7 @@ export default function StandingsTab({
 
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-500 font-medium">{T.standingsTitle}</span>
-        <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} lang={lang} />
+        <ExportButtons elementId="standings-export" fileName={`${slug}-standings`} lang={lang} isPro={isPro} />
       </div>
       {tournament && (tournament.points_win !== 3 || tournament.points_draw !== 1 || tournament.points_loss !== 0) && (
         <p className="text-xs text-gray-400">

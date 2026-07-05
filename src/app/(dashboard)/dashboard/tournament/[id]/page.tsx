@@ -502,9 +502,6 @@ export default async function TournamentPage({ params, searchParams }: { params:
             <p style={{ fontSize: '22px', fontWeight: 800, color: '#111827', margin: 0 }}>{tournament.name}</p>
             <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
               Полный отчёт · {new Date().toLocaleDateString('ru-RU')} · {t.length} команд
-              {isRoundRobin
-                ? ` · ${f.filter((x: Fixture) => x.played && !x.is_bye).length} сыграно`
-                : ` · ${pm.filter((m: any) => m.winner_id).length} матчей сыграно`}
             </p>
           </div>
           <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '-0.02em', color: sportTheme.primary, flexShrink: 0 }}>TOURNABLE</span>
@@ -770,12 +767,12 @@ export default async function TournamentPage({ params, searchParams }: { params:
         )}
         {showGroupStandingsTab && (
           <TabsContent value="group-standings" className="mt-0 pt-5">
-            <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} lang={lang} />
+            <GroupStandingsTab teams={t} fixtures={f} tournament={tournament} lang={lang} isPro={isPro} />
           </TabsContent>
         )}
         {showStandingsTab && (
           <TabsContent value="standings" className="mt-0 pt-5">
-            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} teamHrefs={teamHrefs} teamLinkBrand={teamLinkBrand} />
+            <StandingsTab teams={t} fixtures={f} tournamentName={tournament.name} tournament={tournament} lang={lang} teamHrefs={teamHrefs} teamLinkBrand={teamLinkBrand} isPro={isPro} />
           </TabsContent>
         )}
         {showPlayoffTab && (

@@ -156,28 +156,70 @@
 
 /* ── App dark theme ───────────────────────────────────────────────────────────
    Scoped: the `.dark` class is applied only on the dashboard shell wrapper, so
-   public pages stay light. We remap the common light utility classes to dark
-   values (no per-component changes needed). */
+   public pages stay light. We remap the common light utility classes to a
+   cohesive dark palette (no per-component changes needed). Palette is tuned to
+   match premium products: near-black canvas, slightly-lifted surfaces, calm
+   accents. */
 .dark { color-scheme: dark; }
-.dark, .dark .bg-gray-50, .dark .bg-gray-50\/80, .dark .bg-gray-50\/50 { background-color: #0e0e12 !important; }
-.dark .bg-white, .dark .bg-white\/95, .dark .bg-white\/90, .dark .bg-white\/80, .dark .bg-white\/70, .dark .bg-white\/60 { background-color: #17171d !important; }
-.dark .bg-gray-100, .dark .hover\:bg-gray-100:hover { background-color: #23232b !important; }
-.dark .bg-gray-200, .dark .hover\:bg-gray-200:hover { background-color: #2d2d37 !important; }
-.dark .hover\:bg-gray-50:hover, .dark .hover\:bg-gray-100:hover { background-color: #23232b !important; }
 
-.dark .text-gray-900 { color: #ececf1 !important; }
-.dark .text-gray-800 { color: #e3e3e9 !important; }
-.dark .text-gray-700 { color: #d2d2da !important; }
-.dark .text-gray-600 { color: #b6b6c0 !important; }
-.dark .text-gray-500 { color: #9c9ca8 !important; }
-.dark .text-gray-400 { color: #7e7e8a !important; }
-.dark .text-gray-300 { color: #5c5c68 !important; }
+/* Canvas + surfaces (layered elevation) */
+.dark, .dark .bg-gray-50, .dark .bg-gray-50\/80, .dark .bg-gray-50\/50 { background-color: #0b0b0f !important; }
+.dark .bg-white, .dark .bg-white\/95, .dark .bg-white\/90, .dark .bg-white\/80, .dark .bg-white\/70, .dark .bg-white\/60 { background-color: #16161c !important; }
+.dark .bg-gray-100, .dark .bg-gray-100\/80 { background-color: #202028 !important; }
+.dark .bg-gray-200 { background-color: #2b2b34 !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #1d1d24 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #23232b !important; }
+.dark .hover\:bg-gray-200:hover { background-color: #2d2d37 !important; }
 
-.dark .border-gray-50, .dark .border-gray-100 { border-color: #26262e !important; }
-.dark .border-gray-200 { border-color: #30303a !important; }
+/* Text ramp */
+.dark .text-gray-900 { color: #f2f2f6 !important; }
+.dark .text-gray-800 { color: #e6e6ec !important; }
+.dark .text-gray-700 { color: #d4d4dd !important; }
+.dark .text-gray-600 { color: #b3b3bf !important; }
+.dark .text-gray-500 { color: #9494a1 !important; }
+.dark .text-gray-400 { color: #797986 !important; }
+.dark .text-gray-300 { color: #565662 !important; }
+
+/* Borders + dividers */
+.dark .border-gray-50, .dark .border-gray-100 { border-color: #24242c !important; }
+.dark .border-gray-200 { border-color: #2f2f39 !important; }
+.dark .divide-gray-100 > * + *, .dark .divide-gray-200 > * + * { border-color: #2a2a33 !important; }
+
+/* Tinted status backgrounds — keep meaning, drop the glare */
+.dark .bg-emerald-50, .dark .bg-emerald-100, .dark .bg-green-50, .dark .bg-green-100 { background-color: rgba(16,185,129,.12) !important; }
+.dark .text-emerald-600, .dark .text-emerald-700, .dark .text-emerald-800, .dark .text-green-600, .dark .text-green-700 { color: #34d399 !important; }
+.dark .border-emerald-100, .dark .border-emerald-200, .dark .border-green-100, .dark .border-green-200 { border-color: rgba(16,185,129,.28) !important; }
+
+.dark .bg-amber-50, .dark .bg-amber-100, .dark .bg-yellow-50 { background-color: rgba(245,158,11,.12) !important; }
+.dark .text-amber-600, .dark .text-amber-700, .dark .text-amber-800, .dark .text-yellow-700 { color: #fbbf24 !important; }
+.dark .border-amber-100, .dark .border-amber-200 { border-color: rgba(245,158,11,.28) !important; }
+
+.dark .bg-red-50, .dark .bg-red-100, .dark .bg-rose-50 { background-color: rgba(239,68,68,.12) !important; }
+.dark .text-red-600, .dark .text-red-700, .dark .text-rose-600 { color: #f87171 !important; }
+.dark .border-red-100, .dark .border-red-200 { border-color: rgba(239,68,68,.28) !important; }
+
+.dark .bg-blue-50, .dark .bg-blue-100, .dark .bg-sky-50 { background-color: rgba(59,130,246,.12) !important; }
+.dark .text-blue-600, .dark .text-blue-700, .dark .text-sky-600 { color: #60a5fa !important; }
+.dark .border-blue-100, .dark .border-blue-200 { border-color: rgba(59,130,246,.28) !important; }
+
+.dark .bg-purple-50, .dark .bg-purple-100, .dark .bg-violet-50, .dark .bg-indigo-50 { background-color: rgba(139,92,246,.12) !important; }
+.dark .text-purple-600, .dark .text-purple-700, .dark .text-violet-700, .dark .text-indigo-600, .dark .text-indigo-700 { color: #a78bfa !important; }
+.dark .border-purple-100, .dark .border-purple-200, .dark .border-indigo-100, .dark .border-indigo-200 { border-color: rgba(139,92,246,.28) !important; }
+
+/* Top navbar — dim the brand gradient to a near-black bar (overrides inline style) */
+.dark .app-topbar { background: linear-gradient(90deg,#0d1015 0%,#111318 100%) !important; box-shadow: inset 0 -1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.55) !important; }
+
+/* Ambient glows — barely-there in dark so the canvas stays calm */
+.dark .app-glow { background: radial-gradient(circle, rgba(16,185,129,.10), transparent 70%) !important; }
+.dark .app-bg-decor { opacity: .5; }
 
 /* Inputs/selects readable in dark */
 .dark input:not([type="checkbox"]):not([type="radio"]),
 .dark textarea,
-.dark select { background-color: #15151a !important; color: #ececf1 !important; }
+.dark select { background-color: #14141a !important; color: #f2f2f6 !important; border-color: #2f2f39 !important; }
 .dark input::placeholder, .dark textarea::placeholder { color: #6b6b77 !important; }
+
+/* Shadows read as depth, not smudges, on a dark canvas */
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.4) !important; }
+.dark .shadow, .dark .shadow-md { box-shadow: 0 2px 8px rgba(0,0,0,.45) !important; }
+.dark .shadow-lg, .dark .shadow-xl, .dark .shadow-2xl { box-shadow: 0 12px 40px rgba(0,0,0,.6) !important; }

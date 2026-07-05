@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import StandingsTab from '@/components/tournament/StandingsTab'
@@ -151,13 +152,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  round_robin:    'Круговой',
-  playoff:        'Плей-офф',
-  groups_playoff: 'Группы + Плей-офф',
-  league_playoff: 'Лига + Плей-офф',
-}
-
 export default async function PublicTournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -204,10 +198,14 @@ export default async function PublicTournamentPage({ params }: { params: Promise
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-emerald-100 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="font-black text-lg tracking-tight text-emerald-700" style={{ letterSpacing: '-.03em' }}>TOURNABLE</span>
-          <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
-            Просмотр
-          </span>
+          <Link href={appUrl} className="flex items-center gap-2">
+            <Image src="/logo-green.png" alt="Tournable" width={28} height={28} className="w-7 h-7 object-contain" />
+            <span className="font-black text-lg tracking-tight text-emerald-700" style={{ letterSpacing: '-.03em' }}>TOURNABLE</span>
+          </Link>
+          <Link href={`${appUrl}?ref=public-header`} title={badgeTooltip}
+            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full transition-colors">
+            <Plus size={13} /> Создать
+          </Link>
         </div>
       </header>
 
@@ -217,11 +215,6 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           <TeamAvatar name={tournament.name} logoUrl={tournament.logo_url} size={56} />
           <div>
             <h1 className="text-2xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
-              {FORMAT_LABELS[fmt] ?? fmt}
-              {fmt === 'round_robin' && tournament.num_rounds > 1 && ` · ${tournament.num_rounds} круга`}
-              {fmt === 'groups_playoff' && tournament.groups_count && ` · ${tournament.groups_count} групп`}
-            </p>
           </div>
         </div>
 

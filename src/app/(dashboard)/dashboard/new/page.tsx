@@ -434,13 +434,12 @@ export default function NewTournamentPage() {
   const isAddSeason = isChampionship && !!leagueId  // adding a season to an existing championship
   const champTx = CHAMP[lang]
 
-  // Plan
-  const [isPro, setIsPro] = useState(false)
+  // Plan — only Enterprise gating remains (championships). Sports and formats are
+  // available on every plan; count/branding/co-editor limits are enforced elsewhere.
   const [isEnterprise, setIsEnterprise] = useState(false)
   const [upgradeFor, setUpgradeFor] = useState<string | null>(null)
   useEffect(() => {
     getUserPlanAndAdmin().then(({ plan }) => {
-      setIsPro(plan === 'pro' || plan === 'enterprise')
       setIsEnterprise(plan === 'enterprise')
     })
   }, [])
@@ -790,7 +789,7 @@ export default function NewTournamentPage() {
             <div className="grid grid-cols-2 gap-2">
               {SPORT_CATEGORIES.map(cat => {
                 const active = getCategoryForSport(sport)?.id === cat.id
-                const locked = cat.proOnly && !isPro
+                const locked = false  // all sports available on every plan
                 const chosen = active ? getSubtype(sport) : undefined
                 return (
                   <button key={cat.id} type="button"
@@ -838,8 +837,7 @@ export default function NewTournamentPage() {
               {sportFormats.map(value => {
                 const Icon = FORMATS.find(f => f.value === value)!.icon
                 const active = format === value
-                const isProOnly = value === 'groups_playoff' || value === 'league_playoff'
-                const locked = isProOnly && !isPro
+                const locked = false  // all formats available on every plan
                 return (
                   <button key={value} type="button"
                     onClick={() => {

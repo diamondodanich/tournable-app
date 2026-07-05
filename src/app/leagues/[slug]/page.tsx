@@ -121,14 +121,12 @@ export default async function LeaguePublicPage({
   }
 
   const lang = await getLang()
-  const sportLabel = league.sport ? SPORT_LABELS[lang][league.sport] ?? null : null
   const brand = getSportTheme(league.sport).primary
 
   return (
     <LeaguePublicView
       league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug }}
       brand={brand}
-      sportLabel={sportLabel}
       seasons={allSeasons.map(s => ({ id: s.id, name: s.name, status: s.status }))}
       selectedSeasonId={selectedSeason?.id ?? null}
       tournamentId={tournamentId}

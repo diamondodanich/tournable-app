@@ -93,12 +93,6 @@ export default function LoginForm({ lang, next = '', add = false }: { lang: Lang
             {add ? tx.addBack : tx.backHome}
           </Link>
 
-          {add && (
-            <div className="mb-5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 leading-relaxed">
-              {tx.addBanner}
-            </div>
-          )}
-
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <Image src="/logo-green.png" alt="Tournable" width={44} height={44} className="w-11 h-11 object-contain" />

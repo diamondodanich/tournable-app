@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
   MapPin, Users, Trophy, ChevronRight, BarChart3, CalendarDays, Table2, ChevronDown, Check,
@@ -54,12 +55,11 @@ function useSort<Row>(rows: Row[], initial: keyof Row) {
 }
 
 export default function LeaguePublicView({
-  league, brand, sportLabel, seasons, selectedSeasonId, tournamentId,
+  league, brand, seasons, selectedSeasonId, tournamentId,
   standings, recent, upcoming, teamsCount, playerStats, teamStats, lang = 'ru',
 }: {
   league: { name: string; logo_url: string | null; sport: string | null; city: string | null; description: string | null; slug: string }
   brand: string
-  sportLabel: string | null
   seasons: SeasonLite[]
   selectedSeasonId: string | null
   tournamentId: string | null
@@ -104,7 +104,6 @@ export default function LeaguePublicView({
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-black leading-tight break-words">{league.name}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                {sportLabel && <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20">{sportLabel}</span>}
                 {league.city && <span className="flex items-center gap-1 text-xs text-white/80"><MapPin size={11} /> {league.city}</span>}
                 <span className="flex items-center gap-1 text-xs text-white/80"><Users size={11} /> {teamsCount} {tx.teams}</span>
                 <span className="flex items-center gap-1 text-xs text-white/80"><Trophy size={11} /> {seasons.length} {tx.seasons}</span>
@@ -321,7 +320,10 @@ export default function LeaguePublicView({
 
       <div className="border-t border-gray-200 mt-10 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="text-xs text-gray-300 hover:text-gray-500 font-black tracking-wider">TOURNABLE</Link>
+          <Link href="/" className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 font-black tracking-wider">
+            <Image src="/logo-green.png" alt="Tournable" width={20} height={20} className="w-5 h-5 object-contain" />
+            TOURNABLE
+          </Link>
           <Link href="/register" className="text-xs font-medium hover:opacity-80" style={{ color: brand }}>{tx.createOwn} →</Link>
         </div>
       </div>

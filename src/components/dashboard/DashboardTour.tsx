@@ -22,8 +22,8 @@ const T = {
     live: { title: 'Live-табло', desc: 'Ведите матч в реальном времени с телефона: счёт, голы, карточки. На всех планах.' },
     stats: { title: 'Таблицы и статистика', desc: 'Турнирная таблица и бомбардиры обновляются автоматически после каждого матча.' },
     share: { title: 'Делитесь ссылкой', desc: 'Отправьте ссылку — участники следят за результатами без регистрации.' },
-    planFree: { title: 'Ваш план — Free', desc: '1 турнир и до 16 команд. Про открывает безлимит, все форматы и экспорт отчётов.' },
-    planPro: { title: 'Ваш план — Pro', desc: 'Безлимит турниров, до 64 команд, все форматы и экспорт PDF/PNG.' },
+    planFree: { title: 'Ваш план — Free', desc: 'Все виды спорта и форматы доступны. Лимит: 1 турнир и до 16 команд. Pro снимает лимиты, добавляет брендированные отчёты и со-редакторов.' },
+    planPro: { title: 'Ваш план — Pro', desc: 'Без лимита турниров и команд, брендированные отчёты PDF/PNG и со-редакторы.' },
     planEnt: { title: 'Ваш план — Enterprise', desc: 'Всё из Pro плюс чемпионаты с сезонами, профили игроков и публичные страницы.' },
     entChamp: { title: 'Чемпионаты с сезонами', desc: 'Здесь живут ваши чемпионаты: команды и статистика сохраняются между сезонами.' },
   },
@@ -36,8 +36,8 @@ const T = {
     live: { title: 'Live-табло', desc: 'Матчты телефоннан нақты уақытта жүргізіңіз. Барлық жоспарларда.' },
     stats: { title: 'Кестелер мен статистика', desc: 'Турнир кестесі әр матчтан кейін автоматты жаңарады.' },
     share: { title: 'Сілтемемен бөлісіңіз', desc: 'Сілтеме жіберіңіз — қатысушылар тіркелусіз қадағалайды.' },
-    planFree: { title: 'Жоспарыңыз — Free', desc: '1 турнир, 16 командаға дейін. Про шексіздік пен экспорт ашады.' },
-    planPro: { title: 'Жоспарыңыз — Pro', desc: 'Шексіз турнирлер, 64 командаға дейін, барлық форматтар.' },
+    planFree: { title: 'Жоспарыңыз — Free', desc: 'Барлық спорт түрлері мен форматтар қолжетімді. Лимит: 1 турнир, 16 командаға дейін. Pro лимиттерді алып тастайды, брендті есептер мен қосалқы редакторлар қосады.' },
+    planPro: { title: 'Жоспарыңыз — Pro', desc: 'Шексіз турнирлер мен командалар, брендті PDF/PNG есептер және қосалқы редакторлар.' },
     planEnt: { title: 'Жоспарыңыз — Enterprise', desc: 'Pro-дағының бәрі және маусымдары бар чемпионаттар, ойыншы профильдері.' },
     entChamp: { title: 'Маусымдары бар чемпионаттар', desc: 'Осында чемпионаттарыңыз: командалар мен статистика маусымдар аралығында сақталады.' },
   },
@@ -50,8 +50,8 @@ const T = {
     live: { title: 'Live scoreboard', desc: 'Run a match in real time from your phone. Available on all plans.' },
     stats: { title: 'Standings & stats', desc: 'The table and top scorers update automatically after every match.' },
     share: { title: 'Share a link', desc: 'Send a link — participants follow results without signing up.' },
-    planFree: { title: 'Your plan — Free', desc: '1 tournament, up to 16 teams. Pro unlocks unlimited, all formats and export.' },
-    planPro: { title: 'Your plan — Pro', desc: 'Unlimited tournaments, up to 64 teams, all formats and PDF/PNG export.' },
+    planFree: { title: 'Your plan — Free', desc: 'All sports and formats included. Limit: 1 tournament and up to 16 teams. Pro removes limits, adds branded reports and co-editors.' },
+    planPro: { title: 'Your plan — Pro', desc: 'Unlimited tournaments and teams, branded PDF/PNG reports and co-editors.' },
     planEnt: { title: 'Your plan — Enterprise', desc: 'Everything in Pro plus championships with seasons and player profiles.' },
     entChamp: { title: 'Championships with seasons', desc: 'Your championships live here: teams and stats carry across seasons.' },
   },
@@ -80,10 +80,11 @@ function buildSteps(plan: Plan, tx: (typeof T)['ru']): Step[] {
 const STORAGE_KEY = 'tournable_dashboard_tour_v2'
 type Rect = { top: number; left: number; width: number; height: number }
 
-export default function DashboardTour({ plan, lang = 'ru', initialSeen }: {
+export default function DashboardTour({ plan, lang = 'ru', initialSeen, userId }: {
   plan: Plan
   lang?: Lang
   initialSeen: boolean
+  userId?: string
 }) {
   const tx = T[lang]
   const steps = buildSteps(plan, T[lang] as (typeof T)['ru'])
@@ -91,11 +92,17 @@ export default function DashboardTour({ plan, lang = 'ru', initialSeen }: {
   const [i, setI] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
 
+  // Per-account key: a global key made a brand-new account skip the tour on any
+  // browser where a previous account had already dismissed it (multi-account).
+  const storageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY
+
   useEffect(() => {
+    // Source of truth is the server-side flag (per account). The local key is
+    // only a fast-path guard for the same account on the same device.
     if (initialSeen) return
-    if (typeof window !== 'undefined' && window.localStorage.getItem(STORAGE_KEY)) return
+    if (typeof window !== 'undefined' && window.localStorage.getItem(storageKey)) return
     setOpen(true)
-  }, [initialSeen])
+  }, [initialSeen, storageKey])
 
   const step = steps[i]
 
@@ -122,7 +129,7 @@ export default function DashboardTour({ plan, lang = 'ru', initialSeen }: {
 
   function finish() {
     setOpen(false)
-    try { window.localStorage.setItem(STORAGE_KEY, '1') } catch {}
+    try { window.localStorage.setItem(storageKey, '1') } catch {}
     const supabase = createClient()
     void supabase.auth.updateUser({ data: { dashboard_tour_seen: true } })
   }

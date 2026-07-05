@@ -59,9 +59,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
 
       {/* ── Background decoration ──────────────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-48 -right-48 w-[600px] h-[600px] rounded-full bg-emerald-100/50 blur-3xl" />
-        <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full bg-emerald-50/70 blur-3xl" />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden app-bg-decor">
+        <div className="app-glow absolute -top-48 -right-48 w-[600px] h-[600px] rounded-full bg-emerald-100/50 blur-3xl" />
+        <div className="app-glow absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full bg-emerald-50/70 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{ backgroundImage: 'radial-gradient(circle, #059669 1px, transparent 1px)', backgroundSize: '32px 32px' }}
@@ -70,7 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── Header (fixed — stays on scroll; parent overflow-x-hidden breaks sticky) ── */}
       <header
-        className="fixed top-0 inset-x-0 z-30"
+        className="app-topbar fixed top-0 inset-x-0 z-30"
         style={{ background: 'linear-gradient(90deg,#047857 0%,#059669 100%)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">

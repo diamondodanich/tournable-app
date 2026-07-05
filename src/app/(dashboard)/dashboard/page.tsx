@@ -184,7 +184,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <DashboardTour plan={plan} lang={lang} initialSeen={tourSeen} />
+      <DashboardTour plan={plan} lang={lang} initialSeen={tourSeen} userId={user?.id} />
 
       <div className="flex items-center justify-between mb-8">
         <div>

@@ -191,7 +191,7 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
             <span className="text-[10px] text-emerald-300 font-semibold">{tx.account}</span>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none ${badge.cls}`}>{badge.label}</span>
           </div>
-          <span className="text-xs text-white font-bold max-w-[110px] truncate">{email.split('@')[0]}</span>
+          <span className="text-xs text-white font-bold max-w-[130px] truncate">{name?.trim() || email}</span>
         </div>
         <ChevronDown size={14} className={`text-emerald-100 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -205,8 +205,8 @@ export default function AccountMenu({ lang = 'ru', currentId, email, name, plan 
               {initialsOf(email, name)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-gray-900 truncate">{name?.trim() || email.split('@')[0]}</p>
-              <p className="text-xs text-gray-400 truncate">{email}</p>
+              <p className="text-sm font-black text-gray-900 truncate">{name?.trim() || email}</p>
+              {name?.trim() && <p className="text-xs text-gray-400 truncate">{email}</p>}
             </div>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
               plan === 'enterprise' ? 'bg-purple-100 text-purple-700' : plan === 'pro' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'

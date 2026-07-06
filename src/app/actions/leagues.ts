@@ -338,6 +338,7 @@ type ChampSettings = {
   teamsAdvance?: number
   sport?: string
   playoffBestOf?: number
+  playoffTwoLegged?: boolean
   seasonPeriod?: string
 }
 
@@ -677,6 +678,7 @@ export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' 
         teamsAdvance: tmpl.teams_advance ?? undefined,
         sport: tmpl.sport ?? league.sport ?? undefined,
         playoffBestOf: (tmpl as { playoff_best_of?: number }).playoff_best_of ?? undefined,
+        playoffTwoLegged: (tmpl as { playoff_two_legged?: boolean }).playoff_two_legged ?? undefined,
       }
     }
   }

@@ -253,9 +253,12 @@ export async function createTournamentWithSetup(
     ])
   }
 
-  // Best-effort: apply the series length to every generated bracket match (migration 025).
+  // Best-effort: apply the series settings to every generated bracket match (migrations 025/026).
   if (bestOf > 1) {
     await supabase.from('playoff_matches').update({ best_of: bestOf }).eq('tournament_id', t.id)
+  }
+  if (settings?.playoffTwoLegged) {
+    await supabase.from('playoff_matches').update({ two_legged: true }).eq('tournament_id', t.id)
   }
 
   revalidatePath('/dashboard')

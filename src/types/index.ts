@@ -98,6 +98,7 @@ export type PlayoffMatch = {
   winner_to_match: string | null
   winner_slot: 'home' | 'away' | null
   best_of?: number
+  two_legged?: boolean
   created_at: string
   match_events?: MatchEvent[]
 }

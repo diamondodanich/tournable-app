@@ -189,7 +189,7 @@ export default function ChampionshipAllSeasons({ league, seasons, teams, teamsCo
           <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">{tx.allTimeStats}</p>
           {statsLoading
             ? <div className="flex items-center justify-center py-16 text-violet-400"><Loader2 className="animate-spin" size={22} /></div>
-            : <ChampStatsTab stats={stats ?? []} teamStats={teamStats} lang={lang} />}
+            : <ChampStatsTab stats={stats ?? []} teamStats={teamStats} lang={lang} slug={league.slug} />}
         </div>
       )}
     </div>

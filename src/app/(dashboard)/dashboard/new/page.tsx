@@ -65,7 +65,7 @@ const T = {
     step3: { title: 'Настройки', sub: 'Шаг 3 из 4 — параметры формата и правила матча' },
     step4: { title: 'Всё готово!', sub: 'Шаг 4 из 4 — подтвердите и запустите' },
     nameLbl: 'Название', namePh: 'например: Кубок компании 2026',
-    sportLbl: 'Вид спорта',
+    sportLbl: 'Выберите дисциплину',
     formatLbl: 'Формат',
     roundsLbl: 'Количество кругов',
     groupsLbl: 'Количество групп',
@@ -78,6 +78,8 @@ const T = {
     pointsWin: 'Победа', pointsDraw: 'Ничья', pointsLoss: 'Пораж.',
     teamPh: (i: number) => `Команда ${i + 1}`,
     addTeam: 'Добавить ещё команду',
+    participantPh: (i: number) => `Участник ${i + 1}`,
+    addParticipant: 'Добавить участника',
     next: 'Далее', back2: 'Назад', create: 'Создать турнир', creating: 'Создаём…',
     errName: 'Введите название турнира',
     errTeams: 'Добавьте минимум 2 команды',
@@ -135,7 +137,7 @@ const T = {
     step3: { title: 'Параметрлер', sub: '4-тен 3-қадам — формат параметрлері және матч ережелері' },
     step4: { title: 'Дайын!', sub: '4-тен 4-қадам — растаңыз және іске қосыңыз' },
     nameLbl: 'Атауы', namePh: 'мысалы: Компания кубогы 2026',
-    sportLbl: 'Спорт түрі',
+    sportLbl: 'Пәнді таңдаңыз',
     formatLbl: 'Формат',
     roundsLbl: 'Айналым саны',
     groupsLbl: 'Топтар саны',
@@ -148,6 +150,8 @@ const T = {
     pointsWin: 'Жеңіс', pointsDraw: 'Тең', pointsLoss: 'Жеңіліс',
     teamPh: (i: number) => `Команда ${i + 1}`,
     addTeam: 'Тағы команда қосу',
+    participantPh: (i: number) => `Қатысушы ${i + 1}`,
+    addParticipant: 'Қатысушы қосу',
     next: 'Келесі', back2: 'Артқа', create: 'Турнир жасау', creating: 'Жасалуда…',
     errName: 'Турнир атауын енгізіңіз',
     errTeams: 'Кемінде 2 команда қосыңыз',
@@ -202,7 +206,7 @@ const T = {
     step3: { title: 'Settings', sub: 'Step 3 of 4 — format settings and match rules' },
     step4: { title: 'Ready!', sub: 'Step 4 of 4 — confirm and launch' },
     nameLbl: 'Name', namePh: 'e.g. Company Cup 2026',
-    sportLbl: 'Sport type',
+    sportLbl: 'Choose a discipline',
     formatLbl: 'Format',
     roundsLbl: 'Number of rounds',
     groupsLbl: 'Number of groups',
@@ -215,6 +219,8 @@ const T = {
     pointsWin: 'Win', pointsDraw: 'Draw', pointsLoss: 'Loss',
     teamPh: (i: number) => `Team ${i + 1}`,
     addTeam: 'Add another team',
+    participantPh: (i: number) => `Player ${i + 1}`,
+    addParticipant: 'Add participant',
     next: 'Next', back2: 'Back', create: 'Create tournament', creating: 'Creating…',
     errName: 'Enter a tournament name',
     errTeams: 'Add at least 2 teams',
@@ -444,13 +450,6 @@ export default function NewTournamentPage() {
     })
   }, [])
 
-  // Warn about the free-plan tournament limit immediately when the wizard opens,
-  // not only after the whole setup is filled in and "Create" is pressed.
-  useEffect(() => {
-    if (isChampionship) return
-    checkTournamentLimit().then(({ atLimit }) => { if (atLimit) setPlanLimit('tournament') })
-  }, [isChampionship])
-
   // Championship season periodicity — drives auto season naming (championship mode)
   const [seasonPeriod, setSeasonPeriod] = useState<SeasonPeriod>('seasonal')
 
@@ -504,6 +503,7 @@ export default function NewTournamentPage() {
   const [extraTime, setExtraTime]           = useState(false)
   const [durationMins, setDurationMins]     = useState(45)
   const [playoffBestOf, setPlayoffBestOf]   = useState(1)   // best-of-N for playoff series
+  const [playoffTwoLegged, setPlayoffTwoLegged] = useState(false)  // 2-legged aggregate tie
   const [pointsWin, setPointsWin]           = useState(3)
   const [pointsDraw, setPointsDraw]         = useState(1)
   const [pointsLoss, setPointsLoss]         = useState(0)
@@ -516,6 +516,13 @@ export default function NewTournamentPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
+
+  // Warn about the free-plan tournament limit immediately when the wizard opens,
+  // not only after the whole setup is filled in and "Create" is pressed.
+  useEffect(() => {
+    if (isChampionship) return
+    checkTournamentLimit().then(({ atLimit }) => { if (atLimit) setPlanLimit('tournament') })
+  }, [isChampionship])
 
   // Add-season mode: prefill teams from the championship's persistent roster
   useEffect(() => {
@@ -532,6 +539,10 @@ export default function NewTournamentPage() {
   // ── Derived sport config + colour theme ──────────────────────────────────────
   const subtype = getSubtype(sport)
   const theme: SportTheme = getSportTheme(sport)
+  // Individual disciplines (chess, combat sports) → "участник" instead of "команда"
+  const isIndividual = getCategoryForSport(sport)?.individual ?? false
+  const teamPhLabel = isIndividual ? tx.participantPh : tx.teamPh
+  const addTeamLabel = isIndividual ? tx.addParticipant : tx.addTeam
   // CSS variables let us tint Tailwind-styled elements with the sport colour.
   const themeVars = {
     ['--sp' as string]:  isChampionship ? '#7c3aed' : theme.primary,
@@ -659,6 +670,7 @@ export default function NewTournamentPage() {
       pointsWin, pointsDraw, pointsLoss,
       groupsCount, teamsAdvance, sport,
       playoffBestOf: format === 'round_robin' || format === 'swiss' ? 1 : playoffBestOf,
+      playoffTwoLegged: format === 'round_robin' || format === 'swiss' ? false : playoffTwoLegged,
       seasonPeriod,
     }
 
@@ -828,7 +840,7 @@ export default function NewTournamentPage() {
                 )
               })}
             </div>
-            <p className="text-xs text-gray-400 pt-0.5">Выберите вид спорта — правила и форматы подстроятся автоматически</p>
+            <p className="text-xs text-gray-400 pt-0.5">Выберите дисциплину — правила и форматы подстроятся автоматически</p>
           </div>
 
           <div className="space-y-1.5">
@@ -1092,12 +1104,12 @@ export default function NewTournamentPage() {
             {teamNames.map((val, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-6 text-center text-xs font-black text-gray-400 shrink-0 select-none">{i + 1}</span>
-                <AvatarPicker dataUrl={teamLogos[i]} name={val || tx.teamPh(i)} size={36}
+                <AvatarPicker dataUrl={teamLogos[i]} name={val || teamPhLabel(i)} size={36}
                   onPick={dataUrl => setTeamLogo(i, dataUrl)} onRemove={() => setTeamLogo(i, null)} />
                 <Input ref={i === teamNames.length - 1 ? lastInputRef : undefined}
                   value={val} onChange={e => updateTeam(i, e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addTeamField() }}
-                  placeholder={tx.teamPh(i)} maxLength={30}
+                  placeholder={teamPhLabel(i)} maxLength={30}
                   className={`flex-1 ${duplicateIndices.has(i) ? 'border-red-400 focus:border-red-400 bg-red-50' : ''}`} />
                 {/* Rating picker (visible only in seeded mode) */}
                 {seedingMode === 'seeded' && (
@@ -1135,7 +1147,7 @@ export default function NewTournamentPage() {
             ))}
             <button onClick={addTeamField}
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-emerald-600 transition-colors py-1 ml-11">
-              <Plus size={14} /> {tx.addTeam}
+              <Plus size={14} /> {addTeamLabel}
             </button>
           </div>
 
@@ -1181,22 +1193,30 @@ export default function NewTournamentPage() {
                 {lang === 'en' ? 'Playoff series' : lang === 'kz' ? 'Плей-офф сериясы' : 'Серия в плей-офф'}
               </label>
               <p className="text-xs text-gray-400">
-                {lang === 'en' ? 'How many games decide each knockout tie.'
-                  : lang === 'kz' ? 'Әр жұп неше ойынмен шешіледі.'
-                  : 'Сколько игр решают каждую пару навылет.'}
+                {lang === 'en' ? 'How many games decide each knockout tie — a fixed number of legs (by aggregate) or a best-of series.'
+                  : lang === 'kz' ? 'Әр жұп неше ойынмен шешіледі — белгіленген кездесу саны (жалпы есеппен) не серия.'
+                  : 'Сколько игр решают каждую пару навылет — фиксированное число встреч (по сумме) или серия до N побед.'}
               </p>
               <div className="flex flex-wrap gap-2">
-                {[1, 3, 5, 7].map(v => (
-                  <button key={v} type="button" onClick={() => setPlayoffBestOf(v)}
-                    style={playoffBestOf === v ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
-                    className={`px-3.5 py-2 rounded-xl border text-sm font-bold transition-all ${
-                      playoffBestOf === v ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}>
-                    {v === 1
-                      ? (lang === 'en' ? 'Single game' : lang === 'kz' ? 'Бір ойын' : 'Один матч')
-                      : (lang === 'en' ? `Best of ${v}` : lang === 'kz' ? `${v} ойыннан` : `До ${Math.ceil(v / 2)} побед (Bo${v})`)}
-                  </button>
-                ))}
+                {([
+                  { key: 'single', bestOf: 1, legs: false, label: lang === 'en' ? 'Single game' : lang === 'kz' ? 'Бір ойын' : 'Один матч' },
+                  { key: 'twolegged', bestOf: 1, legs: true, label: lang === 'en' ? '2 legs (aggregate)' : lang === 'kz' ? '2 кездесу (жалпы есеп)' : '2 матча (по сумме)' },
+                  { key: 'bo3', bestOf: 3, legs: false, label: lang === 'en' ? 'Best of 3' : lang === 'kz' ? '3 ойыннан' : 'До 2 побед (Bo3)' },
+                  { key: 'bo5', bestOf: 5, legs: false, label: lang === 'en' ? 'Best of 5' : lang === 'kz' ? '5 ойыннан' : 'До 3 побед (Bo5)' },
+                  { key: 'bo7', bestOf: 7, legs: false, label: lang === 'en' ? 'Best of 7' : lang === 'kz' ? '7 ойыннан' : 'До 4 побед (Bo7)' },
+                ] as const).map(opt => {
+                  const active = opt.legs ? playoffTwoLegged : (!playoffTwoLegged && playoffBestOf === opt.bestOf)
+                  return (
+                    <button key={opt.key} type="button"
+                      onClick={() => { setPlayoffBestOf(opt.bestOf); setPlayoffTwoLegged(opt.legs) }}
+                      style={active ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
+                      className={`px-3.5 py-2 rounded-xl border text-sm font-bold transition-all ${
+                        active ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}>
+                      {opt.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}

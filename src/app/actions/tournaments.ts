@@ -93,6 +93,7 @@ export async function createTournamentWithSetup(
     teamsAdvance?: number
     sport?: string
     playoffBestOf?: number
+    playoffTwoLegged?: boolean
   }
 ): Promise<{ id?: string; teamIds?: string[]; error?: string }> {
   const supabase = await createClient()
@@ -168,6 +169,10 @@ export async function createTournamentWithSetup(
   const bestOf = settings?.playoffBestOf ?? 1
   if (bestOf > 1) {
     await supabase.from('tournaments').update({ playoff_best_of: bestOf }).eq('id', t.id)
+  }
+  // Best-effort: two-legged aggregate tie (migration 026), mutually exclusive with best_of.
+  if (settings?.playoffTwoLegged) {
+    await supabase.from('tournaments').update({ playoff_two_legged: true }).eq('id', t.id)
   }
 
   // ── Generate schedule ────────────────────────────────────────────────────

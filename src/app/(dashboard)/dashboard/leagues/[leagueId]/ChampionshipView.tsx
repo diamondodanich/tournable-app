@@ -287,7 +287,7 @@ export default function ChampionshipView({ league, seasons, teams, lang = 'ru', 
       {tab === 'stats' && (
         statsLoading
           ? <div className="flex items-center justify-center py-16 text-violet-400"><Loader2 className="animate-spin" size={22} /></div>
-          : <ChampStatsTab stats={stats ?? []} lang={lang} />
+          : <ChampStatsTab stats={stats ?? []} lang={lang} slug={league.slug} />
       )}
 
       {tab === 'settings' && (

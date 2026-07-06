@@ -272,6 +272,8 @@ function PlayoffMatchCard({
   const bestOf = match.best_of ?? 1
   const winTarget = Math.ceil(bestOf / 2)
   const isSeries = bestOf > 1
+  // Two-legged tie: home_score/away_score are the AGGREGATE across both legs.
+  const twoLegged = match.two_legged ?? false
 
   async function handleSave() {
     if (scoreHome === scoreAway) { toast.error(T.playoffNoDraw); return }
@@ -386,6 +388,7 @@ function PlayoffMatchCard({
             {status === 'live'     && <Badge className="bg-red-100 text-red-600 text-xs animate-pulse"><Radio size={10} className="mr-1" />{T.statusLive}</Badge>}
             {status === 'scheduled' && isReady && <Badge className="bg-gray-100 text-gray-500 text-xs">{T.statusScheduled}</Badge>}
             {isSeries && <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 leading-none">Bo{bestOf}</span>}
+            {twoLegged && <span title={T.twoLeggedTie} className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 leading-none">×2</span>}
           </div>
           <div className="flex items-center gap-1.5">
             {status === 'live' && (

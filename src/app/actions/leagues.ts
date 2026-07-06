@@ -428,7 +428,9 @@ export async function getChampionshipTeams(leagueId: string): Promise<{ name: st
 // numbers carry over between seasons (Flashscore model).
 export type ChampPlayerStat = {
   player: string
+  playerId: string | null
   teamName: string
+  teamSlug: string | null
   teamLogo: string | null
   photo: string | null
   goals: number
@@ -441,6 +443,7 @@ export type ChampPlayerStat = {
 
 export type ChampTeamStat = {
   teamName: string
+  teamSlug: string | null
   logo: string | null
   seasons: number
   GP: number
@@ -465,8 +468,8 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
 
   const [{ data: seasonTeams }, { data: leagueTeams }, { data: fixtures }, { data: playoffMatches }] = await Promise.all([
     supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
-    supabase.from('league_teams').select('id, name, logo_url').eq('league_id', leagueId),
-    supabase.from('fixtures').select('id, tournament_id').in('tournament_id', tournamentIds),
+    supabase.from('league_teams').select('id, name, logo_url, slug').eq('league_id', leagueId),
+    supabase.from('fixtures').select('id, tournament_id, played').in('tournament_id', tournamentIds),
     supabase.from('playoff_matches').select('id, tournament_id').in('tournament_id', tournamentIds),
   ])
 
@@ -475,13 +478,19 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   const { data: rosterPlayers } = leagueTeamIds.length
     ? await supabase.from('players').select('*').in('league_team_id', leagueTeamIds)
     : { data: [] as { name: string; league_team_id: string; photo_url?: string | null }[] }
-  // key: `${leagueTeamId}|${name.toLowerCase()}` → photo_url
+  // key: `${leagueTeamId}|${name.toLowerCase()}` → photo_url / player id (for links)
   const photoByKey = new Map<string, string | null>()
+  const idByKey = new Map<string, string>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const p of (rosterPlayers ?? []) as any[]) {
-    if (p.league_team_id && p.name) photoByKey.set(`${p.league_team_id}|${String(p.name).toLowerCase()}`, p.photo_url ?? null)
+    if (p.league_team_id && p.name) {
+      const k = `${p.league_team_id}|${String(p.name).toLowerCase()}`
+      photoByKey.set(k, p.photo_url ?? null)
+      if (p.id) idByKey.set(k, p.id as string)
+    }
   }
   const leagueTeamLogo = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.logo_url ?? null]))
+  const leagueTeamSlug = new Map((leagueTeams ?? []).map(lt => [lt.id, (lt as { slug?: string | null }).slug ?? null]))
 
   const fixtureIds = (fixtures ?? []).map(f => f.id)
   const playoffIds = (playoffMatches ?? []).map(m => m.id)
@@ -519,7 +528,9 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
     if (!row) {
       const teamLogo = info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null
       const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
-      row = { player, teamName, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
+      const playerId = info.leagueTeamId ? (idByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
+      const teamSlug = info.leagueTeamId ? (leagueTeamSlug.get(info.leagueTeamId) ?? null) : null
+      row = { player, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
       acc.set(key, row)
     }
     row.seasonSet.add(info.tournamentId)
@@ -529,6 +540,43 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
     else if (e.type === 'assist') row.assists++
     else if (e.type === 'yellow_card') row.yellow++
     else if (e.type === 'red_card') row.red++
+  }
+
+  // ── Accurate appearances from match lineups ────────────────────────────────
+  // A player "played" a match if they were named in the starting lineup for a
+  // played fixture — this catches players who appeared but recorded no goal /
+  // assist / card, which the event scan above misses entirely. Union with the
+  // event-derived matches keeps playoff appearances (lineups exist only for
+  // round-robin fixtures) and subs who scored.
+  const playedFixtures = new Set((fixtures ?? []).filter(f => f.played).map(f => f.id))
+  const seasonTeamIds = (seasonTeams ?? []).map(t => t.id)
+  if (seasonTeamIds.length && playedFixtures.size) {
+    const [{ data: lineups }, { data: roster }] = await Promise.all([
+      supabase.from('match_lineups').select('fixture_id, team_id, player_id, role').in('team_id', seasonTeamIds),
+      supabase.from('team_players').select('id, name, team_id').in('team_id', seasonTeamIds),
+    ])
+    const rosterName = new Map((roster ?? []).map(p => [p.id, (p.name ?? '').trim()]))
+    for (const ln of lineups ?? []) {
+      if (ln.role !== 'starter' || !playedFixtures.has(ln.fixture_id)) continue
+      const info = teamInfo.get(ln.team_id)
+      if (!info) continue
+      const name = rosterName.get(ln.player_id) ?? ''
+      if (!name) continue
+      const teamKey = info.leagueTeamId ?? `name:${info.name.toLowerCase()}`
+      const teamName = info.leagueTeamId ? (leagueTeamName.get(info.leagueTeamId) ?? info.name) : info.name
+      const key = `${teamKey}|${name.toLowerCase()}`
+      let row = acc.get(key)
+      if (!row) {
+        const teamLogo = info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null
+        const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${name.toLowerCase()}`) ?? null) : null
+        const playerId = info.leagueTeamId ? (idByKey.get(`${info.leagueTeamId}|${name.toLowerCase()}`) ?? null) : null
+        const teamSlug = info.leagueTeamId ? (leagueTeamSlug.get(info.leagueTeamId) ?? null) : null
+        row = { player: name, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
+        acc.set(key, row)
+      }
+      row.seasonSet.add(info.tournamentId)
+      row.matchSet.add(ln.fixture_id)
+    }
   }
 
   return [...acc.values()]
@@ -545,7 +593,7 @@ export async function getChampionshipTeamStats(leagueId: string): Promise<ChampT
 
   const [{ data: seasonTeams }, { data: leagueTeams }, { data: tourns }, { data: fixtures }] = await Promise.all([
     supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
-    supabase.from('league_teams').select('id, name, logo_url').eq('league_id', leagueId),
+    supabase.from('league_teams').select('id, name, logo_url, slug').eq('league_id', leagueId),
     supabase.from('tournaments').select('id, points_win, points_draw, points_loss').in('id', tournamentIds),
     supabase.from('fixtures').select('tournament_id, home_team_id, away_team_id, home_score, away_score, played, is_bye').in('tournament_id', tournamentIds),
   ])
@@ -554,6 +602,7 @@ export async function getChampionshipTeamStats(leagueId: string): Promise<ChampT
   for (const t of seasonTeams ?? []) teamInfo.set(t.id, { leagueTeamId: t.league_team_id, name: t.name })
   const leagueTeamName = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.name]))
   const leagueTeamLogo = new Map((leagueTeams ?? []).map(lt => [lt.id, lt.logo_url ?? null]))
+  const leagueTeamSlug = new Map((leagueTeams ?? []).map(lt => [lt.id, (lt as { slug?: string | null }).slug ?? null]))
   const cfg = new Map((tourns ?? []).map(t => [t.id, { pw: t.points_win ?? 3, pd: t.points_draw ?? 1, pl: t.points_loss ?? 0 }]))
 
   type Acc = ChampTeamStat & { seasonSet: Set<string> }
@@ -566,6 +615,7 @@ export async function getChampionshipTeamStats(leagueId: string): Promise<ChampT
     if (!r) {
       r = {
         teamName: info.leagueTeamId ? (leagueTeamName.get(info.leagueTeamId) ?? info.name) : info.name,
+        teamSlug: info.leagueTeamId ? (leagueTeamSlug.get(info.leagueTeamId) ?? null) : null,
         logo: info.leagueTeamId ? (leagueTeamLogo.get(info.leagueTeamId) ?? null) : null,
         seasons: 0, GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, seasonSet: new Set(),
       }

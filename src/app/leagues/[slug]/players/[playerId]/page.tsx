@@ -12,22 +12,22 @@ async function getLang(): Promise<Lang> {
 const PT = {
   ru: {
     players: 'Игроки', seasonsWord: (n: number) => `${n} ${n === 1 ? 'сезон' : n < 5 ? 'сезона' : 'сезонов'}`,
-    allTime: 'За всю историю', goals: 'Голы', assists: 'Передачи', yellow: 'Жёлтые', red: 'Красные',
-    bySeason: 'По сезонам', season: 'Сезон', pas: 'Пас', yc: 'ЖК', rc: 'КК',
+    allTime: 'За всю историю', matches: 'Матчи', goals: 'Голы', assists: 'Передачи', yellow: 'Жёлтые', red: 'Красные',
+    bySeason: 'По сезонам', season: 'Сезон', mp: 'И', pas: 'Пас', yc: 'ЖК', rc: 'КК',
     recent: 'Последние события', evGoal: 'Гол', evAssist: 'Пас', round: 'тур', noStats: 'У игрока пока нет статистики по матчам.',
     pos: { goalkeeper: 'Вратарь', defender: 'Защитник', midfielder: 'Полузащитник', forward: 'Нападающий', other: '—' } as Record<string, string>,
   },
   kz: {
     players: 'Ойыншылар', seasonsWord: (n: number) => `${n} маусым`,
-    allTime: 'Барлық тарих', goals: 'Голдар', assists: 'Ассисттер', yellow: 'Сары', red: 'Қызыл',
-    bySeason: 'Маусымдар бойынша', season: 'Маусым', pas: 'Ассист', yc: 'СК', rc: 'ҚК',
+    allTime: 'Барлық тарих', matches: 'Матчтар', goals: 'Голдар', assists: 'Ассисттер', yellow: 'Сары', red: 'Қызыл',
+    bySeason: 'Маусымдар бойынша', season: 'Маусым', mp: 'О', pas: 'Ассист', yc: 'СК', rc: 'ҚК',
     recent: 'Соңғы оқиғалар', evGoal: 'Гол', evAssist: 'Ассист', round: 'тур', noStats: 'Ойыншыда әзірге матч статистикасы жоқ.',
     pos: { goalkeeper: 'Қақпашы', defender: 'Қорғаушы', midfielder: 'Жартылай қорғаушы', forward: 'Шабуылшы', other: '—' } as Record<string, string>,
   },
   en: {
     players: 'Players', seasonsWord: (n: number) => `${n} season${n === 1 ? '' : 's'}`,
-    allTime: 'All time', goals: 'Goals', assists: 'Assists', yellow: 'Yellow', red: 'Red',
-    bySeason: 'By season', season: 'Season', pas: 'Ast', yc: 'YC', rc: 'RC',
+    allTime: 'All time', matches: 'Matches', goals: 'Goals', assists: 'Assists', yellow: 'Yellow', red: 'Red',
+    bySeason: 'By season', season: 'Season', mp: 'MP', pas: 'Ast', yc: 'YC', rc: 'RC',
     recent: 'Recent events', evGoal: 'Goal', evAssist: 'Assist', round: 'round', noStats: 'No match statistics for this player yet.',
     pos: { goalkeeper: 'Goalkeeper', defender: 'Defender', midfielder: 'Midfielder', forward: 'Forward', other: '—' } as Record<string, string>,
   },
@@ -54,7 +54,7 @@ type EventRow = {
   fixtures: { matchday: number | null; tournaments: { name: string } | null } | null
 }
 
-type SeasonStat = { tournamentId: string; name: string; goals: number; assists: number; yellow: number; red: number }
+type SeasonStat = { tournamentId: string; name: string; mp: number; goals: number; assists: number; yellow: number; red: number }
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ slug: string; playerId: string }> }) {
   const supabase = await createClient()
@@ -111,16 +111,55 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   // Per-season breakdown
   const bySeason = new Map<string, SeasonStat>()
+  function seasonRow(tid: string): SeasonStat {
+    let row = bySeason.get(tid)
+    if (!row) { row = { tournamentId: tid, name: seasonName.get(tid) ?? '—', mp: 0, goals: 0, assists: 0, yellow: 0, red: 0 }; bySeason.set(tid, row) }
+    return row
+  }
   for (const e of events) {
     const tid = teamToTournament.get(e.team_id)
     if (!tid) continue
-    let row = bySeason.get(tid)
-    if (!row) { row = { tournamentId: tid, name: seasonName.get(tid) ?? '—', goals: 0, assists: 0, yellow: 0, red: 0 }; bySeason.set(tid, row) }
+    const row = seasonRow(tid)
     if (e.type === 'goal') row.goals++
     else if (e.type === 'assist') row.assists++
     else if (e.type === 'yellow_card') row.yellow++
     else if (e.type === 'red_card') row.red++
   }
+
+  // Matches played — from the starting lineups of played fixtures (accurate: also
+  // counts games where the player scored nothing). match_lineups.player_id points
+  // at the per-season roster (team_players), matched to this player by name.
+  let matchesPlayed = 0
+  if (seasonTeamIds.length > 0) {
+    const { data: tpRows } = await supabase
+      .from('team_players').select('id, team_id').in('team_id', seasonTeamIds).eq('name', player.name)
+    const tpIds = (tpRows ?? []).map(r => r.id)
+    if (tpIds.length > 0) {
+      const { data: lns } = await supabase
+        .from('match_lineups').select('fixture_id, team_id, role').in('player_id', tpIds).eq('role', 'starter')
+      const lnFixtureIds = [...new Set((lns ?? []).map(l => l.fixture_id))]
+      const playedSet = new Set<string>()
+      if (lnFixtureIds.length > 0) {
+        const { data: fx } = await supabase.from('fixtures').select('id, played').in('id', lnFixtureIds)
+        for (const f of fx ?? []) if (f.played) playedSet.add(f.id)
+      }
+      const perSeason = new Map<string, Set<string>>()
+      for (const l of lns ?? []) {
+        if (!playedSet.has(l.fixture_id)) continue
+        const tid = teamToTournament.get(l.team_id)
+        if (!tid) continue
+        if (!perSeason.has(tid)) perSeason.set(tid, new Set())
+        perSeason.get(tid)!.add(l.fixture_id)
+      }
+      const total = new Set<string>()
+      for (const [tid, set] of perSeason) {
+        seasonRow(tid).mp = set.size
+        set.forEach(f => total.add(f))
+      }
+      matchesPlayed = total.size
+    }
+  }
+
   const seasonStats = [...bySeason.values()]
   const seasonsPlayed = seasonStats.length
 
@@ -158,8 +197,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Career totals */}
         <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.allTime}</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
           {[
+            { label: tx.matches, value: matchesPlayed, color: 'text-white' },
             { label: tx.goals, value: goals, color: 'text-emerald-400' },
             { label: tx.assists, value: assists, color: 'text-blue-400' },
             { label: tx.yellow, value: yellowCards, color: 'text-yellow-400' },
@@ -181,6 +221,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <thead>
                   <tr className="text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
                     <th className="text-left px-4 py-2.5">{tx.season}</th>
+                    <th className="text-center px-2 py-2.5 w-12">{tx.mp}</th>
                     <th className="text-center px-2 py-2.5 w-14">{tx.goals}</th>
                     <th className="text-center px-2 py-2.5 w-14">{tx.pas}</th>
                     <th className="text-center px-2 py-2.5 w-12">{tx.yc}</th>
@@ -191,6 +232,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   {seasonStats.map((s, i) => (
                     <tr key={s.tournamentId} className={i > 0 ? 'border-t border-white/5' : ''}>
                       <td className="px-4 py-2.5 font-bold text-white/90 truncate max-w-[160px]">{s.name}</td>
+                      <td className="px-2 py-2.5 text-center text-white/70 tabular-nums">{s.mp || '—'}</td>
                       <td className="px-2 py-2.5 text-center font-black text-emerald-400 tabular-nums">{s.goals}</td>
                       <td className="px-2 py-2.5 text-center text-blue-400 tabular-nums">{s.assists}</td>
                       <td className="px-2 py-2.5 text-center text-white/50 tabular-nums">{s.yellow || '—'}</td>

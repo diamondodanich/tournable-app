@@ -62,6 +62,12 @@ export async function generatePlayoff(tournamentId: string) {
   const bo = (tt as { playoff_best_of?: number } | null)?.playoff_best_of ?? 1
   if (bo > 1) await supabase.from('playoff_matches').update({ best_of: bo }).eq('tournament_id', tournamentId)
 
+  // Two-legged aggregate tie (migration 026) — queried separately so that a missing
+  // column (before the migration is applied) can never break the best_of carry above.
+  const { data: tl } = await supabase.from('tournaments').select('playoff_two_legged').eq('id', tournamentId).maybeSingle()
+  const twoLegged = (tl as { playoff_two_legged?: boolean } | null)?.playoff_two_legged ?? false
+  if (twoLegged) await supabase.from('playoff_matches').update({ two_legged: true }).eq('tournament_id', tournamentId)
+
   await supabase.from('tournaments').update({ generated: true }).eq('id', tournamentId)
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
 }

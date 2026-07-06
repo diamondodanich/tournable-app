@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { BarChart2, Crown, ChevronUp, ChevronDown, Users, User } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import type { ChampPlayerStat, ChampTeamStat } from '@/app/actions/leagues'
@@ -58,10 +59,11 @@ function SortHead<T>({ label, k, sort, align = 'center' }: { label: string; k: k
   )
 }
 
-export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru' }: {
+export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug }: {
   stats: ChampPlayerStat[]
   teamStats?: ChampTeamStat[]
   lang?: Lang
+  slug?: string
 }) {
   const tx = T[lang]
   const [view, setView] = useState<'players' | 'teams'>('players')
@@ -138,13 +140,17 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru' }: {
                           ? <img src={s.photo} alt="" className="w-full h-full object-cover" />
                           : s.player.slice(0, 2).toUpperCase()}
                       </span>
-                      <span className="truncate">{s.player}</span>
+                      {slug && s.playerId
+                        ? <Link href={`/leagues/${slug}/players/${s.playerId}`} className="truncate hover:text-violet-700 hover:underline">{s.player}</Link>
+                        : <span className="truncate">{s.player}</span>}
                     </div>
                   </td>
                   <td className="px-3 py-2 text-gray-500">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <TeamAvatar name={s.teamName} logoUrl={s.teamLogo} size={18} />
-                      <span className="truncate max-w-[120px]">{s.teamName}</span>
+                      {slug && s.teamSlug
+                        ? <Link href={`/leagues/${slug}/teams/${s.teamSlug}`} className="truncate max-w-[120px] hover:text-violet-700 hover:underline">{s.teamName}</Link>
+                        : <span className="truncate max-w-[120px]">{s.teamName}</span>}
                     </div>
                   </td>
                   <td className="px-2 py-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
@@ -185,7 +191,9 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru' }: {
                   <td className="px-3 py-2 font-bold text-gray-900">
                     <div className="flex items-center gap-2 min-w-0">
                       <TeamAvatar name={s.teamName} logoUrl={s.logo} size={20} />
-                      <span className="truncate">{s.teamName}</span>
+                      {slug && s.teamSlug
+                        ? <Link href={`/leagues/${slug}/teams/${s.teamSlug}`} className="truncate hover:text-violet-700 hover:underline">{s.teamName}</Link>
+                        : <span className="truncate">{s.teamName}</span>}
                     </div>
                   </td>
                   <td className="px-2 py-2 text-center text-gray-500 tabular-nums">{s.seasons}</td>

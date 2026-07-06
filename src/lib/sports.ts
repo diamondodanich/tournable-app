@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ElementType } from 'react'
-import { Volleyball, HelpCircle } from 'lucide-react'
+import { Volleyball, HelpCircle, Gamepad2, Swords, Dices } from 'lucide-react'
 import { SoccerBall, BasketballBall, HockeyPuck } from '@/components/icons/sport-icons'
 
 export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
@@ -48,6 +48,7 @@ export interface SportCategory {
   proOnly: boolean                   // football is free; the rest are Pro
   theme: SportTheme
   subtypes: SportSubtype[]
+  individual?: boolean               // 1v1 disciplines → "участник" instead of "команда"
 }
 
 // ── Colour themes ────────────────────────────────────────────────────────────
@@ -58,6 +59,8 @@ const THEME = {
   cyan:   { primary: '#0891b2', primaryDark: '#0e7490', light: '#ecfeff', ringRgba: 'rgba(8,145,178,.30)',  gradient: 'linear-gradient(135deg,#0e7490 0%,#06b6d4 100%)', heroDark: 'linear-gradient(135deg,#062f37 0%,#0e7490 45%,#083344 100%)' },
   violet: { primary: '#7c3aed', primaryDark: '#6d28d9', light: '#f5f3ff', ringRgba: 'rgba(124,58,237,.30)', gradient: 'linear-gradient(135deg,#6d28d9 0%,#8b5cf6 100%)', heroDark: 'linear-gradient(135deg,#2a1259 0%,#5b21b6 45%,#3b0764 100%)' },
   gray:   { primary: '#4b5563', primaryDark: '#374151', light: '#f9fafb', ringRgba: 'rgba(75,85,99,.30)',   gradient: 'linear-gradient(135deg,#374151 0%,#6b7280 100%)', heroDark: 'linear-gradient(135deg,#111827 0%,#374151 45%,#0b0f17 100%)' },
+  red:    { primary: '#dc2626', primaryDark: '#b91c1c', light: '#fef2f2', ringRgba: 'rgba(220,38,38,.30)',  gradient: 'linear-gradient(135deg,#b91c1c 0%,#ef4444 100%)', heroDark: 'linear-gradient(135deg,#3b0a0a 0%,#7f1d1d 45%,#450a0a 100%)' },
+  indigo: { primary: '#4f46e5', primaryDark: '#4338ca', light: '#eef2ff', ringRgba: 'rgba(79,70,229,.30)',  gradient: 'linear-gradient(135deg,#4338ca 0%,#6366f1 100%)', heroDark: 'linear-gradient(135deg,#1e1b4b 0%,#3730a3 45%,#1e1b4b 100%)' },
 } satisfies Record<string, SportTheme>
 
 const ALL_FORMATS: Format[] = ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
@@ -163,6 +166,113 @@ export const SPORT_CATEGORIES: SportCategory[] = [
         periods: 3, periodOptions: [2, 3], duration: 20, extraTime: true, pts: { win: 3, draw: 1, loss: 0 },
         periodLabel: { ru: 'Периоды', kz: 'Кезеңдер', en: 'Periods' }, durationLabel: { ru: 'Длительность периода', kz: 'Кезең ұзақтығы', en: 'Period duration' },
         recommendedFormat: 'league_playoff', formats: ['league_playoff', 'round_robin', 'playoff', 'groups_playoff'],
+      },
+    ],
+  },
+  {
+    id: 'esports', abbr: 'E', icon: Gamepad2, proOnly: true, theme: THEME.violet,
+    label:   { ru: 'Киберспорт', kz: 'Киберспорт', en: 'Esports' },
+    tagline: { ru: 'EA FC, CS, Dota 2, Valorant', kz: 'EA FC, CS, Dota 2, Valorant', en: 'EA FC, CS, Dota 2, Valorant' },
+    subtypes: [
+      {
+        value: 'eafc',
+        label: { ru: 'EA FC (FIFA)', kz: 'EA FC (FIFA)', en: 'EA FC (FIFA)' },
+        desc:  { ru: 'Футбольный симулятор 1×1. Счёт — голы в матче.', kz: 'Футбол симуляторы 1×1. Есеп — матчтағы голдар.', en: 'Football sim 1v1. Score = goals per match.' },
+        periods: 1, periodOptions: [1], duration: 6, extraTime: false, pts: { win: 3, draw: 1, loss: 0 },
+        periodLabel: { ru: 'Матчи', kz: 'Матчтар', en: 'Games' }, durationLabel: { ru: 'Длительность тайма', kz: 'Тайм ұзақтығы', en: 'Half length' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'round_robin', 'swiss'],
+      },
+      {
+        value: 'cs',
+        label: { ru: 'Counter-Strike', kz: 'Counter-Strike', en: 'Counter-Strike' },
+        desc:  { ru: 'Командный шутер 5×5. Счёт — выигранные карты.', kz: 'Командалық атыс 5×5. Есеп — ұтылған карталар.', en: 'Team shooter 5v5. Score = maps won.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 3, draw: 0, loss: 0 }, noDraw: true, hideDuration: true,
+        periodLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' }, durationLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' },
+        scoreNote: { ru: 'Счёт серии — количество выигранных карт (например 2:1). Обычно Bo1/Bo3/Bo5, ничьих нет.', kz: 'Серия есебі — ұтылған карталар саны. Bo1/Bo3/Bo5, теңсіз.', en: 'Series score = maps won (e.g. 2:1). Usually Bo1/Bo3/Bo5, no draws.' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'swiss', 'round_robin'],
+      },
+      {
+        value: 'dota',
+        label: { ru: 'Dota 2', kz: 'Dota 2', en: 'Dota 2' },
+        desc:  { ru: 'MOBA 5×5. Счёт — выигранные карты.', kz: 'MOBA 5×5. Есеп — ұтылған карталар.', en: 'MOBA 5v5. Score = maps won.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 3, draw: 0, loss: 0 }, noDraw: true, hideDuration: true,
+        periodLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' }, durationLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' },
+        scoreNote: { ru: 'Счёт серии — количество выигранных карт (например 2:1). Обычно Bo3/Bo5, ничьих нет.', kz: 'Серия есебі — ұтылған карталар саны. Bo3/Bo5, теңсіз.', en: 'Series score = maps won (e.g. 2:1). Usually Bo3/Bo5, no draws.' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'swiss', 'round_robin'],
+      },
+      {
+        value: 'valorant',
+        label: { ru: 'Valorant', kz: 'Valorant', en: 'Valorant' },
+        desc:  { ru: 'Тактический шутер 5×5. Счёт — выигранные карты.', kz: 'Тактикалық атыс 5×5. Есеп — ұтылған карталар.', en: 'Tactical shooter 5v5. Score = maps won.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 3, draw: 0, loss: 0 }, noDraw: true, hideDuration: true,
+        periodLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' }, durationLabel: { ru: 'Карты', kz: 'Карталар', en: 'Maps' },
+        scoreNote: { ru: 'Счёт серии — количество выигранных карт (например 2:1). Обычно Bo3/Bo5, ничьих нет.', kz: 'Серия есебі — ұтылған карталар саны. Bo3/Bo5, теңсіз.', en: 'Series score = maps won (e.g. 2:1). Usually Bo3/Bo5, no draws.' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'swiss', 'round_robin'],
+      },
+    ],
+  },
+  {
+    id: 'boardgames', abbr: 'C', icon: Dices, proOnly: true, theme: THEME.indigo, individual: true,
+    label:   { ru: 'Настольные игры', kz: 'Үстел ойындары', en: 'Board games' },
+    tagline: { ru: 'Шахматы, шашки, тоғызқұмалақ', kz: 'Шахмат, дойбы, тоғызқұмалақ', en: 'Chess, checkers, togyzkumalak' },
+    subtypes: [
+      {
+        value: 'chess',
+        label: { ru: 'Шахматы', kz: 'Шахмат', en: 'Chess' },
+        desc:  { ru: 'Швейцарка или круговой. Победа/ничья/поражение.', kz: 'Швейцарлық не айналмалы. Жеңіс/тең/жеңіліс.', en: 'Swiss or round-robin. Win/draw/loss.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 1, draw: 1, loss: 0 }, hideDuration: true,
+        periodLabel: { ru: 'Партии', kz: 'Партиялар', en: 'Games' }, durationLabel: { ru: 'Контроль времени', kz: 'Уақыт бақылауы', en: 'Time control' },
+        scoreNote: { ru: 'Результат партии: 1 — победа, ½ — ничья, 0 — поражение. Очки таблицы задаются ниже (по умолчанию 1 за победу).', kz: 'Партия нәтижесі: 1 — жеңіс, ½ — тең, 0 — жеңіліс. Кесте ұпайлары төменде.', en: 'Game result: 1 win, ½ draw, 0 loss. Table points set below.' },
+        recommendedFormat: 'swiss', formats: ['swiss', 'round_robin', 'playoff', 'groups_playoff'],
+      },
+      {
+        value: 'checkers',
+        label: { ru: 'Шашки', kz: 'Дойбы', en: 'Checkers' },
+        desc:  { ru: 'Швейцарка или круговой. Победа/ничья/поражение.', kz: 'Швейцарлық не айналмалы. Жеңіс/тең/жеңіліс.', en: 'Swiss or round-robin. Win/draw/loss.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 1, draw: 1, loss: 0 }, hideDuration: true,
+        periodLabel: { ru: 'Партии', kz: 'Партиялар', en: 'Games' }, durationLabel: { ru: 'Контроль времени', kz: 'Уақыт бақылауы', en: 'Time control' },
+        scoreNote: { ru: 'Результат партии: 1 — победа, ½ — ничья, 0 — поражение. Очки таблицы задаются ниже.', kz: 'Партия нәтижесі: 1 — жеңіс, ½ — тең, 0 — жеңіліс. Кесте ұпайлары төменде.', en: 'Game result: 1 win, ½ draw, 0 loss. Table points set below.' },
+        recommendedFormat: 'swiss', formats: ['swiss', 'round_robin', 'playoff', 'groups_playoff'],
+      },
+      {
+        value: 'togyzkumalak',
+        label: { ru: 'Тоғызқұмалақ', kz: 'Тоғызқұмалақ', en: 'Togyzkumalak' },
+        desc:  { ru: 'Казахская настольная игра. Швейцарка или круговой.', kz: 'Қазақтың ұлттық ойыны. Швейцарлық не айналмалы.', en: 'Kazakh board game. Swiss or round-robin.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 1, draw: 1, loss: 0 }, hideDuration: true,
+        periodLabel: { ru: 'Партии', kz: 'Партиялар', en: 'Games' }, durationLabel: { ru: 'Контроль времени', kz: 'Уақыт бақылауы', en: 'Time control' },
+        scoreNote: { ru: 'Результат партии: 1 — победа, ½ — ничья, 0 — поражение. Очки таблицы задаются ниже.', kz: 'Партия нәтижесі: 1 — жеңіс, ½ — тең, 0 — жеңіліс. Кесте ұпайлары төменде.', en: 'Game result: 1 win, ½ draw, 0 loss. Table points set below.' },
+        recommendedFormat: 'swiss', formats: ['swiss', 'round_robin', 'playoff', 'groups_playoff'],
+      },
+    ],
+  },
+  {
+    id: 'combat', abbr: 'M', icon: Swords, proOnly: true, theme: THEME.red, individual: true,
+    label:   { ru: 'Единоборства', kz: 'Жекпе-жек', en: 'Combat sports' },
+    tagline: { ru: 'MMA, бокс, борьба', kz: 'MMA, бокс, күрес', en: 'MMA, boxing, wrestling' },
+    subtypes: [
+      {
+        value: 'mma',
+        label: { ru: 'MMA', kz: 'MMA', en: 'MMA' },
+        desc:  { ru: 'Смешанные единоборства. Сетка на выбывание.', kz: 'Аралас жекпе-жек. Жою сеткасы.', en: 'Mixed martial arts. Elimination bracket.' },
+        periods: 3, periodOptions: [3, 5], duration: 5, extraTime: false, pts: { win: 3, draw: 0, loss: 0 }, noDraw: true, hideDuration: false,
+        periodLabel: { ru: 'Раунды', kz: 'Раундтар', en: 'Rounds' }, durationLabel: { ru: 'Длительность раунда', kz: 'Раунд ұзақтығы', en: 'Round length' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'round_robin'],
+      },
+      {
+        value: 'boxing',
+        label: { ru: 'Бокс', kz: 'Бокс', en: 'Boxing' },
+        desc:  { ru: 'Бокс по раундам. Возможна ничья.', kz: 'Раундтармен бокс. Тең болуы мүмкін.', en: 'Boxing by rounds. Draws possible.' },
+        periods: 3, periodOptions: [3, 5, 12], duration: 3, extraTime: false, pts: { win: 3, draw: 1, loss: 0 },
+        periodLabel: { ru: 'Раунды', kz: 'Раундтар', en: 'Rounds' }, durationLabel: { ru: 'Длительность раунда', kz: 'Раунд ұзақтығы', en: 'Round length' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'round_robin'],
+      },
+      {
+        value: 'wrestling',
+        label: { ru: 'Борьба', kz: 'Күрес', en: 'Wrestling' },
+        desc:  { ru: 'Борьба / грэпплинг. Сетка на выбывание.', kz: 'Күрес / грэпплинг. Жою сеткасы.', en: 'Wrestling / grappling. Elimination bracket.' },
+        periods: 2, periodOptions: [1, 2, 3], duration: 3, extraTime: false, pts: { win: 3, draw: 0, loss: 0 }, noDraw: true, hideDuration: false,
+        periodLabel: { ru: 'Периоды', kz: 'Кезеңдер', en: 'Periods' }, durationLabel: { ru: 'Длительность периода', kz: 'Кезең ұзақтығы', en: 'Period length' },
+        recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'round_robin'],
       },
     ],
   },

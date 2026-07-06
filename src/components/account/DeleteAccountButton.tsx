@@ -93,7 +93,9 @@ export default function DeleteAccountButton({ email, lang = 'ru' }: { email: str
     router.push('/login?deleted=1')
   }
 
-  const ready = value.trim() === CONFIRM_WORD
+  // Case-insensitive: mobile keyboards often refuse to force uppercase even with
+  // the CSS `uppercase` transform, which left the button permanently disabled.
+  const ready = value.trim().toLocaleUpperCase() === CONFIRM_WORD.toLocaleUpperCase()
 
   const modal = open && (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
@@ -139,7 +141,10 @@ export default function DeleteAccountButton({ email, lang = 'ru' }: { email: str
               value={value}
               onChange={e => setValue(e.target.value)}
               autoComplete="off"
+              autoCapitalize="characters"
+              autoCorrect="off"
               spellCheck={false}
+              inputMode="text"
               placeholder={CONFIRM_WORD}
               className="w-full h-11 rounded-xl border border-gray-200 px-3.5 text-sm font-bold tracking-wide uppercase focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all mb-3"
             />

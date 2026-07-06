@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Trophy, Zap, BarChart2, Share2, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -32,8 +33,8 @@ const T = {
     saving: 'Сохраняем…',
     continue: 'Продолжить',
     greatName: (name: string) => `Отлично, ${name}!`,
-    allReady: 'Всё готово!',
-    tagline: 'Tournable умеет всё, что нужно организатору',
+    allReady: 'Аккаунт готов!',
+    tagline: 'Всё, что нужно организатору турнира — уже внутри',
     goingTo: 'Переходим…',
     createFirst: 'Создать первый турнир',
     goToAll: 'Перейти ко всем турнирам',
@@ -52,8 +53,8 @@ const T = {
     saving: 'Сақталуда…',
     continue: 'Жалғастыру',
     greatName: (name: string) => `Керемет, ${name}!`,
-    allReady: 'Бәрі дайын!',
-    tagline: 'Tournable ұйымдастырушыға қажеттінің бәрін істей алады',
+    allReady: 'Аккаунт дайын!',
+    tagline: 'Ұйымдастырушыға қажеттінің бәрі — ішінде',
     goingTo: 'Өтуде…',
     createFirst: 'Алғашқы турнирді құру',
     goToAll: 'Барлық турнирлерге өту',
@@ -72,8 +73,8 @@ const T = {
     saving: 'Saving…',
     continue: 'Continue',
     greatName: (name: string) => `Great, ${name}!`,
-    allReady: "You're all set!",
-    tagline: 'Tournable has everything an organizer needs',
+    allReady: 'Your account is ready!',
+    tagline: 'Everything a tournament organizer needs — already inside',
     goingTo: 'Redirecting…',
     createFirst: 'Create your first tournament',
     goToAll: 'Go to all tournaments',
@@ -121,8 +122,9 @@ export default function OnboardingPage() {
       className="min-h-screen flex flex-col items-center justify-center p-4"
       style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #ffffff 100%)' }}
     >
-      {/* Logo */}
-      <div className="mb-8">
+      {/* Logo — real brand mark + wordmark (matches the app header) */}
+      <div className="mb-8 flex items-center gap-2.5">
+        <Image src="/logo-green.png" alt="Tournable" width={40} height={40} className="w-9 h-9 object-contain" priority />
         <span
           className="text-2xl font-black text-emerald-700 tracking-tight"
           style={{ letterSpacing: '-0.03em' }}

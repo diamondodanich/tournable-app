@@ -8,6 +8,7 @@ import LangSwitcher from '@/components/dashboard/LangSwitcher'
 import AccountMenu from '@/components/dashboard/AccountMenu'
 import SupportWidget from '@/components/landing/SupportWidget'
 import InstallPrompt from '@/components/InstallPrompt'
+import { ConfirmHost } from '@/components/ui/confirm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -126,6 +127,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── PWA install prompt (mobile only) ─────────────────────────── */}
       <InstallPrompt />
+
+      {/* ── Global confirmation dialog host ──────────────────────────── */}
+      <ConfirmHost />
     </div>
     </div>
   )

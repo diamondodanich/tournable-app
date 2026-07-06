@@ -13,6 +13,7 @@ import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
+import { confirmDialog } from '@/components/ui/confirm'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -587,7 +588,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   async function handleGenerate() {
     if (fmt === 'playoff' && teams.length < 2) { toast.error(T.minTeamsToGenerate); return }
     if (matches.length > 0) {
-      const ok = window.confirm(T.bracketRegenerateConfirm)
+      const ok = await confirmDialog({ title: T.bracketRegenerateConfirm, tone: 'danger', lang })
       if (!ok) return
     }
     setGenerating(true)

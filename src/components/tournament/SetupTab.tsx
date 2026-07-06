@@ -14,6 +14,7 @@ import TeamLogoUpload from './TeamLogoUpload'
 import TournamentLogoUpload from './TournamentLogoUpload'
 import TournamentCoverPicker from './TournamentCoverPicker'
 import TournamentCoverBanner from './TournamentCoverBanner'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { createClient } from '@/lib/supabase/client'
 import { tx, type Lang } from '@/lib/i18n'
 
@@ -46,6 +47,12 @@ export default function SetupTab({
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(tournament.name)
   const [savingName, setSavingName] = useState(false)
+
+  // Destructive-action confirmations (our own dialog instead of window.confirm)
+  const [teamToRemove, setTeamToRemove]     = useState<{ id: string; name: string } | null>(null)
+  const [removingTeam, setRemovingTeam]     = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState<TournamentMember | null>(null)
+  const [removingMember, setRemovingMember] = useState(false)
 
   const [matchPeriods, setMatchPeriods]     = useState(tournament.match_periods ?? 2)
   const [extraTime, setExtraTime]           = useState(tournament.extra_time ?? false)
@@ -91,14 +98,30 @@ export default function SetupTab({
     setLoading(false)
   }
 
-  async function handleRemoveTeam(teamId: string, teamName: string) {
-    if (tournament.generated) {
-      const ok = window.confirm(
-        `${T.confirmDeleteTeam(teamName)}\n\n${T.deleteTeamScheduleWarning}`
-      )
-      if (!ok) return
-    }
-    await removeTeam(teamId, tournament.id)
+  function handleRemoveTeam(teamId: string, teamName: string) {
+    // A generated schedule makes team removal destructive → confirm first.
+    if (tournament.generated) { setTeamToRemove({ id: teamId, name: teamName }); return }
+    removeTeam(teamId, tournament.id)
+  }
+
+  async function confirmRemoveTeam() {
+    if (!teamToRemove) return
+    setRemovingTeam(true)
+    await removeTeam(teamToRemove.id, tournament.id)
+    setRemovingTeam(false)
+    setTeamToRemove(null)
+  }
+
+  async function confirmRemoveMember() {
+    if (!memberToRemove) return
+    const m = memberToRemove
+    setRemovingMember(true)
+    const res = await removeMember(m.id, tournament.id)
+    setRemovingMember(false)
+    setMemberToRemove(null)
+    if (res?.error) { toast.error(res.error); return }
+    setMembers(prev => prev.filter(x => x.id !== m.id))
+    toast.success(T.accessRevoked)
   }
 
   async function handleGenerate() {
@@ -231,6 +254,11 @@ export default function SetupTab({
             <p className="text-xs text-gray-400">{T.coverInHeaderHint}</p>
           )}
         </div>
+
+        {/* Danger zone — lives only under the General sub-tab, not every tab */}
+        {isOwner && (
+          <DangerZone tournamentId={tournament.id} tournamentName={tournament.name} lang={lang} />
+        )}
       </TabsContent>
 
       {/* Правила */}
@@ -410,11 +438,7 @@ export default function SetupTab({
                       </div>
                     </div>
                     <button
-                      onClick={async () => {
-                        setMembers(prev => prev.filter(x => x.id !== m.id))
-                        await removeMember(m.id, tournament.id)
-                        toast.success(T.accessRevoked)
-                      }}
+                      onClick={() => setMemberToRemove(m)}
                       className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
                       title={T.revokeAccess}
                     >
@@ -429,10 +453,29 @@ export default function SetupTab({
       </TabsContent>
     </Tabs>
 
-    {/* Danger zone */}
-    {isOwner && (
-      <DangerZone tournamentId={tournament.id} tournamentName={tournament.name} lang={lang} />
-    )}
+    {/* Confirm: remove a team from a generated schedule */}
+    <ConfirmDialog
+      open={!!teamToRemove}
+      title={teamToRemove ? T.confirmDeleteTeam(teamToRemove.name) : ''}
+      description={T.deleteTeamScheduleWarning}
+      confirmLabel={T.confirmDeleteBtn}
+      cancelLabel={T.cancel}
+      loading={removingTeam}
+      onConfirm={confirmRemoveTeam}
+      onCancel={() => { if (!removingTeam) setTeamToRemove(null) }}
+    />
+
+    {/* Confirm: revoke a member's access */}
+    <ConfirmDialog
+      open={!!memberToRemove}
+      title={T.revokeAccessTitle}
+      description={T.revokeAccessDesc}
+      confirmLabel={T.revokeAccess}
+      cancelLabel={T.cancel}
+      loading={removingMember}
+      onConfirm={confirmRemoveMember}
+      onCancel={() => { if (!removingMember) setMemberToRemove(null) }}
+    />
     </>
   )
 }

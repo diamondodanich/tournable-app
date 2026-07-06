@@ -20,21 +20,21 @@ const T = {
     seasons: 'Сезоны', teams: 'Команды', players: 'Игроки',
     active: 'Активный', finished: 'Завершён',
     openSeason: 'Открыть', seasonsList: 'Сезоны чемпионата', noSeasons: 'Пока нет сезонов',
-    allTimeStats: 'Статистика за всю историю', currentSeason: 'Текущий сезон', openSeasonBtn: 'Открыть сезон', report: 'Отчёт по сезонам',
+    allTimeStats: 'Статистика за всю историю', currentSeason: 'Текущий сезон', openSeasonBtn: 'Открыть сезон', report: 'Отчёт по всем сезонам',
   },
   kz: {
     tabs: { overview: 'Шолу', stats: 'Статистика' },
     seasons: 'Маусымдар', teams: 'Командалар', players: 'Ойыншылар',
     active: 'Белсенді', finished: 'Аяқталды',
     openSeason: 'Ашу', seasonsList: 'Чемпионат маусымдары', noSeasons: 'Әзірге маусымдар жоқ',
-    allTimeStats: 'Барлық тарих статистикасы', currentSeason: 'Ағымдағы маусым', openSeasonBtn: 'Маусымды ашу', report: 'Маусымдар есебі',
+    allTimeStats: 'Барлық тарих статистикасы', currentSeason: 'Ағымдағы маусым', openSeasonBtn: 'Маусымды ашу', report: 'Барлық маусымдар есебі',
   },
   en: {
     tabs: { overview: 'Overview', stats: 'Stats' },
     seasons: 'Seasons', teams: 'Teams', players: 'Players',
     active: 'Active', finished: 'Finished',
     openSeason: 'Open', seasonsList: 'Championship seasons', noSeasons: 'No seasons yet',
-    allTimeStats: 'All-time statistics', currentSeason: 'Current season', openSeasonBtn: 'Open season', report: 'Seasons report',
+    allTimeStats: 'All-time statistics', currentSeason: 'Current season', openSeasonBtn: 'Open season', report: 'All-seasons report',
   },
 } as const
 

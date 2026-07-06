@@ -107,8 +107,12 @@ export async function requestPasswordReset(formData: FormData) {
 // Hard-deletes the auth user via the admin API; FK cascades remove the profile,
 // tournaments, teams, fixtures, memberships and subscriptions. Irreversible.
 export async function deleteAccount(confirmation: string) {
-  // Anti-accident guard: the client must echo this exact word.
-  if (confirmation !== 'УДАЛИТЬ') return { error: 'Подтверждение не совпадает' }
+  // Anti-accident guard: the client must echo the confirm word. Accept it in any
+  // of the supported languages (ru/kz/en) and case — the UI localises the word.
+  const CONFIRM_WORDS = ['УДАЛИТЬ', 'ЖОЮ', 'DELETE']
+  if (!CONFIRM_WORDS.includes(confirmation.trim().toLocaleUpperCase())) {
+    return { error: 'Подтверждение не совпадает' }
+  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

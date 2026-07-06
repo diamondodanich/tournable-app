@@ -71,8 +71,25 @@ export async function acceptInvite(token: string): Promise<{ ok?: true; tourname
 
 export async function removeMember(memberId: string, tournamentId: string) {
   const supabase = await createClient()
-  await supabase.from('tournament_members').delete().eq('id', memberId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Не авторизован' }
+
+  // Only the tournament owner may revoke access.
+  const { data: t } = await supabase.from('tournaments').select('user_id').eq('id', tournamentId).single()
+  if (!t || t.user_id !== user.id) return { error: 'Нет доступа' }
+
+  // Delete via the service-role client so the membership row is truly removed
+  // regardless of RLS — otherwise a revoked editor could keep write access.
+  const admin = getAdmin()
+  const { error } = await admin
+    .from('tournament_members')
+    .delete()
+    .eq('id', memberId)
+    .eq('tournament_id', tournamentId)
+
+  if (error) return { error: error.message }
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
+  return { ok: true }
 }
 
 // ── Email invite ──────────────────────────────────────────────────────────────

@@ -6,11 +6,12 @@ import { createInviteLink, removeMember, inviteByEmail } from '@/app/actions/mem
 import { TournamentMember } from '@/types'
 import {
   Share2, Copy, Check, Link2, X,
-  Eye, Pencil, ChevronLeft, Clock, UserX, Mail, Send,
+  Eye, Pencil, ChevronLeft, Clock, UserX, Mail, Send, Lock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { APP_URL } from '@/lib/appUrl'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 interface Props {
   tournamentId: string
@@ -36,6 +37,8 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
   const [dropPos, setDropPos]       = useState({ top: 0, right: 0 })
   const [emailInput, setEmailInput] = useState('')
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState<TournamentMember | null>(null)
+  const [removingMember, setRemovingMember] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => setMounted(true), [])
@@ -80,8 +83,11 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
 
   async function selectEditMode() {
     setMode('edit')
-    setCreating(true)
     setEmailInput('')
+    // Co-editing (edit links + email invites) is a Pro feature — don't mint a link
+    // for free users; the edit panel shows an upgrade gate instead.
+    if (!isPro) { setInviteUrl(null); return }
+    setCreating(true)
     const res = await createInviteLink(tournamentId, 'editor')
     if (res?.error) { toast.error(res.error); setCreating(false); return }
     if ('token' in res) {
@@ -101,9 +107,20 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
     setEmailInput('')
   }
 
-  async function handleRemove(memberId: string) {
-    setMembers(prev => prev.filter(m => m.id !== memberId))
-    await removeMember(memberId, tournamentId)
+  function requestRemove(memberId: string) {
+    const m = members.find(x => x.id === memberId)
+    if (m) setMemberToRemove(m)
+  }
+
+  async function confirmRemove() {
+    if (!memberToRemove) return
+    const m = memberToRemove
+    setRemovingMember(true)
+    const res = await removeMember(m.id, tournamentId)
+    setRemovingMember(false)
+    setMemberToRemove(null)
+    if (res?.error) { toast.error(res.error); return }
+    setMembers(prev => prev.filter(x => x.id !== m.id))
     toast.success(T.accessRevoked)
   }
 
@@ -186,7 +203,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       {T.shareEditors} · {acceptedEditors.length}
                     </p>
                     {acceptedEditors.map(m => (
-                      <MemberRow key={m.id} member={m} onRemove={handleRemove} T={T} />
+                      <MemberRow key={m.id} member={m} onRemove={requestRemove} T={T} />
                     ))}
                   </div>
                 )}
@@ -198,7 +215,7 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
                       {T.shareViewers} · {acceptedViewers.length}
                     </p>
                     {acceptedViewers.map(m => (
-                      <MemberRow key={m.id} member={m} onRemove={handleRemove} T={T} />
+                      <MemberRow key={m.id} member={m} onRemove={requestRemove} T={T} />
                     ))}
                   </div>
                 )}
@@ -250,7 +267,24 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
         {/* ── Edit mode ────────────────────────────────────────── */}
         {mode === 'edit' && (
           <div className="space-y-3">
-            {creating ? (
+            {!isPro ? (
+              /* Free plan: co-editing links are Pro — show an upgrade gate */
+              <div className="text-center py-4 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto">
+                  <Lock size={20} className="text-violet-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-gray-800">{T.shareEditMode}</p>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">{T.coEditingProNote}</p>
+                </div>
+                <a
+                  href="/checkout"
+                  className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors"
+                >
+                  {T.getProCta}
+                </a>
+              </div>
+            ) : creating ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-400">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-violet-600 rounded-full animate-spin" />
                 {T.shareGenerating}
@@ -389,6 +423,17 @@ export default function SharePanel({ tournamentId, tournamentName, publicUrl, me
       </button>
 
       {mounted && createPortal(portalContent, document.body)}
+
+      <ConfirmDialog
+        open={!!memberToRemove}
+        title={T.revokeAccessTitle}
+        description={T.revokeAccessDesc}
+        confirmLabel={T.revokeAccess}
+        cancelLabel={T.cancel}
+        loading={removingMember}
+        onConfirm={confirmRemove}
+        onCancel={() => { if (!removingMember) setMemberToRemove(null) }}
+      />
     </>
   )
 }

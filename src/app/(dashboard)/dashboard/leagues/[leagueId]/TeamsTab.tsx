@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { addLeagueTeam, removeLeagueTeam } from '@/app/actions/leagues'
 import { Plus, Trash2, MapPin, Check, X } from 'lucide-react'
 import type { LeagueTeam } from '@/types'
+import { confirmDialog } from '@/components/ui/confirm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -62,8 +63,8 @@ export default function TeamsTab({ leagueId, teams, lang = 'ru' }: { leagueId: s
     })
   }
 
-  function handleRemove(teamId: string, teamName: string) {
-    if (!confirm(T_.confirmRemove(teamName))) return
+  async function handleRemove(teamId: string, teamName: string) {
+    if (!(await confirmDialog({ title: T_.confirmRemove(teamName), tone: 'danger', lang }))) return
     startTransition(() => { void removeLeagueTeam(teamId, leagueId) })
   }
 

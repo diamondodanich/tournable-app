@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { removeSeason, updateSeason } from '@/app/actions/leagues'
 import { Plus, Trash2, ExternalLink } from 'lucide-react'
 import type { Season } from '@/types'
+import { confirmDialog } from '@/components/ui/confirm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -50,8 +51,8 @@ export default function SeasonsTab({
   const T_ = T[lang]
   const [isPending, startTransition] = useTransition()
 
-  function handleRemove(seasonId: string) {
-    if (!confirm(T_.confirmRemove)) return
+  async function handleRemove(seasonId: string) {
+    if (!(await confirmDialog({ title: T_.confirmRemove, tone: 'danger', lang }))) return
     startTransition(() => { void removeSeason(seasonId, leagueId) })
   }
 

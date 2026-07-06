@@ -8,6 +8,7 @@ import { updateLeague, deleteLeague, setCalendarEnabled } from '@/app/actions/le
 import SeasonsTab from './SeasonsTab'
 import { getSportTheme } from '@/lib/sports'
 import type { League, Season } from '@/types'
+import { confirmDialog } from '@/components/ui/confirm'
 
 type Lang = 'ru' | 'kz' | 'en'
 type SubTab = 'general' | 'seasons' | 'danger'
@@ -108,8 +109,8 @@ export default function ChampionshipSettings({ league, seasons, lang = 'ru' }: {
     })
   }
 
-  function handleDelete() {
-    if (!confirm(tx.confirmDelete(league.name))) return
+  async function handleDelete() {
+    if (!(await confirmDialog({ title: tx.confirmDelete(league.name), tone: 'danger', lang }))) return
     startTransition(() => deleteLeague(league.id))
   }
 

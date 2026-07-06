@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { updateLeague, deleteLeague } from '@/app/actions/leagues'
 import { Save, Trash2 } from 'lucide-react'
 import type { League } from '@/types'
+import { confirmDialog } from '@/components/ui/confirm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -127,8 +128,8 @@ export default function SettingsTab({ league, lang = 'ru' }: { league: League; l
     })
   }
 
-  function handleDelete() {
-    if (!confirm(T_.confirmDelete(league.name))) return
+  async function handleDelete() {
+    if (!(await confirmDialog({ title: T_.confirmDelete(league.name), tone: 'danger', lang }))) return
     startTransition(() => deleteLeague(league.id))
   }
 

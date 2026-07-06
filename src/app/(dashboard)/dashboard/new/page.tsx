@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import { createTournamentWithSetup } from '@/app/actions/tournaments'
+import { createTournamentWithSetup, checkTournamentLimit } from '@/app/actions/tournaments'
 import { createChampionshipWithSetup, addSeasonWithSetup, getChampionshipTeams } from '@/app/actions/leagues'
 import { SEASON_PERIOD_OPTIONS, seasonName as buildSeasonName, type SeasonPeriod } from '@/lib/seasons'
 import { getUserPlanAndAdmin } from '@/app/actions/billing'
@@ -443,6 +443,13 @@ export default function NewTournamentPage() {
       setIsEnterprise(plan === 'enterprise')
     })
   }, [])
+
+  // Warn about the free-plan tournament limit immediately when the wizard opens,
+  // not only after the whole setup is filled in and "Create" is pressed.
+  useEffect(() => {
+    if (isChampionship) return
+    checkTournamentLimit().then(({ atLimit }) => { if (atLimit) setPlanLimit('tournament') })
+  }, [isChampionship])
 
   // Championship season periodicity — drives auto season naming (championship mode)
   const [seasonPeriod, setSeasonPeriod] = useState<SeasonPeriod>('seasonal')

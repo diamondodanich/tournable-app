@@ -41,6 +41,20 @@ async function getUserPlan(supabase: Awaited<ReturnType<typeof createClient>>, u
   return 'free'
 }
 
+// Lets the create wizard warn about the free-plan limit up-front (on open) instead
+// of only after the user has filled in everything and pressed "Create".
+export async function checkTournamentLimit(): Promise<{ atLimit: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { atLimit: false }
+
+  const [plan, { count }] = await Promise.all([
+    getUserPlan(supabase, user.id),
+    supabase.from('tournaments').select('*', { count: 'exact', head: true }).eq('user_id', user.id).is('deleted_at', null),
+  ])
+  return { atLimit: plan === 'free' && (count ?? 0) >= 1 }
+}
+
 export async function createTournament(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

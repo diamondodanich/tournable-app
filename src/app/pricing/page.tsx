@@ -1,11 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { cookies } from 'next/headers'
-import { Check, X, Zap, Trophy, Star, ArrowRight, Building2, MessageCircle } from 'lucide-react'
-
-// Temporary: until the payment gateway goes live, paid plans route to WhatsApp
-// instead of the on-site checkout.
-const WA_LINK = 'https://wa.me/message/YHLE2IFII4MSJ1'
+import { Check, X, Zap, Trophy, Star, ArrowRight, Building2 } from 'lucide-react'
 import type { Metadata } from 'next'
 
 type Lang = 'ru' | 'kz' | 'en'
@@ -408,13 +404,11 @@ export default async function PricingPage() {
               </ul>
 
               <Link
-                href={WA_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/checkout"
                 className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 rounded-xl transition-colors text-sm shadow-md"
               >
-                <MessageCircle className="w-4 h-4" />
-                {tx.ctaWhatsApp}
+                {tx.ctaGoPro}
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -445,13 +439,11 @@ export default async function PricingPage() {
               </ul>
 
               <Link
-                href={WA_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/checkout/enterprise"
                 className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl transition-colors text-sm"
               >
-                <MessageCircle className="w-4 h-4" />
-                {tx.ctaWhatsApp}
+                {tx.ctaGoEnterprise}
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 

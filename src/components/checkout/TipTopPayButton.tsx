@@ -53,6 +53,7 @@ const T = {
     everyYear: ' раз в год', everyMonth: ' раз в месяц',
     consentPost: '. Отменить можно в любой момент в настройках.',
     processing: 'Обработка...', pay: 'Оплатить',
+    comingSoon: 'Скоро', cardSoon: 'Оплата картой скоро будет доступна — пока оформляем через менеджера.',
     secured: 'Защищено · PCI DSS · 3D Secure',
   },
   kz: {
@@ -68,6 +69,7 @@ const T = {
     everyYear: ' жылына бір рет', everyMonth: ' айына бір рет',
     consentPost: '. Кез келген уақытта баптаулардан бас тартуға болады.',
     processing: 'Өңделуде...', pay: 'Төлеу',
+    comingSoon: 'Жақында', cardSoon: 'Картамен төлеу жақында қолжетімді болады — әзірге менеджер арқылы рәсімдейміз.',
     secured: 'Қорғалған · PCI DSS · 3D Secure',
   },
   en: {
@@ -83,9 +85,14 @@ const T = {
     everyYear: ' once a year', everyMonth: ' once a month',
     consentPost: '. You can cancel anytime in settings.',
     processing: 'Processing...', pay: 'Pay',
+    comingSoon: 'Coming soon', cardSoon: 'Card payment is coming soon — for now we set it up via a manager.',
     secured: 'Secured · PCI DSS · 3D Secure',
   },
 } as const
+
+// Card gateway is not live yet → show the card button as "coming soon" and route
+// users to the manager (WhatsApp). Flip to true once TipTop Pay is in production.
+const CARD_PAYMENTS_ENABLED = false
 
 export function TipTopPayButton({ period, amount, userEmail, planType = 'pro', lang = 'ru' }: Props) {
   const tx = T[lang]
@@ -95,6 +102,7 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro', l
   const [error, setError]             = useState<string | null>(null)
 
   useEffect(() => {
+    if (!CARD_PAYMENTS_ENABLED) return           // gateway off — don't load the widget
     if (typeof window === 'undefined') return
     if (window.tiptop) { setScriptReady(true); return }
 
@@ -202,25 +210,29 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro', l
       )}
 
       <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-        {tx.consentPre}{' '}
-        <a
-          href="/terms"
-          className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
-        >
-          {tx.offerLink}
-        </a>
-        {' '}{tx.consentMid}
-        {period === 'annual' ? tx.everyYear : tx.everyMonth}{tx.consentPost}
+        {CARD_PAYMENTS_ENABLED ? (
+          <>
+            {tx.consentPre}{' '}
+            <a
+              href="/terms"
+              className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
+            >
+              {tx.offerLink}
+            </a>
+            {' '}{tx.consentMid}
+            {period === 'annual' ? tx.everyYear : tx.everyMonth}{tx.consentPost}
+          </>
+        ) : tx.cardSoon}
       </p>
 
       <button
         onClick={handlePay}
-        disabled={!scriptReady || isPending}
+        disabled={!CARD_PAYMENTS_ENABLED || !scriptReady || isPending}
         className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl transition-all hover:opacity-90 text-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed mt-1"
         style={{ background: GRADIENTS[planType] }}
       >
         {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-        {isPending ? tx.processing : tx.pay}
+        {!CARD_PAYMENTS_ENABLED ? `${tx.pay} · ${tx.comingSoon}` : isPending ? tx.processing : tx.pay}
       </button>
 
       <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">

@@ -5,20 +5,57 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { sendWelcomeEmail } from '@/lib/email'
 
+// ── Email-confirmation bypass ────────────────────────────────────────────────
+// Product decision: users should enter the app right after registration without
+// an email round-trip. We auto-confirm the address via the admin API (works even
+// if "Confirm email" is still ON in Supabase Auth settings).
+function getAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceKey) return null
+  return createAdminClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+}
+
+async function adminAutoConfirm(userId: string): Promise<void> {
+  const admin = getAdmin()
+  if (!admin) return
+  try { await admin.auth.admin.updateUserById(userId, { email_confirm: true }) } catch {}
+}
+
+// Existing account created before confirmation was bypassed: find it by email and confirm.
+async function adminConfirmByEmail(email: string): Promise<boolean> {
+  const admin = getAdmin()
+  if (!admin) return false
+  try {
+    const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 })
+    const target = data?.users?.find(u => u.email?.toLowerCase() === email.trim().toLowerCase())
+    if (!target) return false
+    await admin.auth.admin.updateUserById(target.id, { email_confirm: true })
+    return true
+  } catch { return false }
+}
+
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const nextRaw = (formData.get('next') as string | null) ?? ''
 
-  const { error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) return { error: error.message }
+
+  // If confirmation is required, signUp returns no session → auto-confirm and sign
+  // the user in so they land straight in the app (no "confirm your email" step).
+  if (!data.session && data.user) {
+    await adminAutoConfirm(data.user.id)
+    await supabase.auth.signInWithPassword({ email, password })
+  }
 
   // Fire-and-forget — not blocking redirect on email failure
   sendWelcomeEmail(email).catch(() => {})
 
-  // If an invite or other deep link was waiting, go there instead of onboarding
-  const safePath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/onboarding'
+  // Straight to "My tournaments" (or a waiting invite/deep link).
+  const safePath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/dashboard'
   redirect(safePath)
 }
 
@@ -27,12 +64,23 @@ export async function signIn(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const nextRaw = (formData.get('next') as string | null) ?? ''
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) return { error: error.message }
-
   // Only allow local relative redirects (prevent open-redirect attacks)
   const safePath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/dashboard'
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) {
+    // Account created before confirmation was bypassed → confirm it and retry once,
+    // so nobody is ever blocked by "Email not confirmed".
+    const code = (error as { code?: string }).code
+    if (code === 'email_not_confirmed' || /not confirmed/i.test(error.message)) {
+      if (await adminConfirmByEmail(email)) {
+        const retry = await supabase.auth.signInWithPassword({ email, password })
+        if (!retry.error) redirect(safePath)
+      }
+    }
+    return { error: error.message }
+  }
+
   redirect(safePath)
 }
 

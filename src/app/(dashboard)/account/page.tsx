@@ -410,14 +410,12 @@ export default async function AccountPage() {
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href="https://wa.me/message/YHLE2IFII4MSJ1"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/checkout"
                     className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
                   >
                     {tx.goToPro}
-                  </a>
+                  </Link>
                   <p className="text-[10px] text-emerald-300 mt-2 text-center">{tx.proYearNote}</p>
                 </div>
 
@@ -442,14 +440,12 @@ export default async function AccountPage() {
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href="https://wa.me/message/YHLE2IFII4MSJ1"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/checkout/enterprise"
                     className="block text-center bg-white text-violet-700 hover:bg-violet-50 font-black py-2.5 rounded-xl transition-colors text-sm shadow-md"
                   >
                     {tx.connectEnterprise}
-                  </a>
+                  </Link>
                   <p className="text-[10px] text-violet-300 mt-2 text-center">{tx.enterpriseYearNote}</p>
                 </div>
               </div>
@@ -487,23 +483,19 @@ export default async function AccountPage() {
                   )}
                 </div>
                 <div className="shrink-0 w-full sm:w-auto">
-                  <a
-                    href="https://wa.me/message/YHLE2IFII4MSJ1"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/checkout"
                     className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors whitespace-nowrap"
                     style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     {tx.renewSubscription}
-                  </a>
+                  </Link>
                 </div>
               </div>
               {/* Enterprise upsell for Pro users */}
-              <a
-                href="https://wa.me/message/YHLE2IFII4MSJ1"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/checkout/enterprise"
                 className="mt-5 flex items-center justify-between gap-3 rounded-xl p-4 text-white transition-opacity hover:opacity-95"
                 style={{ background: 'linear-gradient(135deg,#5b21b6,#a855f7)' }}
               >
@@ -517,7 +509,7 @@ export default async function AccountPage() {
                   </div>
                 </div>
                 <span className="text-xs font-bold whitespace-nowrap shrink-0">{tx.upsellFrom}</span>
-              </a>
+              </Link>
               <div className="mt-5 pt-4 border-t border-gray-100">
                 <CancelSubscriptionButton />
               </div>

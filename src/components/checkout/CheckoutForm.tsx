@@ -36,6 +36,9 @@ const T = {
     toPay: 'К оплате',
     cardPayment: 'Оплата картой',
     orWhatsApp: 'или оплатите через WhatsApp',
+    payViaManager: 'Оплата через менеджера',
+    managerDesc: 'Напишите нам в WhatsApp — оформим подписку и подключим доступ за пару минут. Быстро и удобно.',
+    managerBtn: 'Оплатить в WhatsApp',
     copyTitle: 'Скопировать',
     whatsAppBtn: 'Написать в WhatsApp',
     waMessage: (planLabel: string, price: string, email?: string) =>
@@ -70,6 +73,9 @@ const T = {
     toPay: 'Төлеуге',
     cardPayment: 'Картамен төлеу',
     orWhatsApp: 'немесе WhatsApp арқылы төлеңіз',
+    payViaManager: 'Менеджер арқылы төлеу',
+    managerDesc: 'WhatsApp-қа жазыңыз — жазылымды рәсімдеп, қолжетімділікті бірнеше минутта қосамыз. Жылдам әрі ыңғайлы.',
+    managerBtn: 'WhatsApp-та төлеу',
     copyTitle: 'Көшіру',
     whatsAppBtn: 'WhatsApp-қа жазу',
     waMessage: (planLabel: string, price: string, email?: string) =>
@@ -104,6 +110,9 @@ const T = {
     toPay: 'Amount due',
     cardPayment: 'Card payment',
     orWhatsApp: 'or pay via WhatsApp',
+    payViaManager: 'Pay via manager',
+    managerDesc: 'Message us on WhatsApp — we’ll set up your subscription and unlock access within minutes. Quick and easy.',
+    managerBtn: 'Pay on WhatsApp',
     copyTitle: 'Copy',
     whatsAppBtn: 'Message on WhatsApp',
     waMessage: (planLabel: string, price: string, email?: string) =>
@@ -248,35 +257,38 @@ export function CheckoutForm({ userEmail, lang = 'ru' }: Props) {
           <TipTopPayButton period={period} amount={plan.price} userEmail={userEmail} lang={lang} />
         </div>
 
-        {/* WhatsApp fallback */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[11px] text-gray-400 shrink-0">{tx.orWhatsApp}</span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2 mb-3">
-            <p className="text-xs text-gray-600 flex-1 leading-relaxed break-all">{message}</p>
-            <button
-              onClick={handleCopy}
-              className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500"
-              title={tx.copyTitle}
+        {/* Pay via manager — WhatsApp (primary path while the card gateway is coming soon) */}
+        <div className="rounded-2xl shadow-md overflow-hidden text-white" style={{ background: 'linear-gradient(135deg,#128C7E,#25D366)' }}>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <MessageCircle className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-black text-base leading-tight">{tx.payViaManager}</p>
+                <p className="text-[12px] text-white/90 leading-snug mt-0.5">{tx.managerDesc}</p>
+              </div>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3 flex items-start gap-2 mb-3">
+              <p className="text-xs text-white/90 flex-1 leading-relaxed break-all">{message}</p>
+              <button
+                onClick={handleCopy}
+                className="shrink-0 p-1.5 rounded-lg hover:bg-white/20 transition-colors text-white"
+                title={tx.copyTitle}
+              >
+                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-white text-emerald-700 font-black py-3.5 rounded-xl hover:bg-emerald-50 transition-colors text-sm shadow-sm"
             >
-              {copied
-                ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                : <Copy className="w-4 h-4" />
-              }
-            </button>
+              <MessageCircle className="w-4 h-4" />
+              {tx.managerBtn}
+            </a>
           </div>
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full text-gray-700 font-bold py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-sm"
-          >
-            <MessageCircle className="w-4 h-4" />
-            {tx.whatsAppBtn}
-          </a>
         </div>
 
       </div>

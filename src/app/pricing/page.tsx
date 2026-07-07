@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { cookies } from 'next/headers'
-import { Check, X, Zap, Trophy, Star, ArrowRight, Building2 } from 'lucide-react'
+import { Check, X, Zap, Trophy, Star, ArrowRight, Building2, MessageCircle } from 'lucide-react'
+
+// Temporary: until the payment gateway goes live, paid plans route to WhatsApp
+// instead of the on-site checkout.
+const WA_LINK = 'https://wa.me/message/YHLE2IFII4MSJ1'
 import type { Metadata } from 'next'
 
 type Lang = 'ru' | 'kz' | 'en'
@@ -85,6 +89,7 @@ const T = {
     ctaGoPro: 'Перейти на Про',
     ctaGoEnterprise: 'Подключить Enterprise',
     ctaContactUs: 'Связаться с нами',
+    ctaWhatsApp: 'Оформить в WhatsApp',
     faqTitle: 'Частые вопросы',
     ctaTitle: 'Готовы провести турнир?',
     ctaSubtitle: 'Зарегистрируйтесь бесплатно и создайте первый турнир за 2 минуты.',
@@ -169,6 +174,7 @@ const T = {
     ctaGoPro: 'Про-ға өту',
     ctaGoEnterprise: 'ҚОСУ',
     ctaContactUs: 'Бізбен байланысу',
+    ctaWhatsApp: 'WhatsApp арқылы рәсімдеу',
     faqTitle: 'Жиі қойылатын сұрақтар',
     ctaTitle: 'Турнир өткізуге дайынсыз ба?',
     ctaSubtitle: 'Тегін тіркеліп, 2 минутта алғашқы турнирді жасаңыз.',
@@ -253,6 +259,7 @@ const T = {
     ctaGoPro: 'Go Pro',
     ctaGoEnterprise: 'Get Enterprise',
     ctaContactUs: 'Contact us',
+    ctaWhatsApp: 'Order via WhatsApp',
     faqTitle: 'Frequently asked questions',
     ctaTitle: 'Ready to run a tournament?',
     ctaSubtitle: 'Sign up for free and create your first tournament in 2 minutes.',
@@ -401,11 +408,13 @@ export default async function PricingPage() {
               </ul>
 
               <Link
-                href="/checkout"
+                href={WA_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 rounded-xl transition-colors text-sm shadow-md"
               >
-                {tx.ctaGoPro}
-                <ArrowRight className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4" />
+                {tx.ctaWhatsApp}
               </Link>
             </div>
 
@@ -436,11 +445,13 @@ export default async function PricingPage() {
               </ul>
 
               <Link
-                href="/checkout/enterprise"
+                href={WA_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl transition-colors text-sm"
               >
-                {tx.ctaGoEnterprise}
-                <ArrowRight className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4" />
+                {tx.ctaWhatsApp}
               </Link>
             </div>
 

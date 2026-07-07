@@ -16,6 +16,7 @@ import TournamentCoverPicker from './TournamentCoverPicker'
 import TournamentCoverBanner from './TournamentCoverBanner'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { createClient } from '@/lib/supabase/client'
+import { getCategoryForSport } from '@/lib/sports'
 import { tx, type Lang } from '@/lib/i18n'
 
 const TAB_CLASS = `inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold whitespace-nowrap
@@ -32,6 +33,10 @@ export default function SetupTab({
   lang?: Lang
 }) {
   const T = tx[lang]
+  // Combat sports use "участник/боец", not "команда".
+  const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
+  const participantsWord = { ru: 'Участники', kz: 'Қатысушылар', en: 'Participants' }[lang]
+  const participantPh = { ru: 'Имя участника', kz: 'Қатысушы аты', en: 'Participant name' }[lang]
   const FORMAT_LABEL: Record<string, string> = {
     round_robin:    T.fmtRoundRobin,
     playoff:        T.fmtPlayoff,
@@ -169,7 +174,7 @@ export default function SetupTab({
             <Sliders size={12} /> {T.setupTabRules}
           </TabsTrigger>
           <TabsTrigger value="teams" className={TAB_CLASS}>
-            <Users size={12} /> {T.setupTabTeams(teams.length)}
+            <Users size={12} /> {isCombat ? `${participantsWord} · ${teams.length}` : T.setupTabTeams(teams.length)}
           </TabsTrigger>
           {isOwner && (
             <TabsTrigger value="access" className={TAB_CLASS}>
@@ -349,7 +354,7 @@ export default function SetupTab({
             <Input
               value={teamName}
               onChange={e => setTeamName(e.target.value)}
-              placeholder={T.teamNamePh}
+              placeholder={isCombat ? participantPh : T.teamNamePh}
               maxLength={30}
             />
             <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>

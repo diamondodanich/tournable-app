@@ -848,9 +848,9 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                       return rows
                     })}
                   </ul>
-                  <Link href="/register?next=/checkout" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3 rounded-2xl transition-colors shadow-xl shadow-black/20 text-sm">
+                  <a href="https://wa.me/message/YHLE2IFII4MSJ1" target="_blank" rel="noopener noreferrer" className="block text-center bg-white text-emerald-700 hover:bg-emerald-50 font-black py-3 rounded-2xl transition-colors shadow-xl shadow-black/20 text-sm">
                     {tx.pricing.pro.cta}
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
@@ -906,13 +906,15 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                     return rows
                   })}
                 </ul>
-                <Link
-                  href="/checkout/enterprise"
+                <a
+                  href="https://wa.me/message/YHLE2IFII4MSJ1"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block text-center font-black py-3 rounded-2xl transition-colors text-white text-sm"
                   style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
                 >
                   {tx.pricing.enterprise.cta}
-                </Link>
+                </a>
               </div>
             </div>
 

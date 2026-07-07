@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { getUserPlan } from '@/app/actions/billing'
 import { Tournament } from '@/types'
 import Link from 'next/link'
-import { Plus, Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
+import { Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
 import DeleteTournamentButton from '@/components/tournament/DeleteTournamentButton'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import NewTournamentButton from '@/components/tournament/NewTournamentButton'
@@ -295,12 +295,6 @@ export default async function DashboardPage() {
               </div>
             )
           })}
-
-          <Link href="/dashboard/new" className="group">
-            <div className="h-full min-h-[90px] rounded-2xl border-2 border-dashed border-gray-200 group-hover:border-emerald-400 transition-colors flex items-center justify-center gap-1.5 text-gray-300 group-hover:text-emerald-500 font-bold text-sm p-5">
-              <Plus size={15} /> {tx.newTournament}
-            </div>
-          </Link>
         </div>
       )}
 

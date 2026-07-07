@@ -63,7 +63,11 @@ export default async function ChampionshipReportPage({ params }: { params: Promi
             <h1 className="text-2xl font-black text-gray-900">{league.name}</h1>
             <p className="text-sm text-gray-500 mt-1">{tx.title} · {new Date().toLocaleDateString(lang === 'kz' ? 'kk-KZ' : lang === 'en' ? 'en-US' : 'ru-RU')}</p>
           </div>
-          <span className="text-sm font-black tracking-tight" style={{ color: brand }}>TOURNABLE</span>
+          <span className="flex items-center gap-1.5 text-sm font-black tracking-tight" style={{ color: brand }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-green.png" alt="" width={18} height={18} className="w-[18px] h-[18px] object-contain" />
+            TOURNABLE
+          </span>
         </div>
 
         {/* Summary */}

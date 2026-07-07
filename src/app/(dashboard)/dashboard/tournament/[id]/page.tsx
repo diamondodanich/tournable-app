@@ -12,8 +12,21 @@ import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import { CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
-import { getSportTheme } from '@/lib/sports'
+import { getSportTheme, getCategoryForSport } from '@/lib/sports'
 import { tx, getLang } from '@/lib/i18n'
+
+// ── Exported-report i18n — the PDF report must render in the selected language ──
+const REPORT_DATE_LOCALE: Record<'ru' | 'kz' | 'en', string> = { ru: 'ru-RU', kz: 'kk-KZ', en: 'en-US' }
+const REPORT_STRINGS: Record<'ru' | 'kz' | 'en', {
+  fullReport: string; teams: (n: number) => string
+  standings: string; matrix: string; scorers: string; assists: string; yellow: string; red: string
+  groupStage: string; leagueStage: string; bracket: string; bracketOnly: string
+  goalsLbl: string; assistsLbl: string; ycLbl: string; rcLbl: string; noData: string
+}> = {
+  ru: { fullReport: 'Полный отчёт', teams: n => `${n} команд`, standings: 'Турнирная таблица', matrix: 'Матрица матчей', scorers: 'Бомбардиры', assists: 'Ассистенты', yellow: 'Жёлтые карточки', red: 'Красные карточки', groupStage: 'Групповой этап — таблицы', leagueStage: 'Этап лиги — таблица', bracket: 'Плей-офф — результаты сетки', bracketOnly: 'Результаты сетки', goalsLbl: 'Голы', assistsLbl: 'Ассисты', ycLbl: 'ЖК', rcLbl: 'КК', noData: 'Нет данных' },
+  kz: { fullReport: 'Толық есеп', teams: n => `${n} команда`, standings: 'Турнир кестесі', matrix: 'Матчтар матрицасы', scorers: 'Бомбардирлер', assists: 'Ассистенттер', yellow: 'Сары карточкалар', red: 'Қызыл карточкалар', groupStage: 'Топтық кезең — кестелер', leagueStage: 'Лига кезеңі — кесте', bracket: 'Плей-офф — сетка нәтижелері', bracketOnly: 'Сетка нәтижелері', goalsLbl: 'Голдар', assistsLbl: 'Ассисттер', ycLbl: 'СК', rcLbl: 'ҚК', noData: 'Деректер жоқ' },
+  en: { fullReport: 'Full report', teams: n => `${n} teams`, standings: 'Standings', matrix: 'Match matrix', scorers: 'Top scorers', assists: 'Assists', yellow: 'Yellow cards', red: 'Red cards', groupStage: 'Group stage — tables', leagueStage: 'League stage — table', bracket: 'Playoff — bracket results', bracketOnly: 'Bracket results', goalsLbl: 'Goals', assistsLbl: 'Assists', ycLbl: 'YC', rcLbl: 'RC', noData: 'No data' },
+}
 
 // ── Tab skeleton — shown while lazy JS chunk is loading ───────────────────
 function TabSkeleton() {
@@ -264,6 +277,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
   const cookieStore = await cookies()
   const lang = getLang(cookieStore.get('lang')?.value)
   const T = tx[lang]
+  const rt = REPORT_STRINGS[lang]
+  const reportLocale = REPORT_DATE_LOCALE[lang]
 
   const [{ data: { user } }, plan] = await Promise.all([
     supabase.auth.getUser(),
@@ -289,7 +304,11 @@ export default async function TournamentPage({ params, searchParams }: { params:
   const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || fmt === 'swiss' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
   const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss'                 // playoff, groups_playoff, league_playoff
-  const fixturesTabLabel = T.tabFixtures
+  // Combat sports (MMA/boxing/wrestling): fights, not matches; participants, not teams.
+  const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
+  const fixturesTabLabel = isCombat
+    ? (lang === 'en' ? 'Fights' : lang === 'kz' ? 'Жекпе-жектер' : 'Бои')
+    : T.tabFixtures
 
   const [{ data: teams }, { data: fixtures }, { data: playoffMatches }, { data: liveGame }, { data: membersRaw }, { data: seasonRow }] = await Promise.all([
     supabase.from('teams').select('*').eq('tournament_id', id).order('created_at'),
@@ -501,17 +520,21 @@ export default async function TournamentPage({ params, searchParams }: { params:
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: '22px', fontWeight: 800, color: '#111827', margin: 0 }}>{tournament.name}</p>
             <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-              Полный отчёт · {new Date().toLocaleDateString('ru-RU')} · {t.length} команд
+              {rt.fullReport} · {new Date().toLocaleDateString(reportLocale)} · {rt.teams(t.length)}
             </p>
           </div>
-          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '-0.02em', color: sportTheme.primary, flexShrink: 0 }}>TOURNABLE</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexShrink: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-green.png" alt="" width={20} height={20} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+            <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '-0.02em', color: sportTheme.primary }}>TOURNABLE</span>
+          </div>
         </div>
 
         {isRoundRobin ? (
           <>
             {/* 1. Standings */}
             <div style={s1}>
-              <p style={{ ...s1.header, color: '#059669' }}>1. Турнирная таблица</p>
+              <p style={{ ...s1.header, color: '#059669' }}>1. {rt.standings}</p>
               <div style={s1.box}>
                 <StandingsTable teams={t} fixtures={f}
                   pointsWin={tournament.points_win} pointsDraw={tournament.points_draw} pointsLoss={tournament.points_loss} />
@@ -521,7 +544,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
             {/* 2. Results matrix */}
             {t.length >= 2 && (
               <div style={s2}>
-                <p style={{ ...s2.header, color: '#059669' }}>2. Матрица результатов</p>
+                <p style={{ ...s2.header, color: '#059669' }}>2. {rt.matrix}</p>
                 <div style={{ ...s2.box, padding: '12px' }}>
                   <ResultsMatrix teams={t} fixtures={f} />
                 </div>
@@ -530,33 +553,33 @@ export default async function TournamentPage({ params, searchParams }: { params:
 
             {/* 3. Goals */}
             <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>3. Бомбардиры</p>
+              <p style={{ ...s3.header, color: '#059669' }}>3. {rt.scorers}</p>
               <div style={s3.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="goal" label="Голы" accent="#059669" />
+                <ExportStatsTable teams={t} events={allEvents} type="goal" label={rt.goalsLbl} accent="#059669" />
               </div>
             </div>
 
             {/* 4. Assists */}
             <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>4. Ассистенты</p>
+              <p style={{ ...s4.header, color: '#d97706' }}>4. {rt.assists}</p>
               <div style={s4.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="assist" label="Ассисты" accent="#2563eb" />
+                <ExportStatsTable teams={t} events={allEvents} type="assist" label={rt.assistsLbl} accent="#2563eb" />
               </div>
             </div>
 
             {/* 5. Yellow cards */}
             <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>5. Жёлтые карточки</p>
+              <p style={{ ...s5.header, color: '#d97706' }}>5. {rt.yellow}</p>
               <div style={s5.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label="ЖК" accent="#d97706" />
+                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label={rt.ycLbl} accent="#d97706" />
               </div>
             </div>
 
             {/* 6. Red cards */}
             <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s6.header, color: '#dc2626' }}>6. Красные карточки</p>
+              <p style={{ ...s6.header, color: '#dc2626' }}>6. {rt.red}</p>
               <div style={s6.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="red_card" label="КК" accent="#dc2626" />
+                <ExportStatsTable teams={t} events={allEvents} type="red_card" label={rt.rcLbl} accent="#dc2626" />
               </div>
             </div>
           </>
@@ -565,7 +588,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
             {/* groups_playoff: group stage standings */}
             {fmt === 'groups_playoff' && (
               <div style={s1}>
-                <p style={{ ...s1.header, color: '#059669' }}>1. Групповой этап — таблицы</p>
+                <p style={{ ...s1.header, color: '#059669' }}>1. {rt.groupStage}</p>
                 <div style={{ ...s1.box, padding: '12px' }}>
                   <ExportGroupStandings
                     teams={t}
@@ -581,7 +604,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
             {/* league_playoff: league stage standings */}
             {fmt === 'league_playoff' && (
               <div style={s1}>
-                <p style={{ ...s1.header, color: '#059669' }}>1. Этап лиги — таблица</p>
+                <p style={{ ...s1.header, color: '#059669' }}>1. {rt.leagueStage}</p>
                 <div style={s1.box}>
                   <ExportLeagueStandings
                     teams={t}
@@ -597,9 +620,9 @@ export default async function TournamentPage({ params, searchParams }: { params:
             {/* Bracket */}
             <div style={s2}>
               <p style={{ ...s2.header, color: '#059669' }}>
-                {fmt === 'groups_playoff' ? '2. Плей-офф — результаты сетки' :
-                 fmt === 'league_playoff' ? '2. Плей-офф — результаты сетки' :
-                 '1. Результаты сетки'}
+                {fmt === 'groups_playoff' ? `2. ${rt.bracket}` :
+                 fmt === 'league_playoff' ? `2. ${rt.bracket}` :
+                 `1. ${rt.bracketOnly}`}
               </p>
               <div style={{ ...s2.box, padding: '12px' }}>
                 <ExportBracket teams={t} matches={pm} />
@@ -609,40 +632,40 @@ export default async function TournamentPage({ params, searchParams }: { params:
             {/* Goals */}
             <div style={s3}>
               <p style={{ ...s3.header, color: '#059669' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? '3. Бомбардиры' : '2. Бомбардиры'}
+                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `3. ${rt.scorers}` : `2. ${rt.scorers}`}
               </p>
               <div style={s3.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="goal" label="Голы" accent="#059669" />
+                <ExportStatsTable teams={t} events={allEvents} type="goal" label={rt.goalsLbl} accent="#059669" />
               </div>
             </div>
 
             {/* Assists */}
             <div style={s4}>
               <p style={{ ...s4.header, color: '#d97706' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? '4. Ассистенты' : '3. Ассистенты'}
+                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `4. ${rt.assists}` : `3. ${rt.assists}`}
               </p>
               <div style={s4.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="assist" label="Ассисты" accent="#2563eb" />
+                <ExportStatsTable teams={t} events={allEvents} type="assist" label={rt.assistsLbl} accent="#2563eb" />
               </div>
             </div>
 
             {/* Yellow cards */}
             <div style={s5}>
               <p style={{ ...s5.header, color: '#d97706' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? '5. Жёлтые карточки' : '4. Жёлтые карточки'}
+                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `5. ${rt.yellow}` : `4. ${rt.yellow}`}
               </p>
               <div style={s5.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label="ЖК" accent="#d97706" />
+                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label={rt.ycLbl} accent="#d97706" />
               </div>
             </div>
 
             {/* Red cards */}
             <div style={{ marginBottom: 0 }}>
               <p style={{ ...s7.header, color: '#dc2626' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? '6. Красные карточки' : '5. Красные карточки'}
+                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `6. ${rt.red}` : `5. ${rt.red}`}
               </p>
               <div style={s7.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="red_card" label="КК" accent="#dc2626" />
+                <ExportStatsTable teams={t} events={allEvents} type="red_card" label={rt.rcLbl} accent="#dc2626" />
               </div>
             </div>
           </>

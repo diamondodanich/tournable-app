@@ -14,6 +14,7 @@ import LineupEditor from './LineupEditor'
 import SquadEditor from '@/components/championship/SquadEditor'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
+import { getCategoryForSport } from '@/lib/sports'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/client'
 
@@ -429,7 +430,9 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           disabled={starting}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md">
           {starting ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-          {starting ? T.btnStarting : T.btnStartMatch}
+          {starting ? T.btnStarting : (getCategoryForSport(sport ?? '')?.id === 'combat'
+            ? ({ ru: 'Начать бой', kz: 'Жекпе-жекті бастау', en: 'Start fight' }[lang])
+            : T.btnStartMatch)}
         </button>
       </div>
     )

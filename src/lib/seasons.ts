@@ -78,13 +78,21 @@ export function seasonName(period: SeasonPeriod, anchorISO: string, index: numbe
   }
 }
 
-/** Options for the championship-creation periodicity picker. */
-export const SEASON_PERIOD_OPTIONS: { value: SeasonPeriod; label: Record<Lang, string>; example: (lang: Lang) => string }[] = [
-  { value: 'seasonal',    label: { ru: 'Сезонная', kz: 'Маусымдық', en: 'Seasonal' },     example: () => '2025/2026' },
-  { value: 'yearly',      label: { ru: 'Ежегодная', kz: 'Жылдық', en: 'Yearly' },          example: () => '2026' },
-  { value: 'monthly',     label: { ru: 'Ежемесячная', kz: 'Айлық', en: 'Monthly' },        example: l => `${MONTHS_NOM[l][0]} 2026` },
-  { value: 'quarterly',   label: { ru: 'Квартальная', kz: 'Тоқсандық', en: 'Quarterly' },  example: l => `I ${QUARTER_WORD[l]} 2026` },
-  { value: 'weekly',      label: { ru: 'Еженедельная', kz: 'Апталық', en: 'Weekly' },       example: l => `${WEEK_WORD[l]} 1` },
-  { value: 'daily_index', label: { ru: 'Ежедневная (День N)', kz: 'Күнделікті (Күн N)', en: 'Daily (Day N)' }, example: l => `${DAY_WORD[l]} 1` },
-  { value: 'daily_date',  label: { ru: 'Ежедневная (дата)', kz: 'Күнделікті (күн)', en: 'Daily (date)' }, example: l => `1 ${MONTHS_GEN[l][8]} 2025` },
+/** Options for the championship-creation periodicity picker.
+ * Examples are derived from the CURRENT date via the same naming engine, so they
+ * never go stale (e.g. "Сезонная" always shows the live current/next-year pair). */
+const SEASON_PERIOD_META: { value: SeasonPeriod; label: Record<Lang, string> }[] = [
+  { value: 'seasonal',    label: { ru: 'Сезонная', kz: 'Маусымдық', en: 'Seasonal' } },
+  { value: 'yearly',      label: { ru: 'Ежегодная', kz: 'Жылдық', en: 'Yearly' } },
+  { value: 'monthly',     label: { ru: 'Ежемесячная', kz: 'Айлық', en: 'Monthly' } },
+  { value: 'quarterly',   label: { ru: 'Квартальная', kz: 'Тоқсандық', en: 'Quarterly' } },
+  { value: 'weekly',      label: { ru: 'Еженедельная', kz: 'Апталық', en: 'Weekly' } },
+  { value: 'daily_index', label: { ru: 'Ежедневная (День N)', kz: 'Күнделікті (Күн N)', en: 'Daily (Day N)' } },
+  { value: 'daily_date',  label: { ru: 'Ежедневная (дата)', kz: 'Күнделікті (күн)', en: 'Daily (date)' } },
 ]
+
+export const SEASON_PERIOD_OPTIONS: { value: SeasonPeriod; label: Record<Lang, string>; example: (lang: Lang) => string }[] =
+  SEASON_PERIOD_META.map(m => ({
+    ...m,
+    example: (lang: Lang) => seasonName(m.value, new Date().toISOString(), 0, lang),
+  }))

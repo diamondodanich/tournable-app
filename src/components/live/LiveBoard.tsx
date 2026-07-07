@@ -6,7 +6,7 @@ import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch, initLiveGame, patchLiveGame } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus } from 'lucide-react'
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus, Minus } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { AssistIcon } from '@/components/ui/SportIcon'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { APP_URL } from '@/lib/appUrl'
 import { useFeedback } from '@/hooks/useFeedback'
-import { getSportTheme } from '@/lib/sports'
+import { getSportTheme, getCategoryForSport } from '@/lib/sports'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -130,10 +130,18 @@ export default function LiveBoard({
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const gameRef    = useRef<LiveGame | null>(initialGame)
   const timeUpRef  = useRef(false)
+  const warnRef    = useRef(false)
   gameRef.current  = game
+
+  // ── Combat sports (MMA/boxing/wrestling): rounds + count-down round timer,
+  // no football events (goals/cards/assists). ────────────────────────────────
+  const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
 
   // Total match duration in seconds based on tournament settings
   const totalDurationSecs = (tournament.match_periods ?? 2) * (tournament.match_duration_mins ?? 45) * 60
+  // Combat counts DOWN per round; ball sports count UP across the whole match.
+  const roundDurationSecs = (tournament.match_duration_mins ?? 5) * 60
+  const timeLimitSecs = isCombat ? roundDurationSecs : totalDurationSecs
 
   // ── Realtime: live_games ──────────────────────────────────────────────────
   useEffect(() => {
@@ -197,17 +205,25 @@ export default function LiveBoard({
         setDisplaySecs(secs)
 
         // Auto-detect time up (only for owner, only fire once)
-        if (isOwner && secs >= totalDurationSecs && !timeUpRef.current) {
+        if (isOwner && secs >= timeLimitSecs && !timeUpRef.current) {
           timeUpRef.current = true
           setIsTimeUp(true)
           feedback.timeUp()
+        }
+        // Combat: warn 10 seconds before the round ends
+        if (isCombat && isOwner) {
+          const remaining = timeLimitSecs - secs
+          if (remaining <= 10 && remaining > 0 && !warnRef.current) {
+            warnRef.current = true
+            feedback.timeUp()
+          }
         }
       }, 200)
     } else {
       setDisplaySecs(game?.accumulated_secs ?? 0)
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [game?.timer_running, game?.accumulated_secs, game?.started_at, isOwner, totalDurationSecs])
+  }, [game?.timer_running, game?.accumulated_secs, game?.started_at, isOwner, timeLimitSecs, isCombat])
 
   // ── beforeunload — only while match is in progress ────────────────────────
   useEffect(() => {
@@ -289,6 +305,7 @@ export default function LiveBoard({
     setGame(prev => prev ? { ...prev, ...patch } : prev)
     setDisplaySecs(0)
     timeUpRef.current = false
+    warnRef.current = false
     setIsTimeUp(false)
     patchGame(patch)
   }
@@ -296,7 +313,28 @@ export default function LiveBoard({
   function handlePeriod(p: string) {
     if (!game) return
     setGame(prev => prev ? { ...prev, period: p } : prev)
+    // Combat: each round runs its own count-down, so re-arm the timer on round change.
+    if (isCombat) {
+      const patch = { timer_running: false, accumulated_secs: 0, started_at: null as string | null, period: p }
+      setGame(prev => prev ? { ...prev, ...patch } : prev)
+      setDisplaySecs(0)
+      timeUpRef.current = false
+      warnRef.current = false
+      setIsTimeUp(false)
+      patchGame(patch)
+      return
+    }
     patchGame({ period: p })
+  }
+
+  // Combat scoring: manual +/- per fighter (no goal events)
+  function bumpScore(sideKey: 'home' | 'away', delta: number) {
+    if (!game) return
+    const patch: Partial<LiveGame> = sideKey === 'home'
+      ? { home_score: Math.max(0, game.home_score + delta) }
+      : { away_score: Math.max(0, game.away_score + delta) }
+    setGame(prev => prev ? { ...prev, ...patch } : prev)
+    patchGame(patch)
   }
 
   // ── Submit event (unified) ────────────────────────────────────────────────
@@ -509,8 +547,6 @@ export default function LiveBoard({
   }, [side, homeTeam?.name, awayTeam?.name]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const currentPeriodLabel = PERIODS.find(p => p.value === game?.period)?.label ?? ''
-
   const homeEvents  = events.filter(e => e.team_id === game?.home_team_id)
   const awayEvents  = events.filter(e => e.team_id === game?.away_team_id)
   const homeStrip   = homeEvents.filter(e => e.type !== 'assist').sort((a, b) => (a.minute ?? 999) - (b.minute ?? 999))
@@ -525,11 +561,19 @@ export default function LiveBoard({
   const hasEvents  = events.length > 0
   const hasFixture = !!(game?.fixture_id ?? game?.playoff_match_id ?? defaultFixtureId ?? defaultPlayoffMatchId)
 
-  // Period tabs filtered by tournament settings
-  const activePeriods = PERIODS.filter(p => {
-    if (p.value === 'ot') return tournament.extra_time ?? false
-    return parseInt(p.value) <= (tournament.match_periods ?? 2)
-  })
+  // Period/round tabs. Combat shows N rounds; ball sports show halves/quarters + OT.
+  const activePeriods = isCombat
+    ? Array.from({ length: tournament.match_periods ?? 3 }, (_, i) => ({ value: String(i + 1), label: `Раунд ${i + 1}` }))
+    : PERIODS.filter(p => {
+        if (p.value === 'ot') return tournament.extra_time ?? false
+        return parseInt(p.value) <= (tournament.match_periods ?? 2)
+      })
+  const currentPeriodLabel = activePeriods.find(p => p.value === game?.period)?.label ?? ''
+
+  // Combat count-down: seconds remaining in the current round.
+  const remainingSecs = Math.max(0, timeLimitSecs - displaySecs)
+  const timerText = isCombat ? formatTime(remainingSecs) : formatTime(displaySecs)
+  const timerDanger = isCombat && !!game?.timer_running && remainingSecs <= 10
 
   // Current timer minute for auto-minute placeholder
   const currentMinute = Math.floor(displaySecs / 60)
@@ -542,7 +586,7 @@ export default function LiveBoard({
         <div className="text-center space-y-6 max-w-sm w-full">
           <CheckCircle2 size={56} className="text-emerald-400 mx-auto" />
           <div>
-            <p className="text-white font-black text-2xl mb-1">Матч завершён</p>
+            <p className="text-white font-black text-2xl mb-1">{isCombat ? 'Бой завершён' : 'Матч завершён'}</p>
             <p className="text-gray-400 text-sm">Результат сохранён в турнире</p>
           </div>
           <div className="bg-gray-900 rounded-2xl p-6 flex items-center justify-center gap-6">
@@ -680,7 +724,9 @@ export default function LiveBoard({
             <div className="flex items-center gap-2">
               <AlertTriangle size={15} className="text-amber-400 shrink-0" />
               <p className="text-amber-300 text-xs font-bold">
-                Время вышло ({tournament.match_periods ?? 2}×{tournament.match_duration_mins ?? 45} мин)
+                {isCombat
+                  ? `Раунд окончен (${tournament.match_duration_mins ?? 5} мин)`
+                  : `Время вышло (${tournament.match_periods ?? 2}×${tournament.match_duration_mins ?? 45} мин)`}
               </p>
             </div>
             <button
@@ -743,12 +789,30 @@ export default function LiveBoard({
           </div>
         </div>
 
+        {/* Combat: manual +/- scoring per fighter (no goal events) */}
+        {isCombat && isOwner && (
+          <div className="flex items-stretch justify-center gap-10 mt-3">
+            {(['home', 'away'] as const).map(sk => (
+              <div key={sk} className="flex items-center gap-2">
+                <button onClick={() => bumpScore(sk, -1)}
+                  className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 flex items-center justify-center transition-colors">
+                  <Minus size={14} />
+                </button>
+                <button onClick={() => bumpScore(sk, 1)}
+                  className="w-8 h-8 rounded-full bg-[var(--lbd)] hover:bg-[var(--lb)] text-white flex items-center justify-center transition-colors">
+                  <Plus size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Timer + period + controls row */}
         <div className="flex items-center justify-center gap-3 mt-4">
           <span className={`font-mono font-black tabular-nums ${
-            game.timer_running ? 'text-[var(--lb)]' : 'text-gray-600'
+            timerDanger ? 'text-red-500 animate-pulse' : game.timer_running ? 'text-[var(--lb)]' : 'text-gray-600'
           } ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>
-            {formatTime(displaySecs)}
+            {timerText}
           </span>
           <span className="text-gray-600 text-[11px] font-bold uppercase tracking-wider">
             {currentPeriodLabel}
@@ -778,7 +842,7 @@ export default function LiveBoard({
 
       {/* ── Events strip — gets all remaining space, scrollable ──────────── */}
       <div className="flex-1 min-h-0 mx-4 mb-2 overflow-y-auto scrollbar-hide">
-        {hasEvents && (
+        {!isCombat && hasEvents && (
           <div className="bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
 
@@ -846,6 +910,8 @@ export default function LiveBoard({
         <div className="shrink-0 px-4 pb-4 flex gap-2">
           {hasFixture && (() => {
             const matchStarted = game.accumulated_secs > 0 || game.timer_running
+            // Combat has no goal/card events → skip the "Событие" button once started.
+            if (matchStarted && isCombat) return null
             return matchStarted ? (
               <button
                 onClick={() => setShowForm(true)}
@@ -877,11 +943,11 @@ export default function LiveBoard({
       {showFinishConfirm && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <p className="text-white font-black text-xl mb-1">Завершить матч?</p>
+            <p className="text-white font-black text-xl mb-1">{isCombat ? 'Завершить бой?' : 'Завершить матч?'}</p>
             <p className="text-gray-400 text-sm mb-6">
               Результат{' '}
               <span className="text-white font-bold">{game.home_score} : {game.away_score}</span>{' '}
-              и все события будут сохранены в турнире.
+              {isCombat ? 'будет сохранён в турнире.' : 'и все события будут сохранены в турнире.'}
             </p>
             <div className="flex gap-3">
               <button
@@ -895,7 +961,7 @@ export default function LiveBoard({
                 disabled={finishing}
                 className="flex-1 py-2.5 rounded-xl bg-[var(--lb)] hover:bg-[var(--lbd)] text-white text-sm font-bold transition-colors disabled:opacity-50"
               >
-                {finishing ? 'Сохраняем…' : 'Сохранить и завершить'}
+                {finishing ? 'Сохраняем…' : 'Завершить'}
               </button>
             </div>
           </div>

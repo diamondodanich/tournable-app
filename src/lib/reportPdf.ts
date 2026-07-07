@@ -26,12 +26,13 @@ export function saveImageAsPdf(
   if (!isPro) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyPdf = pdf as any
-    try { anyPdf.setGState(anyPdf.GState({ opacity: 0.07 })) } catch {}
+    // Softer, sparser watermark than before (0.07 → 0.04, wider spacing).
+    try { anyPdf.setGState(anyPdf.GState({ opacity: 0.04 })) } catch {}
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(17, 24, 39)
-    pdf.setFontSize(26)
-    const stepX = 78
-    const stepY = 52
+    pdf.setFontSize(24)
+    const stepX = 92
+    const stepY = 64
     for (let y = 6; y < pageH + stepY; y += stepY) {
       for (let x = -12; x < pageW; x += stepX) {
         pdf.text('TOURNABLE', x, y, { angle: 28 })

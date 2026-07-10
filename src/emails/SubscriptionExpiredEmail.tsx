@@ -11,7 +11,7 @@ export default function SubscriptionExpiredEmail({ appUrl }: Props) {
   return (
     <Html lang="ru">
       <Head />
-      <Preview>Р’Р°С€Р° РїРѕРґРїРёСЃРєР° Tournable Pro РёСЃС‚РµРєР»Р° вЂ” РІР°С€Рё РґР°РЅРЅС‹Рµ РІ СЃРѕС…СЂР°РЅРЅРѕСЃС‚Рё</Preview>
+      <Preview>Ваша подписка Tournable Pro истекла — ваши данные в сохранности</Preview>
       <Body style={body}>
         <Container style={container}>
 
@@ -31,28 +31,28 @@ export default function SubscriptionExpiredEmail({ appUrl }: Props) {
           </Section>
 
           <Section style={contentSection}>
-            <Heading style={h1}>РџРѕРґРїРёСЃРєР° Pro РёСЃС‚РµРєР»Р°</Heading>
+            <Heading style={h1}>Подписка Pro истекла</Heading>
 
             <Text style={paragraph}>
-              Р’Р°С€ Р°РєРєР°СѓРЅС‚ РїРµСЂРµРІРµРґС‘РЅ РЅР° Р±РµСЃРїР»Р°С‚РЅС‹Р№ РїР»Р°РЅ. Р’СЃРµ РІР°С€Рё С‚СѓСЂРЅРёСЂС‹,
-              РєРѕРјР°РЅРґС‹ Рё СЂРµР·СѓР»СЊС‚Р°С‚С‹ РјР°С‚С‡РµР№ <strong>СЃРѕС…СЂР°РЅРµРЅС‹</strong> Рё РґРѕСЃС‚СѓРїРЅС‹ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР°.
+              Ваш аккаунт переведён на бесплатный план. Все ваши турниры,
+              команды и результаты матчей <strong>сохранены</strong> и доступны для просмотра.
             </Text>
 
             <Section style={infoBox}>
-              <Text style={infoTitle}>Р§С‚Рѕ РёР·РјРµРЅРёР»РѕСЃСЊ:</Text>
-              <Text style={infoItem}>вЂ” РЎРѕР·РґР°РЅРёРµ РЅРѕРІС‹С… С‚СѓСЂРЅРёСЂРѕРІ РѕРіСЂР°РЅРёС‡РµРЅРѕ РґРѕ 3</Text>
-              <Text style={infoItem}>вЂ” Р¤РѕСЂРјР°С‚С‹ Р›РёРіР° Рё Р“СЂСѓРїРїС‹ РЅРµРґРѕСЃС‚СѓРїРЅС‹ РґР»СЏ РЅРѕРІС‹С…</Text>
-              <Text style={infoItem}>вЂ” LIVE-СЂРµР¶РёРј Рё СЌРєСЃРїРѕСЂС‚ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅС‹</Text>
+              <Text style={infoTitle}>Что изменилось:</Text>
+              <Text style={infoItem}>— Создание новых турниров ограничено до 1</Text>
+              <Text style={infoItem}>— Форматы Лига и Группы недоступны для новых</Text>
+              <Text style={infoItem}>— Табло и экспорт заблокированы</Text>
             </Section>
 
             <Text style={paragraphSmall}>
-              Р’СЃРµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ С‚СѓСЂРЅРёСЂС‹ РѕСЃС‚Р°СЋС‚СЃСЏ РґРѕСЃС‚СѓРїРЅС‹РјРё вЂ” РІС‹ РјРѕР¶РµС‚Рµ
-              РїСЂРѕСЃРјР°С‚СЂРёРІР°С‚СЊ Рё СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РёС… Р±РµР· РѕРіСЂР°РЅРёС‡РµРЅРёР№.
+              Все существующие турниры остаются доступными — вы можете
+              просматривать и редактировать их без ограничений.
             </Text>
 
             <Section style={{ textAlign: 'center', margin: '32px 0' }}>
               <Button href={`${appUrl}/checkout`} style={button}>
-                Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ Pro
+                Восстановить Pro
               </Button>
             </Section>
           </Section>
@@ -60,7 +60,7 @@ export default function SubscriptionExpiredEmail({ appUrl }: Props) {
           <Hr style={hr} />
 
           <Text style={footer}>
-            Р•СЃС‚СЊ РІРѕРїСЂРѕСЃС‹? РќР°РїРёС€РёС‚Рµ РЅР°Рј РЅР°{' '}
+            Есть вопросы? Напишите нам на{' '}
             <a href="mailto:info@tournable.app" style={link}>info@tournable.app</a>.
           </Text>
         </Container>

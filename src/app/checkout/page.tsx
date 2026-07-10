@@ -27,7 +27,7 @@ const T = {
 
 export const metadata: Metadata = {
   title: 'Оформление Про — Tournable',
-  description: 'Перейдите на тариф Про и получите неограниченные турниры, Live-табло и до 64 команд.',
+  description: 'Перейдите на тариф Про и получите неограниченные турниры, Табло и до 64 команд.',
 }
 
 export default async function CheckoutPage() {

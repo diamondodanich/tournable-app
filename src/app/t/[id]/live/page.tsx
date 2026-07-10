@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase.from('tournaments').select('name').eq('id', id).single()
-  return { title: data ? `Live — ${data.name}` : 'Live' }
+  return { title: data ? `Табло — ${data.name}` : 'Табло' }
 }
 
 export default async function LivePage({
@@ -67,7 +67,7 @@ export default async function LivePage({
   return (
     <div className="h-[100dvh] bg-gray-950 flex flex-col overflow-hidden">
       <header className="bg-gray-900 border-b border-gray-800 px-4 h-12 flex items-center justify-between shrink-0">
-        <span className="text-sm font-black tracking-tight text-emerald-400">TOURNABLE LIVE</span>
+        <span className="text-sm font-black tracking-tight text-emerald-400">TOURNABLE ТАБЛО</span>
         <span className="text-xs text-gray-500 truncate max-w-[60%] text-right">{tournament.name}</span>
       </header>
       <main className="flex-1 flex flex-col min-h-0">

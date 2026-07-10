@@ -446,12 +446,12 @@ export default function LiveBoard({
         toast.error(error.message)
       } else {
         feedback.card()
-        // One-time hint: share Live-табло (shown only on first event ever)
+        // One-time hint: share the scoreboard (shown only on first event ever)
         const HINT_KEY = 'live-share-hint-shown'
         if (!localStorage.getItem(HINT_KEY)) {
           localStorage.setItem(HINT_KEY, '1')
           const shareUrl = `${APP_URL}/t/${tournament.id}`
-          toast.info('Поделитесь Live-табло — участники смогут следить в реальном времени', {
+          toast.info('Поделитесь табло — участники смогут следить в реальном времени', {
             action: {
               label: 'Поделиться',
               onClick: async () => {

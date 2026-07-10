@@ -338,7 +338,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         <div className="mt-10 bg-emerald-600 rounded-2xl p-6 text-center text-white">
           <Trophy size={28} className="mx-auto mb-3 opacity-80" />
           <p className="font-black text-lg mb-1">Организуй свой турнир бесплатно</p>
-          <p className="text-sm text-emerald-100 mb-5">Всё включено: расписание, таблица, Live-счёт</p>
+          <p className="text-sm text-emerald-100 mb-5">Всё включено: расписание, таблица, табло</p>
           <Link
             href="/register"
             className="inline-flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 font-bold px-6 py-2.5 rounded-xl shadow-md transition-colors text-sm"

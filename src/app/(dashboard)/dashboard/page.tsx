@@ -94,7 +94,7 @@ const T = {
     active: 'Active',
     setup: 'Setup',
     features: [
-      { title: 'Live scoreboard', desc: 'Track matches in real time from your phone' },
+      { title: 'Online scoreboard', desc: 'Track matches in real time from your phone' },
       { title: 'Tables & stats',  desc: 'Standings and top scorers update automatically' },
       { title: 'Share',           desc: 'Send a link — no sign-up needed for viewers' },
     ],

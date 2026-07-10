@@ -22,7 +22,7 @@ const T = {
     features: [
       'Неограниченные турниры',
       'До 64 команд в турнире',
-      'Live-табло в реальном времени',
+      'Табло в реальном времени',
       'До 3 соредакторов',
       'Все форматы (круговой, плей-офф, групповой)',
       'Экспорт PDF и PNG',
@@ -59,7 +59,7 @@ const T = {
     features: [
       'Шектеусіз турнирлер',
       'Турнирде 64 командаға дейін',
-      'Нақты уақыттағы Live-табло',
+      'Нақты уақыттағы табло',
       '3 бірлескен редакторға дейін',
       'Барлық форматтар (дөңгелек, плей-офф, топтық)',
       'PDF және PNG экспорты',
@@ -96,7 +96,7 @@ const T = {
     features: [
       'Unlimited tournaments',
       'Up to 64 teams per tournament',
-      'Real-time live scoreboard',
+      'Real-time scoreboard',
       'Up to 3 co-editors',
       'All formats (round robin, playoff, groups)',
       'PDF and PNG export',

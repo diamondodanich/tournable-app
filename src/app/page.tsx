@@ -11,7 +11,7 @@ const JSON_LD = {
   operatingSystem: 'Web',
   inLanguage: ['ru', 'kk', 'en'],
   description:
-    'Сервис для создания турниров онлайн: автоматическое расписание, турнирная таблица, плей-офф, статистика игроков и Live-табло.',
+    'Сервис для создания турниров онлайн: автоматическое расписание, турнирная таблица, плей-офф, статистика игроков и табло.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'KZT' },
   publisher: { '@type': 'Organization', name: 'Tournable', url: APP_URL },
 }

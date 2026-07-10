@@ -163,6 +163,9 @@ Additional (in Vercel, not needed locally for basic dev):
 - CardPaymentForm.tsx: consent text on payment
 - Продление РУЧНОЕ (2026-07-03): terms п.4.2 откачен на «Продление осуществляется Пользователем самостоятельно». Cron шлёт письмо за 3 дня до истечения (`sendSubscriptionExpiringEmail`, кнопка «Продлить подписку» → `/checkout`), затем downgrade на Free через `deactivate_expired_subscriptions`
 
+## UI wording — no "Live" / no betting-adjacent terms (2026-07-03)
+Removed "Live-табло"/"LIVE-режим"/"Live scoreboard" etc. across the entire UI (landing, dashboard, emails, checkout, tour, FAQ) — replaced with plain "Табло"/"Scoreboard". Reason: suspected trigger for TipTop Pay's gambling-suspicion rejection — "live" + sports + real-time score is a common in-play betting profile for AML keyword scanners. Also fixed a pre-existing CP1251-as-UTF8 mojibake bug in `src/emails/SubscriptionExpiredEmail.tsx` (entire email was unreadable garbage) while touching that file, and corrected a stale "до 3 турниров" to "до 1" (free plan limit) found in the same broken text. Search tags in SupportWidget.tsx FAQ (internal keyword matching, not displayed) still include "live"/"лайв" — intentionally left, users may still type that when searching for help.
+
 ## Recurring payments — built, tested, currently NOT used
 - TipTop Pay отказал в подключении (заявка отклонена внутренней проверкой, без объяснения причины, спор из-за возврата 20 000 ₸ в процессе) — переходим на FreedomPay
 - FreedomPay recurring = «безакцептные платежи» = списание БЕЗ 3D Secure (не как у TipTop — там рекуррент шёл поверх 3DS). Это осознанно отклонено (2026-07-03): при нулевом обороте и отсутствии истории антифрода риск чарджбэков/штрафов MPS, полностью ложащийся на мерчанта по их допсоглашению, не оправдан. FreedomPay terminal будет со стандартным 3DS, вручную подтверждено менеджером

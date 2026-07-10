@@ -97,7 +97,7 @@ Values in `tournaments.sport` column:
 - Webhook: `src/app/api/webhooks/tiptoppay/route.ts` — verifies `Content-HMAC`/`X-Content-HMAC` header (`HMAC-SHA256(rawBody, ApiSecret)`, UTF8, base64), responds `{"code":0}` — field names (`TransactionId`, `AccountId`, `InvoiceId`, `SubscriptionId`, `Data`) and response format confirmed word-for-word against the official TipTop Pay doc (2026-07-01), not inferred from CloudPayments
 - Subscriptions `source` value: `'cloudpayments'` (already allowed by the original 011 migration's check constraint — no new constraint needed)
 - RPC: `record_cloudpayments_subscription` (migration 023) — mirrors `record_freedompay_subscription`, used by `activateProAfterPayment`/`activateEnterpriseAfterPayment` when called with `source: 'cloudpayments'`
-- Recurring payments WIRED (2026-07-02): widget passes `recurrent: { interval: 'Month', period: 1|12 }` + `userInfo.accountId` (обязателен для рекуррента). Every payment creates an auto-renewing subscription
+- Recurring payments WIRED but CURRENTLY UNUSED (2026-07-02): widget passes `recurrent: { interval: 'Month', period: 1|12 }` + `userInfo.accountId` (обязателен для рекуррента). Code kept intact for future reactivation — see "Recurring payments — currently disabled" section below for why
 - Recurring charges may arrive without Data metadata → webhook falls back to amount→plan mapping (4990/44990/39990/349990 are pairwise distinct). SubscriptionId stored in subscriptions.subscription_id (migration 024 — НЕ применена, выполнить в Supabase!)
 - `cancelSubscription()` (billing.ts): cancels via POST api.tiptoppay.kz/subscriptions/cancel (Basic auth PublicId:ApiSecret), access stays until plan_expires_at (cron downgrades); fallback для ручных выдач — немедленный free
 - Terms 4.2/4.2.1/4.2.2 updated for auto-renewal (было «продление самостоятельно» — БЫЛО НЕВЕРНО для рекуррента)
@@ -161,12 +161,19 @@ Additional (in Vercel, not needed locally for basic dev):
 - `/privacy` → `src/app/privacy/page.tsx` — Политика конфиденциальности (FreedomPay + Resend как субподрядчики)
 - RegisterForm.tsx: consent text on registration (3 languages)
 - CardPaymentForm.tsx: consent text on payment
-- Auto-renewal via TipTop Pay recurrent (since 2026-07-02). Cron still downgrades to Free after plan_expires_at — срабатывает только если подписка отменена/списание не прошло (иначе Pay-уведомление продлит план раньше)
+- Продление РУЧНОЕ (2026-07-03): terms п.4.2 откачен на «Продление осуществляется Пользователем самостоятельно». Cron шлёт письмо за 3 дня до истечения (`sendSubscriptionExpiringEmail`, кнопка «Продлить подписку» → `/checkout`), затем downgrade на Free через `deactivate_expired_subscriptions`
 
-## Pending Tasks (as of 2026-07-01)
-1. TipTop Pay: уточнить сумму сбора (оферта — 6 000 ₸, менеджер называл 20 000 ₸) → оплатить → дождаться выдачи боевого терминала от Береке Банка → добавить `NEXT_PUBLIC_TIPTOPPAY_PUBLIC_ID`/`TIPTOPPAY_API_SECRET` (prod) в Vercel → онлайн-касса (ОФД) → рекуррентные платежи
-2. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
-3. Домен: купить tournable.kz → подключить к Vercel
+## Recurring payments — built, tested, currently NOT used
+- TipTop Pay отказал в подключении (заявка отклонена внутренней проверкой, без объяснения причины, спор из-за возврата 20 000 ₸ в процессе) — переходим на FreedomPay
+- FreedomPay recurring = «безакцептные платежи» = списание БЕЗ 3D Secure (не как у TipTop — там рекуррент шёл поверх 3DS). Это осознанно отклонено (2026-07-03): при нулевом обороте и отсутствии истории антифрода риск чарджбэков/штрафов MPS, полностью ложащийся на мерчанта по их допсоглашению, не оправдан. FreedomPay terminal будет со стандартным 3DS, вручную подтверждено менеджером
+- Решение сообщено FreedomPay: «клиенты продлевают подписку самостоятельно» — доп. соглашение о без-3DS терминале НЕ подписано
+- Код рекуррента (TipTopPayButton.tsx `recurrent` object, `cancelSubscription()` через TipTop API, migration 024 `subscription_id`) **оставлен нетронутым** — рабочий, протестированный, просто не в проде. Реактивировать когда: (а) спор с TipTop Pay разрешится в нашу пользу, или (б) найдётся провайдер с рекуррентом поверх 3DS (индустриальный стандарт — MIT-исключение из аутентификации, так и должно быть в норме)
+
+## Pending Tasks (as of 2026-07-03)
+1. FreedomPay: терминал заводится банком (~7 раб. дней с 2026-07-03) → получить боевые `FREEDOMPAY_MERCHANT_ID`/`FREEDOMPAY_SECRET_KEY`/`WIDGET_TOKEN` → обновить `.env.local` + Vercel → переключить `CheckoutForm.tsx`/`EnterpriseCheckoutForm.tsx` с `TipTopPayButton` обратно на `CardPaymentForm` → протестировать реальный платёж на боевом терминале
+2. TipTop Pay: спор о возврате 20 000 ₸ за отклонённую верификацию — письмо отправлено, ссылка на ст. 389 ГК РК (договор присоединения)
+3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
+4. Домен: купить tournable.kz → подключить к Vercel
 4. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
 
 ## Завершено

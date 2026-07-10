@@ -5,8 +5,11 @@ import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
 import { getPaymentOrderParams, activateProAfterPayment, activateEnterpriseAfterPayment } from '@/app/actions/payments'
 import type { PlanPeriod, PlanType } from '@/lib/freedompay'
 
-const WIDGET_TOKEN = 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
+// Widget token is merchant/environment-specific (test vs production) — env-driven
+// so switching to the production terminal is an env var change, not a code change.
+const WIDGET_TOKEN = process.env.NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN ?? 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
 const SDK_URL = 'https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js'
+// SDK-wide transport key, same for every merchant/environment — not env-specific.
 const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj04TlTFEhwJDaXO6NoNr
 /7h72RAeGChRkBPvgTTOSxGmHTpEC9MwtiyE/Qk7lBhyj9DwT2JsmiP1Se4m+8lG
@@ -33,14 +36,60 @@ declare global {
   }
 }
 
+type Lang = 'ru' | 'kz' | 'en'
+
 interface Props {
-  period:    PlanPeriod
-  amount:    number
+  period:     PlanPeriod
+  amount:     number
   userEmail?: string
-  planType?: PlanType
+  planType?:  PlanType
+  lang?:      Lang
 }
 
 type Step = 'form' | '3ds'
+
+const T = {
+  ru: {
+    cardNumber: 'Номер карты', cardHolder: 'Имя владельца', expiry: 'Срок действия', cvv: 'CVV / CVC',
+    consentPre: 'Нажимая «Оплатить», вы подтверждаете согласие с', offerLink: 'условиями оферты',
+    processing: 'Обработка...', pay: (a: string) => `Оплатить ${a} ₸`,
+    secured: 'Защищено · PCI DSS · 3D Secure', confirm3ds: 'Подтверждение банком (3D Secure)',
+    scriptFailed: 'Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.',
+    activatedNoPlan: (e: string) => `Оплата прошла, но план не активировался: ${e}`,
+    paymentFailed: (s: string) => `Платёж не прошёл. Статус: ${s}`, payError: 'Ошибка при оплате',
+    comingSoon: 'Скоро', cardSoon: 'Оплата картой скоро будет доступна — пока оформляем через менеджера.',
+  },
+  kz: {
+    cardNumber: 'Карта нөмірі', cardHolder: 'Иесінің аты', expiry: 'Қолданылу мерзімі', cvv: 'CVV / CVC',
+    consentPre: '«Төлеу» батырмасын басу арқылы сіз', offerLink: 'оферта шарттарымен келісесіз',
+    processing: 'Өңделуде...', pay: (a: string) => `Төлеу ${a} ₸`,
+    secured: 'Қорғалған · PCI DSS · 3D Secure', confirm3ds: 'Банк растауы (3D Secure)',
+    scriptFailed: 'Төлем модулін жүктеу мүмкін болмады. Бетті жаңартып көріңіз.',
+    activatedNoPlan: (e: string) => `Төлем өтті, бірақ жоспар белсендірілмеді: ${e}`,
+    paymentFailed: (s: string) => `Төлем өтпеді. Мәртебесі: ${s}`, payError: 'Төлем кезінде қате',
+    comingSoon: 'Жақында', cardSoon: 'Картамен төлеу жақында қолжетімді болады — әзірге менеджер арқылы рәсімдейміз.',
+  },
+  en: {
+    cardNumber: 'Card number', cardHolder: 'Cardholder name', expiry: 'Expiry', cvv: 'CVV / CVC',
+    consentPre: 'By clicking “Pay” you agree to the', offerLink: 'terms of the offer',
+    processing: 'Processing...', pay: (a: string) => `Pay ${a} ₸`,
+    secured: 'Secured · PCI DSS · 3D Secure', confirm3ds: 'Bank confirmation (3D Secure)',
+    scriptFailed: 'Could not load the payment module. Please refresh the page.',
+    activatedNoPlan: (e: string) => `Payment went through, but the plan wasn’t activated: ${e}`,
+    paymentFailed: (s: string) => `Payment failed. Status: ${s}`, payError: 'Payment error',
+    comingSoon: 'Coming soon', cardSoon: 'Card payment is coming soon — for now we set it up via a manager.',
+  },
+} as const
+
+// Gateway is not live yet (FreedomPay production terminal pending, ~7 business
+// days as of 2026-07-03) → show the button as "coming soon" and route users to
+// the manager (WhatsApp). Flip to true once the production token is in .env/Vercel.
+const CARD_PAYMENTS_ENABLED = false
+
+const GRADIENTS: Record<PlanType, string> = {
+  pro:        'linear-gradient(135deg,#047857,#10b981)',
+  enterprise: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+}
 
 function formatCardNumber(raw: string) {
   return raw.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
@@ -51,7 +100,8 @@ function formatExpiry(raw: string) {
   return d.length >= 3 ? `${d.slice(0, 2)}/${d.slice(2)}` : d
 }
 
-export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }: Props) {
+export function CardPaymentForm({ period, amount, userEmail, planType = 'pro', lang = 'ru' }: Props) {
+  const tx = T[lang]
   const [sdkReady, setSdkReady] = useState(false)
   const [sdkError, setSdkError] = useState(false)
 
@@ -65,6 +115,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
   const [step, setStep]           = useState<Step>('form')
 
   useEffect(() => {
+    if (!CARD_PAYMENTS_ENABLED) return           // gateway off — don't load the SDK
     if (typeof window === 'undefined') return
 
     const script = document.createElement('script')
@@ -134,19 +185,19 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
           ? await activateEnterpriseAfterPayment(period, result.payment_id ?? '')
           : await activateProAfterPayment(period, result.payment_id ?? '')
         if ('error' in activation) {
-          setError(`Оплата прошла, но план не активировался: ${activation.error}`)
+          setError(tx.activatedNoPlan(activation.error))
           setStep('form')
           return
         }
         window.location.href = '/checkout/success'
       } else {
-        setError(`Платёж не прошёл. Статус: ${result.payment_status}`)
+        setError(tx.paymentFailed(result.payment_status))
         setStep('form')
       }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { error_message?: string } })?.response?.error_message ??
-        (err instanceof Error ? err.message : 'Ошибка при оплате')
+        (err instanceof Error ? err.message : tx.payError)
       setError(msg)
       setStep('form')
     } finally {
@@ -157,7 +208,28 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
   if (sdkError) {
     return (
       <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-        Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.
+        {tx.scriptFailed}
+      </div>
+    )
+  }
+
+  if (!CARD_PAYMENTS_ENABLED) {
+    return (
+      <div className="space-y-3">
+        <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+          {tx.cardSoon}
+        </p>
+        <button
+          disabled
+          className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl text-sm shadow-md opacity-40 cursor-not-allowed mt-1"
+          style={{ background: GRADIENTS[planType] }}
+        >
+          {tx.pay('')} · {tx.comingSoon}
+        </button>
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+          <ShieldCheck className="w-3 h-3" />
+          <span>{tx.secured}</span>
+        </div>
       </div>
     )
   }
@@ -169,7 +241,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
           {/* Card number */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1.5">
-              Номер карты
+              {tx.cardNumber}
             </label>
             <div className="relative">
               <input
@@ -189,7 +261,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
           {/* Card holder */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1.5">
-              Имя владельца
+              {tx.cardHolder}
             </label>
             <input
               type="text"
@@ -205,7 +277,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                Срок действия
+                {tx.expiry}
               </label>
               <input
                 type="text"
@@ -220,7 +292,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                CVV / CVC
+                {tx.cvv}
               </label>
               <input
                 type="password"
@@ -242,26 +314,31 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
           )}
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-            Нажимая «Оплатить», вы подтверждаете согласие с{' '}
-            <a href="/terms" className="text-emerald-500 hover:underline">условиями оферты</a>
+            {tx.consentPre}{' '}
+            <a
+              href="/terms"
+              className={`hover:underline ${planType === 'enterprise' ? 'text-violet-500' : 'text-emerald-500'}`}
+            >
+              {tx.offerLink}
+            </a>
           </p>
 
           <button
             onClick={handlePay}
             disabled={!canPay}
             className="flex items-center justify-center gap-2.5 w-full text-white font-black py-4 rounded-xl transition-all hover:opacity-90 text-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-            style={{ background: 'linear-gradient(135deg,#047857,#10b981)' }}
+            style={{ background: GRADIENTS[planType] }}
           >
             {isPending
               ? <Loader2 className="w-4 h-4 animate-spin" />
               : <Lock className="w-4 h-4" />
             }
-            {isPending ? 'Обработка...' : `Оплатить ${amount.toLocaleString('ru-RU')} ₸`}
+            {isPending ? tx.processing : tx.pay(amount.toLocaleString('ru-RU'))}
           </button>
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
             <ShieldCheck className="w-3 h-3" />
-            <span>Защищено · PCI DSS · 3D Secure</span>
+            <span>{tx.secured}</span>
           </div>
 
           {/* Payment system logos */}
@@ -283,7 +360,7 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro' }:
         <div className="rounded-xl overflow-hidden border border-gray-200">
           <div className="bg-gray-50 px-4 py-2 flex items-center gap-2 border-b border-gray-100">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs font-bold text-gray-600">Подтверждение банком (3D Secure)</span>
+            <span className="text-xs font-bold text-gray-600">{tx.confirm3ds}</span>
           </div>
           <div id="fp-3ds-container" className="w-full min-h-[420px]" />
         </div>

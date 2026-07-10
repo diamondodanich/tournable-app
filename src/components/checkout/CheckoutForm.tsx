@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Copy, Star, MessageCircle, CheckCircle2 } from 'lucide-react'
-import { TipTopPayButton } from './TipTopPayButton'
+import { CardPaymentForm } from './CardPaymentForm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -254,7 +254,7 @@ export function CheckoutForm({ userEmail, lang = 'ru' }: Props) {
         {/* Card payment */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-black text-gray-900 mb-4">{tx.cardPayment}</h2>
-          <TipTopPayButton period={period} amount={plan.price} userEmail={userEmail} lang={lang} />
+          <CardPaymentForm period={period} amount={plan.price} userEmail={userEmail} lang={lang} />
         </div>
 
         {/* Pay via manager — WhatsApp (primary path while the card gateway is coming soon) */}

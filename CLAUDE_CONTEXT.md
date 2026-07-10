@@ -170,7 +170,7 @@ Additional (in Vercel, not needed locally for basic dev):
 - Код рекуррента (TipTopPayButton.tsx `recurrent` object, `cancelSubscription()` через TipTop API, migration 024 `subscription_id`) **оставлен нетронутым** — рабочий, протестированный, просто не в проде. Реактивировать когда: (а) спор с TipTop Pay разрешится в нашу пользу, или (б) найдётся провайдер с рекуррентом поверх 3DS (индустриальный стандарт — MIT-исключение из аутентификации, так и должно быть в норме)
 
 ## Pending Tasks (as of 2026-07-03)
-1. FreedomPay: терминал заводится банком (~7 раб. дней с 2026-07-03) → получить боевые `FREEDOMPAY_MERCHANT_ID`/`FREEDOMPAY_SECRET_KEY`/`WIDGET_TOKEN` → обновить `.env.local` + Vercel → переключить `CheckoutForm.tsx`/`EnterpriseCheckoutForm.tsx` с `TipTopPayButton` обратно на `CardPaymentForm` → протестировать реальный платёж на боевом терминале
+1. FreedomPay: терминал заводится банком (~7 раб. дней с 2026-07-03) → получить боевые `FREEDOMPAY_MERCHANT_ID`/`FREEDOMPAY_SECRET_KEY`/`NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN` → обновить `.env.local` + Vercel → флаг `CARD_PAYMENTS_ENABLED = true` в `CardPaymentForm.tsx` → протестировать реальный платёж на боевом терминале. Технически всё готово заранее (2026-07-03): чекаут уже переключён на `CardPaymentForm` (не `TipTopPayButton`), i18n добавлена, цвет Enterprise (фиолетовый) сведён с TipTop-версией, widget token читается из env var — остаётся только флаг + ключи
 2. TipTop Pay: спор о возврате 20 000 ₸ за отклонённую верификацию — письмо отправлено, ссылка на ст. 389 ГК РК (договор присоединения)
 3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
 4. Домен: купить tournable.kz → подключить к Vercel

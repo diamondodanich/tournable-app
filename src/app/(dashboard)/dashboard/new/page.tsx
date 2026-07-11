@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2, Shuffle,
+  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2, Shuffle, ListOrdered,
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
@@ -268,14 +268,15 @@ const T = {
   },
 }
 
-type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
+type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
 
 const FORMATS: { value: Format; icon: React.ElementType }[] = [
-  { value: 'round_robin',    icon: RotateCcw },
-  { value: 'playoff',        icon: Trophy    },
-  { value: 'groups_playoff', icon: Layers    },
-  { value: 'league_playoff', icon: Crown     },
-  { value: 'swiss',          icon: Shuffle   },
+  { value: 'round_robin',    icon: RotateCcw   },
+  { value: 'playoff',        icon: Trophy      },
+  { value: 'groups_playoff', icon: Layers      },
+  { value: 'league_playoff', icon: Crown       },
+  { value: 'swiss',          icon: Shuffle     },
+  { value: 'leaderboard',    icon: ListOrdered },
 ]
 
 const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
@@ -284,6 +285,7 @@ const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
   groups_playoff: { ru: 'Групповой + Плей-офф',  kz: 'Топтар + Плей-офф',       en: 'Groups + Playoff' },
   league_playoff: { ru: 'Лига + Плей-офф',       kz: 'Лига + Плей-офф',         en: 'League + Playoff' },
   swiss:          { ru: 'Швейцарская система',   kz: 'Швейцариялық жүйе',       en: 'Swiss system' },
+  leaderboard:    { ru: 'Рейтинг / очки',        kz: 'Рейтинг / ұпай',          en: 'Leaderboard' },
 }
 
 const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
@@ -292,6 +294,7 @@ const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   groups_playoff: { ru: 'Командки делятся на группы, потом лучшие встречаются в плей-офф.',          kz: 'Командалар топтарға бөлінеді, содан кейін үздіктер плей-оффта кездеседі.', en: 'Teams split into groups, then the best meet in a playoff bracket.' },
   league_playoff: { ru: 'Все играют в единой таблице, топ команды выходят в плей-офф.',             kz: 'Барлығы бір кестеде ойнайды, үздік командалар плей-оффқа шығады.',      en: 'All teams play in one table, top teams advance to playoff bracket.' },
   swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Турлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
+  leaderboard:    { ru: 'Ранжирование по сумме очков за раунды — без пар. Для гонок, battle royale, лёгкой атлетики, шахматной «арены».', kz: 'Раундтар бойынша ұпай қосындысымен ранжирлеу — жұпсыз. Жарыстар, battle royale, жеңіл атлетика үшін.', en: 'Ranking by total points across rounds — no head-to-head. For races, battle royale, athletics, chess arena.' },
 }
 
 // ─── Participant nouns per discipline (team / participant / fighter) ───────────
@@ -491,6 +494,7 @@ export default function NewTournamentPage() {
     if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
     if (newFormat === 'playoff')        { setNumRounds(1) }
     if (newFormat === 'swiss')          { setNumRounds(5); setSeedingMode('seeded') }
+    if (newFormat === 'leaderboard')    { setNumRounds(3); setSeedingMode('random') }
   }
 
   // Pick a sport subtype: store its value, apply match defaults and the sport's
@@ -669,6 +673,7 @@ export default function NewTournamentPage() {
     if (format === 'groups_playoff') return tx.groupsHint(filledTeams.length, groupsCount)
     if (format === 'league_playoff') return tx.leagueHint(filledTeams.length)
     if (format === 'swiss')          return tx.swissHint(filledTeams.length, numRounds)
+    if (format === 'leaderboard')    return lang === 'en' ? `${filledTeams.length} participants — points ranking` : lang === 'kz' ? `${filledTeams.length} қатысушы — ұпай рейтингі` : `${filledTeams.length} участников — рейтинг по очкам`
     return tx.matchesHint(filledTeams.length, matchCount)
   })()
 
@@ -1099,7 +1104,7 @@ export default function NewTournamentPage() {
           {/* Hidden for round-robin: there everyone plays everyone, so seeding
               changes only the order of matchdays — not who meets whom. It matters
               only for bracket/group draws (playoff, groups, league). */}
-          {format !== 'round_robin' && (
+          {format !== 'round_robin' && format !== 'leaderboard' && (
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-700">{noun.seed}</p>
               <div className="grid grid-cols-2 gap-2">
@@ -1386,6 +1391,12 @@ export default function NewTournamentPage() {
           </div>
           )}
 
+          {format === 'leaderboard' && (
+            <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
+              {lang === 'en' ? `Points per round are entered on the tournament page. Rounds: ${numRounds}` : lang === 'kz' ? `Раунд ұпайлары турнир бетінде енгізіледі. Раундтар: ${numRounds}` : `Очки за раунды вносятся на странице турнира. Раундов: ${numRounds}`}
+            </div>
+          )}
+          {format !== 'leaderboard' && (
           <div className="space-y-2">
             <p className="text-sm font-bold text-gray-700">{periodLabelTxt}</p>
             <div className="flex items-center gap-3 flex-wrap">
@@ -1418,8 +1429,9 @@ export default function NewTournamentPage() {
               </div>
             )}
           </div>
+          )}
 
-          {!isSetBased && (
+          {format !== 'leaderboard' && !isSetBased && (
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-700">{durationLabelTxt}</p>
               <div className="flex items-center gap-2">

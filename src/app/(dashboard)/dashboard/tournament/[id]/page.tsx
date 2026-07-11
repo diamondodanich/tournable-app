@@ -9,10 +9,11 @@ import TournamentHeader from '@/components/tournament/TournamentHeader'
 import ChampionshipSeasonBar from '@/components/championship/ChampionshipSeasonBar'
 import StandingsTable from '@/components/tournament/StandingsTable'
 import ResultsMatrix from '@/components/tournament/ResultsMatrix'
-import { CalendarDays, BarChart2, Users, Trophy, Layers } from 'lucide-react'
+import { CalendarDays, BarChart2, Users, Trophy, Layers, ListOrdered } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
 import { getSportTheme, getCategoryForSport } from '@/lib/sports'
+import { getLeaderboardEntries } from '@/app/actions/leaderboard'
 import { tx, getLang } from '@/lib/i18n'
 
 // ── Exported-report i18n — the PDF report must render in the selected language ──
@@ -49,6 +50,7 @@ const CalendarTab        = dynamic(() => import('@/components/tournament/Calenda
 const ExportReportButton = dynamic(() => import('@/components/tournament/ExportReportButton'), {
   loading: () => <div className="h-8 w-44 bg-gray-100 rounded-lg animate-pulse" />,
 })
+const LeaderboardTab = dynamic(() => import('@/components/tournament/LeaderboardTab'), { loading: () => <TabSkeleton /> })
 
 // ── Inline stats helper for server-rendered PDF export ────────────────────
 function buildStats(teams: Team[], events: MatchEvent[], type: string) {
@@ -300,9 +302,11 @@ export default async function TournamentPage({ params, searchParams }: { params:
 
   // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
   const fmt = tournament.format ?? 'round_robin'
-  const showFixturesTab       = fmt !== 'playoff'                                         // round_robin, groups_playoff, league_playoff, swiss
+  const showLeaderboardTab    = fmt === 'leaderboard'                                     // points ranking, no fixtures/bracket
+  const showFixturesTab       = fmt !== 'playoff' && fmt !== 'leaderboard'                // round_robin, groups_playoff, league_playoff, swiss
   const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || fmt === 'swiss' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
+  const leaderboardEntries    = showLeaderboardTab ? await getLeaderboardEntries(tournament.id) : []
   const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss'                 // playoff, groups_playoff, league_playoff
   // Combat sports (MMA/boxing/wrestling): fights, not matches; participants, not teams.
   const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
@@ -373,6 +377,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
   const calendarEnabled = !!champLeague && !!(champLeague as { calendar_enabled?: boolean }).calendar_enabled && showFixturesTab
   const validTabs = new Set(
     [
+      showLeaderboardTab && 'leaderboard',
       showFixturesTab && 'fixtures',
       showGroupStandingsTab && 'group-standings',
       showStandingsTab && 'standings',
@@ -382,7 +387,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
     ].filter(Boolean) as string[],
   )
   // Table-first: default to standings / groups / league stage, then playoff, then fixtures.
-  const tableDefault = showGroupStandingsTab ? 'group-standings'
+  const tableDefault = showLeaderboardTab ? 'leaderboard'
+    : showGroupStandingsTab ? 'group-standings'
     : showStandingsTab ? 'standings'
     : showPlayoffTab ? 'playoff'
     : 'fixtures'
@@ -696,6 +702,16 @@ export default async function TournamentPage({ params, searchParams }: { params:
             <div className="flex-1 overflow-x-auto scrollbar-hide px-2 py-2">
               <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
 
+                {showLeaderboardTab && (
+                  <TabsTrigger value="leaderboard"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
+                      text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all
+                      data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-md">
+                    <ListOrdered size={13} className="shrink-0" />
+                    <span>{lang === 'en' ? 'Leaderboard' : lang === 'kz' ? 'Рейтинг' : 'Рейтинг'}</span>
+                  </TabsTrigger>
+                )}
+
                 {showGroupStandingsTab && (
                   <TabsTrigger value="group-standings"
                     className="inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap
@@ -771,13 +787,26 @@ export default async function TournamentPage({ params, searchParams }: { params:
         </div>
 
         {/* Export button — below tab bar, aligned right */}
-        {tournament.generated && (
+        {tournament.generated && !showLeaderboardTab && (
           <div className="flex justify-end">
             <ExportReportButton fileName={`${slug}-report`} isPro={isPro} lang={lang} />
           </div>
         )}
 
         {/* Tab content */}
+        {showLeaderboardTab && (
+          <TabsContent value="leaderboard" className="mt-0 pt-5">
+            <LeaderboardTab
+              tournamentId={tournament.id}
+              teams={t}
+              entries={leaderboardEntries}
+              isOwner={isOwner}
+              lang={lang}
+              brand={sportTheme.primary}
+              initialRounds={tournament.num_rounds ?? 1}
+            />
+          </TabsContent>
+        )}
         {showFixturesTab && (
           <TabsContent value="fixtures" className="mt-0 pt-5">
             <FixturesTab tournament={tournament} teams={t} fixtures={f} isPro={isPro} isEnterprise={isEnterprise} isOwner={isOwner} lang={lang} champSquad={champSquad} />

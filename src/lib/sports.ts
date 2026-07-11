@@ -9,7 +9,7 @@ import type { ElementType } from 'react'
 import { Volleyball, HelpCircle, Gamepad2, Swords, Dices, Target } from 'lucide-react'
 import { SoccerBall, BasketballBall, HockeyPuck } from '@/components/icons/sport-icons'
 
-export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
+export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
 export type Lang = 'ru' | 'kz' | 'en'
 
 export interface SportTheme {
@@ -297,6 +297,24 @@ export const SPORT_CATEGORIES: SportCategory[] = [
         periodLabel: { ru: 'Партии', kz: 'Партиялар', en: 'Games' }, durationLabel: { ru: 'Партии', kz: 'Партиялар', en: 'Games' },
         scoreNote: { ru: 'Счёт серии — количество выигранных партий (например 3:1). Обычно Bo3/Bo5, ничьих нет.', kz: 'Серия есебі — ұтылған партиялар саны. Bo3/Bo5, теңсіз.', en: 'Series score = games won. Usually Bo3/Bo5, no draws.' },
         recommendedFormat: 'playoff', formats: ['playoff', 'groups_playoff', 'swiss', 'round_robin'],
+      },
+      {
+        value: 'pubg',
+        label: { ru: 'PUBG', kz: 'PUBG', en: 'PUBG' },
+        desc:  { ru: 'Battle royale. Рейтинг по очкам за серию матчей.', kz: 'Battle royale. Матчтар сериясы бойынша ұпай рейтингі.', en: 'Battle royale. Points ranking across a series of matches.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 0, draw: 0, loss: 0 }, noDraw: true, hideDuration: true,
+        periodLabel: { ru: 'Матчи', kz: 'Матчтар', en: 'Matches' }, durationLabel: { ru: 'Матчи', kz: 'Матчтар', en: 'Matches' },
+        scoreNote: { ru: 'Итог — сумма очков за все матчи. Победитель — с наибольшим счётом.', kz: 'Қорытынды — барлық матчтар ұпайының қосындысы.', en: 'Result = total points across all matches. Highest total wins.' },
+        recommendedFormat: 'leaderboard', formats: ['leaderboard', 'round_robin'],
+      },
+      {
+        value: 'fortnite',
+        label: { ru: 'Fortnite', kz: 'Fortnite', en: 'Fortnite' },
+        desc:  { ru: 'Battle royale. Рейтинг по очкам за серию матчей.', kz: 'Battle royale. Матчтар сериясы бойынша ұпай рейтингі.', en: 'Battle royale. Points ranking across a series of matches.' },
+        periods: 1, periodOptions: [1], duration: 0, extraTime: false, pts: { win: 0, draw: 0, loss: 0 }, noDraw: true, hideDuration: true,
+        periodLabel: { ru: 'Матчи', kz: 'Матчтар', en: 'Matches' }, durationLabel: { ru: 'Матчи', kz: 'Матчтар', en: 'Matches' },
+        scoreNote: { ru: 'Итог — сумма очков за все матчи. Победитель — с наибольшим счётом.', kz: 'Қорытынды — барлық матчтар ұпайының қосындысы.', en: 'Result = total points across all matches. Highest total wins.' },
+        recommendedFormat: 'leaderboard', formats: ['leaderboard', 'round_robin'],
       },
     ],
   },

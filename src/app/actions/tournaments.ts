@@ -79,7 +79,7 @@ export async function createTournament(formData: FormData) {
 
 export async function createTournamentWithSetup(
   name: string,
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss',
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim',
   numRounds: number,
   teamNames: string[],
   settings?: {
@@ -208,6 +208,11 @@ export async function createTournamentWithSetup(
       // Pre-generate placeholder bracket with null team IDs → shows A1/B2 labels in UI
       insertPlaceholderBracket(supabase, t.id, groupsCount * teamsAdvance),
     ])
+  }
+
+  if (format === 'leaderboard' && teamIds.length >= 2) {
+    // No fixtures/bracket — points are entered per round on the tournament page.
+    await supabase.from('tournaments').update({ generated: true }).eq('id', t.id)
   }
 
   if (format === 'swiss' && teamIds.length >= 2) {

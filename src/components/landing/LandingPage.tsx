@@ -16,8 +16,8 @@ const T = {
     label: 'RU',
     nav: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', start: 'Начать бесплатно', dashboard: 'Все турниры', account: 'Личный кабинет', accountTitle: 'Личный кабинет', menu: 'Меню' },
     hero: {
-      badge: 'Соревнования любого масштаба — от двора до федерации',
-      h1: ['Счёт у всех — онлайн.', 'Статистика считается сама.', 'Турнир — меньше 1 минуты.'],
+      badge: 'От дворового турнира до федерации',
+      h1: ['Создавай соревнования', 'любого масштаба'],
       sub: 'Создайте расписание, поделитесь ссылкой — и живая страница вашего турнира уже у каждого участника. Счёт, таблица, плей-офф и лучшие игроки считаются сами. Вы просто ведёте игру.',
       cta: 'Создать турнир бесплатно', cta2: 'Как это работает',
       proof: [['1 турнир бесплатно', 'все функции включены'], ['Готово', 'за 2 минуты'], ['Живая ссылка', 'без приложений']],
@@ -128,8 +128,8 @@ const T = {
     label: 'KZ',
     nav: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', start: 'Тегін бастау', dashboard: 'Барлық турнирлер', account: 'Жеке кабинет', accountTitle: 'Жеке кабинет', menu: 'Мәзір' },
     hero: {
-      badge: 'Кез келген деңгейдегі жарыстар — ауладан федерацияға дейін',
-      h1: ['Есеп барлығында — онлайн.', 'Статистика өздігінен есептеледі.', 'Турнир — 1 минуттан аз.'],
+      badge: 'Аула турнирінен федерацияға дейін',
+      h1: ['Кез келген ауқымдағы', 'жарыстарды жаса'],
       sub: 'Кесте жасаңыз, сілтемемен бөлісіңіз — және турниріңіздің тірі беті әрбір қатысушыда. Есеп, кесте, плей-офф және үздік ойыншылар өздігінен есептеледі. Сіз тек турнирді өткізесіз.',
       cta: 'Турнирді тегін жасау', cta2: 'Қалай жұмыс істейді',
       proof: [['1 турнир тегін', 'барлық мүмкіндіктер'], ['Дайын', '2 минутта'], ['Тірі сілтеме', 'қосымшасыз']],
@@ -240,8 +240,8 @@ const T = {
     label: 'EN',
     nav: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', start: 'Start Free', dashboard: 'All tournaments', account: 'Account', accountTitle: 'Account', menu: 'Menu' },
     hero: {
-      badge: 'Competitions of any scale — from backyard to federation',
-      h1: ['Real-time scores for everyone.', 'Stats calculate themselves.', 'Tournament in under a minute.'],
+      badge: 'From backyard to federation',
+      h1: ['Run competitions', 'at any scale'],
       sub: 'Build the schedule, share the link — and every participant instantly has a real-time tournament page. Scores, standings, playoff and top performers update on their own. You just run the game.',
       cta: 'Create a tournament — free', cta2: 'See how it works',
       proof: [['1 tournament free', 'all features included'], ['Ready', 'in 2 minutes'], ['Real-time link', 'no app needed']],
@@ -547,10 +547,9 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
                 {tx.hero.badge}
               </div>
-              <h1 className="text-[1.7rem] sm:text-[2.1rem] lg:text-[2.5rem] font-black leading-[1.08] tracking-tight text-white mb-5" style={{ letterSpacing: '-.03em' }}>
+              <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-[3.1rem] font-black leading-[1.05] tracking-tight text-white mb-5" style={{ letterSpacing: '-.03em' }}>
                 {tx.hero.h1[0]}<br />
-                {tx.hero.h1[1]}<br />
-                <span className="text-emerald-400">{tx.hero.h1[2]}</span>
+                <span className="text-emerald-400">{tx.hero.h1[1]}</span>
               </h1>
               <p className="text-base text-white/70 leading-relaxed mb-8 max-w-md">{tx.hero.sub}</p>
               <div className="flex flex-wrap items-center gap-3">

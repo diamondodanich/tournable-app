@@ -21,7 +21,7 @@ import { tx, type Lang } from '@/lib/i18n'
 
 const TAB_CLASS = `inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold whitespace-nowrap
   text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all
-  data-[active]:bg-emerald-600 data-[active]:text-white data-[active]:shadow-sm`
+  data-[active]:bg-[var(--sp)] data-[active]:text-white data-[active]:shadow-sm`
 
 export default function SetupTab({
   tournament, teams, members: initialMembers = [], isOwner = false, lang = 'ru',
@@ -214,7 +214,7 @@ export default function SetupTab({
                       autoFocus
                       onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
                     />
-                    <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 px-2" onClick={handleSaveName} disabled={savingName}>
+                    <Button size="sm" className="h-8 bg-[var(--sp)] hover:bg-[var(--spd)] px-2" onClick={handleSaveName} disabled={savingName}>
                       {savingName ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     </Button>
                     <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => { setEditingName(false); setNameValue(tournament.name) }}>
@@ -340,7 +340,7 @@ export default function SetupTab({
             </div>
           )}
 
-          <Button onClick={handleSaveSettings} disabled={savingSettings} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={handleSaveSettings} disabled={savingSettings} size="sm" className="bg-[var(--sp)] hover:bg-[var(--spd)]">
             {savingSettings ? <Loader2 size={13} className="mr-1.5 animate-spin" /> : <Check size={13} className="mr-1.5" />}
             {savingSettings ? T.saving : T.saveSettingsBtn}
           </Button>
@@ -357,7 +357,7 @@ export default function SetupTab({
               placeholder={isCombat ? participantPh : T.teamNamePh}
               maxLength={30}
             />
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 shrink-0" disabled={loading}>
+            <Button type="submit" className="bg-[var(--sp)] hover:bg-[var(--spd)] shrink-0" disabled={loading}>
               {loading ? <Loader2 size={14} className="mr-1 animate-spin" /> : null}
               {loading ? T.addingBtn : T.addTeamBtn2}
             </Button>
@@ -392,7 +392,7 @@ export default function SetupTab({
           <Button
             onClick={handleGenerate}
             disabled={teams.length < 2 || generating}
-            className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+            className="bg-[var(--sp)] hover:bg-[var(--spd)] gap-2"
             size="lg"
           >
             {generating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}

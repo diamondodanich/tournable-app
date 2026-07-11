@@ -479,7 +479,7 @@ export default async function TournamentPage({ params, searchParams }: { params:
     : undefined
 
   return (
-    <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary } as React.CSSProperties}>
+    <div className="space-y-5" style={{ ['--sp' as string]: sportTheme.primary, ['--spd' as string]: sportTheme.primaryDark, ['--spl' as string]: sportTheme.light } as React.CSSProperties}>
       {champLeague ? (
         <ChampionshipSeasonBar
           league={{ id: champLeague.id, name: champLeague.name, slug: champLeague.slug, sport: champLeague.sport, logo_url: champLeague.logo_url }}

@@ -522,7 +522,7 @@ function PlayoffMatchCard({
       {isReady && (
         <div className="flex justify-end pt-1">
           <Button onClick={handleSave} disabled={saving} size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 h-7 text-xs px-4">
+            className="bg-[var(--sp)] hover:bg-[var(--spd)] h-7 text-xs px-4">
             {saving
               ? <Loader2 size={11} className="mr-1 animate-spin" />
               : <Check size={11} className="mr-1" />}
@@ -610,7 +610,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         <p className="font-bold text-gray-700 text-lg mb-2">{T.emptyBracketTitle}</p>
         <p className="text-sm text-gray-400 mb-6">{T.emptyBracketHint}</p>
         {fmt === 'playoff' && (
-          <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-[var(--sp)] hover:bg-[var(--spd)]">
             {generating && <Loader2 size={14} className="mr-2 animate-spin" />}
             {generating ? '…' : T.generateBracket}
           </Button>

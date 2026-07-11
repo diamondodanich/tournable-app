@@ -428,7 +428,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
         <button
           onClick={handleStart}
           disabled={starting}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md">
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 bg-[var(--sp)] hover:bg-[var(--spd)] text-white shadow-sm hover:shadow-md">
           {starting ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
           {starting ? T.btnStarting : (getCategoryForSport(sport ?? '')?.id === 'combat'
             ? ({ ru: 'Начать бой', kz: 'Жекпе-жекті бастау', en: 'Start fight' }[lang])
@@ -568,7 +568,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
             <Radio size={12} /> {T.statusLive} · {T.btnLiveBoard}
           </Link>
         ) : <div />}
-        <Button onClick={handleSave} disabled={saving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 px-5">
+        <Button onClick={handleSave} disabled={saving} size="sm" className="bg-[var(--sp)] hover:bg-[var(--spd)] px-5">
           {saving
             ? <Loader2 size={13} className="mr-1.5 animate-spin" />
             : <Check size={13} className="mr-1.5" />}

@@ -294,6 +294,25 @@ const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Турлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
 }
 
+// ─── Participant nouns per discipline (team / participant / fighter) ───────────
+const PARTICIPANT_NOUNS = {
+  ru: {
+    team:        { plural: 'Команды',   ph: (i: number) => `Команда ${i + 1}`,  add: 'Добавить ещё команду', seed: 'Посев команд',     byStrength: 'По силе команды' },
+    participant: { plural: 'Участники', ph: (i: number) => `Участник ${i + 1}`, add: 'Добавить участника',   seed: 'Посев участников', byStrength: 'По силе участника' },
+    fighter:     { plural: 'Бойцы',     ph: (i: number) => `Боец ${i + 1}`,     add: 'Добавить бойца',       seed: 'Посев бойцов',     byStrength: 'По силе бойца' },
+  },
+  kz: {
+    team:        { plural: 'Командалар',  ph: (i: number) => `Команда ${i + 1}`,  add: 'Тағы команда қосу', seed: 'Командаларды бөлу',  byStrength: 'Команда күші бойынша' },
+    participant: { plural: 'Қатысушылар', ph: (i: number) => `Қатысушы ${i + 1}`, add: 'Қатысушы қосу',     seed: 'Қатысушыларды бөлу', byStrength: 'Қатысушы күші бойынша' },
+    fighter:     { plural: 'Балуандар',   ph: (i: number) => `Балуан ${i + 1}`,   add: 'Балуан қосу',       seed: 'Балуандарды бөлу',   byStrength: 'Балуан күші бойынша' },
+  },
+  en: {
+    team:        { plural: 'Teams',        ph: (i: number) => `Team ${i + 1}`,    add: 'Add another team', seed: 'Team seeding',        byStrength: 'By team strength' },
+    participant: { plural: 'Participants', ph: (i: number) => `Player ${i + 1}`,  add: 'Add participant',  seed: 'Participant seeding', byStrength: 'By participant strength' },
+    fighter:     { plural: 'Fighters',     ph: (i: number) => `Fighter ${i + 1}`, add: 'Add fighter',      seed: 'Fighter seeding',     byStrength: 'By fighter strength' },
+  },
+} as const
+
 // ─── Image helpers ────────────────────────────────────────────────────────────
 function resizeToDataUrl(file: File, size: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -539,10 +558,13 @@ export default function NewTournamentPage() {
   // ── Derived sport config + colour theme ──────────────────────────────────────
   const subtype = getSubtype(sport)
   const theme: SportTheme = getSportTheme(sport)
-  // Individual disciplines (chess, combat sports) → "участник" instead of "команда"
-  const isIndividual = getCategoryForSport(sport)?.individual ?? false
-  const teamPhLabel = isIndividual ? tx.participantPh : tx.teamPh
-  const addTeamLabel = isIndividual ? tx.addParticipant : tx.addTeam
+  // Discipline-aware nouns: combat → "боец", other individual → "участник", else "команда"
+  const category = getCategoryForSport(sport)
+  const nounKind: 'team' | 'participant' | 'fighter' =
+    category?.id === 'combat' ? 'fighter' : (category?.individual ? 'participant' : 'team')
+  const noun = PARTICIPANT_NOUNS[lang][nounKind]
+  const teamPhLabel = noun.ph
+  const addTeamLabel = noun.add
   // CSS variables let us tint Tailwind-styled elements with the sport colour.
   const themeVars = {
     ['--sp' as string]:  isChampionship ? '#7c3aed' : theme.primary,
@@ -1069,7 +1091,7 @@ export default function NewTournamentPage() {
       {step === 2 && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
           <div>
-            <h1 className="text-xl font-black text-gray-900">{tx.step2.title}</h1>
+            <h1 className="text-xl font-black text-gray-900">{noun.plural}</h1>
             <p className="text-sm text-gray-400 mt-0.5">{tx.step2.sub}</p>
           </div>
 
@@ -1079,11 +1101,11 @@ export default function NewTournamentPage() {
               only for bracket/group draws (playoff, groups, league). */}
           {format !== 'round_robin' && (
             <div className="space-y-2">
-              <p className="text-sm font-bold text-gray-700">{tx.seedingLbl}</p>
+              <p className="text-sm font-bold text-gray-700">{noun.seed}</p>
               <div className="grid grid-cols-2 gap-2">
                 {(['random', 'seeded'] as const).map(mode => {
                   const active = seedingMode === mode
-                  const label = mode === 'random' ? tx.seedingRandom : tx.seedingSeeded
+                  const label = mode === 'random' ? tx.seedingRandom : noun.byStrength
                   const desc  = mode === 'random' ? tx.seedingRandomDesc : tx.seedingSeededDesc
                   return (
                     <button key={mode} type="button" onClick={() => setSeedingMode(mode)}

@@ -74,6 +74,66 @@ export function BasketballBall({ className = 'w-full h-full' }: IconProps) {
   )
 }
 
+// MMA / boxing glove — combat sports
+export function MmaGlove({ size = 24, className = '' }: IconProps) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.7"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className}
+    >
+      {/* fist body */}
+      <path d="M8 4.5h4.2a5 5 0 0 1 5 5v2.3a4.2 4.2 0 0 1-4.2 4.2H9a4 4 0 0 1-4-4V8a3.5 3.5 0 0 1 3-3.5z" />
+      {/* thumb */}
+      <path d="M5 9.6H3.6A1.6 1.6 0 0 0 2 11.2a1.6 1.6 0 0 0 1.6 1.6H5" />
+      {/* knuckle crease */}
+      <path d="M9.2 9.7h6" />
+      {/* wrist cuff */}
+      <path d="M9 16v2.4a1.6 1.6 0 0 0 1.6 1.6h3.8a1.6 1.6 0 0 0 1.6-1.6V16" />
+    </svg>
+  )
+}
+
+// Tennis racket — racket sports
+export function TennisRacket({ size = 24, className = '' }: IconProps) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.7"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className}
+    >
+      {/* head */}
+      <ellipse cx="9.7" cy="8.3" rx="5" ry="6" transform="rotate(-38 9.7 8.3)" />
+      {/* strings */}
+      <path d="M6.6 5.7l4.8 3.6M5.4 9.2l6-1.4M8.4 4.4l1.4 8" opacity=".9" />
+      {/* throat + handle */}
+      <path d="M12.6 12.4l5 5.6" />
+      <path d="M16.2 16.1l2.6 2.9" />
+    </svg>
+  )
+}
+
+// Chess pawn — mind sports
+export function ChessPawn({ size = 24, className = '' }: IconProps) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className}
+    >
+      {/* head */}
+      <circle cx="12" cy="5.5" r="2.6" />
+      {/* body */}
+      <path d="M10.1 8.2c-.3 1.4-1.3 1.9-1.3 3.1 0 1 .7 1.6 1.3 2.3-.7 1.6-1.7 3-2.1 4.9h8.2c-.4-1.9-1.4-3.3-2.1-4.9.6-.7 1.3-1.3 1.3-2.3 0-1.2-1-1.7-1.3-3.1" />
+      {/* base */}
+      <rect x="6.6" y="18.5" width="10.8" height="2.9" rx="1.3" />
+    </svg>
+  )
+}
+
 // Hockey puck: flat 3D cylinder viewed from slight angle
 export function HockeyPuck({ size = 24, className = '' }: IconProps) {
   return (

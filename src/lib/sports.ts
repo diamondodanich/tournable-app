@@ -6,8 +6,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ElementType } from 'react'
-import { Volleyball, HelpCircle, Gamepad2, Swords, Dices, Target } from 'lucide-react'
-import { SoccerBall, BasketballBall, HockeyPuck } from '@/components/icons/sport-icons'
+import { Volleyball, HelpCircle, Gamepad2 } from 'lucide-react'
+import { SoccerBall, BasketballBall, HockeyPuck, MmaGlove, TennisRacket, ChessPawn } from '@/components/icons/sport-icons'
 
 export type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
 export type Lang = 'ru' | 'kz' | 'en'
@@ -171,7 +171,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'racket', abbr: 'R', icon: Target, proOnly: true, theme: THEME.teal, individual: true,
+    id: 'racket', abbr: 'R', icon: TennisRacket, proOnly: true, theme: THEME.teal, individual: true,
     label:   { ru: 'Ракеточные виды', kz: 'Ракетка ойындары', en: 'Racket sports' },
     tagline: { ru: 'Теннис, наст. теннис, бадминтон, сквош, падел', kz: 'Теннис, үстел теннисі, бадминтон, сквош, падел', en: 'Tennis, table tennis, badminton, squash, padel' },
     subtypes: [
@@ -319,7 +319,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'boardgames', abbr: 'C', icon: Dices, proOnly: true, theme: THEME.indigo, individual: true,
+    id: 'boardgames', abbr: 'C', icon: ChessPawn, proOnly: true, theme: THEME.indigo, individual: true,
     label:   { ru: 'Интеллектуальные игры', kz: 'Зияткерлік ойындар', en: 'Mind sports' },
     tagline: { ru: 'Шахматы, шашки, тоғызқұмалақ', kz: 'Шахмат, дойбы, тоғызқұмалақ', en: 'Chess, checkers, togyzkumalak' },
     subtypes: [
@@ -353,7 +353,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
-    id: 'combat', abbr: 'M', icon: Swords, proOnly: true, theme: THEME.red, individual: true,
+    id: 'combat', abbr: 'M', icon: MmaGlove, proOnly: true, theme: THEME.red, individual: true,
     label:   { ru: 'Единоборства', kz: 'Жекпе-жек', en: 'Combat sports' },
     tagline: { ru: 'MMA, бокс, борьба', kz: 'MMA, бокс, күрес', en: 'MMA, boxing, wrestling' },
     subtypes: [

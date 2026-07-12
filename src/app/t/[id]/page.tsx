@@ -37,6 +37,83 @@ const ROUND_LABELS: Record<number, string> = {
   1: 'Финал', 2: 'Полуфинал', 4: 'Четвертьфинал', 8: '1/8 финала', 16: '1/16 финала',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PublicMatchCard({ m, teams }: { m: any; teams: any[] }) {
+  const homeTeam = teams.find((t: any) => t.id === m.home_team_id)
+  const awayTeam = teams.find((t: any) => t.id === m.away_team_id)
+  const isReady  = !!(m.home_team_id && m.away_team_id)
+  const isDone   = !!m.winner_id
+  return (
+    <div className={`bg-white border rounded-xl p-3 min-w-[260px] shadow-sm ${
+      isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
+    }`}>
+      {isDone && (
+        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-2">Сыгран</p>
+      )}
+      {/* Home */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {homeTeam
+            ? <>
+                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.home_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                <span className={`text-sm font-bold truncate ${m.winner_id === m.home_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
+                  {homeTeam.name}
+                  {m.winner_id === m.home_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
+                </span>
+              </>
+            : <span className="text-sm text-gray-400 italic">TBD</span>
+          }
+        </div>
+        <span className="font-black text-lg font-mono tabular-nums shrink-0">
+          {m.home_score != null ? m.home_score : '–'}
+        </span>
+      </div>
+      {/* Away */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {awayTeam
+            ? <>
+                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.away_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                <span className={`text-sm font-bold truncate ${m.winner_id === m.away_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
+                  {awayTeam.name}
+                  {m.winner_id === m.away_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
+                </span>
+              </>
+            : <span className="text-sm text-gray-400 italic">TBD</span>
+          }
+        </div>
+        <span className="font-black text-lg font-mono tabular-nums shrink-0">
+          {m.away_score != null ? m.away_score : '–'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function BracketColumns({ teams, matches, labelFor, ascending = false }: { teams: any[]; matches: any[]; labelFor: (ro: number, i: number) => string; ascending?: boolean }) {
+  const rounds = [...new Set(matches.map((m: any) => m.round_order as number))]
+  // Winners/single-elim rounds count down (final last); losers rounds count up.
+  rounds.sort((a, b) => ascending ? a - b : b - a)
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div className="flex gap-6 min-w-max">
+        {rounds.map((ro, i) => (
+          <div key={ro} className="flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 text-center">{labelFor(ro, i)}</p>
+            <div className="flex flex-col gap-4 justify-around flex-1">
+              {matches
+                .filter((m: any) => m.round_order === ro)
+                .sort((a: any, b: any) => a.match_order - b.match_order)
+                .map((m: any) => <PublicMatchCard key={m.id} m={m} teams={teams} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function PublicBracket({
   teams, matches,
 }: {
@@ -50,80 +127,43 @@ function PublicBracket({
       </div>
     )
   }
-  const rounds = [...new Set(matches.map((m: any) => m.round_order as number))].sort((a, b) => b - a)
 
-  return (
-    <div className="overflow-x-auto pb-4">
-      <div className="flex gap-6 min-w-max">
-        {rounds.map(ro => (
-          <div key={ro} className="flex flex-col gap-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 text-center">
-              {ROUND_LABELS[ro] ?? `Раунд ${ro}`}
-            </p>
-            <div className="flex flex-col gap-4 justify-around flex-1">
-              {matches
-                .filter((m: any) => m.round_order === ro)
-                .sort((a: any, b: any) => a.match_order - b.match_order)
-                .map((m: any) => {
-                  const homeTeam = teams.find((t: any) => t.id === m.home_team_id)
-                  const awayTeam = teams.find((t: any) => t.id === m.away_team_id)
-                  const isReady  = !!(m.home_team_id && m.away_team_id)
-                  const isDone   = !!m.winner_id
-                  return (
-                    <div
-                      key={m.id}
-                      className={`bg-white border rounded-xl p-3 min-w-[260px] shadow-sm ${
-                        isDone ? 'border-emerald-200' : isReady ? 'border-gray-200' : 'border-gray-100 opacity-60'
-                      }`}
-                    >
-                      {isDone && (
-                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-2">Сыгран</p>
-                      )}
-                      {/* Home */}
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {homeTeam
-                            ? <>
-                                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.home_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
-                                <span className={`text-sm font-bold truncate ${m.winner_id === m.home_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
-                                  {homeTeam.name}
-                                  {m.winner_id === m.home_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
-                                </span>
-                              </>
-                            : <span className="text-sm text-gray-400 italic">TBD</span>
-                          }
-                        </div>
-                        <span className="font-black text-lg font-mono tabular-nums shrink-0">
-                          {m.home_score != null ? m.home_score : '–'}
-                        </span>
-                      </div>
-                      {/* Away */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {awayTeam
-                            ? <>
-                                <div className={`w-2 h-2 rounded-full shrink-0 ${m.winner_id === m.away_team_id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
-                                <span className={`text-sm font-bold truncate ${m.winner_id === m.away_team_id ? 'text-emerald-700' : 'text-gray-900'}`}>
-                                  {awayTeam.name}
-                                  {m.winner_id === m.away_team_id && <Trophy size={10} className="inline ml-1 text-amber-500" />}
-                                </span>
-                              </>
-                            : <span className="text-sm text-gray-400 italic">TBD</span>
-                          }
-                        </div>
-                        <span className="font-black text-lg font-mono tabular-nums shrink-0">
-                          {m.away_score != null ? m.away_score : '–'}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-            </div>
+  // Double elimination: three stacked brackets (Winners / Losers / Grand final)
+  const isDE = matches.some((m: any) => m.bracket === 'LB' || m.bracket === 'GF')
+  if (isDE) {
+    const wb = matches.filter((m: any) => m.bracket === 'WB')
+    const lb = matches.filter((m: any) => m.bracket === 'LB')
+    const gf = matches.filter((m: any) => m.bracket === 'GF')
+    // Losers rounds are ordered ascending — build a value→index map for sequential labels.
+    const lbVals = [...new Set(lb.map((m: any) => m.round_order as number))].sort((a, b) => a - b)
+    return (
+      <div className="space-y-6">
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-emerald-500" />
+            <h3 className="text-sm font-black text-gray-800">Верхняя сетка</h3>
           </div>
-        ))}
+          <BracketColumns teams={teams} matches={wb} labelFor={ro => ROUND_LABELS[ro] ?? `Раунд ${ro}`} />
+        </section>
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-amber-500" />
+            <h3 className="text-sm font-black text-gray-800">Нижняя сетка</h3>
+          </div>
+          <BracketColumns teams={teams} matches={lb} ascending labelFor={ro => `Раунд ${lbVals.indexOf(ro) + 1}`} />
+        </section>
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-emerald-600" />
+            <h3 className="text-sm font-black text-gray-800">Гранд-финал</h3>
+          </div>
+          <BracketColumns teams={teams} matches={gf} labelFor={() => ''} />
+        </section>
       </div>
-    </div>
-  )
+    )
+  }
+
+  return <BracketColumns teams={teams} matches={matches} labelFor={ro => ROUND_LABELS[ro] ?? `Раунд ${ro}`} />
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -311,8 +351,8 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           </Tabs>
         )}
 
-        {/* ── PLAYOFF: full bracket view ── */}
-        {fmt === 'playoff' && (
+        {/* ── PLAYOFF / DOUBLE ELIMINATION: full bracket view ── */}
+        {(fmt === 'playoff' || fmt === 'double_elim') && (
           <Tabs defaultValue="playoff">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm mb-6">
               <div className="overflow-x-auto scrollbar-hide px-2 py-2">

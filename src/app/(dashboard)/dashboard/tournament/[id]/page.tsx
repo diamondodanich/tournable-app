@@ -303,11 +303,11 @@ export default async function TournamentPage({ params, searchParams }: { params:
   // Tab visibility: groups_playoff and league_playoff have BOTH fixtures and a playoff bracket
   const fmt = tournament.format ?? 'round_robin'
   const showLeaderboardTab    = fmt === 'leaderboard'                                     // points ranking, no fixtures/bracket
-  const showFixturesTab       = fmt !== 'playoff' && fmt !== 'leaderboard'                // round_robin, groups_playoff, league_playoff, swiss
+  const showFixturesTab       = fmt !== 'playoff' && fmt !== 'double_elim' && fmt !== 'leaderboard'  // round_robin, groups_playoff, league_playoff, swiss
   const showStandingsTab      = fmt === 'round_robin' || fmt === 'league_playoff' || fmt === 'swiss' || !tournament.format
   const showGroupStandingsTab = fmt === 'groups_playoff'                                 // per-group standings tables
   const leaderboardEntries    = showLeaderboardTab ? await getLeaderboardEntries(tournament.id) : []
-  const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss'                 // playoff, groups_playoff, league_playoff
+  const showPlayoffTab        = fmt !== 'round_robin' && fmt !== 'swiss' && fmt !== 'leaderboard'  // playoff, double_elim, groups_playoff, league_playoff
   // Combat sports (MMA/boxing/wrestling): fights, not matches; participants, not teams.
   const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
   const fixturesTabLabel = isCombat

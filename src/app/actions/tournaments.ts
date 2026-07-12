@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { generatePlayoffBracket, seededBracketPositions } from '@/lib/tournament/playoff'
+import { generatePlayoffBracket, seededBracketPositions, buildDoubleElimRows } from '@/lib/tournament/playoff'
 
 // ─── Slug generation ──────────────────────────────────────────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -256,6 +256,18 @@ export async function createTournamentWithSetup(
       supabase.from('playoff_matches').insert(rows),
       supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
     ])
+  }
+
+  if (format === 'double_elim' && teamIds.length >= 2) {
+    // Double elimination requires a power-of-two field (validated in the wizard).
+    // Insert the full WB + LB + GF bracket in a single round-trip.
+    const rows = buildDoubleElimRows(t.id, teamIds)
+    if (rows.length > 0) {
+      await Promise.all([
+        supabase.from('playoff_matches').insert(rows),
+        supabase.from('tournaments').update({ generated: true }).eq('id', t.id),
+      ])
+    }
   }
 
   // Best-effort: apply the series settings to every generated bracket match (migrations 025/026).

@@ -4,7 +4,7 @@ export type Tournament = {
   name: string
   num_rounds: number
   generated: boolean
-  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
+  format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
   logo_url: string | null
   // Multi-format fields
   groups_count: number | null   // groups_playoff: number of groups
@@ -99,6 +99,10 @@ export type PlayoffMatch = {
   winner_slot: 'home' | 'away' | null
   best_of?: number
   two_legged?: boolean
+  // Double elimination (migration 033) — absent/NULL on single-elim brackets
+  bracket?: 'WB' | 'LB' | 'GF' | null
+  loser_to_match?: string | null
+  loser_slot?: 'home' | 'away' | null
   created_at: string
   match_events?: MatchEvent[]
 }

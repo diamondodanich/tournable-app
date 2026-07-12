@@ -2,22 +2,36 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { generatePlayoffBracket } from '@/lib/tournament/playoff'
+import { generatePlayoffBracket, buildDoubleElimRows, isPowerOfTwo } from '@/lib/tournament/playoff'
 
 export async function generatePlayoff(tournamentId: string) {
   const supabase = await createClient()
 
-  const { data: teams } = await supabase
-    .from('teams')
-    .select('id')
-    .eq('tournament_id', tournamentId)
-    .order('created_at')
+  const [{ data: teams }, { data: tRow }] = await Promise.all([
+    supabase.from('teams').select('id').eq('tournament_id', tournamentId).order('created_at'),
+    supabase.from('tournaments').select('format').eq('id', tournamentId).maybeSingle(),
+  ])
 
   if (!teams || teams.length < 2) return { error: 'Нужно минимум 2 команды' }
 
+  const teamIds = teams.map(t => t.id)
+
+  // ── Double elimination ────────────────────────────────────────────────────
+  if ((tRow as { format?: string } | null)?.format === 'double_elim') {
+    if (!isPowerOfTwo(teamIds.length)) {
+      return { error: 'Double Elimination требует 4, 8, 16 или 32 участника' }
+    }
+    await supabase.from('playoff_matches').delete().eq('tournament_id', tournamentId)
+    const rows = buildDoubleElimRows(tournamentId, teamIds)
+    const { error } = await supabase.from('playoff_matches').insert(rows)
+    if (error) return { error: error.message }
+    await supabase.from('tournaments').update({ generated: true }).eq('id', tournamentId)
+    revalidatePath(`/dashboard/tournament/${tournamentId}`)
+    return
+  }
+
   await supabase.from('playoff_matches').delete().eq('tournament_id', tournamentId)
 
-  const teamIds = teams.map(t => t.id)
   const matches = generatePlayoffBracket(teamIds)
 
   // First insert without winner_to_match to get IDs
@@ -128,6 +142,7 @@ export async function savePlayoffResult(
   if (homeScore === awayScore) return { error: 'В плей-офф ничьей быть не может' }
 
   const winnerId = homeScore > awayScore ? match.home_team_id : match.away_team_id
+  const loserId  = homeScore > awayScore ? match.away_team_id : match.home_team_id
 
   const { error: updateErr } = await supabase.from('playoff_matches').update({
     home_score: homeScore,
@@ -141,6 +156,13 @@ export async function savePlayoffResult(
   if (match.winner_to_match && winnerId) {
     const field = match.winner_slot === 'home' ? 'home_team_id' : 'away_team_id'
     await supabase.from('playoff_matches').update({ [field]: winnerId }).eq('id', match.winner_to_match)
+  }
+
+  // Double elimination: drop the loser into the losers bracket if linked
+  // (loser_to_match / loser_slot exist only after migration 033 — undefined = skip).
+  if (match.loser_to_match && loserId) {
+    const lField = match.loser_slot === 'home' ? 'home_team_id' : 'away_team_id'
+    await supabase.from('playoff_matches').update({ [lField]: loserId }).eq('id', match.loser_to_match)
   }
 
   // Sync score to live_games if a live game is active for this match

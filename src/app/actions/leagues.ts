@@ -658,7 +658,7 @@ export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' 
     .order('created_at', { ascending: false })
 
   const latest = (seasons ?? []).find(s => s.tournament_id) ?? null
-  let format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' = 'round_robin'
+  let format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim' = 'round_robin'
   let numRounds = 1
   let settings: ChampSettings = { sport: league.sport ?? undefined }
 

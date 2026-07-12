@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft, ArrowRight, Camera, Plus, Trophy, X, Zap,
-  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2, Shuffle, ListOrdered,
+  Check, Settings2, RotateCcw, Crown, Layers, Star, Lock, Loader2, Shuffle, ListOrdered, Network,
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
@@ -273,6 +273,7 @@ type Format = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 
 const FORMATS: { value: Format; icon: React.ElementType }[] = [
   { value: 'round_robin',    icon: RotateCcw   },
   { value: 'playoff',        icon: Trophy      },
+  { value: 'double_elim',    icon: Network     },
   { value: 'groups_playoff', icon: Layers      },
   { value: 'league_playoff', icon: Crown       },
   { value: 'swiss',          icon: Shuffle     },
@@ -282,6 +283,7 @@ const FORMATS: { value: Format; icon: React.ElementType }[] = [
 const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
   round_robin:    { ru: 'Круговой',              kz: 'Айналмалы',               en: 'Round-robin' },
   playoff:        { ru: 'Плей-офф',              kz: 'Плей-офф',                en: 'Playoff' },
+  double_elim:    { ru: 'Двойное выбывание',     kz: 'Қос шығару',              en: 'Double Elimination' },
   groups_playoff: { ru: 'Групповой + Плей-офф',  kz: 'Топтар + Плей-офф',       en: 'Groups + Playoff' },
   league_playoff: { ru: 'Лига + Плей-офф',       kz: 'Лига + Плей-офф',         en: 'League + Playoff' },
   swiss:          { ru: 'Швейцарская система',   kz: 'Швейцариялық жүйе',       en: 'Swiss system' },
@@ -291,6 +293,7 @@ const FORMAT_LABELS: Record<string, Record<Lang, string>> = {
 const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
   round_robin:    { ru: 'Каждая команда играет с каждой. Идеально для лиг и чемпионатов.',           kz: 'Барлығы барлығымен ойнайды. Лигалар мен чемпионаттарға өте қолайлы.',   en: 'Every team plays each other. Ideal for leagues and championships.' },
   playoff:        { ru: 'Сетка на выбывание. Идеально для кубков и разовых турниров.',               kz: 'Жою сеткасы. Кубоктар мен бір реттік турнирлерге өте қолайлы.',         en: 'Elimination bracket. Perfect for cups and single-event tournaments.' },
+  double_elim:    { ru: 'Две сетки: проигравший в верхней падает в нижнюю и получает второй шанс. Стандарт для киберспорта и единоборств. Нужно 4, 8, 16 или 32 участника.', kz: 'Екі тор: жоғарғыда жеңілген төменгіге түсіп, екінші мүмкіндік алады. Киберспорт пен жекпе-жекке стандарт. 4, 8, 16 немесе 32 қатысушы қажет.', en: 'Two brackets: a loss in the upper bracket drops you to the lower one for a second chance. The standard for esports and combat sports. Requires 4, 8, 16 or 32 participants.' },
   groups_playoff: { ru: 'Командки делятся на группы, потом лучшие встречаются в плей-офф.',          kz: 'Командалар топтарға бөлінеді, содан кейін үздіктер плей-оффта кездеседі.', en: 'Teams split into groups, then the best meet in a playoff bracket.' },
   league_playoff: { ru: 'Все играют в единой таблице, топ команды выходят в плей-офф.',             kz: 'Барлығы бір кестеде ойнайды, үздік командалар плей-оффқа шығады.',      en: 'All teams play in one table, top teams advance to playoff bracket.' },
   swiss:          { ru: 'Фиксированное число туров, соперников подбирают по очкам. Для шахмат, киберспорта и большого числа участников — без выбывания.', kz: 'Турлардың белгіленген саны, қарсыластар ұпай бойынша таңдалады. Шахмат, киберспорт және көп қатысушыға — шығарусыз.', en: 'A fixed number of rounds; opponents are matched by score. For chess, esports and large fields — no elimination.' },
@@ -493,6 +496,7 @@ export default function NewTournamentPage() {
     if (newFormat === 'league_playoff') { setNumRounds(5); setTeamsAdvance(8) }
     if (newFormat === 'groups_playoff') { setNumRounds(1); setTeamsAdvance(2); setGroupsCount(4) }
     if (newFormat === 'playoff')        { setNumRounds(1) }
+    if (newFormat === 'double_elim')    { setNumRounds(1) }
     if (newFormat === 'swiss')          { setNumRounds(5); setSeedingMode('seeded') }
     if (newFormat === 'leaderboard')    { setNumRounds(3); setSeedingMode('random') }
   }
@@ -590,6 +594,7 @@ export default function NewTournamentPage() {
   // ── Min-teams per format ────────────────────────────────────────────────────
   function minTeamsRequired(): number {
     if (format === 'playoff') return 4
+    if (format === 'double_elim') return 4
     if (format === 'groups_playoff') return groupsCount * 3
     if (format === 'swiss') return 4
     return 2 // round_robin, league_playoff
@@ -612,6 +617,16 @@ export default function NewTournamentPage() {
     if (filledTeams.length < min) {
       setError(min === 2 ? tx.errTeams : tx.errTeamsMin(min))
       return
+    }
+    // Double elimination needs an exact power-of-two field (4, 8, 16, 32 …)
+    if (format === 'double_elim') {
+      const n = filledTeams.length
+      if ((n & (n - 1)) !== 0) {
+        setError(lang === 'en' ? 'Double Elimination requires 4, 8, 16 or 32 participants'
+          : lang === 'kz' ? 'Қос шығару 4, 8, 16 немесе 32 қатысушыны қажет етеді'
+          : 'Double Elimination требует 4, 8, 16 или 32 участника')
+        return
+      }
     }
     if (seedingMode === 'seeded') {
       const missingRating = teamNames.some((n, i) => n.trim() && teamRatings[i] === null)
@@ -670,6 +685,7 @@ export default function NewTournamentPage() {
     if (!filledTeams.length) return ''
     if (format === 'round_robin')    return tx.matchesHint(filledTeams.length, matchCount)
     if (format === 'playoff')        return tx.playoffHint(filledTeams.length)
+    if (format === 'double_elim')    return lang === 'en' ? `${filledTeams.length} participants · double elimination` : lang === 'kz' ? `${filledTeams.length} қатысушы · қос шығару` : `${filledTeams.length} участников · двойное выбывание`
     if (format === 'groups_playoff') return tx.groupsHint(filledTeams.length, groupsCount)
     if (format === 'league_playoff') return tx.leagueHint(filledTeams.length)
     if (format === 'swiss')          return tx.swissHint(filledTeams.length, numRounds)
@@ -1214,7 +1230,7 @@ export default function NewTournamentPage() {
           </div>
 
           {/* Best-of-N playoff series (basketball, volleyball, hockey, esports) */}
-          {(format === 'playoff' || format === 'groups_playoff' || format === 'league_playoff') && (
+          {(format === 'playoff' || format === 'double_elim' || format === 'groups_playoff' || format === 'league_playoff') && (
             <div className="space-y-2 border-b border-gray-100 pb-5">
               <label className="text-sm font-black text-gray-800">
                 {lang === 'en' ? 'Playoff series' : lang === 'kz' ? 'Плей-офф сериясы' : 'Серия в плей-офф'}

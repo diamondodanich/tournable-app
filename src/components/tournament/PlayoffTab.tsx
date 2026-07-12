@@ -570,6 +570,8 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   const T = tx[lang]
   const [generating, setGenerating] = useState(false)
   const fmt = tournament.format ?? 'playoff'
+  const isDE = fmt === 'double_elim'
+  const selfGenerating = fmt === 'playoff' || isDE   // formats that own a "generate bracket" button
 
   // Horizontal-scroll affordance for the bracket (mobile)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -589,7 +591,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
   }
 
   async function handleGenerate() {
-    if (fmt === 'playoff' && teams.length < 2) { toast.error(T.minTeamsToGenerate); return }
+    if (selfGenerating && teams.length < 2) { toast.error(T.minTeamsToGenerate); return }
     if (matches.length > 0) {
       const ok = await confirmDialog({ title: T.bracketRegenerateConfirm, tone: 'danger', lang })
       if (!ok) return
@@ -609,12 +611,97 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
         </div>
         <p className="font-bold text-gray-700 text-lg mb-2">{T.emptyBracketTitle}</p>
         <p className="text-sm text-gray-400 mb-6">{T.emptyBracketHint}</p>
-        {fmt === 'playoff' && (
+        {selfGenerating && (
           <Button onClick={handleGenerate} disabled={generating || teams.length < 2} className="bg-[var(--sp)] hover:bg-[var(--spd)]">
             {generating && <Loader2 size={14} className="mr-2 animate-spin" />}
             {generating ? '…' : T.generateBracket}
           </Button>
         )}
+      </div>
+    )
+  }
+
+  // ── Double elimination: three stacked brackets (Winners / Losers / Grand Final) ──
+  if (isDE) {
+    const wb = matches.filter(m => m.bracket === 'WB')
+    const lb = matches.filter(m => m.bracket === 'LB')
+    const gf = matches.filter(m => m.bracket === 'GF')
+    const wbRoundVals = [...new Set(wb.map(m => m.round_order))].sort((a, b) => b - a) // desc: first round first
+    const lbRoundVals = [...new Set(lb.map(m => m.round_order))].sort((a, b) => a - b) // asc: first round first
+
+    const played = matches.filter(m => m.winner_id !== null).length
+
+    const renderColumn = (label: string, colMatches: PlayoffMatch[]) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 text-center">{label}</p>
+        <div className="flex flex-col gap-4 justify-around flex-1">
+          {colMatches.sort((a, b) => a.match_order - b.match_order).map(m => (
+            <PlayoffMatchCard
+              key={m.id}
+              match={m}
+              teams={teams}
+              tournamentId={tournament.id}
+              sport={tournament.sport ?? undefined}
+              isLive={livePlayoffMatchId === m.id}
+              isPro={isPro}
+              T={T}
+            />
+          ))}
+        </div>
+      </div>
+    )
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">{T.matchesProgress(played, matches.length)}</p>
+          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating} className="gap-2 text-xs">
+            <RefreshCw size={12} /> {generating ? '…' : T.regenerate}
+          </Button>
+        </div>
+
+        {/* Winners bracket */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-emerald-500" />
+            <h3 className="text-sm font-black text-gray-800">{T.deWinners}</h3>
+          </div>
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-6 min-w-max">
+              {wbRoundVals.map(ro => (
+                <div key={`wb-${ro}`}>{renderColumn(getRoundLabel(ro, T), wb.filter(m => m.round_order === ro))}</div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Losers bracket */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-amber-500" />
+            <h3 className="text-sm font-black text-gray-800">{T.deLosers}</h3>
+          </div>
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-6 min-w-max">
+              {lbRoundVals.map((ro, i) => (
+                <div key={`lb-${ro}`}>{renderColumn(T.roundN(i + 1), lb.filter(m => m.round_order === ro))}</div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Grand final */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-5 rounded-full bg-[var(--sp)]" />
+            <h3 className="text-sm font-black text-gray-800">{T.deGrandFinal}</h3>
+          </div>
+          <div className="overflow-x-auto pb-2">
+            <div className="flex min-w-max">
+              {renderColumn('', gf)}
+            </div>
+          </div>
+        </section>
       </div>
     )
   }

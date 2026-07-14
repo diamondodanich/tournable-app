@@ -122,7 +122,7 @@ export function TennisRacket({ size = 24, className = '' }: IconProps) {
   )
 }
 
-// Chess queen — mind sports (crowned head, flared gown, tiered base)
+// Chess queen — mind sports (coronet of ball-tipped points, flared gown, tiered base)
 export function ChessPawn({ size = 24, className = '' }: IconProps) {
   return (
     <svg
@@ -131,42 +131,43 @@ export function ChessPawn({ size = 24, className = '' }: IconProps) {
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
-      {/* crown with points */}
-      <path d="M5.4 5 7 9.2h10L18.6 5l-3 2.5L12 3.6 8.4 7.5 5.4 5Z" />
+      {/* coronet stems */}
+      <path d="M5.2 6.1c.1 1 .6 1.7 1.5 2.1M18.8 6.1c-.1 1-.6 1.7-1.5 2.1M12 4.7c.5 1.1.3 2.5-.5 3.4M8.3 5.2c.2 1.1 0 2.2-.5 3.2M15.7 5.2c-.2 1.1 0 2.2.5 3.2" />
+      {/* ball tips */}
+      <circle cx="5.1" cy="5.2" r=".95" /><circle cx="18.9" cy="5.2" r=".95" />
+      <circle cx="12" cy="3.7" r="1.05" /><circle cx="8.2" cy="4.5" r=".9" /><circle cx="15.8" cy="4.5" r=".9" />
       {/* collar */}
-      <path d="M7 9.2h10l-.5 2H7.5z" />
+      <path d="M7.1 9.1c1.7 1 8.1 1 9.8 0" />
       {/* flared gown */}
-      <path d="M7.5 11.2c.5 3-1 5.4-2.2 7.3h13.4c-1.2-1.9-2.7-4.3-2.2-7.3" />
+      <path d="M7.8 9.7c.5 3-1 5.6-2.4 7.6h13.2c-1.4-2-2.9-4.6-2.4-7.6" />
       {/* base */}
-      <rect x="4.4" y="18.5" width="15.2" height="2.5" rx="1" />
+      <rect x="4.5" y="18.4" width="15" height="2.5" rx="1" />
     </svg>
   )
 }
 
-// Yurt — nomad games (domed roof, eave line, body, door)
-export function Yurt({ size = 24, className = '' }: IconProps) {
+// Horse head — nomad games (stylized stallion facing right, mane, neck to a point)
+export function Horse({ size = 24, className = '' }: IconProps) {
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="1.6"
+      fill="none" stroke="currentColor" strokeWidth="1.5"
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
-      {/* roof */}
-      <path d="M3.5 11 12 4l8.5 7" />
-      {/* shanyrak (crown) */}
-      <path d="M10.4 4.9 12 4l1.6.9" />
-      {/* eave */}
-      <path d="M4 11h16" />
-      {/* walls */}
-      <path d="M5.2 11v9h13.6v-9" />
-      {/* door */}
-      <path d="M9.8 20v-4.2a2.2 2.2 0 0 1 4.4 0V20" />
+      {/* head + neck silhouette */}
+      <path d="M13.5 3.1c.9 1 1.4 2.1 1.5 3.3 1.8.5 4.1 2.2 5.2 4.6.5 1.1-.1 2.1-1.2 2.3l-1.4.2c-.5 1-1.5 1.6-2.7 1.7-1 1.8-2.2 3.2-3.5 4.4l-2.1 1.9c-.35.3-.9.1-1-.35-.55-2.3-.25-4.9 1.2-7.2-1.35.15-2.55.95-3.5 2.2-.3.4-.95.15-.9-.35.2-2.8 1.35-5.2 3.9-6.7-.95-.15-1.95.1-2.9.75-.45.3-1-.15-.75-.6 1-2.1 2.9-3.4 5.4-3.6.25-1 .7-1.9 1.45-2.6.35-.3.9-.15 1 .3Z" />
+      {/* mane crease */}
+      <path d="M8.9 9.3c1.05-.85 2.25-1.25 3.5-1.25" />
+      {/* eye */}
+      <path d="M15.2 8c.55-.15 1.1.15 1.25.7" />
+      {/* muzzle / mouth */}
+      <path d="M18.6 12.5c-.5.35-1.05.45-1.65.3" />
     </svg>
   )
 }
 
-// American football — US sports (pointed ball with center seam and laces)
+// American football — US sports (tilted ball, detached tips, ladder laces)
 export function AmericanFootball({ size = 24, className = '' }: IconProps) {
   return (
     <svg
@@ -175,14 +176,15 @@ export function AmericanFootball({ size = 24, className = '' }: IconProps) {
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
-      {/* ball */}
-      <ellipse cx="12" cy="12" rx="9" ry="5.6" transform="rotate(-35 12 12)" />
-      {/* end caps */}
-      <path d="M6.6 7.2 8 8.6M16 15.4l1.4 1.4" opacity=".8" />
+      {/* ball body */}
+      <ellipse cx="12" cy="12" rx="8.2" ry="5.6" transform="rotate(-40 12 12)" />
+      {/* detached corner tips */}
+      <path d="M17.9 6.1c1.3.2 2.4.7 3.1 1.4s1.2 1.8 1.4 3.1" opacity=".85" />
+      <path d="M6.1 17.9c-1.3-.2-2.4-.7-3.1-1.4s-1.2-1.8-1.4-3.1" opacity=".85" />
       {/* center seam */}
-      <path d="M9.7 14.3 14.3 9.7" />
-      {/* laces */}
-      <path d="M10.6 12.9l1.1 1.1M11.7 11.8l1.1 1.1M12.8 10.7l1.1 1.1" />
+      <path d="M9.2 14.8 14.8 9.2" />
+      {/* ladder laces */}
+      <path d="M10.4 12.6l1.5 1.5M11.6 11.4l1.5 1.5M12.8 10.2l1.5 1.5" />
     </svg>
   )
 }

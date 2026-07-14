@@ -65,7 +65,9 @@ export type MatchEvent = {
   team_id: string
   player_name: string
   player_id?: string | null
-  type: 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
+  // Discipline-defined event type (see EventDef in lib/sports.ts). Stored as text;
+  // football/hockey use goal/own_goal/assist/cards, other sports use their own set.
+  type: string
   minute: number | null
   created_at: string
 }

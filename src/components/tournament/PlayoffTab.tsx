@@ -7,21 +7,20 @@ import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Clock, ChevronRight } from 'lucide-react'
+import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Clock, ChevronRight, Zap, Shield, AlertTriangle, Lock, Star, Flame } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
+import { getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
 import { confirmDialog } from '@/components/ui/confirm'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
-type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
-type ActionType = 'goal' | 'yellow_card' | 'red_card'
+type EventEntry = { teamId: string; playerName: string; type: string; minute: string }
 type PlayoffFormState = {
-  teamId: string; actionType: ActionType
+  teamId: string; actionType: string
   player: string; assister: string; minute: string; isOwnGoal: boolean
 }
 
@@ -44,23 +43,38 @@ function teamById(teams: Team[], id: string | null) {
 
 const BASKETBALL_SPORTS_PT = new Set(['basketball', 'streetball', 'ebasketball'])
 
-function EventIcon({ type, sport }: { type: string; sport?: string }) {
-  if (type === 'goal' || type === 'own_goal') {
-    const Ball = BASKETBALL_SPORTS_PT.has(sport ?? '') ? BasketballBall : SoccerBall
-    const color = type === 'own_goal' ? 'text-red-400' : 'text-emerald-500'
-    return (
-      <div style={{ width: 12, height: 12 }} className={`inline-flex items-center justify-center shrink-0 align-middle ${color}`}>
-        <Ball className="w-full h-full" />
-      </div>
-    )
+function EventIcon({ type, sport, defs }: { type: string; sport?: string; defs: EventDef[] }) {
+  const icon = type === 'own_goal' ? 'ball' : defs.find(d => d.type === type)?.icon
+  switch (icon) {
+    case 'ball': {
+      const Ball = BASKETBALL_SPORTS_PT.has(sport ?? '') ? BasketballBall : SoccerBall
+      return (
+        <div style={{ width: 12, height: 12, color: type === 'own_goal' ? '#ef4444' : 'var(--sp)' }}
+          className="inline-flex items-center justify-center shrink-0 align-middle">
+          <Ball className="w-full h-full" />
+        </div>
+      )
+    }
+    case 'yellow': return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
+    case 'red':    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
+    case 'warn':
+    case 'foul':   return <AlertTriangle size={11} className="text-amber-500 shrink-0 align-middle" />
+    case 'ko':     return <Flame size={11} className="text-red-500 shrink-0 align-middle" />
+    case 'submission': return <Lock size={11} className="text-gray-600 shrink-0 align-middle" />
+    case 'ace':    return <Zap size={11} className="text-sky-500 shrink-0 align-middle" />
+    case 'block':  return <Shield size={11} className="text-indigo-500 shrink-0 align-middle" />
+    case 'three':  return <span className="text-[9px] font-black text-orange-500 shrink-0 align-middle leading-none">3PT</span>
+    case 'strike': return <X size={11} className="text-red-500 shrink-0 align-middle" />
+    case 'touchdown':
+    case 'run':
+    case 'star':   return <Star size={11} className="shrink-0 align-middle" style={{ color: 'var(--sp)' }} />
+    default:       return null
   }
-  if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
-  if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
-  return null
 }
 
-// Pair goals/cards with their assists from flat events array
-function buildRows(teamId: string, events: EventEntry[]) {
+// Pair goal-like events with their assists from flat events array
+function buildRows(teamId: string, events: EventEntry[], defs: EventDef[]) {
+  const assistCapable = new Set(defs.filter(d => d.hasAssist).map(d => d.type))
   const indexed = events.map((e, i) => ({ ...e, i }))
   const mine    = indexed.filter(e => e.teamId === teamId)
   const nonAsst = mine.filter(e => e.type !== 'assist')
@@ -69,7 +83,7 @@ function buildRows(teamId: string, events: EventEntry[]) {
   return nonAsst.map(e => {
     let assisterName: string | null = null
     let assistIdx: number | undefined
-    if (e.type === 'goal') {
+    if (assistCapable.has(e.type)) {
       const a = assists.find(a => !used.has(a.i) && a.minute === e.minute)
       if (a) { used.add(a.i); assisterName = a.playerName; assistIdx = a.i }
     }
@@ -85,41 +99,46 @@ interface PlayoffInlineFormProps {
   setForm: React.Dispatch<React.SetStateAction<PlayoffFormState | null>>
   onConfirm: () => void
   T: TournamentTx
+  lang: Lang
+  pills: EventDef[]
+  ownGoalDef?: EventDef
 }
 
-function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlineFormProps) {
+function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, ownGoalDef }: PlayoffInlineFormProps) {
   if (!form || form.teamId !== teamId) return null
-  const isGoal      = form.actionType === 'goal'
-  const submitLabel = form.isOwnGoal ? T.pillOG : isGoal ? T.pillGoal : form.actionType === 'yellow_card' ? T.pillYC : T.pillRC
+  const selected    = pills.find(p => p.type === form.actionType)
+  const isGoalLike  = !!selected?.hasAssist
+  const submitLabel = form.isOwnGoal ? (ownGoalDef?.label[lang] ?? '') : selected?.label[lang] ?? ''
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
-    : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-    : form.actionType === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-    : 'bg-red-500 text-white hover:bg-red-600'
+    : selected?.type === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+    : selected?.type === 'red_card' ? 'bg-red-500 text-white hover:bg-red-600'
+    : 'text-white'
+  const brandSubmit = !form.isOwnGoal && selected?.type !== 'yellow_card' && selected?.type !== 'red_card'
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-1.5 space-y-1.5">
       {/* Action type pills */}
-      <div className="flex gap-1">
-        {([
-          { v: 'goal' as const,        l: T.pillGoal },
-          { v: 'yellow_card' as const, l: T.pillYC   },
-          { v: 'red_card' as const,    l: T.pillRC   },
-        ]).map(opt => (
-          <button key={opt.v}
-            onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
-            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
-              form.actionType === opt.v
-                ? opt.v === 'goal' ? 'bg-emerald-600 text-white'
-                : opt.v === 'yellow_card' ? 'bg-yellow-400 text-black'
-                : 'bg-red-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-500'
-            }`}
-          >
-            {opt.l}
-          </button>
-        ))}
-        {isGoal && (
+      <div className="flex gap-1 flex-wrap">
+        {pills.map(opt => {
+          const active = form.actionType === opt.type
+          return (
+            <button key={opt.type}
+              onClick={() => setForm(f => f ? { ...f, actionType: opt.type, isOwnGoal: false } : f)}
+              style={active && opt.type !== 'yellow_card' && opt.type !== 'red_card' ? { background: 'var(--sp)' } : undefined}
+              className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
+                active
+                  ? opt.type === 'yellow_card' ? 'bg-yellow-400 text-black'
+                  : opt.type === 'red_card' ? 'bg-red-500 text-white'
+                  : 'text-white'
+                  : 'bg-white border border-gray-200 text-gray-500'
+              }`}
+            >
+              {opt.label[lang]}
+            </button>
+          )
+        })}
+        {isGoalLike && ownGoalDef && (
           <button
             type="button"
             onClick={() => setForm(f => f ? { ...f, isOwnGoal: !f.isOwnGoal } : f)}
@@ -129,7 +148,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlin
                 : 'bg-white text-gray-400 border-gray-200 hover:border-red-200 hover:text-red-400'
             }`}
           >
-            {T.pillOG}
+            {ownGoalDef.label[lang]}
           </button>
         )}
       </div>
@@ -140,12 +159,12 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlin
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoal ? T.scorerPlaceholder : T.playerPlaceholder}
+        placeholder={isGoalLike ? T.scorerPlaceholder : T.playerPlaceholder}
         className="h-7 text-xs bg-white w-full"
       />
 
-      {/* Assister (only for regular goal) */}
-      {isGoal && !form.isOwnGoal && (
+      {/* Assister (only for regular goal-like events) */}
+      {isGoalLike && !form.isOwnGoal && (
         <Input
           value={form.assister}
           onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
@@ -167,6 +186,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlin
         <button
           onClick={onConfirm}
           disabled={!form.player.trim()}
+          style={brandSubmit ? { background: 'var(--sp)' } : undefined}
           className={`flex-1 h-7 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${submitColor}`}
         >
           {submitLabel}
@@ -183,7 +203,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T }: PlayoffInlin
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro, T,
+  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro, T, lang,
 }: {
   match: PlayoffMatch
   teams: Team[]
@@ -194,12 +214,13 @@ function PlayoffMatchCard({
   awayLabel?: string   // shown when away_team_id is null
   isPro?: boolean
   T: TournamentTx
+  lang: Lang
 }) {
   const [events, setEvents] = useState<EventEntry[]>(
     match.match_events?.map(e => ({
       teamId: e.team_id,
       playerName: e.player_name,
-      type: e.type as EventType,
+      type: e.type,
       minute: e.minute?.toString() ?? '',
     })) ?? []
   )
@@ -209,6 +230,9 @@ function PlayoffMatchCard({
     match.winner_id ? 'finished' : isLive ? 'live' : 'scheduled'
   )
   const [isEditing, setIsEditing] = useState(status !== 'finished')
+  // Manual score inputs (combat/basketball/… have no goal events to count)
+  const [homeScore, setHomeScore] = useState((match.home_score ?? 0).toString())
+  const [awayScore, setAwayScore] = useState((match.away_score ?? 0).toString())
 
   // Inline add-event form (one per card, tied to a team)
   const [form, setForm] = useState<PlayoffFormState | null>(null)
@@ -218,33 +242,46 @@ function PlayoffMatchCard({
   const isDone   = match.winner_id !== null
   const isReady  = !!(match.home_team_id && match.away_team_id)
 
-  // Score is computed from goal events; fall back to saved score if no goals tracked
-  const hasGoals  = events.some(e => e.type === 'goal' || e.type === 'own_goal')
+  // ── Discipline-aware events ─────────────────────────────────────────────────
+  const eventDefs   = getEventDefs(sport)
+  const scoreMode   = getScoreMode(sport)
+  const manualScore = scoreMode === 'manual'
+  const defByType   = new Map(eventDefs.map(d => [d.type, d]))
+  const pills       = eventDefs.filter(d => d.type !== 'assist' && !d.countsForOpponent)
+  const ownGoalDef  = eventDefs.find(d => d.countsForOpponent)
+  const defaultAction = (pills.find(p => p.hasAssist) ?? pills[0])?.type ?? 'goal'
+  const scoresForTeam     = (t: string) => (defByType.get(t)?.countsForTeam ?? false)
+  const scoresForOpponent = (t: string) => (defByType.get(t)?.countsForOpponent ?? false)
+
+  // Score: derived from goal events for 'count' disciplines, else from inputs / saved.
+  const hasGoals  = scoreMode === 'count'
+    && events.some(e => scoresForTeam(e.type) || scoresForOpponent(e.type))
   const cHome     = events.filter(e =>
-    (e.teamId === match.home_team_id && e.type === 'goal') ||
-    (e.teamId === match.away_team_id && e.type === 'own_goal')
+    (e.teamId === match.home_team_id && scoresForTeam(e.type)) ||
+    (e.teamId === match.away_team_id && scoresForOpponent(e.type))
   ).length
   const cAway     = events.filter(e =>
-    (e.teamId === match.away_team_id && e.type === 'goal') ||
-    (e.teamId === match.home_team_id && e.type === 'own_goal')
+    (e.teamId === match.away_team_id && scoresForTeam(e.type)) ||
+    (e.teamId === match.home_team_id && scoresForOpponent(e.type))
   ).length
-  const scoreHome = hasGoals ? cHome : (match.home_score ?? 0)
-  const scoreAway = hasGoals ? cAway : (match.away_score ?? 0)
+  const scoreHome = hasGoals ? cHome : manualScore ? (parseInt(homeScore) || 0) : (match.home_score ?? 0)
+  const scoreAway = hasGoals ? cAway : manualScore ? (parseInt(awayScore) || 0) : (match.away_score ?? 0)
 
   // Open inline form for a team (close if already open for same team)
   function openForm(teamId: string) {
     if (form?.teamId === teamId) { setForm(null); return }
-    setForm({ teamId, actionType: 'goal', player: '', assister: '', minute: '', isOwnGoal: false })
+    setForm({ teamId, actionType: defaultAction, player: '', assister: '', minute: '', isOwnGoal: false })
   }
 
   // Confirm: add event(s) and close form
   function confirmForm() {
     if (!form || !form.player.trim()) return
-    const type: EventType = form.actionType === 'goal' && form.isOwnGoal ? 'own_goal' : form.actionType
+    const selected = defByType.get(form.actionType)
+    const type = form.isOwnGoal && ownGoalDef ? ownGoalDef.type : form.actionType
     const added: EventEntry[] = [
       { teamId: form.teamId, playerName: form.player.trim(), type, minute: form.minute },
     ]
-    if (form.actionType === 'goal' && !form.isOwnGoal && form.assister.trim()) {
+    if (selected?.hasAssist && !form.isOwnGoal && form.assister.trim()) {
       added.push({ teamId: form.teamId, playerName: form.assister.trim(), type: 'assist', minute: form.minute })
     }
     setEvents(prev => [...prev, ...added])
@@ -296,8 +333,8 @@ function PlayoffMatchCard({
   // ── Finished summary view ─────────────────────────────────────────────
 
   if (status === 'finished' && !isEditing) {
-    const homeRows = buildRows(match.home_team_id ?? '', events)
-    const awayRows = buildRows(match.away_team_id ?? '', events)
+    const homeRows = buildRows(match.home_team_id ?? '', events, eventDefs)
+    const awayRows = buildRows(match.away_team_id ?? '', events, eventDefs)
     const hasEvts  = homeRows.length > 0 || awayRows.length > 0
 
     return (
@@ -343,7 +380,7 @@ function PlayoffMatchCard({
               <div className="space-y-1">
                 {homeRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    <EventIcon type={r.type} sport={sport} />
+                    <EventIcon type={r.type} sport={sport} defs={eventDefs} />
                     <span className="font-medium truncate">
                       {r.playerName}
                       {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -360,7 +397,7 @@ function PlayoffMatchCard({
                       {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                       {r.playerName}
                     </span>
-                    <EventIcon type={r.type} sport={sport} />
+                    <EventIcon type={r.type} sport={sport} defs={eventDefs} />
                   </div>
                 ))}
               </div>
@@ -373,8 +410,8 @@ function PlayoffMatchCard({
 
   // ── Edit / Scheduled / Live card ──────────────────────────────────────
 
-  const homeRows = buildRows(match.home_team_id ?? '', events)
-  const awayRows = buildRows(match.away_team_id ?? '', events)
+  const homeRows = buildRows(match.home_team_id ?? '', events, eventDefs)
+  const awayRows = buildRows(match.away_team_id ?? '', events, eventDefs)
 
   return (
     <div className={`bg-white border rounded-xl p-3 shadow-sm w-[300px] max-w-[85vw] ${
@@ -434,11 +471,21 @@ function PlayoffMatchCard({
               {homeTeam?.name ?? homeLabel ?? 'TBD'}
             </span>
           </div>
-          <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
-            scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
-          }`}>
-            {scoreHome} – {scoreAway}
-          </div>
+          {manualScore && isEditing ? (
+            <div className="flex items-center gap-1 shrink-0 px-1">
+              <Input type="number" min={0} max={999} value={homeScore} onChange={e => setHomeScore(e.target.value)}
+                className="w-10 text-center font-mono text-base font-bold p-1 h-8" />
+              <span className="font-bold text-gray-400 text-sm">–</span>
+              <Input type="number" min={0} max={999} value={awayScore} onChange={e => setAwayScore(e.target.value)}
+                className="w-10 text-center font-mono text-base font-bold p-1 h-8" />
+            </div>
+          ) : (
+            <div className={`font-black text-2xl font-mono tabular-nums shrink-0 px-2 ${
+              scoreHome === 0 && scoreAway === 0 ? 'text-gray-300' : 'text-gray-900'
+            }`}>
+              {scoreHome} – {scoreAway}
+            </div>
+          )}
           <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
             <span className={`font-bold text-sm text-right leading-tight break-words line-clamp-2 ${awayTeam ? 'text-gray-900' : 'text-gray-400 italic'}`}>
               {awayTeam?.name ?? awayLabel ?? 'TBD'}
@@ -448,8 +495,8 @@ function PlayoffMatchCard({
         </div>
       )}
 
-      {/* ── Events columns ── */}
-      {isReady && (
+      {/* ── Events columns — only for disciplines with in-match events ── */}
+      {isReady && eventDefs.length > 0 && (
         <div className="border-t border-dashed border-gray-200 pt-2 mb-2">
           <div className="grid grid-cols-2 gap-x-2">
 
@@ -457,7 +504,7 @@ function PlayoffMatchCard({
             <div className="min-w-0 overflow-hidden">
               {homeRows.map((r, i) => (
                 <div key={i} className="flex items-center gap-1 mb-1">
-                  <EventIcon type={r.type} sport={sport} />
+                  <EventIcon type={r.type} sport={sport} defs={eventDefs} />
                   <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
                     {r.playerName}
                     {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -470,8 +517,9 @@ function PlayoffMatchCard({
                 </div>
               ))}
               <button onClick={() => match.home_team_id && openForm(match.home_team_id)}
+                style={form?.teamId === match.home_team_id ? { color: 'var(--sp)' } : undefined}
                 className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
-                  form?.teamId === match.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                  form?.teamId === match.home_team_id ? 'font-bold' : 'text-gray-400 hover:text-gray-600'
                 }`}>
                 <Plus size={10} /> {T.addEvent}
               </button>
@@ -490,12 +538,13 @@ function PlayoffMatchCard({
                     {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                     {r.playerName}
                   </span>
-                  <EventIcon type={r.type} sport={sport} />
+                  <EventIcon type={r.type} sport={sport} defs={eventDefs} />
                 </div>
               ))}
               <button onClick={() => match.away_team_id && openForm(match.away_team_id)}
+                style={form?.teamId === match.away_team_id ? { color: 'var(--sp)' } : undefined}
                 className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
-                  form?.teamId === match.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                  form?.teamId === match.away_team_id ? 'font-bold' : 'text-gray-400 hover:text-gray-600'
                 }`}>
                 {T.addEvent} <Plus size={10} />
               </button>
@@ -508,11 +557,11 @@ function PlayoffMatchCard({
             <div className="mt-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{T.eventFor}</span>
-                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
                   {form.teamId === match.home_team_id ? homeTeam?.name : awayTeam?.name}
                 </span>
               </div>
-              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} />
+              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} />
             </div>
           )}
         </div>
@@ -645,6 +694,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
               isLive={livePlayoffMatchId === m.id}
               isPro={isPro}
               T={T}
+              lang={lang}
             />
           ))}
         </div>
@@ -796,6 +846,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                         awayLabel={labels?.away}
                         isPro={isPro}
                         T={T}
+                        lang={lang}
                       />
                     )
                   })}

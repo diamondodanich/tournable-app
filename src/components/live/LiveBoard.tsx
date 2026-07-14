@@ -6,7 +6,7 @@ import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch, initLiveGame, patchLiveGame } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus, Minus } from 'lucide-react'
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus, Minus, Zap, Shield, Lock, Flame, Star } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { AssistIcon } from '@/components/ui/SportIcon'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { APP_URL } from '@/lib/appUrl'
 import { useFeedback } from '@/hooks/useFeedback'
-import { getSportTheme, getCategoryForSport } from '@/lib/sports'
+import { getSportTheme, getCategoryForSport, getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -43,15 +43,26 @@ function GoalBall({ size, sport, className }: { size: number; sport?: string; cl
   )
 }
 
-function EventIcon({ type, size = 14, sport }: { type: string; size?: number; sport?: string }) {
-  if (type === 'goal')        return <GoalBall size={size} sport={sport} className="text-[var(--lb)]" />
-  if (type === 'own_goal')    return <GoalBall size={size} sport={sport} className="text-red-400" />
-  if (type === 'assist')      return <AssistIcon size={size} className="text-sky-400 shrink-0" />
-  if (type === 'yellow_card') return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0"
-    style={{ width: Math.round(size * 0.65), height: size }} />
-  if (type === 'red_card')    return <span className="inline-block rounded-[2px] bg-red-500 shrink-0"
-    style={{ width: Math.round(size * 0.65), height: size }} />
-  return null
+function EventIcon({ type, size = 14, sport, defs }: { type: string; size?: number; sport?: string; defs: EventDef[] }) {
+  const icon = type === 'own_goal' ? 'ball' : defs.find(d => d.type === type)?.icon
+  switch (icon) {
+    case 'ball':       return <GoalBall size={size} sport={sport} className={type === 'own_goal' ? 'text-red-400' : 'text-[var(--lb)]'} />
+    case 'assist':     return <AssistIcon size={size} className="text-sky-400 shrink-0" />
+    case 'yellow':     return <span className="inline-block rounded-[2px] bg-yellow-400 shrink-0" style={{ width: Math.round(size * 0.65), height: size }} />
+    case 'red':        return <span className="inline-block rounded-[2px] bg-red-500 shrink-0" style={{ width: Math.round(size * 0.65), height: size }} />
+    case 'warn':
+    case 'foul':       return <AlertTriangle size={size} className="text-amber-400 shrink-0" />
+    case 'ko':         return <Flame size={size} className="text-red-400 shrink-0" />
+    case 'submission': return <Lock size={size} className="text-gray-300 shrink-0" />
+    case 'ace':        return <Zap size={size} className="text-sky-400 shrink-0" />
+    case 'block':      return <Shield size={size} className="text-indigo-400 shrink-0" />
+    case 'three':      return <span className="text-[9px] font-black text-orange-400 shrink-0 leading-none">3PT</span>
+    case 'strike':     return <X size={size} className="text-red-400 shrink-0" />
+    case 'touchdown':
+    case 'run':
+    case 'star':       return <Star size={size} className="text-[var(--lb)] shrink-0" />
+    default:           return null
+  }
 }
 
 /** Pair each goal/card event with its assist (same team + minute, first available) */
@@ -109,10 +120,9 @@ export default function LiveBoard({
   const [awayId, setAwayId]   = useState(defaultAwayId ?? (teams[1]?.id ?? ''))
   const [initing, setIniting] = useState(false)
 
-  // ── Unified event form ──
-  type ActionType = 'goal' | 'yellow_card' | 'red_card'
+  // ── Unified event form (actionType = selected discipline event) ──
   const [side, setSide]             = useState<'home' | 'away'>('home')
-  const [actionType, setActionType] = useState<ActionType>('goal')
+  const [actionType, setActionType] = useState<string>('goal')
   const [player, setPlayer]         = useState('')
   const [assister, setAssister]     = useState('')
   const [minute, setMinute]         = useState('')   // empty = use timer value
@@ -133,9 +143,18 @@ export default function LiveBoard({
   const warnRef    = useRef(false)
   gameRef.current  = game
 
-  // ── Combat sports (MMA/boxing/wrestling): rounds + count-down round timer,
-  // no football events (goals/cards/assists). ────────────────────────────────
+  // ── Combat sports (MMA/boxing/wrestling): rounds + count-down round timer. ──
   const isCombat = getCategoryForSport(tournament.sport ?? '')?.id === 'combat'
+
+  // ── Discipline-aware events ─────────────────────────────────────────────────
+  const eventDefs   = getEventDefs(tournament.sport)
+  const scoreMode   = getScoreMode(tournament.sport)
+  const manualScore = scoreMode === 'manual'   // score via +/- buttons, not goal events
+  const defByType   = new Map(eventDefs.map(d => [d.type, d]))
+  const eventPills  = eventDefs.filter(d => d.type !== 'assist' && !d.countsForOpponent)
+  const ownGoalDef  = eventDefs.find(d => d.countsForOpponent)
+  const defaultAction = (eventPills.find(p => p.countsForTeam) ?? eventPills[0])?.type ?? 'goal'
+  const hasEventLog = eventPills.length > 0
 
   // Total match duration in seconds based on tournament settings
   const totalDurationSecs = (tournament.match_periods ?? 2) * (tournament.match_duration_mins ?? 45) * 60
@@ -362,8 +381,10 @@ export default function LiveBoard({
     const autoMin = Math.floor(displaySecs / 60)
     const min = minute.trim() ? parseInt(minute) : Math.max(1, autoMin)
 
-    if (actionType === 'goal') {
-      const type = isOwnGoal ? 'own_goal' as const : 'goal' as const
+    const selectedDef = defByType.get(actionType)
+
+    if (selectedDef?.countsForTeam) {
+      const type = isOwnGoal && ownGoalDef ? ownGoalDef.type : actionType
 
       const scorePatch: Partial<LiveGame> = isOwnGoal
         ? (side === 'home' ? { away_score: game.away_score + 1 } : { home_score: game.home_score + 1 })
@@ -374,7 +395,7 @@ export default function LiveBoard({
 
       const tempGoalId   = `temp_g_${Date.now()}`
       const tempAssistId = `temp_a_${Date.now() + 1}`
-      const hasAssist    = assister.trim().length > 0
+      const hasAssist    = !!selectedDef.hasAssist && assister.trim().length > 0
 
       setEvents(prev => [
         ...prev,
@@ -674,19 +695,19 @@ export default function LiveBoard({
   const sportTheme = getSportTheme(tournament.sport)
   const themeVars = { ['--lb' as string]: sportTheme.primary, ['--lbd' as string]: sportTheme.primaryDark } as React.CSSProperties
 
+  const formDef = defByType.get(actionType)
   const submitLabel = submitting
     ? 'Сохраняем…'
-    : actionType === 'goal'
-      ? (isOwnGoal ? '↩ Авто-гол' : 'Гол')
-      : actionType === 'yellow_card' ? 'Жёлтая' : 'Красная'
+    : isOwnGoal ? '↩ ' + (ownGoalDef?.label.ru ?? 'Автогол')
+    : formDef?.label.ru ?? 'Событие'
 
-  const submitClass = actionType === 'goal' && isOwnGoal
+  const submitClass = isOwnGoal
     ? 'bg-red-900/70 hover:bg-red-900 text-red-200'
-    : actionType === 'goal'
-      ? 'bg-[var(--lbd)] hover:bg-[var(--lb)] text-white'
-      : actionType === 'yellow_card'
-        ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
-        : 'bg-red-600 hover:bg-red-500 text-white'
+    : actionType === 'yellow_card'
+      ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
+      : actionType === 'red_card'
+        ? 'bg-red-600 hover:bg-red-500 text-white'
+        : 'bg-[var(--lbd)] hover:bg-[var(--lb)] text-white'
 
   return (
     <div className={boardWrap} style={themeVars}>
@@ -789,8 +810,8 @@ export default function LiveBoard({
           </div>
         </div>
 
-        {/* Combat: manual +/- scoring per fighter (no goal events) */}
-        {isCombat && isOwner && (
+        {/* Manual-score disciplines (combat, basketball, volleyball, …): +/- per side */}
+        {manualScore && isOwner && (
           <div className="flex items-stretch justify-center gap-10 mt-3">
             {(['home', 'away'] as const).map(sk => (
               <div key={sk} className="flex items-center gap-2">
@@ -842,7 +863,7 @@ export default function LiveBoard({
 
       {/* ── Events strip — gets all remaining space, scrollable ──────────── */}
       <div className="flex-1 min-h-0 mx-4 mb-2 overflow-y-auto scrollbar-hide">
-        {!isCombat && hasEvents && (
+        {hasEventLog && hasEvents && (
           <div className="bg-gray-900/70 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-gray-800">
 
@@ -853,7 +874,7 @@ export default function LiveBoard({
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0 pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
-                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} /></span>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} defs={eventDefs} /></span>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate leading-tight ${e.type === 'own_goal' ? 'text-red-400' : 'text-gray-200'}`}>
                         {e.player_name}
@@ -892,7 +913,7 @@ export default function LiveBoard({
                         <p className="text-gray-500 text-[11px] truncate leading-tight text-right">{assist.player_name} ↗</p>
                       )}
                     </div>
-                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} /></span>
+                    <span className="pt-0.5 shrink-0"><EventIcon type={e.type} size={13} sport={tournament.sport ?? undefined} defs={eventDefs} /></span>
                     <span className="text-gray-600 font-mono text-xs w-7 shrink-0 text-right pt-0.5">
                       {e.minute != null ? `${e.minute}'` : ''}
                     </span>
@@ -910,11 +931,11 @@ export default function LiveBoard({
         <div className="shrink-0 px-4 pb-4 flex gap-2">
           {hasFixture && (() => {
             const matchStarted = game.accumulated_secs > 0 || game.timer_running
-            // Combat has no goal/card events → skip the "Событие" button once started.
-            if (matchStarted && isCombat) return null
+            // Disciplines with no loggable events (chess, esports) → no "Событие" button.
+            if (matchStarted && !hasEventLog) return null
             return matchStarted ? (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => { setActionType(defaultAction); setIsOwnGoal(false); setShowForm(true) }}
                 className="px-6 py-3 rounded-2xl bg-[var(--lbd)] hover:bg-[var(--lb)] active:bg-[var(--lbd)] text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
               >
                 <Plus size={16} />
@@ -1003,27 +1024,25 @@ export default function LiveBoard({
               })}
             </div>
 
-            {/* Action type */}
-            <div className="flex gap-2 justify-center">
-              {([
-                { value: 'goal',        label: 'Гол' },
-                { value: 'yellow_card', label: 'ЖК' },
-                { value: 'red_card',    label: 'КК' },
-              ] as const).map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setActionType(opt.value); if (opt.value !== 'goal') setIsOwnGoal(false) }}
-                  className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
-                    actionType === opt.value
-                      ? opt.value === 'goal'        ? 'bg-[var(--lbd)] text-white'
-                      : opt.value === 'yellow_card' ? 'bg-yellow-500 text-black'
-                      : 'bg-red-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            {/* Action type — discipline events */}
+            <div className="flex gap-2 justify-center flex-wrap">
+              {eventPills.map(opt => {
+                const active = actionType === opt.type
+                const activeCls = opt.type === 'yellow_card' ? 'bg-yellow-500 text-black'
+                  : opt.type === 'red_card' ? 'bg-red-600 text-white'
+                  : 'bg-[var(--lbd)] text-white'
+                return (
+                  <button
+                    key={opt.type}
+                    onClick={() => { setActionType(opt.type); if (!opt.hasAssist) setIsOwnGoal(false) }}
+                    className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+                      active ? activeCls : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    {opt.label.ru}
+                  </button>
+                )
+              })}
             </div>
 
             {/* Player inputs */}
@@ -1032,7 +1051,7 @@ export default function LiveBoard({
                 {playerSuggestions.map(name => <option key={name} value={name} />)}
               </datalist>
             )}
-            {actionType === 'goal' ? (
+            {formDef?.hasAssist && !isOwnGoal ? (
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   value={player}
@@ -1069,7 +1088,7 @@ export default function LiveBoard({
                   {currentMinute > 0 ? `${currentMinute}'` : '0\''}
                 </span>
               </div>
-              {actionType === 'goal' && (
+              {formDef?.hasAssist && ownGoalDef && (
                 <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
                   <input
                     type="checkbox"

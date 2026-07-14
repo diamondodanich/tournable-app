@@ -74,57 +74,55 @@ export function BasketballBall({ className = 'w-full h-full' }: IconProps) {
   )
 }
 
-// MMA / boxing glove — combat sports (fist-forward, four finger ridges + thumb + wrist strap)
+// Boxing glove — combat sports (rounded mitt with knuckle bumps, thumb, wrist strap)
 export function MmaGlove({ size = 24, className = '' }: IconProps) {
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="1.5"
+      fill="none" stroke="currentColor" strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
-      {/* glove shell */}
-      <path d="M8 6.4A2.5 2.5 0 0 1 10.5 4h4.2A4.3 4.3 0 0 1 19 8.3v5.1A2.6 2.6 0 0 1 16.4 16H9.6A2.6 2.6 0 0 1 7 13.4v-2" />
+      {/* mitt body */}
+      <path d="M8 8.3c0-2.5 2-4 4.2-4s4.3 1.5 4.3 4v3.6a3 3 0 0 1-3 3h-3a2.5 2.5 0 0 1-2.5-2.5z" />
+      {/* knuckle bumps across the top */}
+      <path d="M8.3 8c1.4-1 6.2-1 8.2 0" />
       {/* thumb */}
-      <path d="M8 6.4 6.4 7.2A2.4 2.4 0 0 0 5 9.4v1.8A2 2 0 0 0 7 13.2" />
-      {/* finger ridges */}
-      <path d="M10.6 4.2v3.5M13.2 4v3.7" />
-      {/* knuckle crease */}
-      <path d="M7.6 7.7h9.7" />
+      <path d="M8 10.4H6.4A2.4 2.4 0 0 0 4 12.8v.2a2.4 2.4 0 0 0 2.4 2.4H8" />
       {/* wrist cuff */}
-      <path d="M9.4 16v2.3A1.7 1.7 0 0 0 11.1 20h3.4a1.7 1.7 0 0 0 1.7-1.7V16" />
+      <path d="M10 14.9V17a2 2 0 0 0 2 2h1.6a2 2 0 0 0 2-2v-2.1" />
       {/* strap */}
-      <rect x="10.6" y="16.4" width="3.6" height="2.4" rx=".7" />
+      <rect x="10.3" y="15.5" width="5" height="2.4" rx=".8" />
     </svg>
   )
 }
 
-// Tennis racket — racket sports (angled head with strings + handle)
+// Tennis racket + ball — racket sports (angled strung head, handle, ball)
 export function TennisRacket({ size = 24, className = '' }: IconProps) {
   return (
     <svg
       width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="1.5"
+      fill="none" stroke="currentColor" strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
       {/* head */}
-      <ellipse cx="9.6" cy="8" rx="5.1" ry="5.9" transform="rotate(-40 9.6 8)" />
-      {/* strings — one way */}
-      <path d="M7 4.7 12.2 9M5.2 7.3 10.9 10.6M8.7 3.7 10.6 11.2" opacity=".85" />
-      {/* strings — cross way */}
-      <path d="M5.8 9.7 12.6 6.4M7.8 12.1 13.3 8.6" opacity=".85" />
-      {/* throat */}
-      <path d="M12.3 12.3 14.9 15" />
-      {/* handle */}
-      <path d="M14.4 14.5 18.9 19.3" />
+      <ellipse cx="9" cy="8" rx="4.9" ry="5.8" transform="rotate(-38 9 8)" />
+      {/* strings */}
+      <path d="M6.2 4.4 11.4 8.7M4.7 7 10.6 10.4M8.4 3.8 10 11.2" opacity=".8" />
+      <path d="M5.4 9.5 12.1 6.1" opacity=".8" />
+      {/* throat + handle */}
+      <path d="M12 12 18.4 19" />
       {/* grip cap */}
-      <path d="M17.4 17.3 19.4 19.5" strokeWidth="2.6" />
+      <path d="M17 16.7 19.2 18.9" strokeWidth="2.6" />
+      {/* ball */}
+      <circle cx="6.4" cy="18" r="2.6" />
+      <path d="M4.2 16.6c1.4 1 1.4 3.8 0 4.8" opacity=".7" />
     </svg>
   )
 }
 
-// Chess pawn — mind sports (canonical: sphere head, collar, bell body, tiered base)
+// Chess queen — mind sports (crowned head, flared gown, tiered base)
 export function ChessPawn({ size = 24, className = '' }: IconProps) {
   return (
     <svg
@@ -133,18 +131,58 @@ export function ChessPawn({ size = 24, className = '' }: IconProps) {
       strokeLinecap="round" strokeLinejoin="round"
       className={className}
     >
-      {/* head */}
-      <circle cx="12" cy="5.2" r="2.6" />
-      {/* collar under the head */}
-      <path d="M9.3 8.4a4 4 0 0 0 5.4 0" />
-      {/* bell body */}
-      <path d="M9.9 9.3c.2 2.1-1.3 3.6-2.2 5.3M14.1 9.3c-.2 2.1 1.3 3.6 2.2 5.3" />
-      {/* mid ring */}
-      <path d="M7.7 14.6h8.6" />
-      {/* flared skirt */}
-      <path d="M8.3 14.6c-.3 1.5-1 2.6-1.8 3.9h11c-.8-1.3-1.5-2.4-1.8-3.9" />
+      {/* crown with points */}
+      <path d="M5.4 5 7 9.2h10L18.6 5l-3 2.5L12 3.6 8.4 7.5 5.4 5Z" />
+      {/* collar */}
+      <path d="M7 9.2h10l-.5 2H7.5z" />
+      {/* flared gown */}
+      <path d="M7.5 11.2c.5 3-1 5.4-2.2 7.3h13.4c-1.2-1.9-2.7-4.3-2.2-7.3" />
       {/* base */}
-      <rect x="5.9" y="18.5" width="12.2" height="2.6" rx="1.1" />
+      <rect x="4.4" y="18.5" width="15.2" height="2.5" rx="1" />
+    </svg>
+  )
+}
+
+// Yurt — nomad games (domed roof, eave line, body, door)
+export function Yurt({ size = 24, className = '' }: IconProps) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className}
+    >
+      {/* roof */}
+      <path d="M3.5 11 12 4l8.5 7" />
+      {/* shanyrak (crown) */}
+      <path d="M10.4 4.9 12 4l1.6.9" />
+      {/* eave */}
+      <path d="M4 11h16" />
+      {/* walls */}
+      <path d="M5.2 11v9h13.6v-9" />
+      {/* door */}
+      <path d="M9.8 20v-4.2a2.2 2.2 0 0 1 4.4 0V20" />
+    </svg>
+  )
+}
+
+// American football — US sports (pointed ball with center seam and laces)
+export function AmericanFootball({ size = 24, className = '' }: IconProps) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={className}
+    >
+      {/* ball */}
+      <ellipse cx="12" cy="12" rx="9" ry="5.6" transform="rotate(-35 12 12)" />
+      {/* end caps */}
+      <path d="M6.6 7.2 8 8.6M16 15.4l1.4 1.4" opacity=".8" />
+      {/* center seam */}
+      <path d="M9.7 14.3 14.3 9.7" />
+      {/* laces */}
+      <path d="M10.6 12.9l1.1 1.1M11.7 11.8l1.1 1.1M12.8 10.7l1.1 1.1" />
     </svg>
   )
 }

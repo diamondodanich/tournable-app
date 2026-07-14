@@ -4,14 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Team, MatchEvent } from '@/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Handshake, RectangleVertical, Lock } from 'lucide-react'
+import { Handshake, RectangleVertical, Lock, Zap, Shield, AlertTriangle, Flame, Target, Star, XCircle } from 'lucide-react'
 import TeamAvatar from './TeamAvatar'
 import { tx, type Lang } from '@/lib/i18n'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
+import { getEventDefs, type EventDef, type EventIcon } from '@/lib/sports'
 
-type Filter = 'goal' | 'assist' | 'yellow_card' | 'red_card'
-
-const FOOTBALL_SPORTS = new Set(['football', 'futsal', 'efootball'])
 const BASKETBALL_SPORTS = new Set(['basketball', 'streetball', 'ebasketball'])
 
 function GoalIcon({ size, className, sport }: { size: number; className?: string; sport?: string }) {
@@ -29,7 +27,45 @@ function GoalIcon({ size, className, sport }: { size: number; className?: string
   )
 }
 
-function buildLeaderboard(teams: Team[], events: MatchEvent[], type: Filter) {
+// Icon + accent colours per discipline event kind (Stats leaderboards).
+function StatMark({ icon, size, className, sport }: { icon: EventIcon; size: number; className?: string; sport?: string }) {
+  switch (icon) {
+    case 'ball':       return <GoalIcon size={size} className={className} sport={sport} />
+    case 'assist':     return <Handshake size={size} className={className} />
+    case 'yellow':
+    case 'red':        return <RectangleVertical size={size} className={className} />
+    case 'warn':
+    case 'foul':       return <AlertTriangle size={size} className={className} />
+    case 'ace':        return <Zap size={size} className={className} />
+    case 'block':      return <Shield size={size} className={className} />
+    case 'ko':         return <Flame size={size} className={className} />
+    case 'submission': return <Lock size={size} className={className} />
+    case 'three':      return <Target size={size} className={className} />
+    case 'strike':     return <XCircle size={size} className={className} />
+    default:           return <Star size={size} className={className} />
+  }
+}
+
+// active-button + empty-state accent classes keyed by icon
+const STAT_COLORS: Record<EventIcon, { color: string; iconColor: string; brand?: boolean }> = {
+  ball:       { color: 'text-white', iconColor: '', brand: true },
+  assist:     { color: 'bg-blue-600 text-white',   iconColor: 'bg-blue-100 text-blue-600' },
+  yellow:     { color: 'bg-amber-500 text-white',  iconColor: 'bg-amber-100 text-amber-600' },
+  red:        { color: 'bg-red-600 text-white',    iconColor: 'bg-red-100 text-red-600' },
+  warn:       { color: 'bg-amber-500 text-white',  iconColor: 'bg-amber-100 text-amber-600' },
+  foul:       { color: 'bg-amber-500 text-white',  iconColor: 'bg-amber-100 text-amber-600' },
+  ace:        { color: 'bg-sky-600 text-white',    iconColor: 'bg-sky-100 text-sky-600' },
+  block:      { color: 'bg-indigo-600 text-white', iconColor: 'bg-indigo-100 text-indigo-600' },
+  ko:         { color: 'bg-red-600 text-white',    iconColor: 'bg-red-100 text-red-600' },
+  submission: { color: 'bg-gray-800 text-white',   iconColor: 'bg-gray-100 text-gray-700' },
+  three:      { color: 'bg-orange-600 text-white', iconColor: 'bg-orange-100 text-orange-600' },
+  strike:     { color: 'bg-red-600 text-white',    iconColor: 'bg-red-100 text-red-600' },
+  touchdown:  { color: 'text-white', iconColor: '', brand: true },
+  run:        { color: 'text-white', iconColor: '', brand: true },
+  star:       { color: 'text-white', iconColor: '', brand: true },
+}
+
+function buildLeaderboard(teams: Team[], events: MatchEvent[], type: string) {
   const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; count: number }>()
 
   events.filter(e => e.type === type).forEach(e => {
@@ -61,51 +97,33 @@ export default function StatsTab({
   hideUpsell?: boolean
 }) {
   const T = tx[lang]
-  const FILTERS: {
-    value: Filter
-    label: string
-    short: string
-    color: string
-    iconColor: string
-    renderIcon: (size: number, className?: string) => React.ReactNode
-  }[] = [
-    {
-      value: 'goal',
-      label: T.statTopScorers,
-      short: T.statGoalsCol,
-      color: 'bg-emerald-600 text-white',
-      iconColor: 'bg-emerald-100 text-emerald-600',
-      renderIcon: (size, cls) => <GoalIcon size={size} className={cls} sport={sport} />,
-    },
-    {
-      value: 'assist',
-      label: T.statAssists,
-      short: T.statAssistsCol,
-      color: 'bg-blue-600 text-white',
-      iconColor: 'bg-blue-100 text-blue-600',
-      renderIcon: (size, cls) => <Handshake size={size} className={cls} />,
-    },
-    {
-      value: 'yellow_card',
-      label: T.statYellowCards,
-      short: T.statYCCol,
-      color: 'bg-amber-500 text-white',
-      iconColor: 'bg-amber-100 text-amber-600',
-      renderIcon: (size, cls) => <RectangleVertical size={size} className={cls} />,
-    },
-    {
-      value: 'red_card',
-      label: T.statRedCards,
-      short: T.statRCCol,
-      color: 'bg-red-600 text-white',
-      iconColor: 'bg-red-100 text-red-600',
-      renderIcon: (size, cls) => <RectangleVertical size={size} className={cls} />,
-    },
-  ]
+  // Leaderboards are built from the discipline's stat-eligible events.
+  const statDefs: EventDef[] = getEventDefs(sport).filter(d => d.stat)
+  const FILTERS = statDefs.map(def => {
+    const c = STAT_COLORS[def.icon]
+    return {
+      value: def.type,
+      label: def.label[lang],
+      short: def.label[lang],
+      color: c.color,
+      iconColor: c.iconColor,
+      brand: !!c.brand,
+      icon: def.icon,
+    }
+  })
 
-  const [filter, setFilter] = useState<Filter>('goal')
-  const list = buildLeaderboard(teams, events, filter)
-  const active = FILTERS.find(f => f.value === filter)!
+  const [filter, setFilter] = useState<string>(statDefs[0]?.type ?? 'goal')
+  const active = FILTERS.find(f => f.value === filter) ?? FILTERS[0]
+  const list = buildLeaderboard(teams, events, active?.value ?? filter)
+
+  // Disciplines with no per-player events (chess, esports…) show no leaderboards.
+  if (FILTERS.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+        <p className="font-bold text-gray-600">{T.statHint}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -116,11 +134,12 @@ export default function StatsTab({
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
+              style={isActive && f.brand ? { background: 'var(--sp)' } : undefined}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
                 isActive ? f.color : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {f.renderIcon(15, 'shrink-0')}
+              <StatMark icon={f.icon} size={15} className="shrink-0" sport={sport} />
               <span>{f.label}</span>
             </button>
           )
@@ -129,8 +148,9 @@ export default function StatsTab({
 
       {list.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${active.iconColor}`}>
-            {active.renderIcon(26)}
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${active.brand ? 'bg-gray-100' : active.iconColor}`}
+            style={active.brand ? { color: 'var(--sp)' } : undefined}>
+            <StatMark icon={active.icon} size={26} sport={sport} />
           </div>
           <p className="font-bold text-gray-600">{T.statEmpty(active.label)}</p>
           <p className="text-sm text-gray-400 mt-1">{T.statHint}</p>
@@ -157,7 +177,7 @@ export default function StatsTab({
                       <span className="text-gray-500 text-sm">{p.teamName}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center font-black text-lg text-emerald-600">{p.count}</TableCell>
+                  <TableCell className="text-center font-black text-lg" style={{ color: 'var(--sp)' }}>{p.count}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

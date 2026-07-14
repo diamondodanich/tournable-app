@@ -7,24 +7,24 @@ import { saveFixtureResult, startFixture, generateNextSwissRound } from '@/app/a
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users, Shuffle } from 'lucide-react'
+import { Check, Plus, X, Radio, Play, Pencil, Loader2, Users, Shuffle, Zap, Shield, AlertTriangle, Lock, Star, Flame } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import LineupEditor from './LineupEditor'
 import SquadEditor from '@/components/championship/SquadEditor'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
-import { getCategoryForSport } from '@/lib/sports'
+import { getCategoryForSport, getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/client'
 
-type EventType = 'goal' | 'own_goal' | 'assist' | 'yellow_card' | 'red_card'
-type ActionType = 'goal' | 'yellow_card' | 'red_card'
-type EventEntry = { teamId: string; playerName: string; type: EventType; minute: string }
+// Event type is now a free-form string (discipline-defined). own_goal/assist are
+// special: own_goal scores for the opponent, assist is a sub-field of a goal event.
+type EventEntry = { teamId: string; playerName: string; type: string; minute: string }
 
 type FormState = {
   teamId: string
-  actionType: ActionType
+  actionType: string      // selected event def type (e.g. goal / knockdown / ace)
   player: string
   assister: string
   minute: string
@@ -39,22 +39,38 @@ function teamById(teams: Team[], id: string | null) {
 
 const BASKETBALL_SPORTS_FT = new Set(['basketball', 'streetball', 'ebasketball'])
 
-function EvtIcon({ type, sport }: { type: string; sport?: string }) {
-  if (type === 'goal' || type === 'own_goal') {
-    const Ball = BASKETBALL_SPORTS_FT.has(sport ?? '') ? BasketballBall : SoccerBall
-    const color = type === 'own_goal' ? 'text-red-500' : 'text-emerald-500'
-    return (
-      <div style={{ width: 12, height: 12 }} className={`inline-flex items-center justify-center shrink-0 align-middle ${color}`}>
-        <Ball className="w-full h-full" />
-      </div>
-    )
+// Generalized event mark: renders a small icon per discipline event kind.
+function EvtIcon({ type, sport, defs }: { type: string; sport?: string; defs: EventDef[] }) {
+  const icon = type === 'own_goal' ? 'ball' : defs.find(d => d.type === type)?.icon
+  switch (icon) {
+    case 'ball': {
+      const Ball = BASKETBALL_SPORTS_FT.has(sport ?? '') ? BasketballBall : SoccerBall
+      return (
+        <div style={{ width: 12, height: 12, color: type === 'own_goal' ? '#ef4444' : 'var(--sp)' }}
+          className="inline-flex items-center justify-center shrink-0 align-middle">
+          <Ball className="w-full h-full" />
+        </div>
+      )
+    }
+    case 'yellow': return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
+    case 'red':    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
+    case 'warn':
+    case 'foul':   return <AlertTriangle size={11} className="text-amber-500 shrink-0 align-middle" />
+    case 'ko':     return <Flame size={11} className="text-red-500 shrink-0 align-middle" />
+    case 'submission': return <Lock size={11} className="text-gray-600 shrink-0 align-middle" />
+    case 'ace':    return <Zap size={11} className="text-sky-500 shrink-0 align-middle" />
+    case 'block':  return <Shield size={11} className="text-indigo-500 shrink-0 align-middle" />
+    case 'three':  return <span className="text-[9px] font-black text-orange-500 shrink-0 align-middle leading-none">3PT</span>
+    case 'strike': return <X size={11} className="text-red-500 shrink-0 align-middle" />
+    case 'touchdown':
+    case 'run':
+    case 'star':   return <Star size={11} className="shrink-0 align-middle" style={{ color: 'var(--sp)' }} />
+    default:       return null
   }
-  if (type === 'yellow_card') return <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[2px] align-middle shrink-0" />
-  if (type === 'red_card')    return <span className="inline-block w-2 h-3 bg-red-500 rounded-[2px] align-middle shrink-0" />
-  return null
 }
 
-function buildRows(teamId: string, events: EventEntry[]) {
+function buildRows(teamId: string, events: EventEntry[], defs: EventDef[]) {
+  const assistCapable = new Set(defs.filter(d => d.hasAssist).map(d => d.type))
   const indexed  = events.map((e, i) => ({ ...e, i }))
   const mine     = indexed.filter(e => e.teamId === teamId)
   const nonAssist = mine.filter(e => e.type !== 'assist')
@@ -63,7 +79,7 @@ function buildRows(teamId: string, events: EventEntry[]) {
   return nonAssist.map(e => {
     let assisterName: string | null = null
     let assistIdx: number | undefined
-    if (e.type === 'goal') {
+    if (assistCapable.has(e.type)) {
       const a = assists.find(a => !used.has(a.i) && a.minute === e.minute)
       if (a) { used.add(a.i); assisterName = a.playerName; assistIdx = a.i }
     }
@@ -79,45 +95,49 @@ interface InlineFormProps {
   setForm: React.Dispatch<React.SetStateAction<FormState | null>>
   onConfirm: () => void
   T: TournamentTx
+  lang: Lang
+  pills: EventDef[]           // selectable event kinds (assist + own_goal excluded)
+  ownGoalDef?: EventDef       // present → offer an own-goal toggle on assist events
 }
 
-function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
-  const isGoal = form.actionType === 'goal'
-  const submitLabel = form.isOwnGoal ? T.pillOG
-    : isGoal ? T.pillGoal
-    : form.actionType === 'yellow_card' ? T.pillYC : T.pillRC
+function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef }: InlineFormProps) {
+  const selected = pills.find(p => p.type === form.actionType)
+  const isGoalLike = !!selected?.hasAssist
+  const pillColor = (type: string, activeSel: boolean) => {
+    if (!activeSel) return 'bg-white border border-gray-200 text-gray-500'
+    if (type === 'yellow_card') return 'bg-yellow-400 text-black'
+    if (type === 'red_card')    return 'bg-red-500 text-white'
+    return 'text-white'  // brand fill via inline style
+  }
+  const submitLabel = form.isOwnGoal ? (ownGoalDef?.label[lang] ?? '')
+    : selected?.label[lang] ?? ''
   const submitColor = form.isOwnGoal
     ? 'bg-red-100 text-red-600 hover:bg-red-200'
-    : isGoal ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-    : form.actionType === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-    : 'bg-red-500 text-white hover:bg-red-600'
+    : selected?.type === 'yellow_card' ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+    : selected?.type === 'red_card' ? 'bg-red-500 text-white hover:bg-red-600'
+    : 'text-white'  // brand fill via inline style
+  const brandSubmit = !form.isOwnGoal && selected?.type !== 'yellow_card' && selected?.type !== 'red_card'
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-1.5 space-y-1.5">
       {/* Type pills */}
-      <div className="flex gap-1">
-        {([
-          { v: 'goal'        as const, l: T.pillGoal },
-          { v: 'yellow_card' as const, l: T.pillYC },
-          { v: 'red_card'    as const, l: T.pillRC },
-        ]).map(opt => (
-          <button key={opt.v}
-            onClick={() => setForm(f => f ? { ...f, actionType: opt.v, isOwnGoal: false } : f)}
-            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${
-              form.actionType === opt.v
-                ? opt.v === 'goal' ? 'bg-emerald-600 text-white'
-                : opt.v === 'yellow_card' ? 'bg-yellow-400 text-black'
-                : 'bg-red-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-500'
-            }`}
-          >{opt.l}</button>
-        ))}
-        {isGoal && (
+      <div className="flex gap-1 flex-wrap">
+        {pills.map(opt => {
+          const activeSel = form.actionType === opt.type
+          return (
+            <button key={opt.type}
+              onClick={() => setForm(f => f ? { ...f, actionType: opt.type, isOwnGoal: false } : f)}
+              style={activeSel && opt.type !== 'yellow_card' && opt.type !== 'red_card' ? { background: 'var(--sp)' } : undefined}
+              className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all ${pillColor(opt.type, activeSel)}`}
+            >{opt.label[lang]}</button>
+          )
+        })}
+        {isGoalLike && ownGoalDef && (
           <label className="flex items-center gap-1 ml-auto cursor-pointer select-none">
             <input type="checkbox" checked={form.isOwnGoal}
               onChange={e => setForm(f => f ? { ...f, isOwnGoal: e.target.checked } : f)}
               className="accent-red-500 w-3 h-3" />
-            <span className="text-xs text-gray-500">{T.pillOG}</span>
+            <span className="text-xs text-gray-500">{ownGoalDef.label[lang]}</span>
           </label>
         )}
       </div>
@@ -129,12 +149,12 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoal ? T.scorerPlaceholder : T.playerPlaceholder}
+        placeholder={isGoalLike ? T.scorerPlaceholder : T.playerPlaceholder}
         className="h-7 text-xs bg-white w-full"
       />
 
       {/* Assister — no autoFocus; typing here no longer steals focus back */}
-      {isGoal && !form.isOwnGoal && (
+      {isGoalLike && !form.isOwnGoal && (
         <Input
           list="tournament-players"
           value={form.assister}
@@ -154,6 +174,7 @@ function InlineForm({ form, setForm, onConfirm, T }: InlineFormProps) {
           className="h-7 text-xs bg-white w-14 shrink-0"
         />
         <button onClick={onConfirm} disabled={!form.player.trim()}
+          style={brandSubmit ? { background: 'var(--sp)' } : undefined}
           className={`flex-1 h-7 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${submitColor}`}>
           {submitLabel}
         </button>
@@ -189,7 +210,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
     fixture.match_events?.map(e => ({
       teamId: e.team_id,
       playerName: e.player_name,
-      type: e.type as EventType,
+      type: e.type,
       minute: e.minute?.toString() ?? '',
     })) ?? []
   )
@@ -211,14 +232,27 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   const homeTeam = teamById(teams, fixture.home_team_id)
   const awayTeam = teamById(teams, fixture.away_team_id)
 
-  const hasGoals = events.some(e => e.type === 'goal' || e.type === 'own_goal')
+  // ── Discipline-aware event model ─────────────────────────────────────────────
+  const eventDefs   = getEventDefs(sport)
+  const scoreMode   = getScoreMode(sport)
+  const defByType   = new Map(eventDefs.map(d => [d.type, d]))
+  // Pills exclude assist (a sub-field) and own_goal (a checkbox on scoring events).
+  const pills       = eventDefs.filter(d => d.type !== 'assist' && !d.countsForOpponent)
+  const ownGoalDef  = eventDefs.find(d => d.countsForOpponent)
+  const scoresForTeam     = (t: string) => (defByType.get(t)?.countsForTeam ?? false)
+  const scoresForOpponent = (t: string) => (defByType.get(t)?.countsForOpponent ?? false)
+  const defaultAction = (pills.find(p => p.hasAssist) ?? pills[0])?.type ?? 'goal'
+
+  // Score derived from events only for 'count' disciplines (football/hockey/kokpar…)
+  const hasGoals = scoreMode === 'count'
+    && events.some(e => scoresForTeam(e.type) || scoresForOpponent(e.type))
   const cHome = events.filter(e =>
-    (e.teamId === fixture.home_team_id && e.type === 'goal') ||
-    (e.teamId === fixture.away_team_id && e.type === 'own_goal')
+    (e.teamId === fixture.home_team_id && scoresForTeam(e.type)) ||
+    (e.teamId === fixture.away_team_id && scoresForOpponent(e.type))
   ).length
   const cAway = events.filter(e =>
-    (e.teamId === fixture.away_team_id && e.type === 'goal') ||
-    (e.teamId === fixture.home_team_id && e.type === 'own_goal')
+    (e.teamId === fixture.away_team_id && scoresForTeam(e.type)) ||
+    (e.teamId === fixture.home_team_id && scoresForOpponent(e.type))
   ).length
 
   // Championship match: the "Состав" button edits the persistent team roster (same
@@ -283,16 +317,17 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
   function openForm(teamId: string) {
     if (form?.teamId === teamId) { setForm(null); return }
-    setForm({ teamId, actionType: 'goal', player: '', assister: '', minute: '', isOwnGoal: false })
+    setForm({ teamId, actionType: defaultAction, player: '', assister: '', minute: '', isOwnGoal: false })
   }
 
   function confirmForm() {
     if (!form || !form.player.trim()) return
-    const type: EventType = form.actionType === 'goal' && form.isOwnGoal ? 'own_goal' : form.actionType
+    const selected = defByType.get(form.actionType)
+    const type = form.isOwnGoal && ownGoalDef ? ownGoalDef.type : form.actionType
     const added: EventEntry[] = [
       { teamId: form.teamId, playerName: form.player.trim(), type, minute: form.minute },
     ]
-    if (form.actionType === 'goal' && !form.isOwnGoal && form.assister.trim()) {
+    if (selected?.hasAssist && !form.isOwnGoal && form.assister.trim()) {
       added.push({ teamId: form.teamId, playerName: form.assister.trim(), type: 'assist', minute: form.minute })
     }
     setEvents(prev => [...prev, ...added])
@@ -344,8 +379,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   // ── Finished summary ──────────────────────────────────────────────────────
 
   if (status === 'finished' && !isEditing) {
-    const homeRows = buildRows(fixture.home_team_id ?? '', events)
-    const awayRows = buildRows(fixture.away_team_id ?? '', events)
+    const homeRows = buildRows(fixture.home_team_id ?? '', events, eventDefs)
+    const awayRows = buildRows(fixture.away_team_id ?? '', events, eventDefs)
     const hasEvts  = homeRows.length > 0 || awayRows.length > 0
 
     return (
@@ -376,7 +411,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
               <div className="min-w-0 space-y-1">
                 {homeRows.map((r, i) => (
                   <div key={i} className={`flex items-center gap-1 text-xs ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-600'}`}>
-                    <EvtIcon type={r.type} sport={sport} />
+                    <EvtIcon type={r.type} sport={sport} defs={eventDefs} />
                     <span className="font-medium truncate flex-1 min-w-0">
                       {r.playerName}
                       {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -393,7 +428,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
                       {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                       {r.playerName}
                     </span>
-                    <EvtIcon type={r.type} sport={sport} />
+                    <EvtIcon type={r.type} sport={sport} defs={eventDefs} />
                   </div>
                 ))}
               </div>
@@ -440,8 +475,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
 
   // ── Edit / Live ───────────────────────────────────────────────────────────
 
-  const homeRows = buildRows(fixture.home_team_id ?? '', events)
-  const awayRows = buildRows(fixture.away_team_id ?? '', events)
+  const homeRows = buildRows(fixture.home_team_id ?? '', events, eventDefs)
+  const awayRows = buildRows(fixture.away_team_id ?? '', events, eventDefs)
 
   return (
     <div className={`bg-white border rounded-xl p-4 shadow-sm ${status === 'finished' ? 'border-emerald-200' : 'border-gray-200'}`}>
@@ -491,7 +526,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
         </div>
       </div>
 
-      {/* Events columns */}
+      {/* Events columns — only for disciplines that define in-match events */}
+      {eventDefs.length > 0 && (
       <div className="border-t border-dashed border-gray-200 pt-2 mb-3">
         <div className="grid grid-cols-2 gap-x-3">
 
@@ -499,7 +535,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           <div className="min-w-0 overflow-hidden">
             {homeRows.map((r, i) => (
               <div key={i} className="flex items-center gap-1 mb-1">
-                <EvtIcon type={r.type} sport={sport} />
+                <EvtIcon type={r.type} sport={sport} defs={eventDefs} />
                 <span className={`text-xs font-medium flex-1 min-w-0 truncate ${r.type === 'own_goal' ? 'text-red-500' : 'text-gray-700'}`}>
                   {r.playerName}
                   {r.assisterName && <span className="text-gray-400 font-normal"> ({r.assisterName})</span>}
@@ -512,8 +548,9 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
               </div>
             ))}
             <button onClick={() => fixture.home_team_id && openForm(fixture.home_team_id)}
+              style={form?.teamId === fixture.home_team_id ? { color: 'var(--sp)' } : undefined}
               className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ${
-                form?.teamId === fixture.home_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                form?.teamId === fixture.home_team_id ? 'font-bold' : 'text-gray-400 hover:text-gray-600'
               }`}>
               <Plus size={10} /> {T.addEvent}
             </button>
@@ -532,12 +569,13 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
                   {r.assisterName && <span className="text-gray-400 font-normal">({r.assisterName}) </span>}
                   {r.playerName}
                 </span>
-                <EvtIcon type={r.type} sport={sport} />
+                <EvtIcon type={r.type} sport={sport} defs={eventDefs} />
               </div>
             ))}
             <button onClick={() => fixture.away_team_id && openForm(fixture.away_team_id)}
+              style={form?.teamId === fixture.away_team_id ? { color: 'var(--sp)' } : undefined}
               className={`flex items-center gap-1 text-xs transition-colors mt-0.5 ml-auto ${
-                form?.teamId === fixture.away_team_id ? 'text-emerald-600 font-bold' : 'text-gray-400 hover:text-emerald-600'
+                form?.teamId === fixture.away_team_id ? 'font-bold' : 'text-gray-400 hover:text-gray-600'
               }`}>
               {T.addEvent} <Plus size={10} />
             </button>
@@ -550,14 +588,15 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           <div className="mt-2">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{T.eventFor}</span>
-              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
+              <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full max-w-[70%] truncate">
                 {form.teamId === fixture.home_team_id ? homeTeam?.name : awayTeam?.name}
               </span>
             </div>
-            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} />
+            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} />
           </div>
         )}
       </div>
+      )}
 
       <div className="flex items-center justify-between gap-2">
         {status === 'live' ? (
@@ -758,7 +797,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
       ) : sortedMatchdays.map(([md, mxs]) => (
         <div key={md}>
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-black text-emerald-600 text-lg">{T.roundLabel(+md)}</span>
+            <span className="font-black text-lg" style={{ color: 'var(--sp)' }}>{T.roundLabel(+md)}</span>
             <div className="flex-1 h-px bg-gray-100" />
             {showCycleLabel && (
               <span className="text-xs text-gray-400 uppercase tracking-wide">

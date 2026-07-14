@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
-import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, type SportTheme } from '@/lib/sports'
+import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, getParticipantKind, type SportTheme } from '@/lib/sports'
 import TournamentCoverPicker from '@/components/tournament/TournamentCoverPicker'
 import { getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
 
@@ -567,9 +567,7 @@ export default function NewTournamentPage() {
   const subtype = getSubtype(sport)
   const theme: SportTheme = getSportTheme(sport)
   // Discipline-aware nouns: combat → "боец", other individual → "участник", else "команда"
-  const category = getCategoryForSport(sport)
-  const nounKind: 'team' | 'participant' | 'fighter' =
-    category?.id === 'combat' ? 'fighter' : (category?.individual ? 'participant' : 'team')
+  const nounKind = getParticipantKind(sport)
   const noun = PARTICIPANT_NOUNS[lang][nounKind]
   const teamPhLabel = noun.ph
   const addTeamLabel = noun.add
@@ -876,8 +874,8 @@ export default function NewTournamentPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold leading-tight" style={active ? { color: cat.theme.primary } : undefined}>{cat.label[lang]}</p>
-                      <p className="text-[11px] text-gray-400 leading-snug line-clamp-2 mt-0.5">{chosen ? chosen.label[lang] : cat.tagline[lang]}</p>
+                      <p className="text-[13px] sm:text-sm font-bold leading-tight break-words hyphens-auto" style={active ? { color: cat.theme.primary } : undefined}>{cat.label[lang]}</p>
+                      <p className="text-[11px] text-gray-400 leading-snug line-clamp-2 mt-0.5 break-words">{chosen ? chosen.label[lang] : cat.tagline[lang]}</p>
                     </div>
                   </button>
                 )

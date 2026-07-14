@@ -2,14 +2,29 @@ import { Tournament, Team, Fixture } from '@/types'
 import TeamAvatar from './TeamAvatar'
 import { Check, Clock } from 'lucide-react'
 import { tx, type Lang } from '@/lib/i18n'
+import { getEventDefs, type EventIcon } from '@/lib/sports'
 
 function teamById(teams: Team[], id: string | null) {
   return teams.find(t => t.id === id) ?? null
 }
 
-function EventBadge({ type }: { type: string }) {
-  if (type === 'goal')
-    return <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black">G</span>
+// Neutral/semantic badge palette per event kind (public view has no --sp var).
+const BADGE_CLS: Partial<Record<EventIcon, string>> = {
+  ball:  'bg-emerald-100 text-emerald-700',
+  three: 'bg-orange-100 text-orange-600',
+  foul:  'bg-amber-100 text-amber-600',
+  warn:  'bg-amber-100 text-amber-600',
+  ace:   'bg-sky-100 text-sky-600',
+  block: 'bg-indigo-100 text-indigo-600',
+  ko:    'bg-red-100 text-red-600',
+  submission: 'bg-gray-200 text-gray-700',
+  strike: 'bg-red-100 text-red-600',
+  touchdown: 'bg-emerald-100 text-emerald-700',
+  run:   'bg-emerald-100 text-emerald-700',
+  star:  'bg-amber-100 text-amber-600',
+}
+
+function EventBadge({ type, sport, lang }: { type: string; sport?: string; lang: Lang }) {
   if (type === 'own_goal')
     return <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-100 text-red-600 text-[9px] font-black">OG</span>
   if (type === 'assist')
@@ -18,7 +33,10 @@ function EventBadge({ type }: { type: string }) {
     return <span className="inline-block w-3 h-4 rounded-[2px] bg-yellow-400 shrink-0" />
   if (type === 'red_card')
     return <span className="inline-block w-3 h-4 rounded-[2px] bg-red-500 shrink-0" />
-  return null
+  const def = getEventDefs(sport ?? '').find(d => d.type === type)
+  if (!def) return null
+  const initial = def.label[lang].replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1).toUpperCase()
+  return <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black ${BADGE_CLS[def.icon] ?? 'bg-gray-100 text-gray-600'}`}>{def.icon === 'ball' ? 'G' : initial}</span>
 }
 
 export default function PublicFixturesTab({ tournament, teams, fixtures, lang = 'ru' }: {
@@ -94,7 +112,7 @@ export default function PublicFixturesTab({ tournament, teams, fixtures, lang = 
                       <div className="space-y-0.5">
                         {homeEvents.map((e, idx) => (
                           <div key={idx} className="flex items-center gap-1 text-gray-600">
-                            <EventBadge type={e.type} />
+                            <EventBadge type={e.type} sport={tournament.sport ?? undefined} lang={lang} />
                             <span className="truncate">{e.player_name}{e.minute ? ` ${e.minute}'` : ''}</span>
                           </div>
                         ))}
@@ -105,7 +123,7 @@ export default function PublicFixturesTab({ tournament, teams, fixtures, lang = 
                         {awayEvents.map((e, idx) => (
                           <div key={idx} className="flex items-center justify-end gap-1 text-gray-600">
                             <span className="truncate text-right">{e.player_name}{e.minute ? ` ${e.minute}'` : ''}</span>
-                            <EventBadge type={e.type} />
+                            <EventBadge type={e.type} sport={tournament.sport ?? undefined} lang={lang} />
                           </div>
                         ))}
                       </div>

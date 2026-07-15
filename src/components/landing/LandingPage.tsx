@@ -1,9 +1,10 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect, type ElementType } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Globe, Download, Video, Star, Menu, X } from 'lucide-react'
+import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Globe, Download, Video, Star, Menu, X, Volleyball, Gamepad2 } from 'lucide-react'
+import { SoccerBall, BasketballBall, HockeyPuck, TennisRacket, ChessPawn, MmaGlove, Horse, AmericanFootball } from '@/components/icons/sport-icons'
 import SupportWidget from './SupportWidget'
 import { setLangCookie } from '@/app/actions/lang'
 
@@ -58,7 +59,7 @@ const T = {
         { title: 'Одна ссылка вместо ста сообщений', desc: 'Публичная страница турнира: участники и болельщики следят без регистрации и приложений.' },
       ],
       sportsLabel: 'Работает для любого вида спорта — от футбола до национальных игр',
-      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Стритбол 3×3', 'Волейбол', 'Хоккей', 'Теннис', 'Настольный теннис', 'Бадминтон', 'Шахматы', 'Көкпар', 'Қазақ күресі', 'Тоғызқұмалақ', 'MMA', 'Бокс', 'Американский футбол', 'Киберспорт'],
+      sports: ['Футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Ракеточные виды', 'Единоборства', 'Кочевые игры', 'Интеллектуальные игры', 'Американские', 'Киберспорт'],
     },
     pricing: {
       h2: 'Выберите свой формат.',
@@ -170,7 +171,7 @@ const T = {
         { title: 'Жүз хабарламаның орнына бір сілтеме', desc: 'Турнирдің жалпыға ортақ беті: қатысушылар мен жанкүйерлер тіркелусіз және қосымшасыз қадағалайды.' },
       ],
       sportsLabel: 'Кез келген спорт түріне жарайды — футболдан ұлттық ойындарға дейін',
-      sports: ['Футбол', 'Мини-футбол', 'Баскетбол', 'Стритбол 3×3', 'Волейбол', 'Хоккей', 'Теннис', 'Үстел теннисі', 'Бадминтон', 'Шахмат', 'Көкпар', 'Қазақ күресі', 'Тоғызқұмалақ', 'MMA', 'Бокс', 'Америкалық футбол', 'Киберспорт'],
+      sports: ['Футбол', 'Баскетбол', 'Волейбол', 'Хоккей', 'Ракетка ойындары', 'Жекпе-жек', 'Ұлттық ойындар', 'Зияткерлік ойындар', 'Америкалық', 'Киберспорт'],
     },
     pricing: {
       h2: 'Өз форматыңызды таңдаңыз.',
@@ -282,7 +283,7 @@ const T = {
         { title: 'One link instead of a hundred messages', desc: 'A public tournament page: participants and fans follow along with no sign-up and no apps.' },
       ],
       sportsLabel: 'Works for any sport — from football to national games',
-      sports: ['Football', 'Futsal', 'Basketball', 'Streetball 3v3', 'Volleyball', 'Hockey', 'Tennis', 'Table Tennis', 'Badminton', 'Chess', 'Kokpar', 'Kazakh Kuresi', 'Togyzkumalak', 'MMA', 'Boxing', 'American Football', 'Esports'],
+      sports: ['Football', 'Basketball', 'Volleyball', 'Hockey', 'Racket sports', 'Combat sports', 'Nomad games', 'Mind sports', 'American sports', 'Esports'],
     },
     pricing: {
       h2: 'Choose your format.',
@@ -379,6 +380,40 @@ const FEAT_STYLES = [
   { bg: 'bg-pink-500/15',    icon: 'text-pink-400',    accent: 'bg-pink-400' },
   { bg: 'bg-cyan-500/15',    icon: 'text-cyan-400',    accent: 'bg-cyan-400' },
 ]
+
+// ─── Sport-group pill icons ───────────────────────────────────────────────────
+// Aligned by index with tx.features.sports (all languages share the same order).
+// The five categories with custom artwork point at /sport-icons/*.png and fall back
+// to the built-in SVG until the PNG is dropped in (PillIcon swaps on load error).
+const SPORT_PILL_ICONS: { Svg: ElementType; img?: string }[] = [
+  { Svg: SoccerBall },
+  { Svg: BasketballBall },
+  { Svg: Volleyball },
+  { Svg: HockeyPuck },
+  { Svg: TennisRacket,     img: '/sport-icons/racket.png' },
+  { Svg: MmaGlove,         img: '/sport-icons/combat.png' },
+  { Svg: Horse,            img: '/sport-icons/nomad.png' },
+  { Svg: ChessPawn,        img: '/sport-icons/mind.png' },
+  { Svg: AmericanFootball, img: '/sport-icons/american.png' },
+  { Svg: Gamepad2 },
+]
+
+// Renders the custom PNG when present, otherwise the built-in SVG. The PNG is
+// normalised to the pills' muted tone, so supply transparent line-art.
+function PillIcon({ Svg, img, className }: { Svg: ElementType; img?: string; className?: string }) {
+  const [failed, setFailed] = useState(false)
+  const ref = useRef<HTMLImageElement>(null)
+  // The 404 can fire before hydration attaches onError, so re-check on mount.
+  useEffect(() => {
+    const el = ref.current
+    if (el && el.complete && el.naturalWidth === 0) setFailed(true)
+  }, [])
+  if (img && !failed) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img ref={ref} src={img} alt="" aria-hidden className={className} style={{ filter: 'brightness(0) invert(0.62)' }} onError={() => setFailed(true)} />
+  }
+  return <Svg className={className} />
+}
 
 // ─── Audience cases ───────────────────────────────────────────────────────────
 const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { tag: string; title: string; desc: string; cta: string; href: string }[] }> = {
@@ -731,11 +766,17 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
 
           {/* Sports compatibility row */}
           <div className="mt-14 border-t border-white/[0.06] pt-10 text-center">
-            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mb-5">{tx.features.sportsLabel}</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {tx.features.sports.map((sport) => (
-                <span key={sport} className="text-xs text-gray-500 bg-white/[0.04] border border-white/[0.08] rounded-full px-4 py-1.5 font-medium">{sport}</span>
-              ))}
+            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mb-6">{tx.features.sportsLabel}</p>
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 max-w-3xl mx-auto">
+              {tx.features.sports.map((sport, i) => {
+                const ic = SPORT_PILL_ICONS[i]
+                return (
+                  <span key={sport} className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] text-gray-300 bg-white/[0.04] border border-white/[0.08] rounded-full pl-2.5 pr-3.5 py-1.5 font-medium hover:bg-white/[0.07] hover:border-white/[0.15] transition-colors">
+                    {ic && <PillIcon Svg={ic.Svg} img={ic.img} className="w-4 h-4 shrink-0 text-gray-400" />}
+                    {sport}
+                  </span>
+                )
+              })}
             </div>
           </div>
         </div>

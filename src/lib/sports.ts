@@ -620,6 +620,28 @@ export function getParticipantKind(value: string | null | undefined): Participan
     ?? (hit.category.individual ? 'participant' : 'team')
 }
 
+// Word for the competitor performing an in-match action (event author), by discipline:
+// team/individual sports → "Игрок"/"Player", combat → "Боец"/"Fighter".
+const ACTOR_NOUN: Record<Lang, Record<ParticipantKind, string>> = {
+  ru: { team: 'Игрок',  participant: 'Игрок',  fighter: 'Боец' },
+  kz: { team: 'Ойыншы', participant: 'Ойыншы', fighter: 'Балуан' },
+  en: { team: 'Player', participant: 'Player', fighter: 'Fighter' },
+}
+export function getActorNoun(value: string | null | undefined, lang: Lang): string {
+  return ACTOR_NOUN[lang][getParticipantKind(value)]
+}
+
+// Word for a single contest, by discipline: most sports → "матч"/"match",
+// combat → "бой"/"bout". Used for card labels and the start-match button.
+const MATCH_NOUN: Record<Lang, Record<ParticipantKind, string>> = {
+  ru: { team: 'Матч', participant: 'Матч', fighter: 'Бой' },
+  kz: { team: 'Матч', participant: 'Матч', fighter: 'Жекпе-жек' },
+  en: { team: 'Match', participant: 'Match', fighter: 'Bout' },
+}
+export function getMatchNoun(value: string | null | undefined, lang: Lang): string {
+  return MATCH_NOUN[lang][getParticipantKind(value)]
+}
+
 // Roster positions for a sport (subtype override → category → football default).
 // Empty array for individual disciplines (combat, racket, mind sports, esports).
 export function getPositions(value: string | null | undefined): PositionDef[] {

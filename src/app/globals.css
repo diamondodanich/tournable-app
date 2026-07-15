@@ -249,3 +249,15 @@
   background: color-mix(in srgb, var(--sp, #059669) 16%, transparent) !important;
   color: color-mix(in srgb, var(--sp, #059669) 68%, #ffffff) !important;
 }
+
+/* Combat's near-black accent (theme "black", #1f2937) is invisible on the dark
+   canvas. When the root is flagged `sp-dark-accent`, repaint its selected states
+   with a visible slate tint/border/text and lift the icon chip. `--sp` itself is
+   left alone so solid buttons keep white-on-dark legibility. */
+.dark .sp-dark-accent .sp-tint { background: rgba(148,163,184,.15) !important; border-color: rgba(148,163,184,.5) !important; }
+.dark .sp-dark-accent .sp-tint, .dark .sp-dark-accent .sp-tint p { color: #cbd5e1 !important; }
+.dark .sp-chip[data-lift] { background: linear-gradient(135deg,#3f4551 0%,#5c6472 100%) !important; }
+
+/* Support chat panel uses an inline #fff background (shared with the public landing);
+   darken it only inside the dashboard shell. */
+.dark .support-panel { background: #16161c !important; border-color: #2f2f39 !important; }

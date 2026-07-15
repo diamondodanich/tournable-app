@@ -44,6 +44,16 @@ function SportCatIcon({ cat, size = 18, className }: { cat: SportCategory; size?
   return <Icon size={size} className={className} />
 }
 
+// A near-black sport accent (combat's "black" theme) disappears on the dark canvas.
+// Flag it so globals.css can lift its selected states / icon chip in dark mode only.
+function isDarkAccent(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return false
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.3
+}
+
 // ─── i18n ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -832,7 +842,7 @@ export default function NewTournamentPage() {
   const LEAGUE_ADVANCE_OPTS = [2, 4, 8, 16].map((v, i) => ({ value: v, label: tx.leagueAdvance[i] }))
 
   return (
-    <div className="max-w-lg mx-auto" style={themeVars}>
+    <div className={`max-w-lg mx-auto ${!isChampionship && isDarkAccent(theme.primary) ? 'sp-dark-accent' : ''}`} style={themeVars}>
       {/* Sport-themed buttons: background driven by CSS vars set above */}
       <style>{`.sport-btn{background:var(--sp)}.sport-btn:hover{background:var(--spd)}@keyframes sheet-up{0%{transform:translateY(100%)}100%{transform:translateY(0)}}@keyframes sheet-fade{0%{opacity:0}100%{opacity:1}}`}</style>
       {planLimit && <PlanLimitModal type={planLimit} tx={tx} onClose={() => setPlanLimit(null)} />}
@@ -890,7 +900,8 @@ export default function NewTournamentPage() {
                     }`}>
                     {/* icon + PRO badge stacked vertically */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center text-white shadow-sm p-1.5"
+                      <div className="sp-chip w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center text-white shadow-sm p-1.5"
+                        data-lift={isDarkAccent(cat.theme.primary) ? '' : undefined}
                         style={{ background: cat.theme.gradient }}>
                         <SportCatIcon cat={cat} size={18} className="w-full h-full" />
                       </div>
@@ -1099,7 +1110,7 @@ export default function NewTournamentPage() {
 
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm text-white p-2" style={{ background: cat.theme.gradient }}>
+                    <div className="sp-chip w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm text-white p-2" data-lift={isDarkAccent(cat.theme.primary) ? '' : undefined} style={{ background: cat.theme.gradient }}>
                       <SportCatIcon cat={cat} size={22} className="w-full h-full" />
                     </div>
                     <div>

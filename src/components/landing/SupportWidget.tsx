@@ -474,7 +474,7 @@ export default function SupportWidget({ lang = 'ru' }: { lang?: Lang }) {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 sm:right-6 z-[100] w-[calc(100vw-2rem)] sm:w-[360px] max-h-[560px] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+          className="support-panel fixed bottom-20 right-4 sm:right-6 z-[100] w-[calc(100vw-2rem)] sm:w-[360px] max-h-[560px] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
           style={{ background: '#fff', border: '1px solid #e5e7eb' }}
         >
           {/* Header */}

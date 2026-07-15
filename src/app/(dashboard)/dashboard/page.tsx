@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { getUserPlan } from '@/app/actions/billing'
+import { getParticipantKind } from '@/lib/sports'
 import { Tournament } from '@/types'
 import Link from 'next/link'
 import { Zap, BarChart2, Share2, Users, Calendar, UserCheck, ExternalLink, Crown, Layers } from 'lucide-react'
@@ -13,6 +14,25 @@ import DashboardSearch from '@/components/dashboard/DashboardSearch'
 export const dynamic = 'force-dynamic'
 
 type Lang = 'ru' | 'kz' | 'en'
+
+// Competitor count with the discipline-correct noun (team → команд, combat → бойцов).
+const UNIT_NOUN = {
+  ru: { team: ['команда', 'команды', 'команд'], participant: ['участник', 'участника', 'участников'], fighter: ['боец', 'бойца', 'бойцов'] },
+  kz: { team: 'команда', participant: 'қатысушы', fighter: 'балуан' },
+  en: { team: ['team', 'teams'], participant: ['participant', 'participants'], fighter: ['fighter', 'fighters'] },
+} as const
+
+function unitCount(n: number, sport: string | null | undefined, lang: Lang): string {
+  const kind = getParticipantKind(sport)
+  if (lang === 'kz') return `${n} ${UNIT_NOUN.kz[kind]}`
+  if (lang === 'en') { const [one, many] = UNIT_NOUN.en[kind]; return `${n} ${n === 1 ? one : many}` }
+  const [one, few, many] = UNIT_NOUN.ru[kind]
+  const m10 = n % 10, m100 = n % 100
+  if (m100 >= 11 && m100 <= 14) return `${n} ${many}`
+  if (m10 === 1) return `${n} ${one}`
+  if (m10 >= 2 && m10 <= 4) return `${n} ${few}`
+  return `${n} ${many}`
+}
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 const T = {
@@ -276,7 +296,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
                       {teamCount > 0 && (
                         <span className="flex items-center gap-1">
-                          <Users size={11} /> {tx.teams(teamCount)}
+                          <Users size={11} /> {unitCount(teamCount, t.sport, lang)}
                         </span>
                       )}
                       {t.format === 'round_robin' && (
@@ -328,7 +348,7 @@ export default async function DashboardPage() {
                       </span>
                       {teamCount > 0 && (
                         <span className="flex items-center gap-1">
-                          <Users size={11} /> {tx.teams(teamCount)}
+                          <Users size={11} /> {unitCount(teamCount, c.sport, lang)}
                         </span>
                       )}
                     </div>
@@ -370,7 +390,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
                       {teamCount > 0 && (
                         <span className="flex items-center gap-1">
-                          <Users size={11} /> {tx.teams(teamCount)}
+                          <Users size={11} /> {unitCount(teamCount, t.sport, lang)}
                         </span>
                       )}
                       <span className="ml-auto">{new Date(t.created_at).toLocaleDateString(DATE_LOCALE[lang])}</span>

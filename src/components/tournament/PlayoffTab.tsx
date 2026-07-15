@@ -13,7 +13,7 @@ import TeamAvatar from './TeamAvatar'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
-import { getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
+import { getEventDefs, getScoreMode, getActorNoun, getCategoryForSport, type EventDef } from '@/lib/sports'
 import { confirmDialog } from '@/components/ui/confirm'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -102,9 +102,10 @@ interface PlayoffInlineFormProps {
   lang: Lang
   pills: EventDef[]
   ownGoalDef?: EventDef
+  sport?: string
 }
 
-function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, ownGoalDef }: PlayoffInlineFormProps) {
+function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport }: PlayoffInlineFormProps) {
   if (!form || form.teamId !== teamId) return null
   const selected    = pills.find(p => p.type === form.actionType)
   const isGoalLike  = !!selected?.hasAssist
@@ -159,7 +160,7 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, o
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoalLike ? T.scorerPlaceholder : T.playerPlaceholder}
+        placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)}
         className="h-7 text-xs bg-white w-full"
       />
 
@@ -438,7 +439,9 @@ function PlayoffMatchCard({
               <button onClick={handleStart} disabled={starting}
                 className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100">
                 <Play size={10} />
-                {starting ? T.btnStarting : T.btnStartMatch}
+                {starting ? T.btnStarting : (getCategoryForSport(sport ?? '')?.id === 'combat'
+                  ? ({ ru: 'Начать бой', kz: 'Жекпе-жекті бастау', en: 'Start fight' }[lang])
+                  : T.btnStartMatch)}
               </button>
             )}
             {status === 'finished' && isEditing && (
@@ -561,7 +564,7 @@ function PlayoffMatchCard({
                   {form.teamId === match.home_team_id ? homeTeam?.name : awayTeam?.name}
                 </span>
               </div>
-              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} />
+              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport} />
             </div>
           )}
         </div>

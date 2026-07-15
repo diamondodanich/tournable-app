@@ -14,7 +14,7 @@ import LineupEditor from './LineupEditor'
 import SquadEditor from '@/components/championship/SquadEditor'
 import Link from 'next/link'
 import { SoccerBall, BasketballBall } from '@/components/icons/sport-icons'
-import { getCategoryForSport, getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
+import { getCategoryForSport, getEventDefs, getScoreMode, getActorNoun, type EventDef } from '@/lib/sports'
 import { tx, type Lang, type TournamentTx } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/client'
 
@@ -98,9 +98,10 @@ interface InlineFormProps {
   lang: Lang
   pills: EventDef[]           // selectable event kinds (assist + own_goal excluded)
   ownGoalDef?: EventDef       // present → offer an own-goal toggle on assist events
+  sport?: string
 }
 
-function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef }: InlineFormProps) {
+function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport }: InlineFormProps) {
   const selected = pills.find(p => p.type === form.actionType)
   const isGoalLike = !!selected?.hasAssist
   const pillColor = (type: string, activeSel: boolean) => {
@@ -149,7 +150,7 @@ function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef }: In
         value={form.player}
         onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
         onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoalLike ? T.scorerPlaceholder : T.playerPlaceholder}
+        placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)}
         className="h-7 text-xs bg-white w-full"
       />
 
@@ -593,7 +594,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
                 {form.teamId === fixture.home_team_id ? homeTeam?.name : awayTeam?.name}
               </span>
             </div>
-            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} />
+            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport} />
           </div>
         )}
       </div>

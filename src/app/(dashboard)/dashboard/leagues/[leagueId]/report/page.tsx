@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getUserPlan } from '@/app/actions/billing'
 import { getChampionshipPlayerStats, getChampionshipTeamStats } from '@/app/actions/leagues'
-import { getSportTheme } from '@/lib/sports'
+import { getSportTheme, getEventDefs } from '@/lib/sports'
 import PrintButton from './PrintButton'
 import type { League } from '@/types'
 
@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic'
 type Lang = 'ru' | 'kz' | 'en'
 
 const T = {
-  ru: { back: 'К чемпионату', title: 'Отчёт по всем сезонам', print: 'Скачать PDF', seasons: 'Сезоны', teams: 'Команды', players: 'Игроки', season: 'Сезон', status: 'Статус', active: 'Активный', finished: 'Завершён', topScorers: 'Бомбардиры за всю историю', teamStats: 'Командная статистика', player: 'Игрок', team: 'Команда', g: 'Голы', a: 'Ассисты', gp: 'И', w: 'В', d: 'Н', l: 'П', pts: 'О', generated: 'Сформировано' },
-  kz: { back: 'Чемпионатқа', title: 'Барлық маусымдар есебі', print: 'PDF жүктеп алу', seasons: 'Маусымдар', teams: 'Командалар', players: 'Ойыншылар', season: 'Маусым', status: 'Күй', active: 'Белсенді', finished: 'Аяқталды', topScorers: 'Барлық тарих бомбардирлары', teamStats: 'Командалық статистика', player: 'Ойыншы', team: 'Команда', g: 'Голдар', a: 'Ассисттер', gp: 'О', w: 'Ж', d: 'Т', l: 'Ұ', pts: 'Ұп', generated: 'Жасалды' },
-  en: { back: 'To championship', title: 'All-seasons report', print: 'Download PDF', seasons: 'Seasons', teams: 'Teams', players: 'Players', season: 'Season', status: 'Status', active: 'Active', finished: 'Finished', topScorers: 'All-time top scorers', teamStats: 'Team statistics', player: 'Player', team: 'Team', g: 'Goals', a: 'Assists', gp: 'P', w: 'W', d: 'D', l: 'L', pts: 'Pts', generated: 'Generated' },
+  ru: { back: 'К чемпионату', title: 'Отчёт по всем сезонам', print: 'Скачать PDF', seasons: 'Сезоны', teams: 'Команды', players: 'Игроки', season: 'Сезон', status: 'Статус', active: 'Активный', finished: 'Завершён', topScorers: 'Бомбардиры за всю историю', leaders: 'Лидеры за всю историю', teamStats: 'Командная статистика', player: 'Игрок', team: 'Команда', gp: 'И', w: 'В', d: 'Н', l: 'П', pts: 'О', generated: 'Сформировано' },
+  kz: { back: 'Чемпионатқа', title: 'Барлық маусымдар есебі', print: 'PDF жүктеп алу', seasons: 'Маусымдар', teams: 'Командалар', players: 'Ойыншылар', season: 'Маусым', status: 'Күй', active: 'Белсенді', finished: 'Аяқталды', topScorers: 'Барлық тарих бомбардирлары', leaders: 'Барлық тарих көшбасшылары', teamStats: 'Командалық статистика', player: 'Ойыншы', team: 'Команда', gp: 'О', w: 'Ж', d: 'Т', l: 'Ұ', pts: 'Ұп', generated: 'Жасалды' },
+  en: { back: 'To championship', title: 'All-seasons report', print: 'Download PDF', seasons: 'Seasons', teams: 'Teams', players: 'Players', season: 'Season', status: 'Status', active: 'Active', finished: 'Finished', topScorers: 'All-time top scorers', leaders: 'All-time leaders', teamStats: 'Team statistics', player: 'Player', team: 'Team', gp: 'P', w: 'W', d: 'D', l: 'L', pts: 'Pts', generated: 'Generated' },
 } as const
 
 export default async function ChampionshipReportPage({ params }: { params: Promise<{ leagueId: string }> }) {
@@ -45,7 +45,15 @@ export default async function ChampionshipReportPage({ params }: { params: Promi
   const league = leagueRaw as League
   const seasons = (seasonsRaw ?? []) as { name: string; status: string }[]
   const brand = getSportTheme(league.sport).primary
-  const scorers = playerStats.filter(s => s.goals > 0).slice(0, 20)
+  // Discipline-driven leaderboard columns + primary ranking stat.
+  const statDefs = getEventDefs(league.sport).filter(d => d.stat)
+  const primary = statDefs[0]
+  const scorers = primary
+    ? [...playerStats]
+        .filter(s => (s.counts[primary.type] ?? 0) > 0)
+        .sort((a, b) => (b.counts[primary.type] ?? 0) - (a.counts[primary.type] ?? 0))
+        .slice(0, 20)
+    : []
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -118,13 +126,14 @@ export default async function ChampionshipReportPage({ params }: { params: Promi
           </>
         )}
 
-        {/* Top scorers */}
+        {/* Player leaderboard — discipline stat columns */}
         {scorers.length > 0 && (
           <>
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: brand }}>{tx.topScorers}</p>
+            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: brand }}>{primary?.type === 'goal' ? tx.topScorers : tx.leaders}</p>
             <table className="w-full text-sm">
               <thead><tr className="text-gray-400 text-xs border-b border-gray-100">
-                <th className="text-left py-1.5 w-6">#</th><th className="text-left py-1.5">{tx.player}</th><th className="text-left py-1.5">{tx.team}</th><th className="text-center py-1.5">{tx.g}</th><th className="text-center py-1.5">{tx.a}</th>
+                <th className="text-left py-1.5 w-6">#</th><th className="text-left py-1.5">{tx.player}</th><th className="text-left py-1.5">{tx.team}</th>
+                {statDefs.map(d => <th key={d.type} className="text-center py-1.5">{d.label[lang]}</th>)}
               </tr></thead>
               <tbody>
                 {scorers.map((s, i) => (
@@ -132,8 +141,11 @@ export default async function ChampionshipReportPage({ params }: { params: Promi
                     <td className="py-1.5 text-gray-400">{i + 1}</td>
                     <td className="py-1.5 font-bold text-gray-800">{s.player}</td>
                     <td className="py-1.5 text-gray-500">{s.teamName}</td>
-                    <td className="py-1.5 text-center font-black" style={{ color: brand }}>{s.goals}</td>
-                    <td className="py-1.5 text-center text-gray-600">{s.assists}</td>
+                    {statDefs.map((d, di) => (
+                      <td key={d.type} className={`py-1.5 text-center ${di === 0 ? 'font-black' : 'text-gray-600'}`} style={di === 0 ? { color: brand } : undefined}>
+                        {s.counts[d.type] ?? 0}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

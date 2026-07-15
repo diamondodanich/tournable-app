@@ -3,8 +3,23 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getEventDefs, type EventIcon } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
+
+// Dark-theme accent per event kind (career cards + per-season table).
+const STAT_TEXT: Record<EventIcon, string> = {
+  ball: 'text-emerald-400', assist: 'text-blue-400', yellow: 'text-yellow-400', red: 'text-red-400',
+  warn: 'text-amber-400', foul: 'text-amber-400', ko: 'text-red-400', submission: 'text-gray-200',
+  ace: 'text-sky-400', block: 'text-indigo-400', three: 'text-orange-400', strike: 'text-red-400',
+  touchdown: 'text-emerald-400', run: 'text-emerald-400', star: 'text-amber-400',
+}
+const STAT_BADGE: Record<EventIcon, string> = {
+  ball: 'bg-emerald-900/60 text-emerald-400', assist: 'bg-blue-900/60 text-blue-400', yellow: 'bg-yellow-900/60 text-yellow-400', red: 'bg-red-900/60 text-red-400',
+  warn: 'bg-amber-900/60 text-amber-400', foul: 'bg-amber-900/60 text-amber-400', ko: 'bg-red-900/60 text-red-400', submission: 'bg-gray-800 text-gray-200',
+  ace: 'bg-sky-900/60 text-sky-400', block: 'bg-indigo-900/60 text-indigo-400', three: 'bg-orange-900/60 text-orange-400', strike: 'bg-red-900/60 text-red-400',
+  touchdown: 'bg-emerald-900/60 text-emerald-400', run: 'bg-emerald-900/60 text-emerald-400', star: 'bg-amber-900/60 text-amber-400',
+}
 async function getLang(): Promise<Lang> {
   const v = (await cookies()).get('lang')?.value
   return v === 'kz' || v === 'en' ? v : 'ru'
@@ -54,7 +69,7 @@ type EventRow = {
   fixtures: { matchday: number | null; tournaments: { name: string } | null } | null
 }
 
-type SeasonStat = { tournamentId: string; name: string; mp: number; goals: number; assists: number; yellow: number; red: number }
+type SeasonStat = { tournamentId: string; name: string; mp: number; counts: Record<string, number> }
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ slug: string; playerId: string }> }) {
   const supabase = await createClient()
@@ -62,7 +77,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   const { data: player } = await supabase
     .from('players')
-    .select('*, league_teams(id, name, slug, league_id, leagues(id, name, slug))')
+    .select('*, league_teams(id, name, slug, league_id, leagues(id, name, slug, sport))')
     .eq('id', playerId)
     .maybeSingle()
 
@@ -72,7 +87,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const league = leagueTeam?.leagues
   if (!league || league.slug !== slug) notFound()
 
-  const tx = PT[await getLang()]
+  const lang = await getLang()
+  const tx = PT[lang]
+
+  // Discipline-driven stat columns.
+  const statDefs = getEventDefs(league.sport).filter(d => d.stat)
+  const defByType = new Map(statDefs.map(d => [d.type, d]))
 
   // Seasons of this championship (id → name)
   const { data: seasons } = await supabase
@@ -104,26 +124,22 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     events = (data ?? []) as unknown as EventRow[]
   }
 
-  const goals = events.filter(e => e.type === 'goal').length
-  const assists = events.filter(e => e.type === 'assist').length
-  const yellowCards = events.filter(e => e.type === 'yellow_card').length
-  const redCards = events.filter(e => e.type === 'red_card').length
+  // Career totals per event type
+  const totalCounts: Record<string, number> = {}
+  for (const e of events) totalCounts[e.type] = (totalCounts[e.type] ?? 0) + 1
 
   // Per-season breakdown
   const bySeason = new Map<string, SeasonStat>()
   function seasonRow(tid: string): SeasonStat {
     let row = bySeason.get(tid)
-    if (!row) { row = { tournamentId: tid, name: seasonName.get(tid) ?? '—', mp: 0, goals: 0, assists: 0, yellow: 0, red: 0 }; bySeason.set(tid, row) }
+    if (!row) { row = { tournamentId: tid, name: seasonName.get(tid) ?? '—', mp: 0, counts: {} }; bySeason.set(tid, row) }
     return row
   }
   for (const e of events) {
     const tid = teamToTournament.get(e.team_id)
     if (!tid) continue
     const row = seasonRow(tid)
-    if (e.type === 'goal') row.goals++
-    else if (e.type === 'assist') row.assists++
-    else if (e.type === 'yellow_card') row.yellow++
-    else if (e.type === 'red_card') row.red++
+    row.counts[e.type] = (row.counts[e.type] ?? 0) + 1
   }
 
   // Matches played — from the starting lineups of played fixtures (accurate: also
@@ -197,13 +213,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Career totals */}
         <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.allTime}</p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        <div className={`grid grid-cols-2 gap-3 mb-8 ${statDefs.length >= 4 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
           {[
             { label: tx.matches, value: matchesPlayed, color: 'text-white' },
-            { label: tx.goals, value: goals, color: 'text-emerald-400' },
-            { label: tx.assists, value: assists, color: 'text-blue-400' },
-            { label: tx.yellow, value: yellowCards, color: 'text-yellow-400' },
-            { label: tx.red, value: redCards, color: 'text-red-400' },
+            ...statDefs.map(d => ({ label: d.label[lang], value: totalCounts[d.type] ?? 0, color: STAT_TEXT[d.icon] ?? 'text-white' })),
           ].map(stat => (
             <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
@@ -222,10 +235,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   <tr className="text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
                     <th className="text-left px-4 py-2.5">{tx.season}</th>
                     <th className="text-center px-2 py-2.5 w-12">{tx.mp}</th>
-                    <th className="text-center px-2 py-2.5 w-14">{tx.goals}</th>
-                    <th className="text-center px-2 py-2.5 w-14">{tx.pas}</th>
-                    <th className="text-center px-2 py-2.5 w-12">{tx.yc}</th>
-                    <th className="text-center px-2 py-2.5 w-12">{tx.rc}</th>
+                    {statDefs.map(d => <th key={d.type} className="text-center px-2 py-2.5 w-14">{d.label[lang]}</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -233,10 +243,11 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     <tr key={s.tournamentId} className={i > 0 ? 'border-t border-white/5' : ''}>
                       <td className="px-4 py-2.5 font-bold text-white/90 truncate max-w-[160px]">{s.name}</td>
                       <td className="px-2 py-2.5 text-center text-white/70 tabular-nums">{s.mp || '—'}</td>
-                      <td className="px-2 py-2.5 text-center font-black text-emerald-400 tabular-nums">{s.goals}</td>
-                      <td className="px-2 py-2.5 text-center text-blue-400 tabular-nums">{s.assists}</td>
-                      <td className="px-2 py-2.5 text-center text-white/50 tabular-nums">{s.yellow || '—'}</td>
-                      <td className="px-2 py-2.5 text-center text-white/50 tabular-nums">{s.red || '—'}</td>
+                      {statDefs.map((d, di) => (
+                        <td key={d.type} className={`px-2 py-2.5 text-center tabular-nums ${di === 0 ? `font-black ${STAT_TEXT[d.icon] ?? 'text-white'}` : 'text-white/60'}`}>
+                          {s.counts[d.type] || '—'}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -250,15 +261,14 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           <div>
             <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.recent}</p>
             <div className="space-y-1">
-              {events.slice(0, 20).map((e, i) => (
+              {events.slice(0, 20).map((e, i) => {
+                const def = e.type === 'own_goal' ? undefined : defByType.get(e.type)
+                const badgeCls = e.type === 'own_goal' ? 'bg-red-900/60 text-red-400' : (def ? STAT_BADGE[def.icon] : 'bg-white/10 text-white/60')
+                const badgeLabel = e.type === 'own_goal' ? tx.evGoal : (def?.label[lang] ?? e.type)
+                return (
                 <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 text-sm">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${
-                    e.type === 'goal' ? 'bg-emerald-900/60 text-emerald-400'
-                    : e.type === 'assist' ? 'bg-blue-900/60 text-blue-400'
-                    : e.type === 'yellow_card' ? 'bg-yellow-900/60 text-yellow-400'
-                    : 'bg-red-900/60 text-red-400'
-                  }`}>
-                    {e.type === 'goal' ? tx.evGoal : e.type === 'assist' ? tx.evAssist : e.type === 'yellow_card' ? tx.yc : tx.rc}
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${badgeCls}`}>
+                    {badgeLabel}
                   </span>
                   {e.minute != null && <span className="text-xs text-white/30 shrink-0">{e.minute}&apos;</span>}
                   <span className="flex-1 text-white/50 text-xs truncate">
@@ -266,7 +276,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     {e.fixtures?.matchday != null ? ` — ${tx.round} ${e.fixtures.matchday}` : ''}
                   </span>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

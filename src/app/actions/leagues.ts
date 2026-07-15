@@ -434,10 +434,13 @@ export type ChampPlayerStat = {
   teamSlug: string | null
   teamLogo: string | null
   photo: string | null
+  // Football-compat fields (kept so existing consumers keep working); for other
+  // disciplines these stay 0 and the per-type `counts` map drives the UI instead.
   goals: number
   assists: number
   yellow: number
   red: number
+  counts: Record<string, number>   // every event type → count (discipline-agnostic)
   matchesPlayed: number
   seasons: number
 }
@@ -531,12 +534,13 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
       const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
       const playerId = info.leagueTeamId ? (idByKey.get(`${info.leagueTeamId}|${player.toLowerCase()}`) ?? null) : null
       const teamSlug = info.leagueTeamId ? (leagueTeamSlug.get(info.leagueTeamId) ?? null) : null
-      row = { player, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
+      row = { player, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, counts: {}, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
       acc.set(key, row)
     }
     row.seasonSet.add(info.tournamentId)
     const matchId = e.fixture_id ?? e.playoff_match_id
     if (matchId) row.matchSet.add(matchId)
+    row.counts[e.type] = (row.counts[e.type] ?? 0) + 1
     if (e.type === 'goal') row.goals++
     else if (e.type === 'assist') row.assists++
     else if (e.type === 'yellow_card') row.yellow++
@@ -572,7 +576,7 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
         const photo = info.leagueTeamId ? (photoByKey.get(`${info.leagueTeamId}|${name.toLowerCase()}`) ?? null) : null
         const playerId = info.leagueTeamId ? (idByKey.get(`${info.leagueTeamId}|${name.toLowerCase()}`) ?? null) : null
         const teamSlug = info.leagueTeamId ? (leagueTeamSlug.get(info.leagueTeamId) ?? null) : null
-        row = { player: name, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
+        row = { player: name, playerId, teamName, teamSlug, teamLogo, photo, goals: 0, assists: 0, yellow: 0, red: 0, counts: {}, matchesPlayed: 0, seasons: 0, seasonSet: new Set(), matchSet: new Set() }
         acc.set(key, row)
       }
       row.seasonSet.add(info.tournamentId)

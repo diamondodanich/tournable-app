@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import type { ChampPlayerStat, ChampTeamStat } from '@/app/actions/leagues'
+import { getEventDefs } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
 type StandingRow = { teamId: string; name: string; logoUrl: string | null; href: string | null; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }
@@ -78,7 +79,21 @@ export default function LeaguePublicView({
   const [statView, setStatView] = useState<'players' | 'teams'>('players')
   const selected = seasons.find(s => s.id === selectedSeasonId)
 
-  const pSort = useSort<ChampPlayerStat>(playerStats, 'goals')
+  // Player stat columns driven by the championship's discipline.
+  const statCols = getEventDefs(league.sport).filter(d => d.stat)
+  const primaryStat = statCols[0]
+  const [pKey, setPKey] = useState<string>(primaryStat?.type ?? 'matchesPlayed')
+  const [pDir, setPDir] = useState<1 | -1>(-1)
+  const pVal = (s: ChampPlayerStat, k: string): number | string =>
+    k === 'player' ? s.player : k === 'team' ? s.teamName
+    : k === 'matchesPlayed' ? s.matchesPlayed : k === 'seasons' ? s.seasons
+    : (s.counts[k] ?? 0)
+  const pSortedRows = [...playerStats].sort((a, b) => {
+    const av = pVal(a, pKey), bv = pVal(b, pKey)
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * pDir
+    return String(av).localeCompare(String(bv)) * pDir
+  })
+  const pSortObj = { key: pKey, dir: pDir, toggle: (k: string) => (k === pKey ? setPDir(d => (d === 1 ? -1 : 1)) : (setPKey(k), setPDir(-1))) }
   const tSort = useSort<ChampTeamStat>(teamStats, 'Pts')
 
   const fmtDate = (iso: string | null) => iso
@@ -241,15 +256,12 @@ export default function LeaguePublicView({
                         <th className="text-left py-2.5 pl-4 w-8">#</th>
                         <th className="text-left py-2.5">{tx.player}</th>
                         <th className="text-left py-2.5">{tx.team}</th>
-                        <Th label={tx.mp} k="matchesPlayed" s={pSort} />
-                        <Th label={tx.goals} k="goals" s={pSort} />
-                        <Th label={tx.assists} k="assists" s={pSort} />
-                        <Th label={tx.yellow} k="yellow" s={pSort} />
-                        <Th label={tx.red} k="red" s={pSort} />
-                        <Th label={tx.ssn} k="seasons" s={pSort} />
+                        <Th label={tx.mp} k="matchesPlayed" s={pSortObj} />
+                        {statCols.map(c => <Th key={c.type} label={c.label[lang]} k={c.type} s={pSortObj} />)}
+                        <Th label={tx.ssn} k="seasons" s={pSortObj} />
                       </tr></thead>
                       <tbody>
-                        {pSort.sorted.map((s, i) => (
+                        {pSortedRows.map((s, i) => (
                           <tr key={`${s.teamName}|${s.player}`} className="border-t border-gray-50">
                             <td className="py-2.5 pl-4 text-gray-400 font-bold">{i + 1}</td>
                             <td className="py-2.5 font-bold text-gray-900">
@@ -267,10 +279,11 @@ export default function LeaguePublicView({
                               <div className="flex items-center gap-1.5 min-w-0"><TeamAvatar name={s.teamName} logoUrl={s.teamLogo} size={18} /><span className="break-words">{s.teamName}</span></div>
                             </td>
                             <td className="py-2.5 px-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
-                            <td className="py-2.5 px-2 text-center font-black tabular-nums" style={{ color: brand }}>{s.goals}</td>
-                            <td className="py-2.5 px-2 text-center text-gray-600 tabular-nums">{s.assists}</td>
-                            <td className="py-2.5 px-2 text-center tabular-nums">{s.yellow || <span className="text-gray-300">—</span>}</td>
-                            <td className="py-2.5 px-2 text-center tabular-nums">{s.red || <span className="text-gray-300">—</span>}</td>
+                            {statCols.map((c, ci) => (
+                              <td key={c.type} className={`py-2.5 px-2 text-center tabular-nums ${ci === 0 ? 'font-black' : 'text-gray-600'}`} style={ci === 0 ? { color: brand } : undefined}>
+                                {s.counts[c.type] || <span className="text-gray-300">—</span>}
+                              </td>
+                            ))}
                             <td className="py-2.5 px-2 text-center text-gray-500 tabular-nums">{s.seasons}</td>
                           </tr>
                         ))}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { BarChart2, Crown, ChevronUp, ChevronDown, Users, User } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import type { ChampPlayerStat, ChampTeamStat } from '@/app/actions/leagues'
+import { getEventDefs, type EventDef } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -13,22 +14,22 @@ const T = {
     empty: 'Статистика появится после первых сыгранных матчей.',
     hint: 'Сквозная статистика по всем сезонам чемпионата',
     players: 'Игроки', teams: 'Команды',
-    player: 'Игрок', team: 'Команда', mp: 'И', goals: 'Г', assists: 'А', yellow: 'ЖК', red: 'КК', seasons: 'Сез.',
-    gp: 'И', w: 'В', d: 'Н', l: 'П', gf: 'ЗМ', ga: 'ПМ', gd: '±', pts: 'О', topScorer: 'Лучший бомбардир',
+    player: 'Игрок', team: 'Команда', mp: 'И', seasons: 'Сез.',
+    gp: 'И', w: 'В', d: 'Н', l: 'П', gf: 'Заб.', ga: 'Проп.', gd: '±', pts: 'О', topScorer: 'Лучший бомбардир', leader: 'Лидер',
   },
   kz: {
     empty: 'Статистика алғашқы ойналған матчтардан кейін пайда болады.',
     hint: 'Чемпионаттың барлық маусымдары бойынша жиынтық статистика',
     players: 'Ойыншылар', teams: 'Командалар',
-    player: 'Ойыншы', team: 'Команда', mp: 'О', goals: 'Г', assists: 'А', yellow: 'СК', red: 'ҚК', seasons: 'Мау.',
-    gp: 'О', w: 'Ж', d: 'Т', l: 'Ұ', gf: 'ЗМ', ga: 'ӨМ', gd: '±', pts: 'Ұп', topScorer: 'Үздік бомбардир',
+    player: 'Ойыншы', team: 'Команда', mp: 'О', seasons: 'Мау.',
+    gp: 'О', w: 'Ж', d: 'Т', l: 'Ұ', gf: 'Соқ.', ga: 'Жіб.', gd: '±', pts: 'Ұп', topScorer: 'Үздік бомбардир', leader: 'Көшбасшы',
   },
   en: {
     empty: 'Stats appear after the first matches are played.',
     hint: 'Cumulative statistics across all championship seasons',
     players: 'Players', teams: 'Teams',
-    player: 'Player', team: 'Team', mp: 'MP', goals: 'G', assists: 'A', yellow: 'YC', red: 'RC', seasons: 'Ssn',
-    gp: 'P', w: 'W', d: 'D', l: 'L', gf: 'GF', ga: 'GA', gd: '±', pts: 'Pts', topScorer: 'Top scorer',
+    player: 'Player', team: 'Team', mp: 'MP', seasons: 'Ssn',
+    gp: 'P', w: 'W', d: 'D', l: 'L', gf: 'SF', ga: 'SA', gd: '±', pts: 'Pts', topScorer: 'Top scorer', leader: 'Leader',
   },
 } as const
 
@@ -59,17 +60,49 @@ function SortHead<T>({ label, k, sort, align = 'center' }: { label: string; k: k
   )
 }
 
-export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug }: {
+export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug, sport }: {
   stats: ChampPlayerStat[]
   teamStats?: ChampTeamStat[]
   lang?: Lang
   slug?: string
+  sport?: string | null
 }) {
   const tx = T[lang]
   const [view, setView] = useState<'players' | 'teams'>('players')
 
-  const pSort = useSort<ChampPlayerStat>(stats, 'goals')
+  // Stat columns are driven by the championship's discipline (goals/assists for
+  // football, 3-pointers/fouls for basketball, knockdowns for combat, …).
+  const statCols: EventDef[] = getEventDefs(sport ?? undefined).filter(d => d.stat)
+  const primary = statCols[0]
+
   const tSort = useSort<ChampTeamStat>(teamStats, 'Pts')
+
+  // String-keyed sort for the player table (supports dynamic stat columns).
+  const [pKey, setPKey] = useState<string>(primary?.type ?? 'matchesPlayed')
+  const [pDir, setPDir] = useState<1 | -1>(-1)
+  const pVal = (s: ChampPlayerStat, k: string): number | string => {
+    if (k === 'player') return s.player
+    if (k === 'team') return s.teamName
+    if (k === 'matchesPlayed') return s.matchesPlayed
+    if (k === 'seasons') return s.seasons
+    return s.counts[k] ?? 0
+  }
+  const pSorted = [...stats].sort((a, b) => {
+    const av = pVal(a, pKey), bv = pVal(b, pKey)
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * pDir
+    return String(av).localeCompare(String(bv)) * pDir
+  })
+  const pToggle = (k: string) => {
+    if (k === pKey) setPDir(d => (d === 1 ? -1 : 1))
+    else { setPKey(k); setPDir(-1) }
+  }
+  const PHead = ({ label, k }: { label: string; k: string }) => (
+    <th className="px-2 py-2 text-center cursor-pointer select-none whitespace-nowrap" onClick={() => pToggle(k)}>
+      <span className={`inline-flex items-center gap-0.5 ${pKey === k ? 'text-violet-700' : ''}`}>
+        {label}{pKey === k && (pDir === -1 ? <ChevronDown size={11} /> : <ChevronUp size={11} />)}
+      </span>
+    </th>
+  )
 
   if (stats.length === 0 && teamStats.length === 0) {
     return (
@@ -80,23 +113,28 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug
     )
   }
 
-  const top = stats[0]
+  // Leader banner: top performer in the discipline's primary stat.
+  const leader = primary
+    ? [...stats].sort((a, b) => (b.counts[primary.type] ?? 0) - (a.counts[primary.type] ?? 0))[0]
+    : undefined
+  const leaderVal = leader && primary ? (leader.counts[primary.type] ?? 0) : 0
+  const leaderCaption = primary?.type === 'goal' ? tx.topScorer : `${tx.leader} · ${primary?.label[lang] ?? ''}`
 
   return (
     <div className="space-y-4">
-      {top && top.goals > 0 && (
+      {leader && leaderVal > 0 && (
         <div className="flex items-center gap-3 rounded-xl px-4 py-3 text-white" style={{ background: 'linear-gradient(135deg,#5b21b6,#8b5cf6)' }}>
           <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0 overflow-hidden">
-            {top.photo
+            {leader.photo
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={top.photo} alt="" className="w-full h-full object-cover" />
+              ? <img src={leader.photo} alt="" className="w-full h-full object-cover" />
               : <Crown size={18} />}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-violet-200">{tx.topScorer}</p>
-            <p className="font-black text-sm truncate">{top.player} <span className="text-violet-200 font-medium">· {top.teamName}</span></p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-violet-200">{leaderCaption}</p>
+            <p className="font-black text-sm truncate">{leader.player} <span className="text-violet-200 font-medium">· {leader.teamName}</span></p>
           </div>
-          <span className="text-2xl font-black tabular-nums shrink-0">{top.goals}</span>
+          <span className="text-2xl font-black tabular-nums shrink-0">{leaderVal}</span>
         </div>
       )}
 
@@ -120,16 +158,13 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug
                 <th className="text-left px-3 py-2 w-8">#</th>
                 <th className="text-left px-3 py-2">{tx.player}</th>
                 <th className="text-left px-3 py-2">{tx.team}</th>
-                <SortHead<ChampPlayerStat> label={tx.mp} k="matchesPlayed" sort={pSort} />
-                <SortHead<ChampPlayerStat> label={tx.goals} k="goals" sort={pSort} />
-                <SortHead<ChampPlayerStat> label={tx.assists} k="assists" sort={pSort} />
-                <SortHead<ChampPlayerStat> label={tx.yellow} k="yellow" sort={pSort} />
-                <SortHead<ChampPlayerStat> label={tx.red} k="red" sort={pSort} />
-                <SortHead<ChampPlayerStat> label={tx.seasons} k="seasons" sort={pSort} />
+                <PHead label={tx.mp} k="matchesPlayed" />
+                {statCols.map(c => <PHead key={c.type} label={c.label[lang]} k={c.type} />)}
+                <PHead label={tx.seasons} k="seasons" />
               </tr>
             </thead>
             <tbody>
-              {pSort.sorted.map((s, i) => (
+              {pSorted.map((s, i) => (
                 <tr key={`${s.teamName}|${s.player}`} className={i % 2 ? 'bg-gray-50/60' : 'bg-white'}>
                   <td className="px-3 py-2 text-gray-400 font-bold">{i + 1}</td>
                   <td className="px-3 py-2 font-bold text-gray-900">
@@ -154,10 +189,11 @@ export default function ChampStatsTab({ stats, teamStats = [], lang = 'ru', slug
                     </div>
                   </td>
                   <td className="px-2 py-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
-                  <td className="px-2 py-2 text-center font-black text-purple-700 tabular-nums">{s.goals}</td>
-                  <td className="px-2 py-2 text-center text-gray-600 tabular-nums">{s.assists}</td>
-                  <td className="px-2 py-2 text-center tabular-nums">{s.yellow || <span className="text-gray-300">—</span>}</td>
-                  <td className="px-2 py-2 text-center tabular-nums">{s.red || <span className="text-gray-300">—</span>}</td>
+                  {statCols.map((c, ci) => (
+                    <td key={c.type} className={`px-2 py-2 text-center tabular-nums ${ci === 0 ? 'font-black text-purple-700' : 'text-gray-600'}`}>
+                      {s.counts[c.type] || <span className="text-gray-300">—</span>}
+                    </td>
+                  ))}
                   <td className="px-2 py-2 text-center text-gray-500 tabular-nums">{s.seasons}</td>
                 </tr>
               ))}

@@ -12,7 +12,7 @@ import ResultsMatrix from '@/components/tournament/ResultsMatrix'
 import { CalendarDays, BarChart2, Users, Trophy, Layers, ListOrdered } from 'lucide-react'
 import type { Team, Fixture, MatchEvent, TournamentMember } from '@/types'
 import ChampionBanner from '@/components/tournament/ChampionBanner'
-import { getSportTheme, getCategoryForSport } from '@/lib/sports'
+import { getSportTheme, getCategoryForSport, getEventDefs, type EventIcon } from '@/lib/sports'
 import { getLeaderboardEntries } from '@/app/actions/leaderboard'
 import { tx, getLang } from '@/lib/i18n'
 
@@ -453,11 +453,28 @@ export default async function TournamentPage({ params, searchParams }: { params:
 
   const s1 = SECTION(1, '', '#059669')
   const s2 = SECTION(2, '', '#059669')
-  const s3 = SECTION(3, '', '#059669')
-  const s4 = SECTION(4, '', '#d97706')
-  const s5 = SECTION(5, '', '#2563eb')
-  const s6 = SECTION(6, '', '#d97706')
-  const s7 = SECTION(7, '', '#dc2626')
+
+  // Discipline-driven PDF stat sections (goals/assists for football, 3-pointers/
+  // fouls for basketball, knockdowns for combat, …).
+  const STAT_ACCENT: Record<EventIcon, string> = {
+    ball: '#059669', assist: '#2563eb', yellow: '#d97706', red: '#dc2626',
+    warn: '#d97706', foul: '#d97706', ko: '#dc2626', submission: '#374151',
+    ace: '#0891b2', block: '#4f46e5', three: '#ea580c', strike: '#dc2626',
+    touchdown: '#059669', run: '#059669', star: '#b45309',
+  }
+  const reportStatDefs = getEventDefs(tournament.sport).filter(d => d.stat)
+  const renderStatSections = (start: number) => reportStatDefs.map((d, i) => {
+    const accent = STAT_ACCENT[d.icon] ?? '#059669'
+    const sec = SECTION(start + i, '', accent)
+    return (
+      <div key={d.type} style={i === reportStatDefs.length - 1 ? { marginBottom: 0 } : sec}>
+        <p style={{ ...sec.header, color: accent }}>{start + i}. {d.label[lang]}</p>
+        <div style={sec.box}>
+          <ExportStatsTable teams={t} events={allEvents} type={d.type} label={d.label[lang]} accent={accent} />
+        </div>
+      </div>
+    )
+  })
 
   const sportTheme = getSportTheme(tournament.sport)
 
@@ -557,37 +574,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
               </div>
             )}
 
-            {/* 3. Goals */}
-            <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>3. {rt.scorers}</p>
-              <div style={s3.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="goal" label={rt.goalsLbl} accent="#059669" />
-              </div>
-            </div>
-
-            {/* 4. Assists */}
-            <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>4. {rt.assists}</p>
-              <div style={s4.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="assist" label={rt.assistsLbl} accent="#2563eb" />
-              </div>
-            </div>
-
-            {/* 5. Yellow cards */}
-            <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>5. {rt.yellow}</p>
-              <div style={s5.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label={rt.ycLbl} accent="#d97706" />
-              </div>
-            </div>
-
-            {/* 6. Red cards */}
-            <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s6.header, color: '#dc2626' }}>6. {rt.red}</p>
-              <div style={s6.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="red_card" label={rt.rcLbl} accent="#dc2626" />
-              </div>
-            </div>
+            {/* 3+. Discipline stat leaderboards */}
+            {renderStatSections(3)}
           </>
         ) : (
           <>
@@ -635,45 +623,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
               </div>
             </div>
 
-            {/* Goals */}
-            <div style={s3}>
-              <p style={{ ...s3.header, color: '#059669' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `3. ${rt.scorers}` : `2. ${rt.scorers}`}
-              </p>
-              <div style={s3.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="goal" label={rt.goalsLbl} accent="#059669" />
-              </div>
-            </div>
-
-            {/* Assists */}
-            <div style={s4}>
-              <p style={{ ...s4.header, color: '#d97706' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `4. ${rt.assists}` : `3. ${rt.assists}`}
-              </p>
-              <div style={s4.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="assist" label={rt.assistsLbl} accent="#2563eb" />
-              </div>
-            </div>
-
-            {/* Yellow cards */}
-            <div style={s5}>
-              <p style={{ ...s5.header, color: '#d97706' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `5. ${rt.yellow}` : `4. ${rt.yellow}`}
-              </p>
-              <div style={s5.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="yellow_card" label={rt.ycLbl} accent="#d97706" />
-              </div>
-            </div>
-
-            {/* Red cards */}
-            <div style={{ marginBottom: 0 }}>
-              <p style={{ ...s7.header, color: '#dc2626' }}>
-                {fmt === 'groups_playoff' || fmt === 'league_playoff' ? `6. ${rt.red}` : `5. ${rt.red}`}
-              </p>
-              <div style={s7.box}>
-                <ExportStatsTable teams={t} events={allEvents} type="red_card" label={rt.rcLbl} accent="#dc2626" />
-              </div>
-            </div>
+            {/* Discipline stat leaderboards */}
+            {renderStatSections(fmt === 'groups_playoff' || fmt === 'league_playoff' ? 3 : 2)}
           </>
         )}
       </div>

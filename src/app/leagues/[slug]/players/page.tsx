@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getChampionshipPlayerStats } from '@/app/actions/leagues'
+import { getEventDefs } from '@/lib/sports'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -30,7 +31,7 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
   const supabase = await createClient()
   const { slug } = await params
 
-  const { data: league } = await supabase.from('leagues').select('id, name').eq('slug', slug).eq('is_public', true).maybeSingle()
+  const { data: league } = await supabase.from('leagues').select('id, name, sport').eq('slug', slug).eq('is_public', true).maybeSingle()
   if (!league) notFound()
 
   const [{ data: teams }, allTimeStats] = await Promise.all([
@@ -41,10 +42,21 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
       .order('name'),
     getChampionshipPlayerStats(league.id),
   ])
-  const allTimeLeaders = allTimeStats.filter(s => s.goals > 0 || s.assists > 0).slice(0, 10)
 
-  const tx = PT[await getLang()]
+  const lang = await getLang()
+  const tx = PT[lang]
   const POSITION_LABELS: Record<string, string> = tx.pos
+
+  // Leader columns driven by the championship's discipline (max 2 in this compact list).
+  const statDefs = getEventDefs(league.sport).filter(d => d.stat).slice(0, 2)
+  const primary = statDefs[0]
+  const allTimeLeaders = primary
+    ? allTimeStats
+        .filter(s => statDefs.some(d => (s.counts[d.type] ?? 0) > 0))
+        .sort((a, b) => (b.counts[primary.type] ?? 0) - (a.counts[primary.type] ?? 0))
+        .slice(0, 10)
+    : []
+  const leaderGrid = { gridTemplateColumns: `2rem 1fr ${statDefs.map(() => '3rem').join(' ')}` }
 
   return (
     <div className="min-h-screen bg-[#0f0f11] text-white">
@@ -66,11 +78,12 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
               <h2 className="font-black text-white text-sm uppercase tracking-widest">{tx.leaders}</h2>
             </div>
             <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-              <div className="grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
-                <span>#</span><span>{tx.player}</span><span className="text-center">{tx.goals}</span><span className="text-center">{tx.assists}</span>
+              <div className="grid gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10" style={leaderGrid}>
+                <span>#</span><span>{tx.player}</span>
+                {statDefs.map(d => <span key={d.type} className="text-center">{d.label[lang]}</span>)}
               </div>
               {allTimeLeaders.map((s, i) => (
-                <div key={`${s.teamName}|${s.player}`} className={`grid grid-cols-[2rem_1fr_3rem_3rem] gap-2 items-center px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`}>
+                <div key={`${s.teamName}|${s.player}`} className={`grid gap-2 items-center px-4 py-2.5 ${i > 0 ? 'border-t border-white/5' : ''}`} style={leaderGrid}>
                   <span className={`text-xs font-black ${i === 0 ? 'text-purple-300' : 'text-white/30'}`}>{i + 1}</span>
                   <span className="min-w-0 flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-full overflow-hidden bg-purple-900/50 shrink-0 flex items-center justify-center text-[10px] font-black text-purple-300">
@@ -84,8 +97,9 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
                       <span className="text-[11px] text-white/30 truncate block">{s.teamName}{s.seasons > 1 ? ` · ${tx.seasonsN(s.seasons)}` : ''}</span>
                     </span>
                   </span>
-                  <span className="text-center text-sm font-black text-purple-300 tabular-nums">{s.goals}</span>
-                  <span className="text-center text-sm text-white/50 tabular-nums">{s.assists}</span>
+                  {statDefs.map((d, di) => (
+                    <span key={d.type} className={`text-center text-sm tabular-nums ${di === 0 ? 'font-black text-purple-300' : 'text-white/50'}`}>{s.counts[d.type] ?? 0}</span>
+                  ))}
                 </div>
               ))}
             </div>

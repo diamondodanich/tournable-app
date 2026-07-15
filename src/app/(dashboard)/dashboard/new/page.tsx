@@ -15,9 +15,34 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import UpgradePrompt from '@/components/billing/UpgradePrompt'
-import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, getParticipantKind, type SportTheme } from '@/lib/sports'
+import { SPORT_CATEGORIES, getSubtype, getSportTheme, getCategoryForSport, getParticipantKind, type SportTheme, type SportCategory } from '@/lib/sports'
 import TournamentCoverPicker from '@/components/tournament/TournamentCoverPicker'
 import { getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
+
+// ─── Sport category icon ──────────────────────────────────────────────────────
+// Custom PNG artwork for these categories lives in public/sport-icons/. It renders
+// white to sit on the gradient chip, and falls back to the built-in SVG until the
+// file exists (the 404 can fire before hydration, so we re-check on mount).
+const SPORT_ICON_IMG: Record<string, string> = {
+  racket: '/sport-icons/racket.png',
+  combat: '/sport-icons/combat.png',
+  nomad: '/sport-icons/nomad.png',
+  boardgames: '/sport-icons/mind.png',
+  american: '/sport-icons/american.png',
+}
+
+function SportCatIcon({ cat, size = 18, className }: { cat: SportCategory; size?: number; className?: string }) {
+  const [failed, setFailed] = useState(false)
+  const ref = useRef<HTMLImageElement>(null)
+  const img = SPORT_ICON_IMG[cat.id]
+  useEffect(() => { const el = ref.current; if (el && el.complete && el.naturalWidth === 0) setFailed(true) }, [])
+  if (img && !failed) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img ref={ref} src={img} alt="" aria-hidden className={`${className ?? ''} object-contain`} style={{ filter: 'brightness(0) invert(1)' }} onError={() => setFailed(true)} />
+  }
+  const Icon = cat.icon
+  return <Icon size={size} className={className} />
+}
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -867,7 +892,7 @@ export default function NewTournamentPage() {
                     <div className="flex flex-col items-center gap-1 shrink-0">
                       <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center text-white shadow-sm p-1.5"
                         style={{ background: cat.theme.gradient }}>
-                        <cat.icon size={18} className="w-full h-full" />
+                        <SportCatIcon cat={cat} size={18} className="w-full h-full" />
                       </div>
                       {locked && (
                         <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full whitespace-nowrap">
@@ -1075,7 +1100,7 @@ export default function NewTournamentPage() {
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm text-white p-2" style={{ background: cat.theme.gradient }}>
-                      <cat.icon size={22} className="w-full h-full" />
+                      <SportCatIcon cat={cat} size={22} className="w-full h-full" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: cat.theme.primary }}>{tx.sportLbl}</p>

@@ -65,10 +65,18 @@ export interface SportSubtype {
   events?: EventDef[]                // per-subtype override of category events
   scoreMode?: ScoreMode              // per-subtype override of category scoreMode
   participantKind?: ParticipantKind  // per-subtype override (mixed categories, e.g. nomad)
+  positions?: PositionDef[]          // per-subtype override of roster positions
 }
 
 // How to refer to a competitor in the UI (nouns, placeholders, seeding labels).
 export type ParticipantKind = 'team' | 'participant' | 'fighter'
+
+// Roster positions per discipline. Empty for individual sports (no positions).
+export interface PositionDef {
+  value: string                  // stored in players/team_players.position (text)
+  label: Record<Lang, string>    // full label
+  short: Record<Lang, string>    // compact badge label
+}
 
 export interface SportCategory {
   id: string
@@ -83,6 +91,7 @@ export interface SportCategory {
   participantKind?: ParticipantKind  // explicit competitor noun (defaults from `individual`)
   scoreMode?: ScoreMode              // 'count' = score from events, 'manual' = score inputs
   events?: EventDef[]                // in-match events offered for this discipline
+  positions?: PositionDef[]          // roster positions ([] / undefined → no positions)
 }
 
 // ── Colour themes ────────────────────────────────────────────────────────────
@@ -137,13 +146,57 @@ const EVENTS = {
   none:       [] as EventDef[],
 } satisfies Record<string, EventDef[]>
 
+// ── Roster positions per discipline ─────────────────────────────────────────────
+const POS = {
+  football: [
+    { value: 'goalkeeper', label: { ru: 'Вратарь',      kz: 'Қақпашы',        en: 'Goalkeeper' }, short: { ru: 'ВРТ', kz: 'ҚҚ',  en: 'GK' } },
+    { value: 'defender',   label: { ru: 'Защитник',     kz: 'Қорғаушы',       en: 'Defender' },   short: { ru: 'ЗАЩ', kz: 'ҚОРҒ', en: 'DEF' } },
+    { value: 'midfielder', label: { ru: 'Полузащитник', kz: 'Жартылай қорғ.', en: 'Midfielder' }, short: { ru: 'ПЗ',  kz: 'ЖШ',  en: 'MID' } },
+    { value: 'forward',    label: { ru: 'Нападающий',   kz: 'Шабуылшы',       en: 'Forward' },    short: { ru: 'НАП', kz: 'ШАБ', en: 'FWD' } },
+  ],
+  basketball: [
+    { value: 'pg', label: { ru: 'Разыгрывающий',      kz: 'Ойын құрушы',       en: 'Point guard' },    short: { ru: 'РЗ',  kz: 'ОҚ',  en: 'PG' } },
+    { value: 'sg', label: { ru: 'Атакующий защитник', kz: 'Шабуылшы қорғаушы', en: 'Shooting guard' }, short: { ru: 'АЗ',  kz: 'ШҚ',  en: 'SG' } },
+    { value: 'sf', label: { ru: 'Лёгкий форвард',     kz: 'Жеңіл форвард',     en: 'Small forward' },  short: { ru: 'ЛФ',  kz: 'ЖФ',  en: 'SF' } },
+    { value: 'pf', label: { ru: 'Тяжёлый форвард',    kz: 'Ауыр форвард',      en: 'Power forward' },  short: { ru: 'ТФ',  kz: 'АФ',  en: 'PF' } },
+    { value: 'c',  label: { ru: 'Центровой',          kz: 'Орталық',           en: 'Center' },         short: { ru: 'Ц',   kz: 'Ор',  en: 'C' } },
+  ],
+  volleyball: [
+    { value: 'setter',   label: { ru: 'Связующий',         kz: 'Байланыстырушы',  en: 'Setter' },         short: { ru: 'СВ',  kz: 'БАЙ', en: 'S' } },
+    { value: 'outside',  label: { ru: 'Доигровщик',        kz: 'Шабуылшы',        en: 'Outside hitter' }, short: { ru: 'ДГ',  kz: 'ШАБ', en: 'OH' } },
+    { value: 'middle',   label: { ru: 'Центр. блокирующий', kz: 'Орталық блок',   en: 'Middle blocker' }, short: { ru: 'ЦБ',  kz: 'ОБ',  en: 'MB' } },
+    { value: 'opposite', label: { ru: 'Диагональный',      kz: 'Диагональ',       en: 'Opposite' },       short: { ru: 'ДИАГ', kz: 'ДГ', en: 'OPP' } },
+    { value: 'libero',   label: { ru: 'Либеро',            kz: 'Либеро',          en: 'Libero' },         short: { ru: 'ЛИБ', kz: 'ЛИБ', en: 'L' } },
+  ],
+  hockey: [
+    { value: 'goalie',  label: { ru: 'Вратарь',   kz: 'Қақпашы',   en: 'Goaltender' }, short: { ru: 'ВРТ', kz: 'ҚҚ',  en: 'G' } },
+    { value: 'defense', label: { ru: 'Защитник',  kz: 'Қорғаушы',  en: 'Defenseman' }, short: { ru: 'ЗАЩ', kz: 'ҚОРҒ', en: 'D' } },
+    { value: 'wing',    label: { ru: 'Крайний',   kz: 'Шеткі',     en: 'Winger' },     short: { ru: 'КР',  kz: 'ШЕТ', en: 'W' } },
+    { value: 'center',  label: { ru: 'Центральный', kz: 'Орталық', en: 'Center' },     short: { ru: 'Ц',   kz: 'Ор',  en: 'C' } },
+  ],
+  americanFb: [
+    { value: 'qb', label: { ru: 'Квотербек', kz: 'Квотербек', en: 'Quarterback' },  short: { ru: 'QB', kz: 'QB', en: 'QB' } },
+    { value: 'rb', label: { ru: 'Раннинбек', kz: 'Раннинбек', en: 'Running back' }, short: { ru: 'RB', kz: 'RB', en: 'RB' } },
+    { value: 'wr', label: { ru: 'Ресивер',   kz: 'Ресивер',   en: 'Wide receiver' }, short: { ru: 'WR', kz: 'WR', en: 'WR' } },
+    { value: 'ol', label: { ru: 'Лайнмен',   kz: 'Лайнмен',   en: 'Lineman' },      short: { ru: 'OL', kz: 'OL', en: 'OL' } },
+    { value: 'def', label: { ru: 'Защита',   kz: 'Қорғаныс',  en: 'Defense' },      short: { ru: 'DEF', kz: 'DEF', en: 'DEF' } },
+  ],
+  baseball: [
+    { value: 'pitcher',  label: { ru: 'Питчер',    kz: 'Питчер',    en: 'Pitcher' },   short: { ru: 'P',  kz: 'P',  en: 'P' } },
+    { value: 'catcher',  label: { ru: 'Кэтчер',    kz: 'Кэтчер',    en: 'Catcher' },   short: { ru: 'C',  kz: 'C',  en: 'C' } },
+    { value: 'infield',  label: { ru: 'Инфилдер',  kz: 'Инфилдер',  en: 'Infielder' }, short: { ru: 'IF', kz: 'IF', en: 'IF' } },
+    { value: 'outfield', label: { ru: 'Аутфилдер', kz: 'Аутфилдер', en: 'Outfielder' }, short: { ru: 'OF', kz: 'OF', en: 'OF' } },
+  ],
+  none: [] as PositionDef[],
+} satisfies Record<string, PositionDef[]>
+
 const ALL_FORMATS: Format[] = ['round_robin', 'playoff', 'groups_playoff', 'league_playoff']
 
 // ── Categories ───────────────────────────────────────────────────────────────
 export const SPORT_CATEGORIES: SportCategory[] = [
   {
     id: 'football', abbr: 'F', icon: SoccerBall, proOnly: false, theme: THEME.green,
-    participantKind: 'team', scoreMode: 'count', events: EVENTS.football,
+    participantKind: 'team', scoreMode: 'count', events: EVENTS.football, positions: POS.football,
     label:   { ru: 'Футбол',  kz: 'Футбол',  en: 'Football' },
     tagline: { ru: 'Классика, мини-футбол и киберфутбол', kz: 'Классика, мини-футбол және киберфутбол', en: 'Classic, futsal & e-football' },
     subtypes: [
@@ -175,7 +228,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
   {
     id: 'basketball', abbr: 'B', icon: BasketballBall, proOnly: true, theme: THEME.orange,
-    participantKind: 'team', scoreMode: 'manual', events: EVENTS.basketball,
+    participantKind: 'team', scoreMode: 'manual', events: EVENTS.basketball, positions: POS.basketball,
     label:   { ru: 'Баскетбол', kz: 'Баскетбол', en: 'Basketball' },
     tagline: { ru: '5×5, стритбол 3×3 и кибербаскетбол', kz: '5×5, стритбол 3×3 және кибербаскетбол', en: '5v5, streetball 3v3 & e-ball' },
     subtypes: [
@@ -207,7 +260,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
   {
     id: 'volleyball', abbr: 'V', icon: Volleyball, proOnly: true, theme: THEME.blue,
-    participantKind: 'team', scoreMode: 'manual', events: EVENTS.volleyball,
+    participantKind: 'team', scoreMode: 'manual', events: EVENTS.volleyball, positions: POS.volleyball,
     label:   { ru: 'Волейбол', kz: 'Волейбол', en: 'Volleyball' },
     tagline: { ru: 'Классический и пляжный', kz: 'Классикалық және жағажай', en: 'Indoor & beach' },
     subtypes: [
@@ -233,7 +286,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
   {
     id: 'hockey', abbr: 'H', icon: HockeyPuck, proOnly: true, theme: THEME.cyan,
-    participantKind: 'team', scoreMode: 'count', events: EVENTS.hockey,
+    participantKind: 'team', scoreMode: 'count', events: EVENTS.hockey, positions: POS.hockey,
     label:   { ru: 'Хоккей', kz: 'Хоккей', en: 'Hockey' },
     tagline: { ru: 'Хоккей с шайбой', kz: 'Шайбалы хоккей', en: 'Ice hockey' },
     subtypes: [
@@ -487,7 +540,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
         periods: 4, periodOptions: [2, 4], duration: 15, extraTime: true, pts: { win: 2, draw: 0, loss: 0 }, noDraw: true,
         periodLabel: { ru: 'Четверти', kz: 'Ширектер', en: 'Quarters' }, durationLabel: { ru: 'Длительность четверти', kz: 'Ширек ұзақтығы', en: 'Quarter duration' },
         recommendedFormat: 'league_playoff', formats: ['league_playoff', 'playoff', 'groups_playoff', 'round_robin'],
-        events: EVENTS.americanFb,
+        events: EVENTS.americanFb, positions: POS.americanFb,
       },
       {
         value: 'baseball',
@@ -497,7 +550,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
         periodLabel: { ru: 'Иннинги', kz: 'Иннингтер', en: 'Innings' }, durationLabel: { ru: 'Иннинги', kz: 'Иннингтер', en: 'Innings' },
         scoreNote: { ru: 'Счёт матча — количество ранов (например 5:3). Ничьих нет.', kz: 'Матч есебі — рандар саны. Теңсіз.', en: 'Match score = runs (e.g. 5:3). No draws.' },
         recommendedFormat: 'league_playoff', formats: ['league_playoff', 'round_robin', 'playoff', 'groups_playoff'],
-        events: EVENTS.baseball,
+        events: EVENTS.baseball, positions: POS.baseball,
       },
     ],
   },
@@ -565,4 +618,21 @@ export function getParticipantKind(value: string | null | undefined): Participan
   return hit.subtype.participantKind
     ?? hit.category.participantKind
     ?? (hit.category.individual ? 'participant' : 'team')
+}
+
+// Roster positions for a sport (subtype override → category → football default).
+// Empty array for individual disciplines (combat, racket, mind sports, esports).
+export function getPositions(value: string | null | undefined): PositionDef[] {
+  if (!value) return POS.football
+  const hit = SUBTYPE_INDEX[value]
+  if (!hit) return POS.football
+  return hit.subtype.positions ?? hit.category.positions ?? []
+}
+
+// Resolve a stored position value to a label (falls back to the raw value).
+export function getPositionLabel(sport: string | null | undefined, value: string | null | undefined, lang: Lang, short = false): string {
+  if (!value || value === 'other') return ''
+  const def = getPositions(sport).find(p => p.value === value)
+  if (!def) return ''
+  return short ? def.short[lang] : def.label[lang]
 }

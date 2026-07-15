@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Users, BarChart3, CalendarDays, Pencil, ChevronLeft } from 'lucide-react'
 import SquadEditor from '@/components/championship/SquadEditor'
+import { getPositionLabel } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
 type PlayerLite = { id: string; name: string; number: number | null; position: string | null; photo_url: string | null }
@@ -135,7 +136,9 @@ export default function TeamProfileView({
                     <div className={`flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors ${i > 0 ? 'border-t border-white/5' : ''}`}>
                       <Avatar name={p.name} photo={p.photo_url} brand={brand} />
                       {p.number != null && <span className="w-5 text-right text-xs font-black text-white/30 shrink-0">{p.number}</span>}
-                      <span className="text-[10px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded shrink-0">{tx.pos[p.position ?? 'other']}</span>
+                      {getPositionLabel(sport, p.position, lang, true) && (
+                        <span className="text-[10px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded shrink-0">{getPositionLabel(sport, p.position, lang, true)}</span>
+                      )}
                       <span className="flex-1 text-sm font-bold text-white/90">{p.name}</span>
                     </div>
                   </Link>

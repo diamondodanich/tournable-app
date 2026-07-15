@@ -102,7 +102,7 @@ export default function ChampionshipAllSeasons({ league, seasons, teams, teamsCo
       </div>
 
       {tab === 'teams' && (
-        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} />
+        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} sport={league.sport} />
       )}
 
       {tab === 'overview' && (

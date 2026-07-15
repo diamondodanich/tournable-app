@@ -10,34 +10,36 @@ import {
 } from '@/app/actions/lineups'
 import type { TeamPlayer, Team } from '@/types'
 import { tx, type Lang } from '@/lib/i18n'
+import { getPositions } from '@/lib/sports'
 
 type Role = 'starter' | 'sub' | null
 
-const POS_ORDER: Record<string, number> = {
-  goalkeeper: 0, defender: 1, midfielder: 2, forward: 3, other: 4,
-}
-
 // ── One team's column ─────────────────────────────────────────────────────────
 function TeamColumn({
-  team, fixtureId, tournamentId, accent, lang = 'ru',
+  team, fixtureId, tournamentId, accent, lang = 'ru', sport,
 }: {
   team: Team
   fixtureId: string
   tournamentId: string
   accent: string
   lang?: Lang
+  sport?: string
 }) {
   const T = tx[lang]
 
+  // Discipline-aware roster positions ([] for individual sports → just "other").
+  const positionDefs = getPositions(sport)
   const POSITIONS = [
-    { value: 'goalkeeper', label: T.posGK },
-    { value: 'defender',   label: T.posDEF },
-    { value: 'midfielder', label: T.posMID },
-    { value: 'forward',    label: T.posFWD },
-    { value: 'other',      label: T.posNone },
+    ...positionDefs.map(p => ({ value: p.value, label: p.label[lang] })),
+    { value: 'other', label: T.posNone },
   ]
   const POS_LABEL: Record<string, string> = {
-    goalkeeper: T.posGK, defender: T.posDEF, midfielder: T.posMID, forward: T.posFWD, other: T.posNone,
+    ...Object.fromEntries(positionDefs.map(p => [p.value, p.label[lang]])),
+    other: T.posNone,
+  }
+  const POS_ORDER: Record<string, number> = {
+    ...Object.fromEntries(positionDefs.map((p, i) => [p.value, i])),
+    other: positionDefs.length,
   }
 
   const [roster, setRoster] = useState<TeamPlayer[]>([])
@@ -69,7 +71,7 @@ function TeamColumn({
   }, [team.id, fixtureId])
 
   const sortedRoster = [...roster].sort((a, b) =>
-    (POS_ORDER[a.position] - POS_ORDER[b.position]) ||
+    ((POS_ORDER[a.position] ?? 99) - (POS_ORDER[b.position] ?? 99)) ||
     ((a.number ?? 999) - (b.number ?? 999))
   )
 
@@ -265,7 +267,7 @@ function TeamColumn({
 
 // ── Modal shell ───────────────────────────────────────────────────────────────
 export default function LineupEditor({
-  fixtureId, tournamentId, homeTeam, awayTeam, onClose, lang = 'ru',
+  fixtureId, tournamentId, homeTeam, awayTeam, onClose, lang = 'ru', sport,
 }: {
   fixtureId: string
   tournamentId: string
@@ -273,6 +275,7 @@ export default function LineupEditor({
   awayTeam: Team | null
   onClose: () => void
   lang?: Lang
+  sport?: string
 }) {
   const T = tx[lang]
   const [mounted, setMounted] = useState(false)
@@ -304,11 +307,11 @@ export default function LineupEditor({
         {/* Body — two team columns */}
         <div className="flex flex-col sm:flex-row gap-5 p-5 overflow-y-auto">
           {homeTeam && (
-            <TeamColumn team={homeTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#059669" lang={lang} />
+            <TeamColumn team={homeTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#059669" lang={lang} sport={sport} />
           )}
           <div className="hidden sm:block w-px bg-gray-100 shrink-0" />
           {awayTeam && (
-            <TeamColumn team={awayTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#7c3aed" lang={lang} />
+            <TeamColumn team={awayTeam} fixtureId={fixtureId} tournamentId={tournamentId} accent="#7c3aed" lang={lang} sport={sport} />
           )}
         </div>
       </div>

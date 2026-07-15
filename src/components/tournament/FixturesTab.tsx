@@ -279,6 +279,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           awayTeam={awayTeam}
           onClose={() => setShowLineup(false)}
           lang={lang}
+          sport={sport}
         />
       )}
       {squadPick && isChampSquad && (

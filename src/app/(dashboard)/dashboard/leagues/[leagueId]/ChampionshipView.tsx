@@ -281,7 +281,7 @@ export default function ChampionshipView({ league, seasons, teams, lang = 'ru', 
       )}
 
       {tab === 'teams' && (
-        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} />
+        <TeamsSquadsTab leagueId={league.id} teams={teams} lang={lang} sport={league.sport} />
       )}
 
       {tab === 'stats' && (

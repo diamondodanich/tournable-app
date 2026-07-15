@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getEventDefs, type EventIcon } from '@/lib/sports'
+import { getEventDefs, getPositionLabel, type EventIcon } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -198,9 +198,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <Link href={`/leagues/${slug}/teams/${leagueTeam.slug}`} className="text-sm text-purple-400 hover:text-purple-300 font-medium">
                   {leagueTeam.name}
                 </Link>
-                {player.position && player.position !== 'other' && (
-                  <span className="text-xs text-white/30">· {tx.pos[player.position]}</span>
-                )}
+                {(() => { const posLabel = getPositionLabel(league.sport, player.position, lang); return posLabel ? (
+                  <span className="text-xs text-white/30">· {posLabel}</span>
+                ) : null })()}
                 {seasonsPlayed > 0 && (
                   <span className="text-xs text-white/30">· {tx.seasonsWord(seasonsPlayed)}</span>
                 )}

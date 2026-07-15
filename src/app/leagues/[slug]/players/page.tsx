@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getChampionshipPlayerStats } from '@/app/actions/leagues'
-import { getEventDefs } from '@/lib/sports'
+import { getEventDefs, getPositionLabel } from '@/lib/sports'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -45,7 +45,6 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
 
   const lang = await getLang()
   const tx = PT[lang]
-  const POSITION_LABELS: Record<string, string> = tx.pos
 
   // Leader columns driven by the championship's discipline (max 2 in this compact list).
   const statDefs = getEventDefs(league.sport).filter(d => d.stat).slice(0, 2)
@@ -130,9 +129,11 @@ export default async function LeaguePlayersPage({ params }: { params: Promise<{ 
                     {p.number != null && (
                       <span className="w-6 text-right text-xs font-black text-white/30 shrink-0">{p.number}</span>
                     )}
-                    <span className="text-[10px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded shrink-0">
-                      {POSITION_LABELS[p.position ?? 'other']}
-                    </span>
+                    {getPositionLabel(league.sport, p.position, lang, true) && (
+                      <span className="text-[10px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded shrink-0">
+                        {getPositionLabel(league.sport, p.position, lang, true)}
+                      </span>
+                    )}
                     <Link href={`/leagues/${slug}/players/${p.id}`} className="flex-1 text-sm font-bold text-white/90 hover:text-purple-300 transition-colors">
                       {p.name}
                     </Link>

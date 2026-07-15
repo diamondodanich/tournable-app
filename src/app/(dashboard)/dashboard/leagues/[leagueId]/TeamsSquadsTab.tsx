@@ -5,6 +5,7 @@ import { addLeagueTeam, removeLeagueTeam, addPlayer, removePlayer } from '@/app/
 import { Plus, Trash2, MapPin, Check, X, ChevronDown, ChevronUp, Users } from 'lucide-react'
 import type { LeagueTeam, Player } from '@/types'
 import { confirmDialog } from '@/components/ui/confirm'
+import { getPositions, getPositionLabel } from '@/lib/sports'
 
 type TeamWithPlayers = LeagueTeam & { players: Player[] }
 type Lang = 'ru' | 'kz' | 'en'
@@ -87,13 +88,17 @@ const T = {
   },
 } as const
 
-function TeamCard({ leagueId, team, lang, onRemoveTeam }: {
+function TeamCard({ leagueId, team, lang, onRemoveTeam, sport }: {
   leagueId: string
   team: TeamWithPlayers
   lang: Lang
   onRemoveTeam: (id: string, name: string) => void
+  sport?: string | null
 }) {
   const T_ = T[lang]
+  // Discipline-aware roster positions ([] for individual sports).
+  const positionDefs = getPositions(sport)
+  const positionOptions = [...positionDefs.map(p => ({ value: p.value, label: p.label[lang] })), { value: 'other', label: T_.positions[T_.positions.length - 1].label }]
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -155,9 +160,11 @@ function TeamCard({ leagueId, team, lang, onRemoveTeam }: {
             .map(p => (
               <div key={p.id} className="flex items-center gap-2 py-1">
                 <span className="w-6 text-xs font-black text-gray-400 text-right shrink-0">{p.number ?? ''}</span>
-                <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded shrink-0">
-                  {T_.positionLabels[p.position ?? 'other']}
-                </span>
+                {getPositionLabel(sport, p.position, lang, true) && (
+                  <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded shrink-0">
+                    {getPositionLabel(sport, p.position, lang, true)}
+                  </span>
+                )}
                 <span className="flex-1 text-sm text-gray-900 truncate">{p.name}</span>
                 <button
                   onClick={() => handleRemovePlayer(p.id)}
@@ -196,7 +203,7 @@ function TeamCard({ leagueId, team, lang, onRemoveTeam }: {
                 onChange={e => setPosition(e.target.value)}
                 className="w-full px-3 py-1.5 rounded-lg border border-gray-200 focus:border-violet-400 outline-none text-sm bg-white"
               >
-                {T_.positions.map(pos => (
+                {positionOptions.map(pos => (
                   <option key={pos.value} value={pos.value}>{pos.label}</option>
                 ))}
               </select>
@@ -231,10 +238,11 @@ function TeamCard({ leagueId, team, lang, onRemoveTeam }: {
   )
 }
 
-export default function TeamsSquadsTab({ leagueId, teams, lang = 'ru' }: {
+export default function TeamsSquadsTab({ leagueId, teams, lang = 'ru', sport }: {
   leagueId: string
   teams: TeamWithPlayers[]
   lang?: Lang
+  sport?: string | null
 }) {
   const T_ = T[lang]
   const [isPending, startTransition] = useTransition()
@@ -267,7 +275,7 @@ export default function TeamsSquadsTab({ leagueId, teams, lang = 'ru' }: {
       )}
 
       {teams.map(team => (
-        <TeamCard key={team.id} leagueId={leagueId} team={team} lang={lang} onRemoveTeam={handleRemoveTeam} />
+        <TeamCard key={team.id} leagueId={leagueId} team={team} lang={lang} onRemoveTeam={handleRemoveTeam} sport={sport} />
       ))}
 
       {adding ? (

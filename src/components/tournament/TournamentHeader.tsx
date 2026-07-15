@@ -78,10 +78,8 @@ export default function TournamentHeader({ tournament, isOwner = true, isPro = f
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                style={tournament.generated
-                  ? { background: theme.light, color: theme.primaryDark }
-                  : { background: '#f3f4f6', color: '#6b7280' }}>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${tournament.generated ? 'sp-tint' : 'bg-gray-100 text-gray-500'}`}
+                style={tournament.generated ? { background: theme.light, color: theme.primaryDark } : undefined}>
                 {tournament.generated ? T.statusActive : T.statusSetup}
               </span>
             </div>

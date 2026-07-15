@@ -886,7 +886,7 @@ export default function NewTournamentPage() {
                     }}
                     style={active ? { borderColor: cat.theme.primary, background: cat.theme.light } : undefined}
                     className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
-                      active ? '' : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90' : 'border-gray-200 bg-white hover:border-gray-300'
+                      active ? 'sp-tint' : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90' : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
                     {/* icon + PRO badge stacked vertically */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
@@ -934,7 +934,7 @@ export default function NewTournamentPage() {
                     }}
                     style={active ? { borderColor: theme.primary, background: theme.light } : undefined}
                     className={`p-3.5 rounded-xl border-2 text-left transition-all ${
-                      active ? ''
+                      active ? 'sp-tint'
                       : locked ? 'border-gray-200 bg-gray-50 opacity-70 hover:opacity-90'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
@@ -1012,7 +1012,7 @@ export default function NewTournamentPage() {
                           <button key={v} type="button" onClick={() => setNumRounds(v)}
                             style={numRounds === v ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                             className={`py-2.5 px-3 rounded-xl border text-center text-sm transition-all ${
-                              numRounds === v ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                              numRounds === v ? 'font-bold sp-tint' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                             }`}>
                             {v}
                           </button>
@@ -1033,7 +1033,7 @@ export default function NewTournamentPage() {
                           <button key={opt.value} type="button" onClick={() => setNumRounds(opt.value)}
                             style={numRounds === opt.value ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                             className={`py-2.5 px-3 rounded-xl border text-left text-sm transition-all ${
-                              numRounds === opt.value ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                              numRounds === opt.value ? 'font-bold sp-tint' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                             }`}>
                             {opt.label}
                           </button>
@@ -1043,7 +1043,7 @@ export default function NewTournamentPage() {
                   )}
 
                   {sheetFormat === 'league_playoff' && (
-                    <div className="rounded-xl px-4 py-3 text-xs flex items-center gap-2 mb-5" style={{ background: theme.light, color: theme.primaryDark }}>
+                    <div className="sp-tint rounded-xl px-4 py-3 text-xs flex items-center gap-2 mb-5" style={{ background: theme.light, color: theme.primaryDark }}>
                       <Settings2 size={13} className="shrink-0 opacity-70" />
                       <span>{tx.leagueSettingsNote}</span>
                     </div>
@@ -1058,14 +1058,14 @@ export default function NewTournamentPage() {
                             <button key={opt.value} type="button" onClick={() => setGroupsCount(opt.value)}
                               style={groupsCount === opt.value ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                               className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                                groupsCount === opt.value ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                groupsCount === opt.value ? 'sp-tint' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                               }`}>
                               {opt.label}
                             </button>
                           ))}
                         </div>
                       </div>
-                      <div className="rounded-xl px-4 py-3 text-xs flex items-center gap-2" style={{ background: theme.light, color: theme.primaryDark }}>
+                      <div className="sp-tint rounded-xl px-4 py-3 text-xs flex items-center gap-2" style={{ background: theme.light, color: theme.primaryDark }}>
                         <Settings2 size={13} className="shrink-0 opacity-70" />
                         <span>{tx.groupAdvanceNote}</span>
                       </div>
@@ -1116,10 +1116,10 @@ export default function NewTournamentPage() {
                         <button key={st.value} type="button"
                           onClick={() => { selectSubtype(st.value); setSportSheet(null) }}
                           style={active ? { borderColor: cat.theme.primary, background: cat.theme.light } : undefined}
-                          className={`w-full flex items-start gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${active ? '' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                          className={`w-full flex items-start gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${active ? 'sp-tint' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                           <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: active ? cat.theme.primary : '#d1d5db' }} />
                           <div className="min-w-0">
-                            <p className="text-sm font-bold leading-tight" style={{ color: active ? cat.theme.primary : '#1f2937' }}>{st.label[lang]}</p>
+                            <p className={`text-sm font-bold leading-tight ${active ? '' : 'text-gray-800'}`} style={active ? { color: cat.theme.primary } : undefined}>{st.label[lang]}</p>
                             <p className="text-xs text-gray-400 leading-snug mt-0.5">{st.desc[lang]}</p>
                           </div>
                         </button>
@@ -1279,7 +1279,7 @@ export default function NewTournamentPage() {
                       onClick={() => { setPlayoffBestOf(opt.bestOf); setPlayoffTwoLegged(opt.legs) }}
                       style={active ? { borderColor: theme.primary, background: theme.light, color: theme.primary } : undefined}
                       className={`px-3.5 py-2 rounded-xl border text-sm font-bold transition-all ${
-                        active ? '' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        active ? 'sp-tint' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}>
                       {opt.label}
                     </button>
@@ -1386,7 +1386,7 @@ export default function NewTournamentPage() {
                       type="button"
                       onClick={() => setSeasonPeriod(opt.value)}
                       className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
-                        active ? 'font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        active ? 'font-bold sp-tint' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                       style={active ? { borderColor: 'var(--sp)', background: 'var(--spl)', color: 'var(--sp)' } : undefined}
                     >
@@ -1433,7 +1433,7 @@ export default function NewTournamentPage() {
           )}
 
           {format === 'leaderboard' && (
-            <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
+            <div className="sp-tint rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
               {lang === 'en' ? `Points per round are entered on the tournament page. Rounds: ${numRounds}` : lang === 'kz' ? `Раунд ұпайлары турнир бетінде енгізіледі. Раундтар: ${numRounds}` : `Очки за раунды вносятся на странице турнира. Раундов: ${numRounds}`}
             </div>
           )}
@@ -1465,7 +1465,7 @@ export default function NewTournamentPage() {
               )}
             </div>
             {isSetBased && scoreNoteTxt && (
-              <div className="rounded-xl px-4 py-2.5 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
+              <div className="sp-tint rounded-xl px-4 py-2.5 text-xs leading-relaxed" style={{ background: theme.light, color: theme.primaryDark }}>
                 {scoreNoteTxt}
               </div>
             )}

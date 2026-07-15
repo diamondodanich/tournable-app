@@ -6,11 +6,12 @@ import { X, Check, Trash2, Loader2, Shirt, Plus, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { getSquad, saveSquad } from '@/app/actions/leagues'
 import { uploadPlayerPhoto } from '@/app/actions/logos'
+import { getPositions, getPositionLabel } from '@/lib/sports'
 
 type Lang = 'ru' | 'kz' | 'en'
-type Cat = 'gk' | 'def' | 'mid' | 'fwd' | 'gen'
 type Player = { name: string; number: string; photoUrl?: string | null; photoData?: string | null }
 type Slot = Player | null
+type Line = string[]   // one horizontal pitch line; each entry is a slot's position value
 
 // Center-crop an image file to a square webp data URL for a player avatar.
 function fileToAvatar(file: File, size = 256): Promise<string> {
@@ -32,31 +33,60 @@ function fileToAvatar(file: File, size = 256): Promise<string> {
   })
 }
 
-const CAT_POSITION: Record<Cat, string> = {
-  gk: 'goalkeeper', def: 'defender', mid: 'midfielder', fwd: 'forward', gen: 'other',
-}
-const POSITION_CAT: Record<string, Cat> = {
-  goalkeeper: 'gk', defender: 'def', midfielder: 'mid', forward: 'fwd', other: 'gen',
-}
+// Formations are horizontal pitch lines; each entry is a position value (top → bottom).
+const rep = (pos: string, n: number): string[] => Array(n).fill(pos)
 
-// Football/futsal formations expressed as rows (from defence to attack, GK implicit first).
-const FOOTBALL_FORMATIONS: Record<string, { cat: Cat; n: number }[]> = {
-  '4-4-2':   [{ cat: 'gk', n: 1 }, { cat: 'def', n: 4 }, { cat: 'mid', n: 4 }, { cat: 'fwd', n: 2 }],
-  '4-3-3':   [{ cat: 'gk', n: 1 }, { cat: 'def', n: 4 }, { cat: 'mid', n: 3 }, { cat: 'fwd', n: 3 }],
-  '3-5-2':   [{ cat: 'gk', n: 1 }, { cat: 'def', n: 3 }, { cat: 'mid', n: 5 }, { cat: 'fwd', n: 2 }],
-  '4-2-3-1': [{ cat: 'gk', n: 1 }, { cat: 'def', n: 4 }, { cat: 'mid', n: 2 }, { cat: 'mid', n: 3 }, { cat: 'fwd', n: 1 }],
-  '5-3-2':   [{ cat: 'gk', n: 1 }, { cat: 'def', n: 5 }, { cat: 'mid', n: 3 }, { cat: 'fwd', n: 2 }],
+const FOOTBALL_FORMATIONS: Record<string, Line[]> = {
+  '4-4-2':   [rep('goalkeeper', 1), rep('defender', 4), rep('midfielder', 4), rep('forward', 2)],
+  '4-3-3':   [rep('goalkeeper', 1), rep('defender', 4), rep('midfielder', 3), rep('forward', 3)],
+  '3-5-2':   [rep('goalkeeper', 1), rep('defender', 3), rep('midfielder', 5), rep('forward', 2)],
+  '4-2-3-1': [rep('goalkeeper', 1), rep('defender', 4), rep('midfielder', 2), rep('midfielder', 3), rep('forward', 1)],
+  '5-3-2':   [rep('goalkeeper', 1), rep('defender', 5), rep('midfielder', 3), rep('forward', 2)],
 }
-const FUTSAL_FORMATIONS: Record<string, { cat: Cat; n: number }[]> = {
-  '1-2-1': [{ cat: 'gk', n: 1 }, { cat: 'def', n: 1 }, { cat: 'mid', n: 2 }, { cat: 'fwd', n: 1 }],
-  '2-2':   [{ cat: 'gk', n: 1 }, { cat: 'def', n: 2 }, { cat: 'fwd', n: 2 }],
-  '2-1-1': [{ cat: 'gk', n: 1 }, { cat: 'def', n: 2 }, { cat: 'mid', n: 1 }, { cat: 'fwd', n: 1 }],
+const FUTSAL_FORMATIONS: Record<string, Line[]> = {
+  '1-2-1': [rep('goalkeeper', 1), rep('defender', 1), rep('midfielder', 2), rep('forward', 1)],
+  '2-2':   [rep('goalkeeper', 1), rep('defender', 2), rep('forward', 2)],
+  '2-1-1': [rep('goalkeeper', 1), rep('defender', 2), rep('midfielder', 1), rep('forward', 1)],
+}
+// Basketball: backcourt (guards) line + frontcourt (forwards/center) line.
+const BASKETBALL_FORMATIONS: Record<string, Line[]> = {
+  'Стандарт':     [['pg', 'sg'], ['sf', 'pf', 'c']],
+  '3 защитника':  [['pg', 'sg', 'sf'], ['pf', 'c']],
+}
+const STREETBALL_FORMATIONS: Record<string, Line[]> = {
+  '3×3': [['pg', 'sf'], ['c']],
+}
+// Volleyball: front row + back row of three.
+const VOLLEYBALL_FORMATIONS: Record<string, Line[]> = {
+  '5-1': [['outside', 'middle', 'opposite'], ['setter', 'middle', 'outside']],
+  '6-2': [['outside', 'middle', 'setter'], ['outside', 'middle', 'setter']],
+}
+const BEACH_FORMATIONS: Record<string, Line[]> = {
+  '2×2': [['outside', 'outside']],
 }
 
 const FOOTBALL_SPORTS = new Set(['football', 'efootball'])
 const FUTSAL_SPORTS = new Set(['futsal'])
 const GENERIC_STARTERS: Record<string, number> = {
-  basketball: 5, streetball: 5, ebasketball: 5, volleyball: 6, beach_volleyball: 2, hockey: 6, other: 5,
+  hockey: 6, other: 5,
+}
+
+// Colour palette for position badges on the pitch (index = position order).
+const POS_PALETTE = ['#f59e0b', '#38bdf8', '#34d399', '#f43f5e', '#a78bfa', '#f472b6', '#22d3ee', '#fbbf24']
+
+function formationsForSport(sport: string | null): Record<string, Line[]> | null {
+  const s = sport ?? ''
+  if (FOOTBALL_SPORTS.has(s)) return FOOTBALL_FORMATIONS
+  if (FUTSAL_SPORTS.has(s)) return FUTSAL_FORMATIONS
+  if (s === 'basketball' || s === 'ebasketball') return BASKETBALL_FORMATIONS
+  if (s === 'streetball') return STREETBALL_FORMATIONS
+  if (s === 'volleyball') return VOLLEYBALL_FORMATIONS
+  if (s === 'beach_volleyball') return BEACH_FORMATIONS
+  return null
+}
+function defaultFormation(sport: string | null): string {
+  const set = formationsForSport(sport)
+  return set ? Object.keys(set)[0] : 'flat'
 }
 
 const T = {
@@ -75,7 +105,7 @@ const T = {
     loadErr: 'Құрамды жүктеу мүмкін болмады',
   },
   en: {
-    title: 'Squad', formation: 'Formation', bench: 'Substitutes', starters: 'Starting XI',
+    title: 'Squad', formation: 'Formation', bench: 'Substitutes', starters: 'Starting lineup',
     save: 'Save squad', saving: 'Saving…', saved: 'Squad saved',
     name: 'Name', number: '#', done: 'Done', clear: 'Clear',
     addSub: 'Add substitute', empty: 'Tap a position to add a player',
@@ -83,15 +113,12 @@ const T = {
   },
 } as const
 
-const CAT_COLORS: Record<Cat, string> = {
-  gk: '#f59e0b', def: '#38bdf8', mid: '#34d399', fwd: '#f43f5e', gen: '#a78bfa',
-}
-
-function rowsFor(sport: string | null, formation: string): { cat: Cat; n: number }[] {
-  if (FOOTBALL_SPORTS.has(sport ?? '')) return FOOTBALL_FORMATIONS[formation] ?? FOOTBALL_FORMATIONS['4-4-2']
-  if (FUTSAL_SPORTS.has(sport ?? '')) return FUTSAL_FORMATIONS[formation] ?? FUTSAL_FORMATIONS['1-2-1']
+// Layout lines for a sport + formation; generic sports get one flat line of N slots.
+function rowsFor(sport: string | null, formation: string): Line[] {
+  const set = formationsForSport(sport)
+  if (set) return set[formation] ?? Object.values(set)[0]
   const n = GENERIC_STARTERS[sport ?? 'other'] ?? 5
-  return [{ cat: 'gen', n }]
+  return [rep('other', n)]
 }
 
 export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, brand = '#7c3aed', lang = 'ru', onClose }: {
@@ -104,15 +131,18 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
   onClose: () => void
 }) {
   const tx = T[lang]
-  const isFootball = FOOTBALL_SPORTS.has(sport ?? '')
-  const isFutsal = FUTSAL_SPORTS.has(sport ?? '')
-  const formationSet = isFootball ? FOOTBALL_FORMATIONS : isFutsal ? FUTSAL_FORMATIONS : null
+  // Discipline formation set (football/futsal/basketball/volleyball) or null (generic).
+  const formationSet = formationsForSport(sport)
+  // Position → badge colour, by the discipline's position order.
+  const posColors: Record<string, string> = { other: '#a78bfa' }
+  getPositions(sport).forEach((p, i) => { posColors[p.value] = POS_PALETTE[i % POS_PALETTE.length] })
+  const posOrder = new Map(getPositions(sport).map((p, i) => [p.value, i]))
 
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [formation, setFormation] = useState(isFootball ? '4-4-2' : isFutsal ? '1-2-1' : 'flat')
-  const [rows, setRows] = useState<{ cat: Cat; n: number }[]>(() => rowsFor(sport, isFootball ? '4-4-2' : isFutsal ? '1-2-1' : 'flat'))
+  const [formation, setFormation] = useState(defaultFormation(sport))
+  const [rows, setRows] = useState<Line[]>(() => rowsFor(sport, defaultFormation(sport)))
   const [assigned, setAssigned] = useState<Slot[]>([])
   const [bench, setBench] = useState<Player[]>([])
   const [editing, setEditing] = useState<number | null>(null)
@@ -138,29 +168,24 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
         const players = await getSquad(leagueTeamId)
         if (cancelled) return
         const r = rowsFor(sport, formation)
-        const totalSlots = r.reduce((s, row) => s + row.n, 0)
-        // Sort players by position category so they land in the right rows.
-        const order: Cat[] = ['gk', 'def', 'mid', 'fwd', 'gen']
-        const sorted = [...players].sort((a, b) =>
-          order.indexOf(POSITION_CAT[a.position] ?? 'gen') - order.indexOf(POSITION_CAT[b.position] ?? 'gen'))
+        const flatPos = r.flat()                 // position value per slot index
+        const totalSlots = flatPos.length
         const slots: Slot[] = Array(totalSlots).fill(null)
-        const catSlotIdx: Record<Cat, number[]> = { gk: [], def: [], mid: [], fwd: [], gen: [] }
-        let idx = 0
-        for (const row of r) { for (let i = 0; i < row.n; i++) { catSlotIdx[row.cat].push(idx); idx++ } }
-        const benchOut: Player[] = []
-        const cursor: Record<Cat, number> = { gk: 0, def: 0, mid: 0, fwd: 0, gen: 0 }
-        for (const p of sorted) {
-          const cat = POSITION_CAT[p.position] ?? 'gen'
-          const targetCat = catSlotIdx[cat].length ? cat : 'gen'
-          const slotList = catSlotIdx[targetCat]
-          const entry: Player = { name: p.name, number: p.number != null ? String(p.number) : '', photoUrl: p.photo_url }
-          if (cursor[targetCat] < slotList.length) {
-            slots[slotList[cursor[targetCat]]] = entry
-            cursor[targetCat]++
-          } else {
-            benchOut.push(entry)
-          }
-        }
+        const toEntry = (p: { name: string; number: number | null; photo_url: string | null }): Player =>
+          ({ name: p.name, number: p.number != null ? String(p.number) : '', photoUrl: p.photo_url })
+        // Sort by position order so exact-match placement is stable.
+        const pool = [...players].sort((a, b) =>
+          (posOrder.get(a.position) ?? 99) - (posOrder.get(b.position) ?? 99))
+        // Pass 1 — place each player into an open slot of their own position.
+        flatPos.forEach((pos, i) => {
+          const idx = pool.findIndex(p => p.position === pos)
+          if (idx >= 0) slots[i] = toEntry(pool.splice(idx, 1)[0])
+        })
+        // Pass 2 — fill any remaining open slots with leftover players, in order.
+        flatPos.forEach((_, i) => {
+          if (!slots[i] && pool.length) slots[i] = toEntry(pool.shift()!)
+        })
+        const benchOut: Player[] = pool.map(toEntry)
         setRows(r)
         setAssigned(slots)
         setBench(benchOut)
@@ -177,7 +202,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
   function changeFormation(f: string) {
     setFormation(f)
     const r = rowsFor(sport, f)
-    const total = r.reduce((s, row) => s + row.n, 0)
+    const total = r.flat().length
     // Preserve currently placed + bench players, refill new slots in order.
     const pool = [...(assigned.filter(Boolean) as Player[]), ...bench]
     const slots: Slot[] = Array(total).fill(null)
@@ -231,16 +256,15 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
 
   async function handleSave() {
     setSaving(true)
-    // Map each slot to its category via the rows layout.
-    const slotCats: Cat[] = []
-    for (const row of rows) for (let i = 0; i < row.n; i++) slotCats.push(row.cat)
+    // Each slot's position comes straight from the layout lines.
+    const slotPos = rows.flat()
     type Full = { name: string; number: number | null; position: string; photo_url: string | null; photoData: string | null }
     const full: Full[] = []
     assigned.forEach((s, i) => {
       if (s?.name.trim()) full.push({
         name: s.name.trim(),
         number: s.number.trim() ? parseInt(s.number) : null,
-        position: CAT_POSITION[slotCats[i] ?? 'gen'],
+        position: slotPos[i] ?? 'other',
         photo_url: s.photoUrl ?? null,
         photoData: s.photoData ?? null,
       })
@@ -274,12 +298,12 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
 
   if (!mounted) return null
 
-  // Build render rows with their slot indices
+  // Build render rows with their slot indices + per-slot position
   let running = 0
-  const renderRows = rows.map(row => {
-    const items = Array.from({ length: row.n }, (_, i) => ({ slotIdx: running + i, cat: row.cat }))
-    running += row.n
-    return { cat: row.cat, items }
+  const renderRows = rows.map(line => {
+    const items = line.map((pos, i) => ({ slotIdx: running + i, pos }))
+    running += line.length
+    return { items }
   })
 
   return createPortal(
@@ -327,21 +351,24 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
             <div>
               <p className="text-xs font-bold text-gray-500 mb-2">{tx.starters}</p>
               <div className="rounded-2xl p-3 sm:p-4 flex flex-col gap-4"
-                style={{ background: 'linear-gradient(180deg,#166534,#15803d)' }}>
+                style={{ background: (FOOTBALL_SPORTS.has(sport ?? '') || FUTSAL_SPORTS.has(sport ?? ''))
+                  ? 'linear-gradient(180deg,#166534,#15803d)'
+                  : `linear-gradient(180deg,${brand},${brand}bb)` }}>
                 {renderRows.map((row, ri) => (
                   <div key={ri} className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-                    {row.items.map(({ slotIdx, cat }) => {
+                    {row.items.map(({ slotIdx, pos }) => {
                       const p = assigned[slotIdx]
                       return (
                         <button key={slotIdx} onClick={() => openEditor(slotIdx)}
                           className="flex flex-col items-center gap-1 group">
                           <span className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black text-white border-2 border-white/70 shadow-md overflow-hidden transition-transform group-hover:scale-105"
-                            style={{ background: p ? CAT_COLORS[cat] : 'rgba(255,255,255,0.15)' }}>
+                            style={{ background: p ? (posColors[pos] ?? '#a78bfa') : 'rgba(255,255,255,0.15)' }}>
                             {p?.photoData || p?.photoUrl
                               // eslint-disable-next-line @next/next/no-img-element
                               ? <img src={p.photoData || p.photoUrl || ''} alt="" className="w-full h-full object-cover" />
                               : p ? (p.number || p.name.slice(0, 2).toUpperCase()) : <Plus size={16} className="text-white/80" />}
                           </span>
+                          <span className="text-[9px] font-bold text-white/70 leading-none">{getPositionLabel(sport, pos, lang, true)}</span>
                           <span className="text-[10px] font-bold text-white/90 max-w-[64px] truncate">
                             {p?.name || ''}
                           </span>

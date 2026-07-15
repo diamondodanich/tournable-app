@@ -92,8 +92,8 @@ const T = {
     seedingSeeded: 'По силе команды',
     seedingSeededDesc: 'Сильные команды попадают в разные части сетки',
     ratingLabel: 'Сила',
-    matchesHint: (teams: number, matches: number) => `${teams} команд — ${matches} матч${matches === 1 ? '' : matches <= 4 ? 'а' : 'ей'}`,
-    swissHint: (teams: number, rounds: number) => `${teams} команд — ${rounds} тур${rounds === 1 ? '' : rounds <= 4 ? 'а' : 'ов'}`,
+    matchesHint: (teams: number, matches: number, unit: string) => `${teams} ${unit} — ${matches} матч${matches === 1 ? '' : matches <= 4 ? 'а' : 'ей'}`,
+    swissHint: (teams: number, rounds: number, unit: string) => `${teams} ${unit} — ${rounds} тур${rounds === 1 ? '' : rounds <= 4 ? 'а' : 'ов'}`,
     scheduleHint: (matches: number) => `Расписание из ${matches} матч${matches === 1 ? 'а' : 'ей'} сгенерируется автоматически`,
     summary: { format: 'Формат', teams: 'команд', periods: 'Таймы', pts: 'Очки' },
     planLimit: {
@@ -121,13 +121,13 @@ const T = {
     groupSettingsLbl: 'Групповой этап',
     groupAdvanceNote: 'Выход из групп и количество матчей настроите на следующем шаге',
     groupsCompositionHint: (groups: number, perGroup: number) => `${groups} групп × до ${perGroup} команд в каждой`,
-    playoffHint: (teams: number) => `${teams} команд — сетка на выбывание`,
-    groupsHint: (teams: number, groups: number) => {
+    playoffHint: (teams: number, unit: string) => `${teams} ${unit} — сетка на выбывание`,
+    groupsHint: (teams: number, groups: number, unit: string) => {
       const n = groups % 10
       const form = (n >= 2 && n <= 4) ? 'группы' : 'групп'
-      return `${teams} команд — ${groups} ${form}`
+      return `${teams} ${unit} — ${groups} ${form}`
     },
-    leagueHint: (teams: number) => `${teams} команд — Лига + Плей-офф`,
+    leagueHint: (teams: number, unit: string) => `${teams} ${unit} — Лига + Плей-офф`,
   },
   kz: {
     back: 'Барлық турнирлер',
@@ -164,8 +164,8 @@ const T = {
     seedingSeeded: 'Команда күші бойынша',
     seedingSeededDesc: 'Күшті командалар торлар/топтар бойынша бөлінеді',
     ratingLabel: 'Күш',
-    matchesHint: (teams: number, matches: number) => `${teams} команда — ${matches} матч`,
-    swissHint: (teams: number, rounds: number) => `${teams} команда — ${rounds} тур`,
+    matchesHint: (teams: number, matches: number, unit: string) => `${teams} ${unit} — ${matches} матч`,
+    swissHint: (teams: number, rounds: number, unit: string) => `${teams} ${unit} — ${rounds} тур`,
     scheduleHint: (matches: number) => `${matches} матчтан тұратын кесте автоматты жасалады`,
     summary: { format: 'Формат', teams: 'команда', periods: 'Таймдар', pts: 'Ұпайлар' },
     planLimit: {
@@ -193,10 +193,10 @@ const T = {
     groupSettingsLbl: 'Топтық кезең',
     groupAdvanceNote: 'Топтан шығу және матч саны келесі қадамда баптайды',
     groupsCompositionHint: (groups: number, perGroup: number) => `${groups} топ × ${perGroup} командаға дейін`,
-    playoffHint: (teams: number) => `${teams} команда — жою сеткасы`,
-    groupsHint: (teams: number, groups: number) => `${teams} команда — ${groups} топ`,
+    playoffHint: (teams: number, unit: string) => `${teams} ${unit} — жою сеткасы`,
+    groupsHint: (teams: number, groups: number, unit: string) => `${teams} ${unit} — ${groups} топ`,
 
-    leagueHint: (teams: number) => `${teams} команда — Лига + Плей-офф`,
+    leagueHint: (teams: number, unit: string) => `${teams} ${unit} — Лига + Плей-офф`,
   },
   en: {
     back: 'All tournaments',
@@ -233,8 +233,8 @@ const T = {
     seedingSeeded: 'By team strength',
     seedingSeededDesc: 'Stronger teams are placed in different brackets or groups',
     ratingLabel: 'Strength',
-    matchesHint: (teams: number, matches: number) => `${teams} teams — ${matches} match${matches === 1 ? '' : 'es'}`,
-    swissHint: (teams: number, rounds: number) => `${teams} teams — ${rounds} round${rounds === 1 ? '' : 's'}`,
+    matchesHint: (teams: number, matches: number, unit: string) => `${teams} ${unit} — ${matches} match${matches === 1 ? '' : 'es'}`,
+    swissHint: (teams: number, rounds: number, unit: string) => `${teams} ${unit} — ${rounds} round${rounds === 1 ? '' : 's'}`,
     scheduleHint: (matches: number) => `Schedule of ${matches} match${matches === 1 ? '' : 'es'} will generate automatically`,
     summary: { format: 'Format', teams: 'teams', periods: 'Periods', pts: 'Points' },
     planLimit: {
@@ -262,9 +262,9 @@ const T = {
     groupSettingsLbl: 'Group stage',
     groupAdvanceNote: 'Advancement and group legs — configure in the next step',
     groupsCompositionHint: (groups: number, perGroup: number) => `${groups} groups × up to ${perGroup} teams each`,
-    playoffHint: (teams: number) => `${teams} teams — elimination bracket`,
-    groupsHint: (teams: number, groups: number) => `${teams} teams — ${groups} groups`,
-    leagueHint: (teams: number) => `${teams} teams — league table + playoff`,
+    playoffHint: (teams: number, unit: string) => `${teams} ${unit} — elimination bracket`,
+    groupsHint: (teams: number, groups: number, unit: string) => `${teams} ${unit} — ${groups} groups`,
+    leagueHint: (teams: number, unit: string) => `${teams} ${unit} — league table + playoff`,
   },
 }
 
@@ -303,19 +303,19 @@ const FORMAT_DESCS: Record<string, Record<Lang, string>> = {
 // ─── Participant nouns per discipline (team / participant / fighter) ───────────
 const PARTICIPANT_NOUNS = {
   ru: {
-    team:        { plural: 'Команды',   ph: (i: number) => `Команда ${i + 1}`,  add: 'Добавить ещё команду', seed: 'Посев команд',     byStrength: 'По силе команды' },
-    participant: { plural: 'Участники', ph: (i: number) => `Участник ${i + 1}`, add: 'Добавить участника',   seed: 'Посев участников', byStrength: 'По силе участника' },
-    fighter:     { plural: 'Бойцы',     ph: (i: number) => `Боец ${i + 1}`,     add: 'Добавить бойца',       seed: 'Посев бойцов',     byStrength: 'По силе бойца' },
+    team:        { plural: 'Команды',   unit: 'команд',      ph: (i: number) => `Команда ${i + 1}`,  add: 'Добавить ещё команду', seed: 'Посев команд',     byStrength: 'По силе команды' },
+    participant: { plural: 'Участники', unit: 'участников',  ph: (i: number) => `Участник ${i + 1}`, add: 'Добавить участника',   seed: 'Посев участников', byStrength: 'По силе участника' },
+    fighter:     { plural: 'Бойцы',     unit: 'бойцов',      ph: (i: number) => `Боец ${i + 1}`,     add: 'Добавить бойца',       seed: 'Посев бойцов',     byStrength: 'По силе бойца' },
   },
   kz: {
-    team:        { plural: 'Командалар',  ph: (i: number) => `Команда ${i + 1}`,  add: 'Тағы команда қосу', seed: 'Командаларды бөлу',  byStrength: 'Команда күші бойынша' },
-    participant: { plural: 'Қатысушылар', ph: (i: number) => `Қатысушы ${i + 1}`, add: 'Қатысушы қосу',     seed: 'Қатысушыларды бөлу', byStrength: 'Қатысушы күші бойынша' },
-    fighter:     { plural: 'Балуандар',   ph: (i: number) => `Балуан ${i + 1}`,   add: 'Балуан қосу',       seed: 'Балуандарды бөлу',   byStrength: 'Балуан күші бойынша' },
+    team:        { plural: 'Командалар',  unit: 'команда',   ph: (i: number) => `Команда ${i + 1}`,  add: 'Тағы команда қосу', seed: 'Командаларды бөлу',  byStrength: 'Команда күші бойынша' },
+    participant: { plural: 'Қатысушылар', unit: 'қатысушы',  ph: (i: number) => `Қатысушы ${i + 1}`, add: 'Қатысушы қосу',     seed: 'Қатысушыларды бөлу', byStrength: 'Қатысушы күші бойынша' },
+    fighter:     { plural: 'Балуандар',   unit: 'балуан',    ph: (i: number) => `Балуан ${i + 1}`,   add: 'Балуан қосу',       seed: 'Балуандарды бөлу',   byStrength: 'Балуан күші бойынша' },
   },
   en: {
-    team:        { plural: 'Teams',        ph: (i: number) => `Team ${i + 1}`,    add: 'Add another team', seed: 'Team seeding',        byStrength: 'By team strength' },
-    participant: { plural: 'Participants', ph: (i: number) => `Player ${i + 1}`,  add: 'Add participant',  seed: 'Participant seeding', byStrength: 'By participant strength' },
-    fighter:     { plural: 'Fighters',     ph: (i: number) => `Fighter ${i + 1}`, add: 'Add fighter',      seed: 'Fighter seeding',     byStrength: 'By fighter strength' },
+    team:        { plural: 'Teams',        unit: 'teams',        ph: (i: number) => `Team ${i + 1}`,    add: 'Add another team', seed: 'Team seeding',        byStrength: 'By team strength' },
+    participant: { plural: 'Participants', unit: 'participants', ph: (i: number) => `Player ${i + 1}`,  add: 'Add participant',  seed: 'Participant seeding', byStrength: 'By participant strength' },
+    fighter:     { plural: 'Fighters',     unit: 'fighters',     ph: (i: number) => `Fighter ${i + 1}`, add: 'Add fighter',      seed: 'Fighter seeding',     byStrength: 'By fighter strength' },
   },
 } as const
 
@@ -681,14 +681,16 @@ export default function NewTournamentPage() {
 
   const teamsHint = (() => {
     if (!filledTeams.length) return ''
-    if (format === 'round_robin')    return tx.matchesHint(filledTeams.length, matchCount)
-    if (format === 'playoff')        return tx.playoffHint(filledTeams.length)
-    if (format === 'double_elim')    return lang === 'en' ? `${filledTeams.length} participants · double elimination` : lang === 'kz' ? `${filledTeams.length} қатысушы · қос шығару` : `${filledTeams.length} участников · двойное выбывание`
-    if (format === 'groups_playoff') return tx.groupsHint(filledTeams.length, groupsCount)
-    if (format === 'league_playoff') return tx.leagueHint(filledTeams.length)
-    if (format === 'swiss')          return tx.swissHint(filledTeams.length, numRounds)
-    if (format === 'leaderboard')    return lang === 'en' ? `${filledTeams.length} participants — points ranking` : lang === 'kz' ? `${filledTeams.length} қатысушы — ұпай рейтингі` : `${filledTeams.length} участников — рейтинг по очкам`
-    return tx.matchesHint(filledTeams.length, matchCount)
+    const u = noun.unit
+    const n = filledTeams.length
+    if (format === 'round_robin')    return tx.matchesHint(n, matchCount, u)
+    if (format === 'playoff')        return tx.playoffHint(n, u)
+    if (format === 'double_elim')    return lang === 'en' ? `${n} ${u} · double elimination` : lang === 'kz' ? `${n} ${u} · қос шығару` : `${n} ${u} · двойное выбывание`
+    if (format === 'groups_playoff') return tx.groupsHint(n, groupsCount, u)
+    if (format === 'league_playoff') return tx.leagueHint(n, u)
+    if (format === 'swiss')          return tx.swissHint(n, numRounds, u)
+    if (format === 'leaderboard')    return lang === 'en' ? `${n} ${u} — points ranking` : lang === 'kz' ? `${n} ${u} — ұпай рейтингі` : `${n} ${u} — рейтинг по очкам`
+    return tx.matchesHint(n, matchCount, u)
   })()
 
   // ── Create ─────────────────────────────────────────────────────────────────
@@ -1522,7 +1524,7 @@ export default function NewTournamentPage() {
             </div>
 
             <div className="border-t border-emerald-100 pt-4">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{filledTeams.length} {tx.summary.teams}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{filledTeams.length} {noun.unit}</p>
               <div className="flex flex-wrap gap-2">
                 {teamNames.map((t, i) => {
                   if (!t.trim()) return null

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { Analytics } from '@vercel/analytics/next'
 import { APP_URL } from '@/lib/appUrl'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} min-h-full`}>
         {children}
         <Toaster richColors position="bottom-right" />
+        <Analytics />
       </body>
     </html>
   )

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { getUserPlan } from '@/app/actions/billing'
 import { getParticipantKind } from '@/lib/sports'
 import { Tournament } from '@/types'
@@ -139,6 +140,10 @@ type TournamentWithCount = Tournament & { teams: { count: number }[] }
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Layout редиректит гостей, но рендерится параллельно с page — без этой
+  // проверки page успевает упасть на user!.id раньше редиректа
+  if (!user) redirect('/login')
 
   const cookieStore = await cookies()
   const langRaw = cookieStore.get('lang')?.value ?? 'ru'

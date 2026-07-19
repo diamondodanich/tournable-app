@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { getUserPlan, getPaymentHistory } from '@/app/actions/billing'
 import ChangePasswordForm from './ChangePasswordForm'
 import CancelSubscriptionButton from './CancelSubscriptionButton'
@@ -223,6 +224,10 @@ const DATE_LOCALE: Record<Lang, string> = { ru: 'ru-RU', kz: 'kk-KZ', en: 'en-US
 export default async function AccountPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Layout редиректит гостей, но рендерится параллельно с page — без этой
+  // проверки page успевает упасть на user!.id раньше редиректа
+  if (!user) redirect('/login')
 
   const cookieStore = await cookies()
   const langRaw = cookieStore.get('lang')?.value ?? 'ru'

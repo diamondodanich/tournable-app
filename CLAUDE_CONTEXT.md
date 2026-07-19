@@ -155,6 +155,16 @@ Additional (in Vercel, not needed locally for basic dev):
 - SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET, RESEND_API_KEY, FROM_EMAIL
 - NEXT_PUBLIC_APP_URL=https://tournable.app
 - FREEDOMPAY_MERCHANT_ID=586535, FREEDOMPAY_SECRET_KEY, FREEDOMPAY_WIDGET_TOKEN (pending)
+- TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — ежедневный дайджест метрик (pending)
+
+## Продуктовые метрики (2026-07-19)
+- Миграция `034_product_metrics.sql` — RPC `public.product_metrics()`, SECURITY DEFINER, доступ только `profiles.is_admin` или `service_role`. Считает все метрики одним запросом, возвращает jsonb
+- `/admin/metrics` (`src/app/(dashboard)/admin/metrics/page.tsx`) — админ-дашборд, мобильная сетка: привлечение / активация / возврат / использование / деньги. Не-админам отдаёт `notFound()`, ссылка — в админ-блоке `/account`
+- `src/lib/metrics.ts` — тип `ProductMetrics` + `formatDigest()` (HTML для Telegram)
+- `src/lib/telegram.ts` — `sendTelegramMessage()`, тихо пропускает при незаданных env
+- `/api/cron/daily-digest` — Vercel Cron `0 1 * * *` (07:00 Астана), требует `SUPABASE_SERVICE_ROLE_KEY` (anon RPC не пустит)
+- Vercel Analytics (`@vercel/analytics/next`) в root layout — трафик и источники переходов
+- Известное ограничение: у `fixtures` нет `played_at`, поэтому `matches_played_7d` = сыграно в турнирах, созданных за 7 дней (не «сыграно за 7 дней»). Для точности нужна колонка `played_at`
 
 ## Legal Pages
 - `/terms` → `src/app/terms/page.tsx` — Пользовательское соглашение
@@ -177,7 +187,8 @@ Removed "Live-табло"/"LIVE-режим"/"Live scoreboard" etc. across the en
 2. TipTop Pay: спор о возврате 20 000 ₸ за отклонённую верификацию — письмо отправлено, ссылка на ст. 389 ГК РК (договор присоединения)
 3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
 4. Домен: купить tournable.kz → подключить к Vercel
-4. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
+5. Pricing strategy: решить модель (лимиты / полное разделение фич / гибрид)
+6. Метрики (2026-07-19): применить миграцию 034 в Supabase SQL Editor (нет `DATABASE_URL` в `.env.local` — раннер не запускается); создать Telegram-бота → `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` в Vercel; включить Analytics в дашборде Vercel
 
 ## Завершено
 - ИП зарегистрировано на eGov.kz: "Tournable.app", ИИН 030830501207

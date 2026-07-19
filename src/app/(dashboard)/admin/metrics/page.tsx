@@ -271,8 +271,9 @@ export default async function AdminMetricsPage() {
       <div className="flex items-start gap-2 text-xs text-gray-400 border-t border-gray-100 pt-4">
         <Clock size={14} className="shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          Данные считаются напрямую из базы в момент открытия страницы. Турниры в корзине
-          (soft delete) не учитываются. Ежедневная сводка приходит в Telegram в 07:00 по Астане.
+          Данные считаются напрямую из базы в момент открытия страницы. Не учитываются:
+          турниры в корзине (soft delete) и аккаунты с меткой <code>profiles.is_internal</code> —
+          свои и тестовые. Ежедневная сводка приходит в Telegram в 07:00 по Астане.
         </p>
       </div>
     </div>

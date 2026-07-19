@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, UserPlus, Rocket, Repeat, Trophy, Wallet, Clock, AlertTriangle,
+  ArrowLeft, UserPlus, Rocket, Repeat, Trophy, Wallet, Clock, AlertTriangle, Users,
 } from 'lucide-react'
-import type { ProductMetrics } from '@/lib/metrics'
+import type { ProductMetrics, RecentUser } from '@/lib/metrics'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Метрики', robots: { index: false, follow: false } }
@@ -21,6 +21,18 @@ function fmtHours(h: number | null | undefined) {
   if (h === null || h === undefined) return '—'
   if (h < 48) return `${h.toFixed(1).replace('.', ',')} ч`
   return `${(h / 24).toFixed(1).replace('.', ',')} дн`
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('ru-RU', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+  })
+}
+
+const PLAN_BADGE: Record<string, string> = {
+  free:       'bg-gray-100 text-gray-500',
+  pro:        'bg-emerald-100 text-emerald-700',
+  enterprise: 'bg-violet-100 text-violet-700',
 }
 
 type Tone = 'emerald' | 'violet' | 'amber' | 'gray'
@@ -82,8 +94,12 @@ export default async function AdminMetricsPage() {
   // Не 403, а 404 — страница не должна выдавать факт своего существования
   if (!profile?.is_admin) notFound()
 
-  const { data, error } = await supabase.rpc('product_metrics')
+  const [{ data, error }, { data: usersData }] = await Promise.all([
+    supabase.rpc('product_metrics'),
+    supabase.rpc('recent_users', { limit_count: 50 }),
+  ])
   const m = data as ProductMetrics | null
+  const users = (usersData ?? []) as RecentUser[]
 
   if (error || !m) {
     return (
@@ -188,6 +204,69 @@ export default async function AdminMetricsPage() {
         <Stat label="Платящих" value={fmt(m.paying_users)} hint={`Pro ${m.pro_active} · Ent ${m.enterprise_active}`} />
         <Stat label="Конверсия в оплату" value={`${String(m.conversion_rate).replace('.', ',')} %`} />
       </Section>
+
+      {/* ── Последние пользователи ──────────────────────────────────── */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${TONES.emerald.icon}`}>
+            <Users size={16} />
+          </div>
+          <h2 className="text-sm font-black uppercase tracking-wide text-gray-700">
+            Последние регистрации
+          </h2>
+        </div>
+
+        {users.length === 0 ? (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6 text-sm text-gray-500">
+            Пока никто не зарегистрировался. Если пользователи есть, а список пуст —
+            не применена миграция 035_recent_users.sql
+          </div>
+        ) : (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
+                    <th className="text-left font-bold px-4 py-3">Пользователь</th>
+                    <th className="text-left font-bold px-4 py-3 whitespace-nowrap">Регистрация</th>
+                    <th className="text-right font-bold px-4 py-3">Турниров</th>
+                    <th className="text-right font-bold px-4 py-3">Матчей</th>
+                    <th className="text-left font-bold px-4 py-3">План</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.user_id} className="border-b border-gray-50 last:border-0">
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-gray-900 break-all">{u.email}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap tabular-nums">
+                        {fmtDate(u.signed_up_at)}
+                      </td>
+                      <td className={`px-4 py-3 text-right tabular-nums font-bold ${u.tournaments > 0 ? 'text-emerald-700' : 'text-gray-300'}`}>
+                        {u.tournaments}
+                      </td>
+                      <td className={`px-4 py-3 text-right tabular-nums ${u.matches_played > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
+                        {u.matches_played}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold uppercase ${PLAN_BADGE[u.plan] ?? PLAN_BADGE.free}`}>
+                          {u.plan}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-400 mt-2">
+          Турниров = 0 означает, что человек зарегистрировался и ушёл — это те, с кем
+          стоит поговорить в первую очередь.
+        </p>
+      </section>
 
       <div className="flex items-start gap-2 text-xs text-gray-400 border-t border-gray-100 pt-4">
         <Clock size={14} className="shrink-0 mt-0.5" />

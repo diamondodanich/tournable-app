@@ -34,6 +34,17 @@ export type ProductMetrics = {
   generated_at: string
 }
 
+/** Строка из RPC recent_users() — миграция 035 */
+export type RecentUser = {
+  user_id: string
+  email: string
+  signed_up_at: string
+  plan: 'free' | 'pro' | 'enterprise'
+  tournaments: number
+  matches_played: number
+  last_activity_at: string
+}
+
 const NUM = new Intl.NumberFormat('ru-RU')
 
 /** Сводка для Telegram. Формат HTML (parse_mode: HTML). */

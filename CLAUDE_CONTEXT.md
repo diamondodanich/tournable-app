@@ -165,6 +165,11 @@ Additional (in Vercel, not needed locally for basic dev):
 - `/api/cron/daily-digest` — Vercel Cron `0 1 * * *` (07:00 Астана), требует `SUPABASE_SERVICE_ROLE_KEY` (anon RPC не пустит)
 - Vercel Analytics (`@vercel/analytics/next`) в root layout — трафик и источники переходов
 - Известное ограничение: у `fixtures` нет `played_at`, поэтому `matches_played_7d` = сыграно в турнирах, созданных за 7 дней (не «сыграно за 7 дней»). Для точности нужна колонка `played_at`
+- Миграция 035 — RPC `recent_users(limit_count)`, отдаёт e-mail из `auth.users` + активность. Таблица «Последние регистрации» на `/admin/metrics`
+- Миграция 036 — колонка `profiles.is_internal`, исключает свои/тестовые аккаунты из ВСЕХ метрик (включая MRR: ручные выдачи Pro через админ-переключатель больше не надувают выручку). Переопределяет `product_metrics()` и `recent_users()`. Пометить тестовый аккаунт: `update profiles set is_internal = true where id = (select id from auth.users where email = '...')`
+- Миграция 037 — RPC `metrics_timeseries(days)`, ряд по дням через `generate_series` (дни без событий не схлопываются), кумулятивные ряды стартуют от базы на начало периода
+- `src/components/admin/MetricsChart.tsx` — SVG-график без библиотек: 2 серии (пользователи/турниры), фильтр периода 7/30/90, режим «Всего»/«За день», вид график/таблица, крестовина с тултипом. Цвета — CSS-переменные `--mc-*` в globals.css (`.metrics-chart` / `.dark .metrics-chart`), палитра прогнана через валидатор dataviz в обеих темах
+- `src/components/admin/MetricsChartPanel.tsx` — клиентская обёртка, смена периода догружает данные через `supabase.rpc` без перезагрузки страницы
 
 ## Legal Pages
 - `/terms` → `src/app/terms/page.tsx` — Пользовательское соглашение

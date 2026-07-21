@@ -45,6 +45,15 @@ export type RecentUser = {
   last_activity_at: string
 }
 
+/** Строка из RPC metrics_timeseries() — миграция 037 */
+export type TimeseriesPoint = {
+  day: string
+  signups: number
+  tournaments: number
+  cum_signups: number
+  cum_tournaments: number
+}
+
 const NUM = new Intl.NumberFormat('ru-RU')
 
 /** Сводка для Telegram. Формат HTML (parse_mode: HTML). */

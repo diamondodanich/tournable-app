@@ -1,27 +1,43 @@
-/* Презентация для корпоративных клиентов. Самодостаточная тёмная тема:
-   страница показывается клиенту с экрана, тема приложения на неё не влияет. */
+/* Презентация для корпоративных клиентов, версия-лендинг (скролл).
+   Слайдовая подача — в ./slides. Обе темы; общий словарь токенов --deck-*.
+   Токены читает и FormatDiagram.tsx, поэтому имена с префиксом. */
 
 .deck {
   --shot-scoreboard: url('/deck/scoreboard.webp');
-  --pitch: #05100B;
-  --turf: #0A1B13;
-  --turf-2: #0E241A;
-  --line: rgba(140, 190, 165, .16);
-  --line-strong: rgba(140, 190, 165, .30);
-  --board: #16C97C;
-  --board-glow: rgba(22, 201, 124, .22);
-  --chalk: #E8F1EC;
-  --chalk-dim: #8CA79A;
-  --amber: #E4A32A;
-  --shadow: 0 24px 60px -24px rgba(0, 0, 0, .75);
 
-  background: var(--pitch);
-  color: var(--chalk);
+  --deck-pitch: #05100B;
+  --deck-turf: #0A1B13;
+  --deck-turf-2: #0E241A;
+  --deck-line: rgba(140, 190, 165, .16);
+  --deck-line-strong: rgba(140, 190, 165, .30);
+  --deck-board: #16C97C;
+  --deck-board-glow: rgba(22, 201, 124, .22);
+  --deck-chalk: #E8F1EC;
+  --deck-chalk-dim: #8CA79A;
+  --deck-amber: #E4A32A;
+  --deck-shadow: 0 24px 60px -24px rgba(0, 0, 0, .75);
+
+  background: var(--deck-pitch);
+  color: var(--deck-chalk);
   font-size: 17px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   min-height: 100vh;
+}
+
+.deck[data-deck-theme='light'] {
+  --deck-pitch: #F4F8F6;
+  --deck-turf: #FFFFFF;
+  --deck-turf-2: #EDF4F0;
+  --deck-line: rgba(10, 60, 38, .14);
+  --deck-line-strong: rgba(10, 60, 38, .26);
+  --deck-board: #067A4D;
+  --deck-board-glow: rgba(6, 122, 77, .12);
+  --deck-chalk: #07140F;
+  --deck-chalk-dim: #4E6A5D;
+  --deck-amber: #8F5A06;
+  --deck-shadow: 0 24px 60px -30px rgba(6, 40, 26, .28);
 }
 
 .deck img { max-width: 100%; display: block }
@@ -43,6 +59,7 @@
 .price,
 .mark,
 .cta,
+.formatName,
 .standings th,
 .meta b {
   font-family: var(--font-oswald), Impact, 'Arial Narrow', sans-serif;
@@ -62,27 +79,49 @@ h2.display { font-size: clamp(2rem, 4.4vw, 3.3rem); margin-bottom: 1.4rem }
   font-size: 1.12rem; font-weight: 700; margin: 0 0 .4rem; line-height: 1.35;
 }
 .deck p { margin: 0 0 1.1rem }
-.lede { font-size: 1.2rem; color: var(--chalk-dim) }
+.lede { font-size: 1.2rem; color: var(--deck-chalk-dim) }
 .eyebrow {
   font-weight: 600; text-transform: uppercase; letter-spacing: .22em;
-  font-size: .78rem; color: var(--board);
+  font-size: .78rem; color: var(--deck-board);
   display: flex; align-items: center; gap: .75rem; margin: 0 0 1.3rem;
 }
 .eyebrow::after {
-  content: ''; flex: 1; height: 1px; background: var(--line); max-width: 180px;
+  content: ''; flex: 1; height: 1px; background: var(--deck-line); max-width: 180px;
 }
 .num { font-variant-numeric: tabular-nums }
-.deck strong { font-weight: 700; color: var(--chalk) }
-.deck a { color: var(--board) }
-.deck a:focus-visible { outline: 2px solid var(--board); outline-offset: 3px; border-radius: 4px }
+.deck strong { font-weight: 700; color: var(--deck-chalk) }
+.deck a { color: var(--deck-board) }
+.deck a:focus-visible, .deck button:focus-visible {
+  outline: 2px solid var(--deck-board); outline-offset: 3px; border-radius: 4px;
+}
+
+/* ── панель управления ────────────────────────────────────── */
+.toolbar {
+  position: fixed; top: 16px; right: 16px; z-index: 20;
+  display: flex; gap: 8px; align-items: center;
+}
+.toolBtn {
+  display: inline-flex; align-items: center; gap: .5rem;
+  height: 38px; padding: 0 .9rem; border-radius: 10px;
+  background: color-mix(in srgb, var(--deck-turf) 88%, transparent);
+  border: 1px solid var(--deck-line-strong);
+  color: var(--deck-chalk); cursor: pointer;
+  font-size: .82rem; font-weight: 600; text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: border-color .18s ease, transform .18s ease;
+}
+.toolBtn:hover { border-color: var(--deck-board); transform: translateY(-1px) }
 
 /* ── ритм секций ──────────────────────────────────────────── */
-.section { padding: clamp(72px, 9vw, 124px) 0; border-top: 1px solid var(--line) }
+.section { padding: clamp(72px, 9vw, 124px) 0; border-top: 1px solid var(--deck-line) }
 
 /* ── обложка ──────────────────────────────────────────────── */
+/* Фон — фотография тёмного стадиона, поэтому обложка остаётся тёмной
+   в обеих темах: светлый градиент поверх тёмного кадра читался бы грязью. */
 .hero {
   position: relative; padding: 0; min-height: min(94vh, 860px);
   display: flex; align-items: flex-end; overflow: hidden;
+  color: #E8F1EC;
 }
 .heroBg {
   position: absolute; inset: 0; z-index: 0;
@@ -92,91 +131,118 @@ h2.display { font-size: clamp(2rem, 4.4vw, 3.3rem); margin-bottom: 1.4rem }
 .heroBg::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(178deg,
-    color-mix(in srgb, var(--pitch) 62%, transparent) 0%,
-    color-mix(in srgb, var(--pitch) 74%, transparent) 42%,
-    var(--pitch) 96%);
+    rgba(5, 16, 11, .62) 0%,
+    rgba(5, 16, 11, .74) 42%,
+    var(--deck-pitch) 96%);
 }
 .heroInner { position: relative; z-index: 1; width: 100%; padding: 0 0 clamp(56px, 7vw, 96px) }
 .hero h1 { margin-bottom: 1.5rem }
-.lit { color: var(--board); text-shadow: 0 0 42px var(--board-glow) }
+.lit { color: #16C97C; text-shadow: 0 0 42px rgba(22, 201, 124, .22) }
 .hero .lede {
   max-width: 56ch; font-size: clamp(1.05rem, 1.8vw, 1.32rem);
-  color: var(--chalk); opacity: .9;
+  color: #E8F1EC; opacity: .9;
 }
 .brandline {
   display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
   text-transform: uppercase; letter-spacing: .2em;
-  font-size: .82rem; color: var(--chalk-dim);
+  font-size: .82rem; color: rgba(232, 241, 236, .66);
   padding: clamp(28px, 4vw, 44px) 0 0; position: relative; z-index: 1;
 }
-.brandline b { color: var(--chalk); letter-spacing: .24em; font-weight: 600 }
+.brandline b { color: #E8F1EC; letter-spacing: .24em; font-weight: 600 }
 
 /* ── строки в духе турнирной таблицы продукта ─────────────── */
 .standings { width: 100%; border-collapse: collapse; font-size: 1rem }
 .standings th {
   font-weight: 600; text-transform: uppercase; letter-spacing: .14em;
-  font-size: .72rem; color: var(--chalk-dim); text-align: left;
-  padding: 0 0 .9rem; border-bottom: 1px solid var(--line-strong);
+  font-size: .72rem; color: var(--deck-chalk-dim); text-align: left;
+  padding: 0 0 .9rem; border-bottom: 1px solid var(--deck-line-strong);
 }
 .standings td {
-  padding: 1.15rem 1.2rem 1.15rem 0; border-bottom: 1px solid var(--line);
+  padding: 1.15rem 1.2rem 1.15rem 0; border-bottom: 1px solid var(--deck-line);
   vertical-align: top;
 }
 .standings td:last-child { padding-right: 0 }
 .standings tr:last-child td { border-bottom: 0 }
-.now { color: var(--chalk-dim) }
+.now { color: var(--deck-chalk-dim) }
 .mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 6px;
   font-size: .74rem; font-weight: 600; margin-right: .45rem; flex: none;
 }
-.markW { background: var(--board); color: var(--pitch) }
-.markL { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber) }
+.markW { background: var(--deck-board); color: var(--deck-pitch) }
+.markL {
+  background: color-mix(in srgb, var(--deck-amber) 22%, transparent);
+  color: var(--deck-amber);
+}
 .tblscroll { overflow-x: auto }
 .tblscroll .standings { min-width: 640px }
 
 /* ── сетка опор ───────────────────────────────────────────── */
 .grid {
-  display: grid; gap: 1px; background: var(--line);
-  border: 1px solid var(--line); margin-top: 2.6rem;
+  display: grid; gap: 1px; background: var(--deck-line);
+  border: 1px solid var(--deck-line); margin-top: 2.6rem;
 }
 @media (min-width: 720px) {
   .c2 { grid-template-columns: 1fr 1fr }
   .c3 { grid-template-columns: repeat(3, 1fr) }
 }
-.cell { background: var(--pitch); padding: 1.9rem 1.7rem }
+.cell { background: var(--deck-pitch); padding: 1.9rem 1.7rem }
 .k {
   font-size: .74rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--board); display: block; margin-bottom: 1rem;
+  color: var(--deck-board); display: block; margin-bottom: 1rem;
 }
-.cell p { margin: 0; color: var(--chalk-dim); font-size: .97rem }
+.cell p { margin: 0; color: var(--deck-chalk-dim); font-size: .97rem }
+
+/* ── схемы форматов ───────────────────────────────────────── */
+.formats {
+  display: grid; gap: 1px; background: var(--deck-line);
+  border: 1px solid var(--deck-line); margin-top: 2.6rem;
+}
+@media (min-width: 640px) { .formats { grid-template-columns: repeat(2, 1fr) } }
+@media (min-width: 1000px) { .formats { grid-template-columns: repeat(3, 1fr) } }
+.format { background: var(--deck-pitch); padding: 1.6rem 1.5rem }
+.formatSvg { width: 100%; height: auto; color: var(--deck-chalk); display: block }
+.formatName {
+  display: block; margin-top: 1.1rem; text-transform: uppercase;
+  letter-spacing: .16em; font-size: .8rem; color: var(--deck-chalk);
+}
+.format p { margin: .45rem 0 0; color: var(--deck-chalk-dim); font-size: .9rem }
 
 /* ── экраны продукта ──────────────────────────────────────── */
 .screen { margin: 3.4rem 0 0 }
 .screen figure { margin: 0 }
 .frame {
-  border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden;
-  background: var(--turf); box-shadow: var(--shadow);
+  border: 1px solid var(--deck-line-strong); border-radius: 12px; overflow: hidden;
+  background: var(--deck-turf); box-shadow: var(--deck-shadow);
 }
 .bar {
   display: flex; align-items: center; gap: .45rem;
-  padding: .6rem .85rem; border-bottom: 1px solid var(--line); background: var(--turf-2);
+  padding: .6rem .85rem; border-bottom: 1px solid var(--deck-line);
+  background: var(--deck-turf-2);
 }
-.bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); display: block }
-.bar span { margin-left: .6rem; font-size: .74rem; color: var(--chalk-dim); letter-spacing: .02em }
+.bar i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--deck-line-strong); display: block;
+}
+.bar span {
+  margin-left: .6rem; font-size: .74rem;
+  color: var(--deck-chalk-dim); letter-spacing: .02em;
+}
 .shotBoard {
   aspect-ratio: 3 / 2; background-image: var(--shot-scoreboard);
   background-size: cover; background-position: center;
 }
 .screen figcaption {
   display: flex; gap: 1.4rem; margin-top: 1.1rem; padding-top: 1.1rem;
-  border-top: 1px solid var(--line); align-items: flex-start;
+  border-top: 1px solid var(--deck-line); align-items: flex-start;
 }
 .tag {
   text-transform: uppercase; letter-spacing: .16em; font-size: .74rem;
-  color: var(--board); flex: none; padding-top: .22rem; width: 132px;
+  color: var(--deck-board); flex: none; padding-top: .22rem; width: 132px;
 }
-.screen figcaption p { margin: 0; color: var(--chalk-dim); font-size: .97rem; max-width: 62ch }
+.screen figcaption p {
+  margin: 0; color: var(--deck-chalk-dim); font-size: .97rem; max-width: 62ch;
+}
 @media (max-width: 640px) {
   .screen figcaption { display: block }
   .tag { width: auto; margin-bottom: .5rem }
@@ -184,65 +250,83 @@ h2.display { font-size: clamp(2rem, 4.4vw, 3.3rem); margin-bottom: 1.4rem }
 @media (min-width: 1100px) { .bleed { margin-right: -90px } }
 
 /* ── этапы внедрения: настоящая последовательность ────────── */
-.stages { margin-top: 2.6rem; border-top: 1px solid var(--line) }
+.stages { margin-top: 2.6rem; border-top: 1px solid var(--deck-line) }
 .stage {
-  display: flex; gap: 1.6rem; padding: 1.6rem 0; border-bottom: 1px solid var(--line);
+  display: flex; gap: 1.6rem; padding: 1.6rem 0;
+  border-bottom: 1px solid var(--deck-line);
 }
 .no {
-  font-size: 1.5rem; color: var(--board); font-variant-numeric: tabular-nums;
+  font-size: 1.5rem; color: var(--deck-board); font-variant-numeric: tabular-nums;
   line-height: 1; flex: none; width: 52px; padding-top: .15rem;
 }
-.stage p { margin: 0; color: var(--chalk-dim); font-size: .97rem }
+.stage p { margin: 0; color: var(--deck-chalk-dim); font-size: .97rem }
 .when {
   text-transform: uppercase; letter-spacing: .14em; font-size: .72rem;
-  color: var(--chalk-dim); margin-left: auto; flex: none; padding-top: .35rem;
+  color: var(--deck-chalk-dim); margin-left: auto; flex: none; padding-top: .35rem;
 }
 @media (max-width: 640px) { .when { display: none } }
 
 /* ── тарифы ───────────────────────────────────────────────── */
 .plans {
-  display: grid; gap: 1px; background: var(--line);
-  border: 1px solid var(--line); margin-top: 2.6rem;
+  display: grid; gap: 1px; background: var(--deck-line);
+  border: 1px solid var(--deck-line); margin-top: 2.6rem;
 }
 @media (min-width: 860px) { .plans { grid-template-columns: repeat(3, 1fr) } }
-.plan { background: var(--pitch); padding: 2rem 1.7rem; display: flex; flex-direction: column }
-.planLead { background: var(--turf) }
-.planName { text-transform: uppercase; letter-spacing: .2em; font-size: .82rem; color: var(--chalk-dim) }
-.planLead .planName { color: var(--board) }
+.plan {
+  background: var(--deck-pitch); padding: 2rem 1.7rem;
+  display: flex; flex-direction: column;
+}
+.planLead { background: var(--deck-turf) }
+.planName {
+  text-transform: uppercase; letter-spacing: .2em;
+  font-size: .82rem; color: var(--deck-chalk-dim);
+}
+.planLead .planName { color: var(--deck-board) }
 .price {
   font-size: 2.5rem; margin: .7rem 0 .1rem;
   font-variant-numeric: tabular-nums; line-height: 1;
 }
-.sub { font-size: .87rem; color: var(--chalk-dim); margin-bottom: 1.4rem }
-.plan ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .62rem }
-.plan li { font-size: .94rem; color: var(--chalk-dim); padding-left: 1.4rem; position: relative }
+.sub { font-size: .87rem; color: var(--deck-chalk-dim); margin-bottom: 1.4rem }
+.plan ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: .62rem;
+}
+.plan li {
+  font-size: .94rem; color: var(--deck-chalk-dim);
+  padding-left: 1.4rem; position: relative;
+}
 .plan li::before {
   content: ''; position: absolute; left: 0; top: .62em;
-  width: 8px; height: 2px; background: var(--board);
+  width: 8px; height: 2px; background: var(--deck-board);
 }
 
 /* ── финал ────────────────────────────────────────────────── */
-.close { background: var(--turf); border-top: 1px solid var(--line-strong) }
+.close { background: var(--deck-turf); border-top: 1px solid var(--deck-line-strong) }
 .cta {
   display: inline-block; margin-top: 1.4rem; padding: .95rem 2rem;
-  background: var(--board); color: var(--pitch); text-decoration: none;
+  background: var(--deck-board); color: var(--deck-pitch); text-decoration: none;
   text-transform: uppercase; letter-spacing: .14em; font-size: .9rem;
   border-radius: 8px; transition: transform .18s ease, box-shadow .18s ease;
 }
-.cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px var(--board-glow) }
+.cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -12px var(--deck-board-glow) }
 .meta {
-  margin-top: 3rem; padding-top: 1.6rem; border-top: 1px solid var(--line);
-  display: grid; gap: 1.4rem; font-size: .88rem; color: var(--chalk-dim);
+  margin-top: 3rem; padding-top: 1.6rem; border-top: 1px solid var(--deck-line);
+  display: grid; gap: 1.4rem; font-size: .88rem; color: var(--deck-chalk-dim);
 }
 @media (min-width: 720px) { .meta { grid-template-columns: repeat(3, 1fr) } }
 .meta b {
   display: block; text-transform: uppercase; letter-spacing: .18em;
-  font-size: .7rem; color: var(--chalk); margin-bottom: .4rem; font-weight: 600;
+  font-size: .7rem; color: var(--deck-chalk); margin-bottom: .4rem; font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta, .toolBtn { transition: none }
 }
 
 /* ── печать в PDF из браузера ─────────────────────────────── */
 @media print {
   .deck { background: #fff; color: #111 }
-  .section, .screen, .stage, .plan { break-inside: avoid }
+  .toolbar { display: none }
+  .section, .screen, .stage, .plan, .format { break-inside: avoid }
   .bleed { margin-right: 0 }
 }

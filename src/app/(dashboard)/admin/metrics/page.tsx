@@ -2,9 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, UserPlus, Rocket, Repeat, Trophy, Wallet, Clock, AlertTriangle, Users,
+  ArrowLeft, UserPlus, Rocket, Repeat, Trophy, Wallet, Clock, AlertTriangle, Users, TrendingUp,
 } from 'lucide-react'
-import type { ProductMetrics, RecentUser } from '@/lib/metrics'
+import type { ProductMetrics, RecentUser, TimeseriesPoint } from '@/lib/metrics'
+import MetricsChartPanel from '@/components/admin/MetricsChartPanel'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Метрики', robots: { index: false, follow: false } }
@@ -94,12 +95,14 @@ export default async function AdminMetricsPage() {
   // Не 403, а 404 — страница не должна выдавать факт своего существования
   if (!profile?.is_admin) notFound()
 
-  const [{ data, error }, { data: usersData }] = await Promise.all([
+  const [{ data, error }, { data: usersData }, { data: seriesData }] = await Promise.all([
     supabase.rpc('product_metrics'),
     supabase.rpc('recent_users', { limit_count: 50 }),
+    supabase.rpc('metrics_timeseries', { days: 30 }),
   ])
   const m = data as ProductMetrics | null
   const users = (usersData ?? []) as RecentUser[]
+  const series = (seriesData ?? []) as TimeseriesPoint[]
 
   if (error || !m) {
     return (
@@ -137,6 +140,21 @@ export default async function AdminMetricsPage() {
         <h1 className="text-2xl font-black text-gray-900">Метрики продукта</h1>
         <span className="text-xs text-gray-400 tabular-nums">обновлено {updated}</span>
       </div>
+
+      {/* ── Динамика ────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${TONES.emerald.icon}`}>
+            <TrendingUp size={16} />
+          </div>
+          <h2 className="text-sm font-black uppercase tracking-wide text-gray-700">Динамика роста</h2>
+        </div>
+        <MetricsChartPanel initialData={series} initialDays={30} />
+        <p className="text-xs text-gray-400 mt-2">
+          Переключатель периода и вида действует только на этот график. Карточки ниже
+          считаются за фиксированные периоды, подписанные на каждой.
+        </p>
+      </section>
 
       <Section title="Привлечение" icon={UserPlus} tone="emerald">
         <Stat label="Сегодня"    value={fmt(m.signups_today)} tone="emerald" hint="регистраций" />

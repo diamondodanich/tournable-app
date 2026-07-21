@@ -261,3 +261,24 @@
 /* Support chat panel uses an inline #fff background (shared with the public landing);
    darken it only inside the dashboard shell. */
 .dark .support-panel { background: #16161c !important; border-color: #2f2f39 !important; }
+/* ── Admin metrics chart ──────────────────────────────────────────────────────
+   Палитра проверена валидатором dataviz в обеих темах (все проверки пройдены):
+   light  #059669 / #2a78d6 на поверхности #ffffff
+   dark   #0ba876 / #3987e5 на поверхности #16161c
+   Тёмные шаги подобраны под тёмную поверхность, а не получены инверсией. */
+.metrics-chart {
+  --mc-users:   #059669;
+  --mc-tours:   #2a78d6;
+  --mc-grid:    #e5e7eb;
+  --mc-axis:    #c3c2b7;
+  --mc-muted:   #898781;
+  --mc-surface: #ffffff;
+}
+.dark .metrics-chart {
+  --mc-users:   #0ba876;
+  --mc-tours:   #3987e5;
+  --mc-grid:    #24242c;
+  --mc-axis:    #383835;
+  --mc-muted:   #797986;
+  --mc-surface: #16161c;
+}

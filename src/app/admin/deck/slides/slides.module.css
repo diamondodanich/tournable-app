@@ -123,8 +123,10 @@
   position: relative; justify-content: flex-end; color: #E8F1EC;
   padding-bottom: clamp(96px, 12vh, 150px);
 }
+/* overflow:hidden обязателен: внутри лежит светопроход с отрицательным inset,
+   иначе он расширяет область прокрутки слайда и обложка «висит» лишние ~250px */
 .coverBg {
-  position: absolute; inset: 0; z-index: 0;
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
   background-image: var(--shot-scoreboard);
   background-size: cover; background-position: center;
 }
@@ -135,7 +137,7 @@
 }
 /* Медленный проход света — как прожектор по полю. Ambient, не аттракцион. */
 .coverSweep {
-  position: absolute; inset: -20%; z-index: 0; pointer-events: none;
+  position: absolute; inset: -20%; z-index: 1; pointer-events: none;
   background: radial-gradient(38% 46% at 50% 50%, rgba(22, 201, 124, .16), transparent 70%);
   animation: sweep 19s ease-in-out infinite alternate;
 }
@@ -198,8 +200,8 @@
 .formats {
   display: grid; gap: 1px; background: var(--deck-line);
   border: 1px solid var(--deck-line); margin-top: 1.8rem;
+  grid-template-columns: repeat(2, 1fr);
 }
-@media (min-width: 640px) { .formats { grid-template-columns: repeat(2, 1fr) } }
 @media (min-width: 1000px) { .formats { grid-template-columns: repeat(5, 1fr) } }
 .format { background: var(--deck-pitch); padding: 1.2rem 1.1rem }
 .formatSvg { width: 100%; height: auto; color: var(--deck-chalk); display: block }
@@ -378,6 +380,43 @@
   transition: opacity .5s ease;
 }
 .hintHidden { opacity: 0 }
+
+/* ── уплотнение: ноутбуки с низким экраном ────────────────── */
+/* Слайд должен помещаться целиком — презентацию листают, а не скроллят */
+@media (max-height: 840px) {
+  .slide { padding: clamp(40px, 4.5vh, 60px) clamp(24px, 5vw, 76px) clamp(84px, 9vh, 100px) }
+  .display { font-size: clamp(1.7rem, 3.2vw, 2.5rem); margin-bottom: .9rem }
+  .lede { font-size: clamp(.94rem, 1.15vw, 1.05rem) }
+  .eyebrow { margin-bottom: .8rem }
+  .cell { padding: 1.1rem 1.1rem }
+  .cell p { font-size: .85rem }
+  .grid, .formats, .plans, .tblscroll { margin-top: 1.2rem }
+  .stages { margin-top: 1rem }
+  .stage { padding: .8rem 0 }
+  .plan { padding: 1.2rem 1.2rem }
+  .plan ul { gap: .4rem }
+  .plan li { font-size: .83rem }
+  .standings td { padding: .65rem 1rem .65rem 0 }
+  .frame img { max-height: 56vh; max-height: 56dvh }
+}
+
+/* ── уплотнение: телефон ──────────────────────────────────── */
+/* Плотные слайды (таблица, шесть карточек) на 390px всё равно длиннее экрана —
+   у слайда есть собственная вертикальная прокрутка, горизонтальный свайп
+   при этом продолжает работать */
+@media (max-width: 640px) {
+  .slide { padding: 56px 20px 88px }
+  .display { font-size: clamp(1.55rem, 7vw, 2rem) }
+  .cover .display { font-size: clamp(2rem, 9.5vw, 2.7rem) }
+  .lede { font-size: .95rem }
+  .cell { padding: 1rem }
+  .format { padding: 1rem }
+  .plan { padding: 1.2rem }
+  .brandline { font-size: .7rem; gap: .6rem }
+  .hud { gap: 10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)) }
+  .toolBtn { font-size: 0; padding: 0; width: 38px }
+  .toolBtn svg { margin: 0 }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .track { scroll-behavior: auto }

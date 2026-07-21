@@ -41,18 +41,25 @@ export default function SlideDeck({ initialTheme }: { initialTheme: 'light' | 'd
     return () => cancelAnimationFrame(id)
   }, [])
 
-  // Позицию читаем из scrollLeft: это точное значение, без порогов и гонок
+  // Авторитетный номер слайда. Держим в ref, потому что при ресайзе окна
+  // событие scroll успевает пересчитать позицию по УЖЕ НОВОЙ ширине ленты
+  // и сбить индекс — тогда выравнивание уводит на чужой слайд
+  const indexRef = useRef(0)
+  const lockRef = useRef(false)
+
+  // Позицию читаем из scrollLeft: точное значение, без порогов и гонок
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
     let frame = 0
     function onScroll() {
-      if (frame) return
+      if (frame || lockRef.current) return
       frame = requestAnimationFrame(() => {
         frame = 0
         const el = trackRef.current
-        if (!el || el.clientWidth === 0) return
+        if (!el || el.clientWidth === 0 || lockRef.current) return
         const i = Math.round(el.scrollLeft / el.clientWidth)
+        indexRef.current = i
         setCurrent((prev) => (prev === i ? prev : i))
       })
     }
@@ -67,23 +74,32 @@ export default function SlideDeck({ initialTheme }: { initialTheme: 'light' | 'd
     const track = trackRef.current
     if (!track) return
     const next = Math.max(0, Math.min(total - 1, i))
+    indexRef.current = next
+    setCurrent(next)          // HUD реагирует сразу, не дожидаясь конца прокрутки
+    setMoved(true)
     track.scrollTo({
       left: next * track.clientWidth,
       behavior: smooth ? 'smooth' : 'auto',
     })
-    setMoved(true)
   }, [total])
 
-  // При смене размера окна слайд обязан остаться выровненным по краю
+  // При смене размера окна слайд обязан остаться тем же и встать по краю
   useEffect(() => {
+    let settle: ReturnType<typeof setTimeout>
     function onResize() {
       const track = trackRef.current
       if (!track) return
-      track.scrollTo({ left: current * track.clientWidth, behavior: 'auto' })
+      lockRef.current = true                 // глушим scroll на время перекладки
+      track.scrollTo({ left: indexRef.current * track.clientWidth, behavior: 'auto' })
+      clearTimeout(settle)
+      settle = setTimeout(() => { lockRef.current = false }, 200)
     }
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [current])
+    return () => {
+      window.removeEventListener('resize', onResize)
+      clearTimeout(settle)
+    }
+  }, [])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -134,8 +150,9 @@ export default function SlideDeck({ initialTheme }: { initialTheme: 'light' | 'd
 
         {/* ── 1. Обложка ─────────────────────────────────────── */}
         <section {...slideProps(idx.cover, s.cover)}>
-          <div className={s.coverBg} role="img" aria-label="Светодиодное табло Tournable на стадионе во время матча" />
-          <div className={s.coverSweep} />
+          <div className={s.coverBg} role="img" aria-label="Светодиодное табло Tournable на стадионе во время матча">
+            <div className={s.coverSweep} />
+          </div>
           <div className={s.inner}>
             <p className={`${s.rise} ${s.brandline}`} style={rise(0)}>
               <b>Tournable</b> <span>Платформа соревнований</span> <span className={s.num}>2026</span>

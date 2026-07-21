@@ -95,11 +95,12 @@ export default async function AdminMetricsPage() {
   // Не 403, а 404 — страница не должна выдавать факт своего существования
   if (!profile?.is_admin) notFound()
 
-  const [{ data, error }, { data: usersData }, { data: seriesData }] = await Promise.all([
-    supabase.rpc('product_metrics'),
-    supabase.rpc('recent_users', { limit_count: 50 }),
-    supabase.rpc('metrics_timeseries', { days: 30 }),
-  ])
+  const [{ data, error }, { data: usersData }, { data: seriesData, error: seriesError }] =
+    await Promise.all([
+      supabase.rpc('product_metrics'),
+      supabase.rpc('recent_users', { limit_count: 50 }),
+      supabase.rpc('metrics_timeseries', { days: 30 }),
+    ])
   const m = data as ProductMetrics | null
   const users = (usersData ?? []) as RecentUser[]
   const series = (seriesData ?? []) as TimeseriesPoint[]
@@ -149,7 +150,21 @@ export default async function AdminMetricsPage() {
           </div>
           <h2 className="text-sm font-black uppercase tracking-wide text-gray-700">Динамика роста</h2>
         </div>
-        <MetricsChartPanel initialData={series} initialDays={30} />
+        {seriesError ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-gray-900">График недоступен</div>
+              <div className="text-xs text-gray-600 mt-1 break-words">{seriesError.message}</div>
+              <div className="text-xs text-gray-500 mt-2">
+                Если написано «structure of query does not match function result type» —
+                примените миграцию 038_fix_timeseries_types.sql
+              </div>
+            </div>
+          </div>
+        ) : (
+          <MetricsChartPanel initialData={series} initialDays={30} />
+        )}
         <p className="text-xs text-gray-400 mt-2">
           Переключатель периода и вида действует только на этот график. Карточки ниже
           считаются за фиксированные периоды, подписанные на каждой.

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
 import { getPaymentOrderParams } from '@/app/actions/payments'
 import type { PlanPeriod, PlanType } from '@/lib/freedompay'
@@ -174,7 +175,11 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro', l
       )
 
       if (result.payment_status === 'need_confirm') {
-        setStep('3ds')
+        // Контейнер #fp-3ds-container рендерится только на шаге '3ds'. Обычный
+        // setState отрисовывается асинхронно, и SDK не нашёл бы узел в DOM —
+        // окно 3D Secure не открылось бы уже после авторизации суммы.
+        // flushSync форсирует синхронную отрисовку до вызова SDK.
+        flushSync(() => setStep('3ds'))
         result = await window.FreedomPaySDK.confirmInIframe(result, 'fp-3ds-container')
       }
 

@@ -96,46 +96,30 @@ export async function getLeagueOwnerPlan(leagueId: string): Promise<Plan> {
   return resolvePlan(data.plan, data.plan_expires_at)
 }
 
-// ── Активирует Pro-тариф для пользователя ─────────────────────────────────────
-export async function activatePro(
+// ── Админская смена плана любому пользователю ─────────────────────────────────
+// Права проверяет сама функция admin_set_plan в БД (миграция 043), а не этот
+// код: server action доступен из браузера, поэтому проверка должна жить там же,
+// где и запись. Напрямую в profiles писать нельзя — RLS запрещает это всем,
+// кроме service_role.
+export async function adminSetPlan(
   userId: string,
-  expiresAt: Date | null,
+  plan: Plan,
+  expiresAt: Date | null = null,
 ): Promise<{ error?: string }> {
   noStore()
   const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('profiles')
-    .upsert(
-      {
-        id: userId,
-        plan: 'pro',
-        plan_expires_at: expiresAt ? expiresAt.toISOString() : null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    )
+  const { error } = await supabase.rpc('admin_set_plan', {
+    p_user_id:    userId,
+    p_plan:       plan,
+    p_expires_at: expiresAt ? expiresAt.toISOString() : null,
+  })
 
-  if (error) return { error: error.message }
-  return {}
-}
-
-// ── Активирует Enterprise (только is_admin) ───────────────────────────────────
-export async function activateEnterprise(userId: string): Promise<{ error?: string }> {
-  noStore()
-  const supabase = await createClient()
-
-  const { data: { user: currentUser } } = await supabase.auth.getUser()
-  if (!currentUser) return { error: 'Не авторизован' }
-
-  const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle()
-  if (!profile?.is_admin) return { error: 'Недостаточно прав' }
-
-  const { error } = await supabase
-    .from('profiles')
-    .upsert({ id: userId, plan: 'enterprise', plan_expires_at: null, updated_at: new Date().toISOString() }, { onConflict: 'id' })
-
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.message.includes('Forbidden')) return { error: 'Недостаточно прав' }
+    console.error('[adminSetPlan]', error)
+    return { error: error.message }
+  }
   return {}
 }
 
@@ -145,11 +129,8 @@ export async function activateEnterprise(userId: string): Promise<{ error?: stri
 // «отмена» означает «не продлевать». Оплаченный период в любом случае доживает
 // до конца, иначе пользователь теряет то, за что уже заплатил.
 //
-// immediate = true — принудительный перевод на free без учёта оплаченного
-// периода. Нужен админскому переключателю планов, обычному пользователю нет.
-export async function cancelSubscription(
-  immediate = false,
-): Promise<{ error?: string; accessUntil?: string | null }> {
+// Принудительный сброс плана — не здесь: у админа для этого adminSetPlan.
+export async function cancelSubscription(): Promise<{ error?: string; accessUntil?: string | null }> {
   noStore()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -213,19 +194,20 @@ export async function cancelSubscription(
 
   const expiresAt = profile?.plan_expires_at ? new Date(profile.plan_expires_at) : null
 
-  if (!immediate && expiresAt && expiresAt.getTime() > Date.now()) {
+  if (expiresAt && expiresAt.getTime() > Date.now()) {
     console.log(`[cancelSubscription] ${user.id}: продления не будет, доступ до ${profile!.plan_expires_at}`)
     return { accessUntil: profile!.plan_expires_at }
   }
 
-  // Оплаченного периода не осталось (ручная выдача без срока или срок вышел),
-  // либо это админский принудительный сброс — переводим на free сразу.
-  const { error } = await supabase
-    .from('profiles')
-    .update({ plan: 'free', plan_expires_at: null, updated_at: new Date().toISOString() })
-    .eq('id', user.id)
+  // Оплаченного периода не осталось (ручная выдача без срока или срок вышел) —
+  // переводим на free сразу. Напрямую в profiles писать нельзя, поэтому через
+  // SECURITY DEFINER функцию: понижение самому себе прав не требует.
+  const { error } = await supabase.rpc('downgrade_own_plan')
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[cancelSubscription] downgrade_own_plan:', error)
+    return { error: error.message }
+  }
   return {}
 }
 

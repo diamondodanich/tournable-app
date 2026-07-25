@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { activateEnterprise, activatePro, cancelSubscription } from '@/app/actions/billing'
+import { adminSetPlan } from '@/app/actions/billing'
 import { toast } from 'sonner'
 
 type Plan = 'free' | 'pro' | 'enterprise'
@@ -11,17 +11,11 @@ export default function AdminPlanButton({ userId, currentPlan }: { userId: strin
 
   async function switchTo(target: Plan) {
     setLoading(true)
-    let result: { error?: string } = {}
 
-    if (target === 'enterprise') {
-      result = await activateEnterprise(userId)
-    } else if (target === 'pro') {
-      result = await activatePro(userId, null)
-    } else {
-      // Админский переключатель — принудительно, не дожидаясь конца
-      // оплаченного периода.
-      result = await cancelSubscription(true)
-    }
+    // Один экшен на все три плана — и он действительно применяется к userId,
+    // а не к текущему пользователю. Раньше переход на free шёл через
+    // cancelSubscription, которая работает только со своим аккаунтом.
+    const result = await adminSetPlan(userId, target)
 
     if (result.error) {
       toast.error(result.error)

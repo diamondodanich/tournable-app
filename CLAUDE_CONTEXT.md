@@ -47,8 +47,8 @@ Tabs use `data-active` attribute (NOT `data-state="active"`). Active tab: `data-
 - `src/components/icons/sport-icons.tsx` — SoccerBall, BasketballBall, HockeyPuck (full realistic SVGs)
 - `src/components/landing/SupportWidget.tsx` — chatbot, keyword matching, 3-language FAQ, text input
 - `src/app/(dashboard)/dashboard/tournament/[id]/page.tsx` — main tournament page (Server Component, reads lang cookie)
-- `src/app/actions/billing.ts` — getUserPlan(), getOwnerPlan(tournamentId), activatePro()
-- `src/app/actions/payments.ts` — getPaymentOrderParams(period), activateProAfterPayment(period, paymentId)
+- `src/app/actions/billing.ts` — getUserPlan(), getOwnerPlan(tournamentId), adminSetPlan(), cancelSubscription()
+- `src/app/actions/payments.ts` — getPaymentOrderParams(period, planType, provider), getPaymentOrderStatus(orderId)
 - `src/components/checkout/CardPaymentForm.tsx` — FreedomPay JS SDK integration
 - `.claude/scripts/auto-deploy.sh` — CI/CD pipeline (TS check → commit → push → merge main → Vercel)
 
@@ -119,6 +119,11 @@ Values in `tournaments.sport` column:
 
 ## Активация платного плана — только через webhook (2026-07-25)
 ПРАВИЛО: клиент НИКОГДА не выдаёт план. Единственный код, который пишет `profiles.plan`, — `src/app/api/webhooks/freedompay/route.ts` (service_role, после проверки MD5-подписи). Раньше это делал server action `activateProAfterPayment`, вызываемый из браузера после ответа SDK, — любой залогиненный пользователь мог дёрнуть его напрямую и получить Pro бесплатно. Оба `activate*AfterPayment` УДАЛЕНЫ, не возвращать.
+
+**Миграция 043 — таблица `profiles` закрыта на запись.** В ней нет пользовательских полей: имя/телефон/страна/город лежат в `auth.users.user_metadata` (`updateAccountProfile` в actions/auth.ts), а в таблице только `plan`, `plan_expires_at`, `is_admin`, `is_internal`. Политика из 010 (`for all using auth.uid() = id`) позволяла любому пользователю прямо из браузера выдать себе бессрочный Pro и `is_admin = true`, минуя server actions. Теперь у `authenticated` только SELECT своей строки; писать могут service_role и две SECURITY DEFINER функции:
+- `admin_set_plan(p_user_id, p_plan, p_expires_at)` — проверяет `is_admin` вызывающего внутри БД, умеет менять план ЛЮБОМУ пользователю. Обёртка — `adminSetPlan()` в billing.ts. Заменила `activatePro`/`activateEnterprise`: у первой проверки прав не было вовсе, вторая проверяла в коде, но всё равно не могла записать чужую строку из-за RLS
+- `downgrade_own_plan()` — понижение самому себе, прав не требует, используется в `cancelSubscription`
+НЕ добавлять RLS-политику на UPDATE для `authenticated` — это вернёт дыру.
 - Миграция `039_payment_orders.sql` — таблица `payment_orders`. RLS: владелец может SELECT свои и INSERT только со `status='pending'`; политик UPDATE/DELETE нет намеренно → статус `paid` неподделываем из браузера (миграция 018 раздаёт права будущим таблицам по умолчанию, поэтому в 039 стоит явный `revoke`)
 - Поток: `getPaymentOrderParams()` пишет заказ `pending` ДО оплаты → SDK платит → редирект на `/checkout/success?order=<id>` → страница показывает `PaymentPending.tsx` (поллинг `getPaymentOrderStatus` раз в 2 с, таймаут 90 с → экран «Оплата обрабатывается» + номер заказа + WhatsApp) → webhook переводит заказ в `paid` и выдаёт план → `router.refresh()` показывает успех
 - Идемпотентность: `update ... where order_id=? and status='pending'` — повторный колбэк не вернёт строк и план не продлится дважды

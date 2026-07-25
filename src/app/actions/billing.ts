@@ -140,10 +140,16 @@ export async function activateEnterprise(userId: string): Promise<{ error?: stri
 }
 
 // ── Отменяет подписку ─────────────────────────────────────────────────────────
-// С рекуррентными платежами TipTop Pay: отключает автопродление через API,
-// доступ сохраняется до конца оплаченного периода (cron переведёт на free).
-// Для планов без подписки в шлюзе (ручная выдача) — немедленный переход на free.
-export async function cancelSubscription(): Promise<{ error?: string; accessUntil?: string | null }> {
+// С рекуррентными платежами TipTop Pay: отключает автопродление через API.
+// У FreedomPay рекуррента нет — продление ручное, и отменять в шлюзе нечего:
+// «отмена» означает «не продлевать». Оплаченный период в любом случае доживает
+// до конца, иначе пользователь теряет то, за что уже заплатил.
+//
+// immediate = true — принудительный перевод на free без учёта оплаченного
+// периода. Нужен админскому переключателю планов, обычному пользователю нет.
+export async function cancelSubscription(
+  immediate = false,
+): Promise<{ error?: string; accessUntil?: string | null }> {
   noStore()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -196,7 +202,24 @@ export async function cancelSubscription(): Promise<{ error?: string; accessUnti
     return { accessUntil: profile?.plan_expires_at ?? null }
   }
 
-  // Нет подписки в шлюзе (ручная выдача / legacy) — немедленный переход на free
+  // Подписки в шлюзе нет: либо оплата разовая через FreedomPay, либо ручная
+  // выдача. Если оплаченный период ещё идёт — не трогаем план: продлевать его
+  // некому, cron сам переведёт на free по истечении срока.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan_expires_at')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const expiresAt = profile?.plan_expires_at ? new Date(profile.plan_expires_at) : null
+
+  if (!immediate && expiresAt && expiresAt.getTime() > Date.now()) {
+    console.log(`[cancelSubscription] ${user.id}: продления не будет, доступ до ${profile!.plan_expires_at}`)
+    return { accessUntil: profile!.plan_expires_at }
+  }
+
+  // Оплаченного периода не осталось (ручная выдача без срока или срок вышел),
+  // либо это админский принудительный сброс — переводим на free сразу.
   const { error } = await supabase
     .from('profiles')
     .update({ plan: 'free', plan_expires_at: null, updated_at: new Date().toISOString() })

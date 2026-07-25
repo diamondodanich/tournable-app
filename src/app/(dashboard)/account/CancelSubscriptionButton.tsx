@@ -6,8 +6,9 @@ import { cancelSubscription } from '@/app/actions/billing'
 
 export default function CancelSubscriptionButton() {
   const router = useRouter()
-  const [step, setStep]       = useState<'idle' | 'confirm' | 'pending'>('idle')
+  const [step, setStep]       = useState<'idle' | 'confirm' | 'pending' | 'done'>('idle')
   const [error, setError]     = useState<string | null>(null)
+  const [accessUntil, setAccessUntil] = useState<string | null>(null)
 
   async function handleCancel() {
     setStep('pending')
@@ -18,8 +19,9 @@ export default function CancelSubscriptionButton() {
       setStep('confirm')
       return
     }
+    setAccessUntil(result.accessUntil ?? null)
     router.refresh()
-    setStep('idle')
+    setStep('done')
   }
 
   if (step === 'idle') {
@@ -38,9 +40,8 @@ export default function CancelSubscriptionButton() {
       <div className="rounded-xl border border-red-100 bg-red-50 p-4 space-y-3">
         <p className="text-sm font-semibold text-red-700">Вы уверены?</p>
         <p className="text-xs text-red-500 leading-relaxed">
-          Автопродление будет отключено. Доступ к Pro сохранится до конца
-          оплаченного периода, дальнейшие списания не производятся.
-          Вы сможете снова оформить подписку в любой момент.
+          Подписка не будет продлена. Доступ сохранится до конца оплаченного
+          периода, списаний не будет. Оформить заново можно в любой момент.
         </p>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex gap-2">
@@ -57,6 +58,21 @@ export default function CancelSubscriptionButton() {
             Назад
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (step === 'done') {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-1">
+        <p className="text-sm font-semibold text-gray-700">Подписка не будет продлена</p>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          {accessUntil
+            ? `Доступ сохраняется до ${new Date(accessUntil).toLocaleDateString('ru-RU', {
+                day: 'numeric', month: 'long', year: 'numeric',
+              })}, дальше аккаунт перейдёт на Free.`
+            : 'Аккаунт переведён на тариф Free.'}
+        </p>
       </div>
     )
   }

@@ -33,10 +33,12 @@ export async function GET(req: NextRequest) {
   const warningDayEnd = new Date(warningDay)
   warningDayEnd.setHours(23, 59, 59, 999)
 
+  // Оба платных плана: Enterprise платит больше Pro, а предупреждения не получал
+  // вовсе — в условии стоял только 'pro'.
   const { data: expiringProfiles } = await supabase
     .from('profiles')
     .select('id, plan_expires_at')
-    .eq('plan', 'pro')
+    .in('plan', ['pro', 'enterprise'])
     .gte('plan_expires_at', warningDay.toISOString())
     .lte('plan_expires_at', warningDayEnd.toISOString())
 

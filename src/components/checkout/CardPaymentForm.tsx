@@ -55,7 +55,9 @@ const T = {
     cardNumber: 'Номер карты', cardHolder: 'Имя владельца', expiry: 'Срок действия', cvv: 'CVV / CVC',
     consentPre: 'Нажимая «Оплатить», вы подтверждаете согласие с', offerLink: 'условиями оферты',
     processing: 'Обработка...', pay: (a: string) => `Оплатить ${a} ₸`,
-    secured: 'Защищено · PCI DSS · 3D Secure', confirm3ds: 'Подтверждение банком (3D Secure)',
+    secured: 'Защищено · PCI DSS · 3D Secure', confirm3ds: 'Подтверждение банком',
+    confirm3dsHint: 'Введите код из СМС. Не закрывайте страницу.',
+    loading3ds: 'Загружаем страницу банка...',
     scriptFailed: 'Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.',
     paymentFailed: (s: string) => `Платёж не прошёл. Статус: ${s}`, payError: 'Ошибка при оплате',
     comingSoon: 'Скоро', cardSoon: 'Оплата картой скоро будет доступна — пока оформляем через менеджера.',
@@ -64,7 +66,9 @@ const T = {
     cardNumber: 'Карта нөмірі', cardHolder: 'Иесінің аты', expiry: 'Қолданылу мерзімі', cvv: 'CVV / CVC',
     consentPre: '«Төлеу» батырмасын басу арқылы сіз', offerLink: 'оферта шарттарымен келісесіз',
     processing: 'Өңделуде...', pay: (a: string) => `Төлеу ${a} ₸`,
-    secured: 'Қорғалған · PCI DSS · 3D Secure', confirm3ds: 'Банк растауы (3D Secure)',
+    secured: 'Қорғалған · PCI DSS · 3D Secure', confirm3ds: 'Банк растауы',
+    confirm3dsHint: 'СМС-кодты енгізіңіз. Бетті жаппаңыз.',
+    loading3ds: 'Банк беті жүктелуде...',
     scriptFailed: 'Төлем модулін жүктеу мүмкін болмады. Бетті жаңартып көріңіз.',
     paymentFailed: (s: string) => `Төлем өтпеді. Мәртебесі: ${s}`, payError: 'Төлем кезінде қате',
     comingSoon: 'Жақында', cardSoon: 'Картамен төлеу жақында қолжетімді болады — әзірге менеджер арқылы рәсімдейміз.',
@@ -73,7 +77,9 @@ const T = {
     cardNumber: 'Card number', cardHolder: 'Cardholder name', expiry: 'Expiry', cvv: 'CVV / CVC',
     consentPre: 'By clicking “Pay” you agree to the', offerLink: 'terms of the offer',
     processing: 'Processing...', pay: (a: string) => `Pay ${a} ₸`,
-    secured: 'Secured · PCI DSS · 3D Secure', confirm3ds: 'Bank confirmation (3D Secure)',
+    secured: 'Secured · PCI DSS · 3D Secure', confirm3ds: 'Bank confirmation',
+    confirm3dsHint: 'Enter the code from the SMS. Do not close this page.',
+    loading3ds: 'Loading the bank page...',
     scriptFailed: 'Could not load the payment module. Please refresh the page.',
     paymentFailed: (s: string) => `Payment failed. Status: ${s}`, payError: 'Payment error',
     comingSoon: 'Coming soon', cardSoon: 'Card payment is coming soon — for now we set it up via a manager.',
@@ -354,12 +360,43 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro', l
       )}
 
       {step === '3ds' && (
-        <div className="rounded-xl overflow-hidden border border-gray-200">
-          <div className="bg-gray-50 px-4 py-2 flex items-center gap-2 border-b border-gray-100">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs font-bold text-gray-600">{tx.confirm3ds}</span>
+        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+          {/* Шапка: чью страницу видит пользователь и за что он платит.
+              Само содержимое ниже рисует банк-эмитент — на его вёрстку мы
+              повлиять не можем, поэтому задаём аккуратную оправу. */}
+          <div
+            className="px-4 py-3 flex items-center gap-3 text-white"
+            style={{ background: GRADIENTS[planType] }}
+          >
+            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-black leading-tight">{tx.confirm3ds}</p>
+              <p className="text-[11px] text-white/80 leading-snug mt-0.5">{tx.confirm3dsHint}</p>
+            </div>
+            <span className="text-sm font-black shrink-0">
+              {amount.toLocaleString('ru-RU')} ₸
+            </span>
           </div>
-          <div id="fp-3ds-container" className="w-full min-h-[420px]" />
+
+          {/* Лоадер лежит под контейнером и скрывается, когда банк отрисует
+              свой iframe поверх него. */}
+          <div className="relative">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+              <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+              <span className="text-[11px] text-gray-400">{tx.loading3ds}</span>
+            </div>
+            <div
+              id="fp-3ds-container"
+              className="relative w-full min-h-[440px] bg-white [&_iframe]:block [&_iframe]:w-full [&_iframe]:min-h-[440px] [&_iframe]:border-0"
+            />
+          </div>
+
+          <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50 flex items-center justify-center gap-1.5">
+            <Lock className="w-3 h-3 text-gray-400" />
+            <span className="text-[11px] text-gray-400">{tx.secured}</span>
+          </div>
         </div>
       )}
     </div>

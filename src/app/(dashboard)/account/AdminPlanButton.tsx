@@ -18,7 +18,9 @@ export default function AdminPlanButton({ userId, currentPlan }: { userId: strin
     } else if (target === 'pro') {
       result = await activatePro(userId, null)
     } else {
-      result = await cancelSubscription()
+      // Админский переключатель — принудительно, не дожидаясь конца
+      // оплаченного периода.
+      result = await cancelSubscription(true)
     }
 
     if (result.error) {

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { ProductMetrics, RecentUser, TimeseriesPoint } from '@/lib/metrics'
 import MetricsChartPanel from '@/components/admin/MetricsChartPanel'
+import UserPlanCell from '@/components/admin/UserPlanCell'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Метрики', robots: { index: false, follow: false } }
@@ -28,12 +29,6 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('ru-RU', {
     day: '2-digit', month: '2-digit', year: '2-digit',
   })
-}
-
-const PLAN_BADGE: Record<string, string> = {
-  free:       'bg-gray-100 text-gray-500',
-  pro:        'bg-emerald-100 text-emerald-700',
-  enterprise: 'bg-violet-100 text-violet-700',
 }
 
 type Tone = 'emerald' | 'violet' | 'amber' | 'gray'
@@ -283,9 +278,7 @@ export default async function AdminMetricsPage() {
                         {u.matches_played}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold uppercase ${PLAN_BADGE[u.plan] ?? PLAN_BADGE.free}`}>
-                          {u.plan}
-                        </span>
+                        <UserPlanCell userId={u.user_id} email={u.email} plan={u.plan} />
                       </td>
                     </tr>
                   ))}

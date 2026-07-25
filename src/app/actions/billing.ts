@@ -96,31 +96,37 @@ export async function getLeagueOwnerPlan(leagueId: string): Promise<Plan> {
   return resolvePlan(data.plan, data.plan_expires_at)
 }
 
-// ── Админская смена плана любому пользователю ─────────────────────────────────
-// Права проверяет сама функция admin_set_plan в БД (миграция 043), а не этот
+// ── Админская выдача плана любому пользователю ────────────────────────────────
+// Права проверяет сама функция admin_grant_plan в БД (миграция 044), а не этот
 // код: server action доступен из браузера, поэтому проверка должна жить там же,
 // где и запись. Напрямую в profiles писать нельзя — RLS запрещает это всем,
 // кроме service_role.
-export async function adminSetPlan(
+//
+// months = null — бессрочная выдача (свои и тестовые аккаунты).
+// amountKzt задаём, когда это настоящая продажа через менеджера: без записи в
+// subscriptions выручка не попадёт в метрики.
+export async function adminGrantPlan(
   userId: string,
   plan: Plan,
-  expiresAt: Date | null = null,
-): Promise<{ error?: string }> {
+  months: number | null = null,
+  amountKzt: number | null = null,
+): Promise<{ error?: string; expiresAt?: string | null }> {
   noStore()
   const supabase = await createClient()
 
-  const { error } = await supabase.rpc('admin_set_plan', {
+  const { data, error } = await supabase.rpc('admin_grant_plan', {
     p_user_id:    userId,
     p_plan:       plan,
-    p_expires_at: expiresAt ? expiresAt.toISOString() : null,
+    p_months:     months,
+    p_amount_kzt: amountKzt,
   })
 
   if (error) {
     if (error.message.includes('Forbidden')) return { error: 'Недостаточно прав' }
-    console.error('[adminSetPlan]', error)
+    console.error('[adminGrantPlan]', error)
     return { error: error.message }
   }
-  return {}
+  return { expiresAt: (data as string | null) ?? null }
 }
 
 // ── Отменяет подписку ─────────────────────────────────────────────────────────
@@ -129,7 +135,7 @@ export async function adminSetPlan(
 // «отмена» означает «не продлевать». Оплаченный период в любом случае доживает
 // до конца, иначе пользователь теряет то, за что уже заплатил.
 //
-// Принудительный сброс плана — не здесь: у админа для этого adminSetPlan.
+// Принудительный сброс плана — не здесь: у админа для этого adminGrantPlan.
 export async function cancelSubscription(): Promise<{ error?: string; accessUntil?: string | null }> {
   noStore()
   const supabase = await createClient()

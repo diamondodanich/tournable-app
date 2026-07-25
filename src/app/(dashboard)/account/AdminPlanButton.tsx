@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { adminSetPlan } from '@/app/actions/billing'
+import { adminGrantPlan } from '@/app/actions/billing'
 import { toast } from 'sonner'
 
 type Plan = 'free' | 'pro' | 'enterprise'
@@ -12,10 +12,9 @@ export default function AdminPlanButton({ userId, currentPlan }: { userId: strin
   async function switchTo(target: Plan) {
     setLoading(true)
 
-    // Один экшен на все три плана — и он действительно применяется к userId,
-    // а не к текущему пользователю. Раньше переход на free шёл через
-    // cancelSubscription, которая работает только со своим аккаунтом.
-    const result = await adminSetPlan(userId, target)
+    // Свой аккаунт, переключение для проверки: бессрочно и без записи платежа,
+    // чтобы не пачкать выручку. Выдача клиенту — на /admin/metrics.
+    const result = await adminGrantPlan(userId, target)
 
     if (result.error) {
       toast.error(result.error)

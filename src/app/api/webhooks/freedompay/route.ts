@@ -20,9 +20,16 @@ type PaymentOrder = {
 }
 
 // ── Helper: build XML response ────────────────────────────────────────────────
-function xmlResponse(status: 'ok' | 'rejected' | 'error', description = '', key = SECRET_KEY) {
+// script и key — те же, которыми подписан пришедший колбэк: FreedomPay проверяет
+// наш ответ по той же паре, а не по какой-то своей.
+function xmlResponse(
+  status: 'ok' | 'rejected' | 'error',
+  description = '',
+  key = SECRET_KEY,
+  script = 'freedompay',
+) {
   const salt = Math.random().toString(36).slice(2)
-  const sig  = buildSignature('result', { pg_status: status, pg_description: description, pg_salt: salt }, key)
+  const sig  = buildSignature(script, { pg_status: status, pg_description: description, pg_salt: salt }, key)
   const xml  = `<?xml version="1.0" encoding="utf-8"?>
 <response>
   <pg_status>${status}</pg_status>
@@ -63,16 +70,39 @@ export async function POST(req: NextRequest) {
   const { pg_sig, ...rest } = params
   if (!pg_sig) return xmlResponse('error', 'Missing pg_sig')
 
+  // Первый элемент подписи — имя вызываемого скрипта, то есть последний сегмент
+  // пути. В примерах FreedomPay колбэк-скрипт называется result.php, откуда и
+  // пошло 'result'; у нас маршрут /api/webhooks/freedompay, значит 'freedompay'.
+  // Берём из фактического пути и оставляем 'result' запасным вариантом.
+  const pathScript = new URL(req.url).pathname.split('/').filter(Boolean).pop() ?? 'freedompay'
+  const scripts = [...new Set([pathScript, 'result'])]
+
   // Терминал может подписывать колбэк ключом приёма или ключом виджета —
   // принимаем оба, оба наши.
-  const signingKey = [SECRET_KEY, WIDGET_SECRET]
-    .filter(Boolean)
-    .find(key => buildSignature('result', rest, key) === pg_sig)
+  const keys = [SECRET_KEY, WIDGET_SECRET].filter(Boolean)
+
+  let signingKey = ''
+  let signingScript = pathScript
+
+  for (const script of scripts) {
+    const match = keys.find(key => buildSignature(script, rest, key) === pg_sig)
+    if (match) { signingKey = match; signingScript = script; break }
+  }
 
   if (!signingKey) {
-    console.error('[freedompay webhook] signature mismatch')
+    // Логируем состав запроса без значений: по именам полей видно, что именно
+    // прислал провайдер, а разбирать подделки по содержимому незачем.
+    console.error(
+      `[freedompay webhook] signature mismatch | поля: ${Object.keys(params).sort().join(',')} | ` +
+      `пробовали скрипты: ${scripts.join(',')} | ключей: ${keys.length}`,
+    )
     return xmlResponse('error', 'Invalid signature')
   }
+
+  console.log(
+    `[freedompay webhook] подпись принята | скрипт=${signingScript} | ` +
+    `ключ=${signingKey === SECRET_KEY ? 'приём' : 'виджет'} | pg_result=${params.pg_result ?? 'нет'}`,
+  )
 
   // ── 2. Service-role client ─────────────────────────────────────────────────
   const url        = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -80,7 +110,7 @@ export async function POST(req: NextRequest) {
 
   if (!url || !serviceKey) {
     console.error('[freedompay webhook] Supabase service key not configured')
-    return xmlResponse('error', 'Server configuration error', signingKey)
+    return xmlResponse('error', 'Server configuration error', signingKey, signingScript)
   }
 
   const supabase = createClient(url, serviceKey, {
@@ -91,7 +121,7 @@ export async function POST(req: NextRequest) {
   const orderId = params.pg_order_id
   if (!orderId) {
     console.error('[freedompay webhook] missing pg_order_id', params)
-    return xmlResponse('error', 'Missing pg_order_id', signingKey)
+    return xmlResponse('error', 'Missing pg_order_id', signingKey, signingScript)
   }
 
   const { data: order, error: orderErr } = await supabase
@@ -102,21 +132,21 @@ export async function POST(req: NextRequest) {
 
   if (orderErr) {
     console.error('[freedompay webhook] order lookup failed:', orderErr)
-    return xmlResponse('error', 'Order lookup failed', signingKey)
+    return xmlResponse('error', 'Order lookup failed', signingKey, signingScript)
   }
 
   // Неизвестный заказ активировать не по чему. Отвечаем ok, чтобы FreedomPay не
   // уходил в бесконечные ретраи — разбираться придётся по логу вручную.
   if (!order) {
     console.error(`[freedompay webhook] unknown order ${orderId} — активация пропущена`)
-    return xmlResponse('ok', 'Unknown order', signingKey)
+    return xmlResponse('ok', 'Unknown order', signingKey, signingScript)
   }
 
   // ── 4. Результат платежа ───────────────────────────────────────────────────
   const pgResult = params.pg_result  // '1' = success, '0' = failure, '2' = partial
   if (pgResult !== '1') {
     await markFailed(supabase, orderId, `pg_result=${pgResult ?? 'none'}`)
-    return xmlResponse('ok', 'Payment not successful', signingKey)
+    return xmlResponse('ok', 'Payment not successful', signingKey, signingScript)
   }
 
   // ── 5. Сверить сумму с прайсом в коде ──────────────────────────────────────
@@ -128,7 +158,7 @@ export async function POST(req: NextRequest) {
   if (!priceRow) {
     console.error(`[freedompay webhook] unknown period ${order.period} for order ${orderId}`)
     await markFailed(supabase, orderId, 'unknown period')
-    return xmlResponse('ok', 'Unknown period', signingKey)
+    return xmlResponse('ok', 'Unknown period', signingKey, signingScript)
   }
 
   const paid     = Number(params.pg_amount)
@@ -139,7 +169,7 @@ export async function POST(req: NextRequest) {
       `[freedompay webhook] amount mismatch on ${orderId}: получено ${params.pg_amount} ${currency}, ожидалось ${priceRow.amount} KZT`,
     )
     await markFailed(supabase, orderId, `amount mismatch: ${params.pg_amount} ${currency}`)
-    return xmlResponse('ok', 'Amount mismatch', signingKey)
+    return xmlResponse('ok', 'Amount mismatch', signingKey, signingScript)
   }
 
   // ── 6. Занять заказ (идемпотентность) ──────────────────────────────────────
@@ -158,12 +188,12 @@ export async function POST(req: NextRequest) {
 
   if (claimErr) {
     console.error('[freedompay webhook] order claim failed:', claimErr)
-    return xmlResponse('error', 'Failed to claim order', signingKey)
+    return xmlResponse('error', 'Failed to claim order', signingKey, signingScript)
   }
 
   if (!claimed?.length) {
     console.log(`[freedompay webhook] order ${orderId} уже обработан (status=${order.status}) — пропуск`)
-    return xmlResponse('ok', 'Already processed', signingKey)
+    return xmlResponse('ok', 'Already processed', signingKey, signingScript)
   }
 
   // ── 7. Активировать план ───────────────────────────────────────────────────
@@ -198,7 +228,7 @@ export async function POST(req: NextRequest) {
     // Заказ уже помечен оплаченным — откатываем в 'pending', чтобы ретрай
     // FreedomPay (ответ 'error') смог довести активацию до конца.
     await supabase.from('payment_orders').update({ status: 'pending' }).eq('order_id', orderId)
-    return xmlResponse('error', 'Failed to activate subscription', signingKey)
+    return xmlResponse('error', 'Failed to activate subscription', signingKey, signingScript)
   }
 
   // ── 8. Записать платёж в историю ───────────────────────────────────────────
@@ -224,5 +254,5 @@ export async function POST(req: NextRequest) {
   }
 
   console.log(`[freedompay webhook] ${order.plan} activated for ${order.user_id} until ${expiresAt.toISOString()}`)
-  return xmlResponse('ok', `${order.plan} activated`, signingKey)
+  return xmlResponse('ok', `${order.plan} activated`, signingKey, signingScript)
 }

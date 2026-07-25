@@ -34,7 +34,7 @@ export type ProductMetrics = {
   generated_at: string
 }
 
-/** Строка из RPC recent_users() — миграция 035 */
+/** Строка из RPC recent_users() — миграции 035, 045 */
 export type RecentUser = {
   user_id: string
   email: string
@@ -43,6 +43,8 @@ export type RecentUser = {
   tournaments: number
   matches_played: number
   last_activity_at: string
+  /** Свой или тестовый аккаунт: в списке показываем, из метрик исключаем (045) */
+  is_internal: boolean
 }
 
 /** Строка из RPC metrics_timeseries() — миграция 037 */

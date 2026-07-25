@@ -267,6 +267,11 @@ export default async function AdminMetricsPage() {
                     <tr key={u.user_id} className="border-b border-gray-50 last:border-0">
                       <td className="px-4 py-3">
                         <div className="font-semibold text-gray-900 break-all">{u.email}</div>
+                        {u.is_internal && (
+                          <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-400">
+                            свой
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap tabular-nums">
                         {fmtDate(u.signed_up_at)}
@@ -290,16 +295,19 @@ export default async function AdminMetricsPage() {
 
         <p className="text-xs text-gray-400 mt-2">
           Турниров = 0 означает, что человек зарегистрировался и ушёл — это те, с кем
-          стоит поговорить в первую очередь.
+          стоит поговорить в первую очередь. Клик по плану открывает выдачу доступа:
+          используйте после оплаты через менеджера, сумма попадёт в выручку.
+          Метка «свой» — аккаунт с <code>is_internal</code>, в метриках ниже он не учитывается.
         </p>
       </section>
 
       <div className="flex items-start gap-2 text-xs text-gray-400 border-t border-gray-100 pt-4">
         <Clock size={14} className="shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          Данные считаются напрямую из базы в момент открытия страницы. Не учитываются:
-          турниры в корзине (soft delete) и аккаунты с меткой <code>profiles.is_internal</code> —
-          свои и тестовые. Ежедневная сводка приходит в Telegram в 07:00 по Астане.
+          Данные считаются напрямую из базы в момент открытия страницы. В метриках не
+          учитываются турниры в корзине (soft delete) и аккаунты с меткой{' '}
+          <code>profiles.is_internal</code> — свои и тестовые; в списке регистраций они
+          показаны с пометкой «свой». Ежедневная сводка приходит в Telegram в 07:00 по Астане.
         </p>
       </div>
     </div>

@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { Check, X, Zap, Trophy, Star, ArrowRight, Building2 } from 'lucide-react'
 import type { Metadata } from 'next'
+import { PRICES } from '@/lib/freedompay'
+import { absUrl, canonicalFor, jsonLdGraph, breadcrumbsLd, faqLd, softwareApplicationLd } from '@/lib/seo'
 
 type Lang = 'ru' | 'kz' | 'en'
 type Feature = { text: string; included: boolean }
@@ -10,8 +12,10 @@ type FaqItem = { q: string; a: string }
 
 const T = {
   ru: {
-    metaTitle: 'Тарифы — Tournable',
-    metaDescription: 'Выберите подходящий план: бесплатный Старт или профессиональный Про с Табло и неограниченными турнирами.',
+    // The root layout appends " — Tournable" via the title template, so the
+    // brand must not be repeated here.
+    metaTitle: 'Тарифы и цены: бесплатный план и Pro',
+    metaDescription: 'Сколько стоит проведение турнира: бесплатный план — 1 активный турнир и до 16 команд, Pro — 4 990 ₸ в месяц или 44 990 ₸ в год за неограниченные турниры, 64 команды, со-редакторов и брендированные отчёты.',
     login: 'Войти',
     startFree: 'Начать бесплатно',
     badge: 'Тарифы',
@@ -95,8 +99,8 @@ const T = {
     footerDashboard: 'Кабинет',
   },
   kz: {
-    metaTitle: 'Тарифтер — Tournable',
-    metaDescription: 'Қажетті жоспарды таңдаңыз: тегін Старт немесе тақтасы мен шексіз турнирлері бар кәсіби Про.',
+    metaTitle: 'Тарифтер мен бағалар: тегін жоспар және Pro',
+    metaDescription: 'Турнир өткізу қанша тұрады: тегін жоспар — 1 белсенді турнир және 16 командаға дейін, Pro — айына 4 990 ₸ немесе жылына 44 990 ₸: шектеусіз турнирлер, 64 команда, қосалқы редакторлар және брендтелген есептер.',
     login: 'Кіру',
     startFree: 'Тегін бастау',
     badge: 'Тарифтер',
@@ -180,8 +184,8 @@ const T = {
     footerDashboard: 'Кабинет',
   },
   en: {
-    metaTitle: 'Pricing — Tournable',
-    metaDescription: 'Choose the right plan: the free Starter or the professional Pro plan with a real-time scoreboard and unlimited tournaments.',
+    metaTitle: 'Pricing: free plan and Pro',
+    metaDescription: 'What running a tournament costs: the free plan covers 1 active tournament and up to 16 teams; Pro is 4,990 KZT per month or 44,990 KZT per year for unlimited tournaments, 64 teams, co-editors and branded reports.',
     login: 'Sign In',
     startFree: 'Start free',
     badge: 'Pricing',
@@ -278,6 +282,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: tx.metaTitle,
     description: tx.metaDescription,
+    alternates: canonicalFor('/pricing'),
+    openGraph: {
+      title: tx.metaTitle, description: tx.metaDescription, type: 'website',
+      url: absUrl('/pricing'), siteName: 'Tournable', images: [{ url: '/logo-green.png' }],
+    },
   }
 }
 
@@ -285,8 +294,24 @@ export default async function PricingPage() {
   const lang = await getLang()
   const tx = T[lang]
 
+  // Prices are declared as Offers so search engines can show them next to the
+  // result; the FAQ block below the table backs the FAQPage node.
+  const jsonLd = jsonLdGraph(
+    softwareApplicationLd(tx.metaDescription, [
+      { price: '0', currency: 'KZT' },
+      { price: String(PRICES.monthly.amount), currency: 'KZT' },
+      { price: String(PRICES.annual.amount), currency: 'KZT' },
+    ]),
+    faqLd(tx.faq.map(f => ({ q: f.q, a: f.a }))),
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: tx.badge, path: '/pricing' },
+    ]),
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header style={{ background: 'linear-gradient(90deg,#047857,#059669)', boxShadow: '0 2px 20px rgba(4,120,87,.25)' }}>

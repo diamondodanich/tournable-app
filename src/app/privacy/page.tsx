@@ -2,8 +2,9 @@
 import Image from 'next/image'
 
 export const metadata = {
-  title: 'Политика конфиденциальности — Tournable',
-  description: 'Политика обработки персональных данных сервиса Tournable',
+  title: 'Политика конфиденциальности',
+  description: 'Политика обработки персональных данных сервиса Tournable: какие данные собираются, зачем и кому передаются.',
+  alternates: { canonical: '/privacy' },
 }
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (

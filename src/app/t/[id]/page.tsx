@@ -13,6 +13,9 @@ import { Trophy, Plus } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getOwnerPlan } from '@/app/actions/billing'
 import type { Lang } from '@/lib/i18n'
+import { getSubtype } from '@/lib/sports'
+import { sportByPhrase, sportDisplayName } from '@/lib/sportSeo'
+import { absUrl, canonicalFor, jsonLdGraph, breadcrumbsLd, sportsEventSeriesLd } from '@/lib/seo'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -166,27 +169,51 @@ function PublicBracket({
   return <BracketColumns teams={teams} matches={matches} labelFor={ro => ROUND_LABELS[ro] ?? `Раунд ${ro}`} />
 }
 
+const FORMAT_LABELS: Record<string, string> = {
+  round_robin: 'круговой турнир', playoff: 'плей-офф', groups_playoff: 'группы и плей-офф',
+  league_playoff: 'лига и плей-офф', swiss: 'швейцарская система', leaderboard: 'таблица лидеров',
+  double_elim: 'двойное выбывание',
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const supabase = await createClient()
   const data = await getTournamentByIdOrSlug(supabase, id)
-  if (!data) return { title: 'Tournable' }
+  if (!data) return { title: 'Турнир не найден', robots: { index: false, follow: false } }
 
-  const sportLabel = data.sport ? (SPORT_LABELS[data.sport] ?? data.sport) : null
-  const description = sportLabel
-    ? `Турнир по ${sportLabel} — таблица, расписание, результаты на Tournable`
-    : 'Таблица, расписание и результаты матчей на Tournable'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
+  const { count: teamsCount } = await supabase
+    .from('teams').select('id', { count: 'exact', head: true }).eq('tournament_id', data.id)
+
+  const sportLabel = sportDisplayName(data.sport, 'ru') ?? (data.sport ? SPORT_LABELS[data.sport] ?? data.sport : null)
+  const byPhrase = sportByPhrase(data.sport)
+  const formatLabel = FORMAT_LABELS[data.format ?? 'round_robin']
+  const path = `/t/${data.slug ?? data.id}`
+
+  // Kept short: the root template appends " — Tournable", and Google truncates
+  // titles past roughly 60 characters.
+  const title = sportLabel
+    ? `${data.name}: таблица и результаты, ${sportLabel.toLowerCase()}`
+    : `${data.name}: таблица, расписание и результаты`
+  const description = [
+    byPhrase ? `Турнир ${byPhrase}` : 'Турнир',
+    teamsCount ? `${teamsCount} команд` : null,
+    formatLabel,
+    'таблица, расписание матчей, результаты и статистика игроков онлайн.',
+  ].filter(Boolean).join(' · ')
 
   return {
-    title: `${data.name} — Tournable`,
+    title,
     description,
+    alternates: canonicalFor(path),
+    // Private tournaments stay reachable by link but must never enter the index.
+    robots: data.is_public === false ? { index: false, follow: true } : { index: true, follow: true },
     openGraph: {
       title: data.name,
       description,
       type: 'website',
-      url: `${appUrl}/t/${data.slug ?? data.id}`,
+      url: absUrl(path),
       siteName: 'Tournable',
+      images: data.logo_url ? [{ url: data.logo_url }] : undefined,
     },
     twitter: { card: 'summary', title: data.name, description },
   }
@@ -233,8 +260,47 @@ export default async function PublicTournamentPage({ params }: { params: Promise
     ? [...new Set((teams ?? []).map((t: any) => t.group_name).filter(Boolean))].sort()
     : []
 
+  // ── Structured data: the tournament as a SportsEvent with its teams as
+  // competitors and played matches as sub-events. Only public tournaments emit it —
+  // a noindex page has nothing to gain and private squads should not leak.
+  const path = `/t/${tournament.slug ?? tournament.id}`
+  const sportName = sportDisplayName(tournament.sport, 'ru')
+    ?? (tournament.sport ? getSubtype(tournament.sport)?.label.ru ?? tournament.sport : null)
+  const sportBy = sportByPhrase(tournament.sport)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teamName = (tid: string | null) => (teams ?? []).find((t: any) => t.id === tid)?.name ?? null
+  const playedFixtures = (fixtures ?? []).filter((f: any) => f.played && !f.is_bye)
+  const scheduledDates = (fixtures ?? [])
+    .map((f: any) => f.scheduled_at)
+    .filter(Boolean)
+    .sort() as string[]
+
+  const jsonLd = tournament.is_public === false ? null : jsonLdGraph(
+    sportsEventSeriesLd({
+      name: tournament.name,
+      path,
+      sport: sportName,
+      startDate: scheduledDates[0] ?? tournament.created_at ?? null,
+      endDate: scheduledDates[scheduledDates.length - 1] ?? null,
+      description: sportBy ? `Турнир ${sportBy}: таблица, расписание и результаты матчей.` : null,
+      logoUrl: tournament.logo_url ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      competitors: (teams ?? []).map((t: any) => ({ name: t.name })),
+      subEvents: playedFixtures.slice(0, 50).map((f: any) => ({
+        name: `${teamName(f.home_team_id) ?? '—'} ${f.home_score}:${f.away_score} ${teamName(f.away_team_id) ?? '—'}`,
+        startDate: f.scheduled_at ?? null,
+      })),
+    }),
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: 'Турниры', path: '/tournaments' },
+      { name: tournament.name, path },
+    ]),
+  )
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 50%,#ffffff 100%)' }}>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-emerald-100 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -255,6 +321,11 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           <TeamAvatar name={tournament.name} logoUrl={tournament.logo_url} size={56} />
           <div>
             <h1 className="text-2xl font-black text-gray-900 leading-tight">{tournament.name}</h1>
+            <p className="mt-1 text-sm font-semibold text-gray-500">
+              {[sportName, FORMAT_LABELS[fmt], (teams ?? []).length ? `${(teams ?? []).length} команд` : null]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
           </div>
         </div>
 

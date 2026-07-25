@@ -2,8 +2,9 @@
 import Image from 'next/image'
 
 export const metadata = {
-  title: 'Пользовательское соглашение — Tournable',
-  description: 'Условия использования сервиса Tournable',
+  title: 'Пользовательское соглашение',
+  description: 'Условия использования сервиса Tournable: права и обязанности сторон, тарифы, оплата и возврат, ответственность.',
+  alternates: { canonical: '/terms' },
 }
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (

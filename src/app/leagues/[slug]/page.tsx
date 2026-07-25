@@ -6,6 +6,8 @@ import type { Team, Fixture } from '@/types'
 import { getSportTheme } from '@/lib/sports'
 import { getChampionshipPlayerStats, getChampionshipTeamStats, type ChampPlayerStat, type ChampTeamStat } from '@/app/actions/leagues'
 import LeaguePublicView from './LeaguePublicView'
+import { jsonLdGraph, breadcrumbsLd, sportsOrganizationLd, itemListLd } from '@/lib/seo'
+import { sportByPhrase, sportDisplayName } from '@/lib/sportSeo'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -43,15 +45,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const supabase = await createClient()
   const { slug } = await params
   const { data: l } = await supabase.from('leagues').select('name, description, sport, city, meta_title, meta_description, logo_url').eq('slug', slug).eq('is_public', true).maybeSingle()
-  if (!l) return { title: 'Лига не найдена' }
-  const sport = l.sport ? SPORT_LABELS[await getLang()][l.sport] : null
-  const title = l.meta_title ?? `${l.name}${sport ? ` — ${sport}` : ''}${l.city ? ` (${l.city})` : ''}`
-  const description = l.meta_description ?? l.description ?? `Турнирная таблица, команды и история сезонов — ${l.name}.`
+  if (!l) return { title: 'Чемпионат не найден', robots: { index: false, follow: false } }
+  const sport = l.sport ? sportDisplayName(l.sport, await getLang()) ?? SPORT_LABELS[await getLang()][l.sport] : null
+  const sportBy = sportByPhrase(l.sport)
+  // Skip the sport suffix when the championship name already contains it.
+  const showSport = sport && !l.name.toLowerCase().includes(sport.toLowerCase())
+  const title = l.meta_title
+    ?? `${l.name}${showSport ? ` — ${sport}` : ''}${l.city ? `, ${l.city}` : ''}: таблица, команды и результаты`
+  const description = l.meta_description ?? l.description
+    ?? `${l.name}${sportBy ? ` — чемпионат ${sportBy}` : ''}${l.city ? ` в городе ${l.city}` : ''}. Турнирная таблица, календарь матчей, составы команд, статистика игроков и история сезонов.`
   const images = l.logo_url ? [{ url: l.logo_url }] : undefined
   return {
     title, description,
     alternates: { canonical: `/leagues/${slug}` },
-    openGraph: { title, description, type: 'website', url: `${APP_URL}/leagues/${slug}`, images },
+    openGraph: { title, description, type: 'website', url: `${APP_URL}/leagues/${slug}`, images, siteName: 'Tournable' },
     twitter: { card: 'summary_large_image', title, description, images: l.logo_url ? [l.logo_url] : undefined },
   }
 }
@@ -123,7 +130,31 @@ export default async function LeaguePublicPage({
   const lang = await getLang()
   const brand = getSportTheme(league.sport).primary
 
+  const leaguePath = `/leagues/${slug}`
+  const jsonLd = jsonLdGraph(
+    sportsOrganizationLd({
+      name: league.name,
+      path: leaguePath,
+      sport: league.sport ? SPORT_LABELS.ru[league.sport] ?? league.sport : null,
+      city: league.city,
+      logoUrl: league.logo_url,
+      description: league.description,
+    }),
+    // The standings table as an ordered list — this is what Google reads when it
+    // shows "positions" for a competition.
+    standings.length
+      ? itemListLd(standings.map(r => ({ name: r.name, path: r.href })))
+      : null,
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: 'Чемпионаты', path: '/leagues' },
+      { name: league.name, path: leaguePath },
+    ]),
+  )
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     <LeaguePublicView
       league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug }}
       brand={brand}
@@ -138,5 +169,6 @@ export default async function LeaguePublicPage({
       teamStats={teamStats as ChampTeamStat[]}
       lang={lang}
     />
+    </>
   )
 }

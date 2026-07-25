@@ -3,7 +3,8 @@ import { XCircle, RefreshCw } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Оплата не прошла — Tournable',
+  title: 'Оплата не прошла',
+  robots: { index: false, follow: false },
 }
 
 export default function CheckoutFailPage() {

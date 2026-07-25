@@ -2,21 +2,72 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { absUrl, canonicalFor, jsonLdGraph, breadcrumbsLd, sportsEventLd } from '@/lib/seo'
+import { sportDisplayName } from '@/lib/sportSeo'
+
+/**
+ * A fixture only belongs on `/leagues/<slug>/matches/...` if its tournament is a
+ * season of that league. Without the check the same match resolves under every
+ * league slug — duplicate URLs for one page, and other people's fixtures readable
+ * through your slug.
+ */
+async function getLeagueForFixture(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tournamentId: string | null,
+  slug: string,
+) {
+  if (!tournamentId) return null
+  const { data } = await supabase
+    .from('seasons')
+    .select('name, leagues!inner(name, slug, sport, is_public)')
+    .eq('tournament_id', tournamentId)
+    .eq('leagues.slug', slug)
+    .maybeSingle()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const league = (data as any)?.leagues
+  if (!league) return null
+  return { seasonName: data?.name as string | undefined, league }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; matchId: string }> }): Promise<Metadata> {
   const supabase = await createClient()
-  const { matchId } = await params
+  const { slug, matchId } = await params
   const { data: f } = await supabase
     .from('fixtures')
-    .select('home_score, away_score, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)')
+    .select('tournament_id, matchday, scheduled_at, played, home_score, away_score, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)')
     .eq('id', matchId)
     .maybeSingle()
 
-  if (!f) return { title: 'Матч не найден' }
+  if (!f) return { title: 'Матч не найден', robots: { index: false, follow: false } }
+  const ctx = await getLeagueForFixture(supabase, f.tournament_id, slug)
+  if (!ctx) return { title: 'Матч не найден', robots: { index: false, follow: false } }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const home = (f as any).home_team?.name ?? '?'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const away = (f as any).away_team?.name ?? '?'
-  const score = f.home_score != null ? ` ${f.home_score}:${f.away_score}` : ''
-  return { title: `${home}${score} — ${away}` }
+  const score = f.played && f.home_score != null ? `${f.home_score}:${f.away_score}` : 'vs'
+  const sport = sportDisplayName(ctx.league.sport, 'ru')
+  const path = `/leagues/${slug}/matches/${matchId}`
+
+  const title = `${home} ${score} ${away} — ${ctx.league.name}`
+  const description = [
+    `${home} — ${away}`,
+    f.played ? `счёт ${f.home_score}:${f.away_score}.` : 'предстоящий матч.',
+    sport ? `${sport},` : null,
+    ctx.league.name,
+    ctx.seasonName ? `· ${ctx.seasonName}` : null,
+    '— состав, события матча и статистика.',
+  ].filter(Boolean).join(' ')
+
+  return {
+    title,
+    description,
+    alternates: canonicalFor(path),
+    robots: ctx.league.is_public === false ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: { title, description, type: 'article', url: absUrl(path), siteName: 'Tournable' },
+    twitter: { card: 'summary', title, description },
+  }
 }
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ slug: string; matchId: string }> }) {
@@ -36,6 +87,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ sl
 
   if (!fixture) notFound()
 
+  const ctx = await getLeagueForFixture(supabase, fixture.tournament_id, slug)
+  if (!ctx) notFound()
+
   const home = (fixture as any).home_team
   const away = (fixture as any).away_team
   const events = ((fixture as any).match_events ?? []) as { id: string; type: string; minute: number | null; player_name: string; team_id: string }[]
@@ -49,13 +103,40 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ sl
     yellow_card: 'text-yellow-400', red_card: 'text-red-500',
   }
 
+  const matchPath = `/leagues/${slug}/matches/${matchId}`
+  const scoreLabel = fixture.played && fixture.home_score != null ? `${fixture.home_score}:${fixture.away_score}` : 'vs'
+  const jsonLd = jsonLdGraph(
+    sportsEventLd({
+      name: `${home?.name ?? '?'} ${scoreLabel} ${away?.name ?? '?'}`,
+      path: matchPath,
+      sport: sportDisplayName(ctx.league.sport, 'ru') ?? ctx.league.sport ?? null,
+      startDate: (fixture as any).scheduled_at ?? null,
+      homeName: home?.name ?? '?',
+      awayName: away?.name ?? '?',
+      organizerName: ctx.league.name,
+      organizerPath: `/leagues/${slug}`,
+    }),
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: 'Чемпионаты', path: '/leagues' },
+      { name: ctx.league.name, path: `/leagues/${slug}` },
+      { name: `${home?.name ?? '?'} — ${away?.name ?? '?'}`, path: matchPath },
+    ]),
+  )
+
   return (
     <div className="min-h-screen bg-[#0f0f11] text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <div className="border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
           <Link href={`/leagues/${slug}`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">
-            ← Лига
+            ← {ctx.league.name}
           </Link>
+          {/* The scoreline below is laid out visually; crawlers and screen readers
+              still need one real heading for the page. */}
+          <h1 className="sr-only">
+            {home?.name ?? '?'} {scoreLabel} {away?.name ?? '?'} — {ctx.league.name}
+          </h1>
 
           <div className="flex items-center justify-around py-6">
             <div className="text-center flex-1">

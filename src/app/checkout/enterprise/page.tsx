@@ -29,8 +29,9 @@ const T = {
 } as const
 
 export const metadata: Metadata = {
-  title: 'Подключить Enterprise — Tournable',
+  title: 'Подключить Enterprise',
   description: 'Enterprise для федераций и лиг. Чемпионаты с сезонами, профили игроков, углублённая статистика.',
+  robots: { index: false, follow: false },
 }
 
 export default async function EnterpriseCheckoutPage() {

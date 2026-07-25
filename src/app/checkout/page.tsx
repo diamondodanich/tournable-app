@@ -26,8 +26,10 @@ const T = {
 } as const
 
 export const metadata: Metadata = {
-  title: 'Оформление Про — Tournable',
+  title: 'Оформление Про',
   description: 'Перейдите на тариф Про и получите неограниченные турниры, Табло и до 64 команд.',
+  // Behind auth and disallowed in robots.txt — keep the meta tag consistent with it.
+  robots: { index: false, follow: false },
 }
 
 export default async function CheckoutPage() {

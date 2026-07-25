@@ -7,7 +7,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase.from('tournaments').select('name').eq('id', id).single()
-  return { title: data ? `Табло — ${data.name}` : 'Табло' }
+  // Transient state (one match in progress) multiplied by ?home/?away/?fixture
+  // query params — nothing here is worth indexing, and it would dilute the
+  // tournament page it belongs to.
+  return {
+    title: data ? `Табло — ${data.name}` : 'Табло',
+    robots: { index: false, follow: true },
+  }
 }
 
 export default async function LivePage({

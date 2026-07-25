@@ -5,6 +5,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getChampionshipPlayerStats } from '@/app/actions/leagues'
 import { getEventDefs, getPositionLabel } from '@/lib/sports'
+import { absUrl, canonicalFor } from '@/lib/seo'
+import { sportByPhrase } from '@/lib/sportSeo'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app'
 
@@ -22,9 +24,16 @@ const PT = {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const supabase = await createClient()
   const { slug } = await params
-  const { data: l } = await supabase.from('leagues').select('name').eq('slug', slug).eq('is_public', true).maybeSingle()
-  if (!l) return { title: 'Лига не найдена' }
-  return { title: `Игроки — ${l.name}`, description: `Состав всех команд лиги ${l.name}.` }
+  const { data: l } = await supabase.from('leagues').select('name, sport').eq('slug', slug).eq('is_public', true).maybeSingle()
+  if (!l) return { title: 'Чемпионат не найден', robots: { index: false, follow: false } }
+  const sportBy = sportByPhrase(l.sport)
+  const title = `Игроки чемпионата «${l.name}» — составы команд и статистика`
+  const description = `Все игроки чемпионата «${l.name}»${sportBy ? ` ${sportBy}` : ''}: составы команд, бомбардиры и ассистенты за всю историю турнира.`
+  return {
+    title, description,
+    alternates: canonicalFor(`/leagues/${slug}/players`),
+    openGraph: { title, description, type: 'website', url: absUrl(`/leagues/${slug}/players`), siteName: 'Tournable' },
+  }
 }
 
 export default async function LeaguePlayersPage({ params }: { params: Promise<{ slug: string }> }) {

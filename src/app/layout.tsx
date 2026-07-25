@@ -26,7 +26,10 @@ export const metadata: Metadata = {
   ],
   applicationName: 'Tournable',
   authors: [{ name: 'Tournable' }],
-  alternates: { canonical: '/' },
+  // NB: no `alternates` here on purpose. Next merges metadata shallowly down the
+  // segment tree, so a root-level `canonical: '/'` is inherited by every page that
+  // doesn't set its own — pointing tournaments, teams and players at the homepage
+  // and dropping them from the index. Each public page sets its own canonical.
   openGraph: {
     type: 'website',
     siteName: 'Tournable',

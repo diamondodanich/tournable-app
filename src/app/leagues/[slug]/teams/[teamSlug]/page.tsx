@@ -2,8 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getSportTheme } from '@/lib/sports'
+import { getSportTheme, getSubtype } from '@/lib/sports'
 import TeamProfileView from './TeamProfileView'
+import { absUrl, canonicalFor, jsonLdGraph, breadcrumbsLd, sportsTeamLd } from '@/lib/seo'
+import { sportByPhrase, sportDisplayName } from '@/lib/sportSeo'
 
 type Lang = 'ru' | 'kz' | 'en'
 async function getLang(): Promise<Lang> {
@@ -16,11 +18,34 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug, teamSlug } = await params
   const { data: t } = await supabase
     .from('league_teams')
-    .select('name, leagues!inner(slug)')
+    .select('name, city, logo_url, leagues!inner(name, slug, sport)')
     .eq('slug', teamSlug)
     .eq('leagues.slug', slug)
     .maybeSingle()
-  return { title: t ? `${t.name} — профиль команды` : 'Команда не найдена' }
+  if (!t) return { title: 'Команда не найдена', robots: { index: false, follow: false } }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const league = (t as any).leagues
+  const sportBy = sportByPhrase(league?.sport)
+  const path = `/leagues/${slug}/teams/${teamSlug}`
+  const title = `${t.name} — состав, статистика и результаты${league?.name ? ` · ${league.name}` : ''}`
+  const description = [
+    `${t.name}${t.city ? ` (${t.city})` : ''} —`,
+    sportBy ? `команда ${sportBy}` : 'команда',
+    league?.name ? `в чемпионате «${league.name}».` : '.',
+    'Состав игроков, статистика по сезонам, календарь и результаты матчей.',
+  ].filter(Boolean).join(' ').replace(' .', '.')
+
+  return {
+    title,
+    description,
+    alternates: canonicalFor(path),
+    openGraph: {
+      title, description, type: 'website', url: absUrl(path), siteName: 'Tournable',
+      images: t.logo_url ? [{ url: t.logo_url }] : undefined,
+    },
+    twitter: { card: 'summary', title, description },
+  }
 }
 
 type SeasonRecord = { seasonName: string; position: number | null; GP: number; W: number; D: number; L: number; Pts: number }
@@ -103,7 +128,29 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
 
   const brand = getSportTheme(league.sport).primary
 
+  const teamPath = `/leagues/${slug}/teams/${teamSlug}`
+  const jsonLd = jsonLdGraph(
+    sportsTeamLd({
+      name: team.name,
+      path: teamPath,
+      sport: sportDisplayName(league.sport, 'ru') ?? (league.sport ? getSubtype(league.sport)?.label.ru ?? league.sport : null),
+      city: team.city ?? null,
+      logoUrl: team.logo_url ?? null,
+      leagueName: league.name,
+      leaguePath: `/leagues/${slug}`,
+      athletes: players.map(p => ({ name: p.name, path: `/leagues/${slug}/players/${p.id}` })),
+    }),
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: 'Чемпионаты', path: '/leagues' },
+      { name: league.name, path: `/leagues/${slug}` },
+      { name: team.name, path: teamPath },
+    ]),
+  )
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     <TeamProfileView
       slug={slug}
       leagueId={league.id}
@@ -119,5 +166,6 @@ export default async function TeamProfilePage({ params }: { params: Promise<{ sl
       lang={lang}
       isOwner={isOwner}
     />
+    </>
   )
 }

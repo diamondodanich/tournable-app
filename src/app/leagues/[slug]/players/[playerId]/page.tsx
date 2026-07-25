@@ -3,7 +3,9 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getEventDefs, getPositionLabel, type EventIcon } from '@/lib/sports'
+import { getEventDefs, getPositionLabel, getSubtype, type EventIcon } from '@/lib/sports'
+import { absUrl, canonicalFor, jsonLdGraph, breadcrumbsLd, athleteLd } from '@/lib/seo'
+import { sportDisplayName } from '@/lib/sportSeo'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -50,15 +52,40 @@ const PT = {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; playerId: string }> }): Promise<Metadata> {
   const supabase = await createClient()
-  const { playerId } = await params
-  const { data: p } = await supabase.from('players').select('name, league_teams(name, leagues(name))').eq('id', playerId).maybeSingle()
-  const name = p?.name ?? 'Игрок'
-  const team = (p as any)?.league_teams?.name
-  const league = (p as any)?.league_teams?.leagues?.name
-  const desc = [team, league].filter(Boolean).join(' · ')
+  const { slug, playerId } = await params
+  const { data: p } = await supabase
+    .from('players')
+    .select('name, number, position, photo_url, league_teams(name, leagues(name, sport))')
+    .eq('id', playerId)
+    .maybeSingle()
+  if (!p) return { title: 'Игрок не найден', robots: { index: false, follow: false } }
+
+  const name = p.name
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lt = (p as any).league_teams
+  const team = lt?.name as string | undefined
+  const league = lt?.leagues?.name as string | undefined
+  const sport = sportDisplayName(lt?.leagues?.sport, 'ru')
+  const path = `/leagues/${slug}/players/${playerId}`
+
+  const title = `${name}${team ? ` — ${team}` : ''}${league ? `, ${league}` : ''}: статистика игрока`
+  const affiliation = [team, league].filter(Boolean).join(', ')
+  const description = [
+    `${name}${p.number != null ? ` (№${p.number})` : ''}`,
+    sport ? `— ${sport.toLowerCase()}.` : '—',
+    affiliation ? `${affiliation}.` : null,
+    'Матчи, голы, передачи и карточки по сезонам.',
+  ].filter(Boolean).join(' ')
+
   return {
-    title: `${name}${league ? ` — ${league}` : ''}`,
-    description: desc ? `Статистика игрока ${name}: ${desc}. Голы, передачи и карточки по сезонам.` : undefined,
+    title,
+    description,
+    alternates: canonicalFor(path),
+    openGraph: {
+      title, description, type: 'profile', url: absUrl(path), siteName: 'Tournable',
+      images: p.photo_url ? [{ url: p.photo_url }] : undefined,
+    },
+    twitter: { card: 'summary', title, description },
   }
 }
 
@@ -179,8 +206,30 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const seasonStats = [...bySeason.values()]
   const seasonsPlayed = seasonStats.length
 
+  const playerPath = `/leagues/${slug}/players/${playerId}`
+  const jsonLd = jsonLdGraph(
+    athleteLd({
+      name: player.name,
+      path: playerPath,
+      photoUrl: player.photo_url ?? null,
+      teamName: leagueTeam?.name ?? null,
+      teamPath: leagueTeam?.slug ? `/leagues/${slug}/teams/${leagueTeam.slug}` : null,
+      sport: sportDisplayName(league.sport, 'ru') ?? (league.sport ? getSubtype(league.sport)?.label.ru ?? league.sport : null),
+      jerseyNumber: player.number,
+      position: getPositionLabel(league.sport, player.position, 'ru') || null,
+    }),
+    breadcrumbsLd([
+      { name: 'Tournable', path: '/' },
+      { name: 'Чемпионаты', path: '/leagues' },
+      { name: league.name, path: `/leagues/${slug}` },
+      { name: tx.players, path: `/leagues/${slug}/players` },
+      { name: player.name, path: playerPath },
+    ]),
+  )
+
   return (
     <div className="min-h-screen bg-[#0f0f11] text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <div className="border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
           <Link href={`/leagues/${slug}/players`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">

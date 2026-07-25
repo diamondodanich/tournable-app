@@ -7,6 +7,7 @@ import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2,
 import { SoccerBall, BasketballBall, HockeyPuck, TennisRacket, ChessPawn, MmaGlove, Horse, AmericanFootball } from '@/components/icons/sport-icons'
 import SupportWidget from './SupportWidget'
 import { setLangCookie } from '@/app/actions/lang'
+import { sportsByCategory, langPrefix } from '@/lib/sportSeo'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lang = 'ru' | 'kz' | 'en'
@@ -118,8 +119,8 @@ const T = {
     cta: { h2: 'Ваш следующий турнир — уже сегодня.', sub: 'Минута на регистрацию. Турнир готов. Участники в шоке от уровня.', btn: 'Начать бесплатно' },
     footer: {
       tagline: 'Создайте первый турнир меньше 1 минуты. Статистика, Табло и плей-офф — всё считается само.',
-      cols: { product: 'Продукт', platform: 'Платформа', connect: 'Связь' },
-      links: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', register: 'Регистрация', pro: 'Тариф PRO' },
+      cols: { product: 'Продукт', platform: 'Платформа', connect: 'Связь', sports: 'Виды спорта' },
+      links: { features: 'Возможности', pricing: 'Тарифы', contact: 'Контакты', login: 'Войти', register: 'Регистрация', pro: 'Тариф PRO', tournaments: 'Турниры', leagues: 'Чемпионаты', allSports: 'Все виды спорта' },
       legal: '© 2026 Tournable. Все права защищены.',
       privacy: 'Политика конфиденциальности', terms: 'Пользовательское соглашение',
     },
@@ -230,8 +231,8 @@ const T = {
     cta: { h2: 'Келесі турниріңіз — бүгін.', sub: 'Тіркелу — бір минут. Турнир дайын. Қатысушылар деңгейден таң қалады.', btn: 'Тегін бастау' },
     footer: {
       tagline: 'Алғашқы турнирді 1 минуттан аз уақытта жасаңыз. Статистика, Тақта және плей-офф — бәрі автоматты.',
-      cols: { product: 'Өнім', platform: 'Платформа', connect: 'Байланыс' },
-      links: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', register: 'Тіркелу', pro: 'PRO тарифі' },
+      cols: { product: 'Өнім', platform: 'Платформа', connect: 'Байланыс', sports: 'Спорт түрлері' },
+      links: { features: 'Мүмкіндіктер', pricing: 'Тарифтер', contact: 'Байланыс', login: 'Кіру', register: 'Тіркелу', pro: 'PRO тарифі', tournaments: 'Турнирлер', leagues: 'Чемпионаттар', allSports: 'Барлық спорт түрлері' },
       legal: '© 2026 Tournable. Барлық құқықтар қорғалған.',
       privacy: 'Құпиялылық саясаты', terms: 'Пайдаланушы келісімі',
     },
@@ -342,8 +343,8 @@ const T = {
     cta: { h2: 'Your next tournament starts today.', sub: 'One minute to sign up. Tournament ready. Participants blown away by the level.', btn: 'Start for free' },
     footer: {
       tagline: 'Create your first tournament in under a minute. Stats, scoreboard and playoff — all automated.',
-      cols: { product: 'Product', platform: 'Platform', connect: 'Connect' },
-      links: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', register: 'Sign Up', pro: 'PRO Plan' },
+      cols: { product: 'Product', platform: 'Platform', connect: 'Connect', sports: 'Sports' },
+      links: { features: 'Features', pricing: 'Pricing', contact: 'Contact', login: 'Sign In', register: 'Sign Up', pro: 'PRO Plan', tournaments: 'Tournaments', leagues: 'Championships', allSports: 'All sports' },
       legal: '© 2026 Tournable. All rights reserved.',
       privacy: 'Privacy Policy', terms: 'Terms of Service',
     },
@@ -1100,6 +1101,15 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 {([['#features', tx.footer.links.features], ['#pricing', tx.footer.links.pricing], ['#contact', tx.footer.links.contact]] as [string,string][]).map(([href, label]) => (
                   <li key={href}><a href={href} className="text-sm text-gray-500 hover:text-white transition-colors">{label}</a></li>
                 ))}
+                {/* Catalogue hubs: without a link from here the tournament,
+                    championship and sport pages are reachable only via sitemap. */}
+                {([
+                  [`${langPrefix(lang)}/tournaments`, tx.footer.links.tournaments],
+                  [`${langPrefix(lang)}/leagues`, tx.footer.links.leagues],
+                  [`${langPrefix(lang)}/sports`, tx.footer.links.allSports],
+                ] as [string, string][]).map(([href, label]) => (
+                  <li key={href}><Link href={href} className="text-sm text-gray-500 hover:text-white transition-colors">{label}</Link></li>
+                ))}
               </ul>
             </div>
 
@@ -1122,6 +1132,18 @@ export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitia
                 <li><a href="mailto:info@tournable.app" className="text-sm text-gray-500 hover:text-white transition-colors">info@tournable.app</a></li>
               </ul>
             </div>
+          </div>
+
+          {/* Sport landing pages — one hop from the homepage to every discipline */}
+          <div className="border-t border-gray-800 pt-8 mb-8">
+            <h4 className="text-xs font-black text-white mb-4 uppercase tracking-widest">{tx.footer.cols.sports}</h4>
+            <ul className="flex flex-wrap gap-x-5 gap-y-2.5">
+              {sportsByCategory(lang).flatMap(g => g.items).map(item => (
+                <li key={item.slug}>
+                  <Link href={item.path} className="text-sm text-gray-500 hover:text-white transition-colors">{item.name}</Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">

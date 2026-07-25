@@ -8,7 +8,8 @@ import { PaymentPending } from '@/components/checkout/PaymentPending'
 // Нейтральный заголовок: на этой же странице живёт экран ожидания, и обещать
 // «успешно» во вкладке до подтверждения webhook нельзя.
 export const metadata: Metadata = {
-  title: 'Оплата — Tournable',
+  title: 'Оплата',
+  robots: { index: false, follow: false },
 }
 
 export default async function CheckoutSuccessPage({

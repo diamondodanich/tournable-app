@@ -13,13 +13,12 @@ export const APP_URL     = process.env.NEXT_PUBLIC_APP_URL    ?? 'https://tourna
 export const GATEWAY_URL = 'https://api.freedompay.kz/v2/payment/purchase'
 
 // Plan pricing
-// TEMP-TEST-PRICE: месячный Pro временно стоит 100 ₸ — проверяем боевой эквайринг
-// живой картой (2026-07-25). На 1 ₸ FreedomPay отвечал «Ошибка комиссии»: процент
-// от такой суммы не считается. Вернуть 4990 сразу после теста. Значение ОБЯЗАНО
-// совпадать с MONTHLY_PRICE в CheckoutForm.tsx: оттуда сумма уходит в SDK, а
-// отсюда webhook её проверяет. Разойдутся — платёж отобьётся как amount mismatch.
+// Plan pricing
+// Внимание: значение monthly обязано совпадать с MONTHLY_PRICE в
+// CheckoutForm.tsx — оттуда сумма уходит в SDK, а отсюда webhook её проверяет.
+// Разойдутся — платёж отобьётся как amount mismatch.
 export const PRICES = {
-  monthly: { amount: 100,   months: 1  },
+  monthly: { amount: 4990,  months: 1  },
   annual:  { amount: 44990, months: 12 },
 } as const
 

@@ -6,17 +6,12 @@ import { CardPaymentForm } from './CardPaymentForm'
 
 type Lang = 'ru' | 'kz' | 'en'
 
-// TEMP-TEST-PRICE: месячный Pro временно стоит 100 ₸ — проверяем боевой эквайринг
-// живой картой (2026-07-25). На 1 ₸ FreedomPay отвечал «Ошибка комиссии». Вернуть
-// 4990 сразу после теста. Значение ОБЯЗАНО совпадать с PRICES.monthly в
-// src/lib/freedompay.ts: отсюда сумма уходит в SDK, оттуда webhook её проверяет.
+// Внимание: MONTHLY_PRICE обязана совпадать с PRICES.monthly в
+// src/lib/freedompay.ts — отсюда сумма уходит в SDK, оттуда webhook её проверяет.
 // Разойдутся — платёж отобьётся как amount mismatch.
-const MONTHLY_PRICE = 100
-// TEMP-TEST-PRICE: витрина годового тарифа считает выгоду от настоящей цены,
-// иначе скидка уходит в минус. Удалить вместе с временной ценой.
-const REGULAR_MONTHLY_PRICE = 4990
+const MONTHLY_PRICE = 4990
 const ANNUAL_PRICE = 44990
-const ANNUAL_DISCOUNT = REGULAR_MONTHLY_PRICE * 12 - ANNUAL_PRICE
+const ANNUAL_DISCOUNT = MONTHLY_PRICE * 12 - ANNUAL_PRICE
 
 const T = {
   ru: {
@@ -240,7 +235,7 @@ export function CheckoutForm({ userEmail, lang = 'ru' }: Props) {
             <>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">{tx.lineYear}</span>
-                <span className="text-sm text-gray-400 line-through">{(REGULAR_MONTHLY_PRICE * 12).toLocaleString('ru-RU')} ₸</span>
+                <span className="text-sm text-gray-400 line-through">{(MONTHLY_PRICE * 12).toLocaleString('ru-RU')} ₸</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-emerald-600 font-bold">{tx.discountLine}</span>

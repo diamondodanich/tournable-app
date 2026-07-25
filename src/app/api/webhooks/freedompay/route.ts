@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { buildSignature, SECRET_KEY, PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/freedompay'
+import { buildSignature, SECRET_KEY, WIDGET_SECRET, PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/freedompay'
 
 export const runtime = 'nodejs'
 
 // ── Helper: build XML response ────────────────────────────────────────────────
-function xmlResponse(status: 'ok' | 'rejected' | 'error', description = '') {
+function xmlResponse(status: 'ok' | 'rejected' | 'error', description = '', key = SECRET_KEY) {
   const salt = Math.random().toString(36).slice(2)
-  const sig  = buildSignature('result', { pg_status: status, pg_description: description, pg_salt: salt })
+  const sig  = buildSignature('result', { pg_status: status, pg_description: description, pg_salt: salt }, key)
   const xml  = `<?xml version="1.0" encoding="utf-8"?>
 <response>
   <pg_status>${status}</pg_status>
@@ -38,8 +38,13 @@ export async function POST(req: NextRequest) {
   const { pg_sig, ...rest } = params
   if (!pg_sig) return xmlResponse('error', 'Missing pg_sig')
 
-  const expected = buildSignature('result', rest, SECRET_KEY)
-  if (expected !== pg_sig) {
+  // Терминал может подписывать колбэк ключом приёма или ключом виджета —
+  // принимаем оба, оба наши.
+  const signingKey = [SECRET_KEY, WIDGET_SECRET]
+    .filter(Boolean)
+    .find(key => buildSignature('result', rest, key) === pg_sig)
+
+  if (!signingKey) {
     console.error('[freedompay webhook] signature mismatch')
     return xmlResponse('error', 'Invalid signature')
   }
@@ -48,7 +53,7 @@ export async function POST(req: NextRequest) {
   const pgResult = params.pg_result  // '1' = success, '0' = failure, '2' = partial
   if (pgResult !== '1') {
     // Payment failed or incomplete — acknowledge without activating
-    return xmlResponse('ok', 'Payment not successful')
+    return xmlResponse('ok', 'Payment not successful', signingKey)
   }
 
   // ── 3. Extract our custom params ──────────────────────────────────────────
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   if (!userId || !planPeriod || !(planPeriod in PRICES)) {
     console.error('[freedompay webhook] missing user_id or plan_period', params)
-    return xmlResponse('error', 'Missing user_id or plan_period')
+    return xmlResponse('error', 'Missing user_id or plan_period', signingKey)
   }
 
   // ── 4. Activate plan ──────────────────────────────────────────────────────
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   if (!url || !serviceKey) {
     console.error('[freedompay webhook] Supabase service key not configured')
-    return xmlResponse('error', 'Server configuration error')
+    return xmlResponse('error', 'Server configuration error', signingKey)
   }
 
   const supabase = createClient(url, serviceKey, {
@@ -93,7 +98,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error(`[freedompay webhook] failed to activate ${planType}:`, error)
-    return xmlResponse('error', 'Failed to activate subscription')
+    return xmlResponse('error', 'Failed to activate subscription', signingKey)
   }
 
   // ── 5. Record payment in subscriptions table ──────────────────────────────
@@ -108,5 +113,5 @@ export async function POST(req: NextRequest) {
   if (subErr) console.error('[freedompay webhook] subscriptions insert:', subErr)
 
   console.log(`[freedompay webhook] ${planType} activated for ${userId} until ${expiresAt.toISOString()}`)
-  return xmlResponse('ok', `${planType} activated`)
+  return xmlResponse('ok', `${planType} activated`, signingKey)
 }

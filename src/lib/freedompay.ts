@@ -3,6 +3,10 @@ import crypto from 'crypto'
 // ── Constants ─────────────────────────────────────────────────────────────────
 export const MERCHANT_ID = process.env.FREEDOMPAY_MERCHANT_ID ?? ''
 export const SECRET_KEY  = process.env.FREEDOMPAY_SECRET_KEY  ?? ''
+// Кабинет выдаёт два ключа приёма: «секретный для приема» и «секретный для
+// виджета». Каким подписан колбэк JS SDK — зависит от того, как заведён
+// терминал, поэтому webhook проверяет подпись против обоих.
+export const WIDGET_SECRET = process.env.FREEDOMPAY_WIDGET_SECRET ?? ''
 export const APP_URL     = process.env.NEXT_PUBLIC_APP_URL    ?? 'https://tournable.app'
 
 // FreedomPay gateway — browser POSTs here directly (Cloudflare blocks server-side calls)

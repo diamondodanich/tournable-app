@@ -9,7 +9,8 @@ import type { PlanPeriod, PlanType } from '@/lib/freedompay'
 // so switching to the production terminal is an env var change, not a code change.
 const WIDGET_TOKEN = process.env.NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN ?? 'OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP'
 const SDK_URL = 'https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js'
-// SDK-wide transport key, same for every merchant/environment — not env-specific.
+// Публичный ключ пары «Ключи для js sdk» из кабинета FreedomPay (my.freedompay.kz/dev).
+// Сверен с боевыми ключами 2026-07-24 — совпадает, при переводе в прод не менялся.
 const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj04TlTFEhwJDaXO6NoNr
 /7h72RAeGChRkBPvgTTOSxGmHTpEC9MwtiyE/Qk7lBhyj9DwT2JsmiP1Se4m+8lG
@@ -81,10 +82,10 @@ const T = {
   },
 } as const
 
-// Gateway is not live yet (FreedomPay production terminal pending, ~7 business
-// days as of 2026-07-03) → show the button as "coming soon" and route users to
-// the manager (WhatsApp). Flip to true once the production token is in .env/Vercel.
-const CARD_PAYMENTS_ENABLED = false
+// FreedomPay перевёл аккаунт в боевой режим 2026-07-24 — приём карт включён.
+// Оставлено флагом-рубильником: если шлюз начнёт сыпать ошибками, ставим false
+// и чекаут снова уводит на менеджера (WhatsApp) без деплоя логики.
+const CARD_PAYMENTS_ENABLED = true
 
 const GRADIENTS: Record<PlanType, string> = {
   pro:        'linear-gradient(135deg,#047857,#10b981)',

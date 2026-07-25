@@ -105,12 +105,17 @@ Values in `tournaments.sport` column:
 - Onboarding sequence per TipTop manager: анкета → сбор 6 000 ₸ (оферта says 6 000, manager quoted 20 000 — clarify) → банк Береке выдаёт онлайн-терминал (согласие ИП на сбор/обработку данных отправлено) → полная готовность
 - Foreign-issued cards: first 2 months KZ-only, then TipTop opens international payments (fixed timeline per manager) — check status ~2 months after go-live. FreedomPay's equivalent condition ("confirm stable turnover") is vague/bank-discretion — one of the reasons we stayed on TipTop over FreedomPay's slightly lower 3.6% vs 3.9% commission (2026-07-02 comparison: switching cost + FreedomPay's own prod token still pending outweighed the ~0.3% commission delta at our volume)
 
-## FreedomPay JS SDK (legacy — code kept, not wired into checkout)
-- MID: 586535, test token: `OEusiPqD0YsZeBZbCcxqkB4QlLBIxbVP`
+## FreedomPay JS SDK (АКТИВНЫЙ провайдер — боевой режим с 2026-07-24)
+- MID: 586535. Аккаунт переведён в боевой режим менеджером 2026-07-24; JS SDK токен при переводе НЕ изменился (тот же `OEusiPqD…`), сменился только режим — не пугаться, что значение совпадает с «тестовым»
+- Ключи живут в `.env.local` / Vercel: `NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN`, `FREEDOMPAY_MERCHANT_ID`, `FREEDOMPAY_SECRET_KEY` («секретный для приема»), `FREEDOMPAY_WIDGET_SECRET` («секретный для виджета»). Смотреть в кабинете: my.freedompay.kz/dev → «Стандартные ключи»
+- Кабинет выдаёт ДВА ключа приёма (приём + виджет) и не документирует, каким подписывается колбэк JS SDK → webhook проверяет подпись против обоих и отвечает тем же ключом, которым пришло (`signingKey` в `route.ts`)
+- `CARD_PAYMENTS_ENABLED` в `CardPaymentForm.tsx` — рубильник приёма карт. `true` с 2026-07-24; поставить `false` вернёт чекаут на оплату через менеджера (WhatsApp) без правки логики
+- Публичный ключ пары js sdk захардкожен в `CardPaymentForm.tsx` — сверен с боевым 2026-07-24, совпадает
 - SDK: `https://cdn.freedompay.kz/sdk/js-sdk-1.0.0.js`
 - Flow: `SDK.setup(publicKey, token)` → `SDK.charge(payment, transaction)` → if `need_confirm`: `SDK.confirmInIframe(result, containerId)`
 - FreedomPay does NOT support recurring payments — one-time only
 - Webhook signature: `MD5(scriptName + ';' + sorted_param_values_by_key + ';' + secretKey)`
+- Ключ выплат (`Секретный ключ для выплат`) в код НЕ заводим — выплат в продукте нет
 
 ## Live Match Flow
 1. Click "Начать матч" → POST /api/live/start → creates live_games row
@@ -188,7 +193,7 @@ Removed "Live-табло"/"LIVE-режим"/"Live scoreboard" etc. across the en
 - Код рекуррента (TipTopPayButton.tsx `recurrent` object, `cancelSubscription()` через TipTop API, migration 024 `subscription_id`) **оставлен нетронутым** — рабочий, протестированный, просто не в проде. Реактивировать когда: (а) спор с TipTop Pay разрешится в нашу пользу, или (б) найдётся провайдер с рекуррентом поверх 3DS (индустриальный стандарт — MIT-исключение из аутентификации, так и должно быть в норме)
 
 ## Pending Tasks (as of 2026-07-03)
-1. FreedomPay: терминал заводится банком (~7 раб. дней с 2026-07-03) → получить боевые `FREEDOMPAY_MERCHANT_ID`/`FREEDOMPAY_SECRET_KEY`/`NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN` → обновить `.env.local` + Vercel → флаг `CARD_PAYMENTS_ENABLED = true` в `CardPaymentForm.tsx` → протестировать реальный платёж на боевом терминале. Технически всё готово заранее (2026-07-03): чекаут уже переключён на `CardPaymentForm` (не `TipTopPayButton`), i18n добавлена, цвет Enterprise (фиолетовый) сведён с TipTop-версией, widget token читается из env var — остаётся только флаг + ключи
+1. FreedomPay (2026-07-24): боевые ключи получены, прописаны в `.env.local`, `CARD_PAYMENTS_ENABLED = true`. ОСТАЛОСЬ: (а) добавить `FREEDOMPAY_MERCHANT_ID` / `FREEDOMPAY_SECRET_KEY` / `FREEDOMPAY_WIDGET_SECRET` / `NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN` в Vercel env; (б) прописать в кабинете FreedomPay result_url `https://tournable.app/api/webhooks/freedompay`; (в) провести реальный платёж на минимальную сумму и убедиться, что план активировался и запись легла в `subscriptions`; (г) уточнить у менеджера, каким из двух ключей приёма подписывается колбэк JS SDK
 2. TipTop Pay: спор о возврате 20 000 ₸ за отклонённую верификацию — письмо отправлено, ссылка на ст. 389 ГК РК (договор присоединения)
 3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz
 4. Домен: купить tournable.kz → подключить к Vercel

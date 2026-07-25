@@ -2,13 +2,41 @@ import Link from 'next/link'
 import { CheckCircle, Trophy, ArrowRight, Crown } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getUserPlan } from '@/app/actions/billing'
+import { getPaymentOrderStatus } from '@/app/actions/payments'
+import { PaymentPending } from '@/components/checkout/PaymentPending'
 
+// Нейтральный заголовок: на этой же странице живёт экран ожидания, и обещать
+// «успешно» во вкладке до подтверждения webhook нельзя.
 export const metadata: Metadata = {
-  title: 'Оплата прошла успешно — Tournable',
+  title: 'Оплата — Tournable',
 }
 
-export default async function CheckoutSuccessPage() {
-  const plan = await getUserPlan()
+export default async function CheckoutSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ order?: string }>
+}) {
+  const { order: orderId } = await searchParams
+
+  // Заказ есть — верим только ему: план выдаёт webhook, и на момент редиректа
+  // подтверждение могло ещё не дойти. Показывать «Оплата прошла!» до этого
+  // означало бы обещать доступ, которого пока нет.
+  const order = orderId ? await getPaymentOrderStatus(orderId) : null
+
+  if (orderId && order?.status !== 'paid') {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ background: 'linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 50%,#ffffff 100%)' }}
+      >
+        <PaymentPending orderId={orderId} />
+      </div>
+    )
+  }
+
+  // Без orderId (ручная выдача, старые ссылки) остаётся прежнее поведение —
+  // показываем то, что реально стоит в профиле.
+  const plan = order?.plan ?? await getUserPlan()
   const isEnterprise = plan === 'enterprise'
 
   const accent = isEnterprise

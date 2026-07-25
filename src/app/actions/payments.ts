@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { PRICES, ENTERPRISE_PRICES, type PlanPeriod, type PlanType } from '@/lib/freedompay'
-import { sendProActivatedEmail } from '@/lib/email'
+
+export type PaymentSource = 'freedompay' | 'cloudpayments'
+export type OrderStatus = 'pending' | 'paid' | 'failed' | 'unknown'
 
 // Read the viewer's UI language from the `lang` cookie (server-side).
 async function getLangFromCookie(): Promise<'ru' | 'kz' | 'en'> {
@@ -13,22 +15,48 @@ async function getLangFromCookie(): Promise<'ru' | 'kz' | 'en'> {
   return v === 'kz' || v === 'en' ? v : 'ru'
 }
 
+// Создаёт заказ ДО оплаты и возвращает параметры для SDK.
+//
+// Заказ — единственная связь между платежом и пользователем: webhook находит
+// строку по pg_order_id и только он вправе перевести её в 'paid'. Раньше эту
+// роль играли custom_params, которые провайдер обязан вернуть обратно, а план
+// выдавался клиентским вызовом — то есть вообще без подтверждения оплаты.
 export async function getPaymentOrderParams(
   period: PlanPeriod,
   planType: PlanType = 'pro',
+  provider: PaymentSource = 'freedompay',
 ): Promise<{ orderId: string; userId: string; amount: number; description: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/checkout')
 
   try {
-    const prices = planType === 'enterprise' ? ENTERPRISE_PRICES : PRICES
-    const label  = planType === 'enterprise' ? 'Enterprise' : 'Pro'
+    const prices  = planType === 'enterprise' ? ENTERPRISE_PRICES : PRICES
+    const label   = planType === 'enterprise' ? 'Enterprise' : 'Pro'
+    const amount  = prices[period].amount
     const orderId = `t_${user.id.replace(/-/g, '').slice(0, 16)}_${Date.now()}`
+
+    const { error } = await supabase.from('payment_orders').insert({
+      order_id:   orderId,
+      user_id:    user.id,
+      plan:       planType,
+      period,
+      amount_kzt: amount,
+      provider,
+      lang:       await getLangFromCookie(),
+    })
+
+    // Без записанного заказа webhook не сможет опознать платёж, а значит план не
+    // активируется. Лучше не пустить к оплате, чем взять деньги вслепую.
+    if (error) {
+      console.error('[getPaymentOrderParams] order insert:', error)
+      return { error: 'Не удалось создать заказ. Попробуйте ещё раз или напишите в поддержку.' }
+    }
+
     return {
       orderId,
       userId:      user.id,
-      amount:      prices[period].amount,
+      amount,
       description: `Tournable ${label} — ${period === 'monthly' ? 'Месяц' : 'Год'}`,
     }
   } catch (err) {
@@ -38,93 +66,21 @@ export async function getPaymentOrderParams(
   }
 }
 
-export type PaymentSource = 'freedompay' | 'cloudpayments'
-
-// Called client-side after SDK returns payment_status === 'success'.
-// Uses user session — profiles RLS allows owner to update their own row.
-export async function activateProAfterPayment(
-  period: PlanPeriod,
-  paymentId: string,
-  source: PaymentSource = 'freedompay',
-): Promise<{ ok: true } | { error: string }> {
+// Статус заказа для поллинга на /checkout/success.
+// RLS отдаёт только свои строки, поэтому чужой orderId вернёт 'unknown'.
+export async function getPaymentOrderStatus(
+  orderId: string,
+): Promise<{ status: OrderStatus; plan?: PlanType }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Не авторизован' }
+  if (!user) return { status: 'unknown' }
 
-  const months    = PRICES[period].months
-  const expiresAt = new Date()
-  expiresAt.setMonth(expiresAt.getMonth() + months)
+  const { data, error } = await supabase
+    .from('payment_orders')
+    .select('status, plan')
+    .eq('order_id', orderId)
+    .maybeSingle()
 
-  const { error: profErr } = await supabase.from('profiles').upsert(
-    { id: user.id, plan: 'pro', plan_expires_at: expiresAt.toISOString(), updated_at: new Date().toISOString() },
-    { onConflict: 'id' },
-  )
-  if (profErr) {
-    console.error('[activateProAfterPayment] profile upsert:', profErr)
-    return { error: profErr.message }
-  }
-
-  // Best-effort payment record; may fail if RLS/constraints block it
-  const rpcName = source === 'cloudpayments' ? 'record_cloudpayments_subscription' : 'record_freedompay_subscription'
-  await supabase.rpc(rpcName, {
-    p_user_id:    user.id,
-    p_plan:       'pro',
-    p_expires_at: expiresAt.toISOString(),
-    p_amount_kzt: PRICES[period].amount,
-    p_payment_id: paymentId || null,
-  }).then(({ error }) => {
-    if (error) console.warn('[activateProAfterPayment] subscription record skipped:', error.message)
-  })
-
-  // Best-effort email — no RESEND_API_KEY → silent no-op
-  if (user.email) {
-    const lang = await getLangFromCookie()
-    sendProActivatedEmail(user.email, period, PRICES[period].amount, expiresAt, 'pro', lang)
-      .catch(() => {})
-  }
-
-  console.log(`[activateProAfterPayment] Pro activated for ${user.id} until ${expiresAt.toISOString()}`)
-  return { ok: true }
-}
-
-// Called client-side after Enterprise payment success.
-export async function activateEnterpriseAfterPayment(
-  period: PlanPeriod,
-  paymentId: string,
-  source: PaymentSource = 'freedompay',
-): Promise<{ ok: true } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Не авторизован' }
-
-  const months    = ENTERPRISE_PRICES[period].months
-  const expiresAt = new Date()
-  expiresAt.setMonth(expiresAt.getMonth() + months)
-
-  const { error: profErr } = await supabase.from('profiles').upsert(
-    { id: user.id, plan: 'enterprise', plan_expires_at: expiresAt.toISOString(), updated_at: new Date().toISOString() },
-    { onConflict: 'id' },
-  )
-  if (profErr) return { error: profErr.message }
-
-  const rpcName = source === 'cloudpayments' ? 'record_cloudpayments_subscription' : 'record_freedompay_subscription'
-  await supabase.rpc(rpcName, {
-    p_user_id:    user.id,
-    p_plan:       'enterprise',
-    p_expires_at: expiresAt.toISOString(),
-    p_amount_kzt: ENTERPRISE_PRICES[period].amount,
-    p_payment_id: paymentId || null,
-  }).then(({ error }) => {
-    if (error) console.warn('[activateEnterpriseAfterPayment] subscription record skipped:', error.message)
-  })
-
-  // Best-effort email — no RESEND_API_KEY → silent no-op
-  if (user.email) {
-    const lang = await getLangFromCookie()
-    sendProActivatedEmail(user.email, period, ENTERPRISE_PRICES[period].amount, expiresAt, 'enterprise', lang)
-      .catch(() => {})
-  }
-
-  console.log(`[activateEnterpriseAfterPayment] Enterprise activated for ${user.id} until ${expiresAt.toISOString()}`)
-  return { ok: true }
+  if (error || !data) return { status: 'unknown' }
+  return { status: data.status as OrderStatus, plan: data.plan as PlanType }
 }

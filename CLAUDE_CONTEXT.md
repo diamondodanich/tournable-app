@@ -117,6 +117,16 @@ Values in `tournaments.sport` column:
 - Webhook signature: `MD5(scriptName + ';' + sorted_param_values_by_key + ';' + secretKey)`
 - Ключ выплат (`Секретный ключ для выплат`) в код НЕ заводим — выплат в продукте нет
 
+## Активация платного плана — только через webhook (2026-07-25)
+ПРАВИЛО: клиент НИКОГДА не выдаёт план. Единственный код, который пишет `profiles.plan`, — `src/app/api/webhooks/freedompay/route.ts` (service_role, после проверки MD5-подписи). Раньше это делал server action `activateProAfterPayment`, вызываемый из браузера после ответа SDK, — любой залогиненный пользователь мог дёрнуть его напрямую и получить Pro бесплатно. Оба `activate*AfterPayment` УДАЛЕНЫ, не возвращать.
+- Миграция `039_payment_orders.sql` — таблица `payment_orders`. RLS: владелец может SELECT свои и INSERT только со `status='pending'`; политик UPDATE/DELETE нет намеренно → статус `paid` неподделываем из браузера (миграция 018 раздаёт права будущим таблицам по умолчанию, поэтому в 039 стоит явный `revoke`)
+- Поток: `getPaymentOrderParams()` пишет заказ `pending` ДО оплаты → SDK платит → редирект на `/checkout/success?order=<id>` → страница показывает `PaymentPending.tsx` (поллинг `getPaymentOrderStatus` раз в 2 с, таймаут 90 с → экран «Оплата обрабатывается» + номер заказа + WhatsApp) → webhook переводит заказ в `paid` и выдаёт план → `router.refresh()` показывает успех
+- Идемпотентность: `update ... where order_id=? and status='pending'` — повторный колбэк не вернёт строк и план не продлится дважды
+- Сумма сверяется с `PRICES`/`ENTERPRISE_PRICES` в коде, а НЕ с `amount_kzt` из заказа (строку создаёт клиентская сессия, подделанная сумма не должна открыть дешёвый Enterprise)
+- Продление считается от текущего `plan_expires_at`, если он в будущем, иначе от now — оплата заранее не съедает остаток оплаченного периода
+- Письмо об активации шлёт webhook; язык берётся из `payment_orders.lang` (cookie там не прочитать)
+- Fail-closed: если заказ не записался, `getPaymentOrderParams` возвращает ошибку и к оплате не пускает. ⚠️ Пока миграция 039 не применена, чекаут не работает вообще — это осознанно, лучше чем брать деньги без записи
+
 ## Live Match Flow
 1. Click "Начать матч" → POST /api/live/start → creates live_games row
 2. LiveBoard.tsx subscribes to live_games via Supabase realtime
@@ -193,6 +203,7 @@ Removed "Live-табло"/"LIVE-режим"/"Live scoreboard" etc. across the en
 - Код рекуррента (TipTopPayButton.tsx `recurrent` object, `cancelSubscription()` через TipTop API, migration 024 `subscription_id`) **оставлен нетронутым** — рабочий, протестированный, просто не в проде. Реактивировать когда: (а) спор с TipTop Pay разрешится в нашу пользу, или (б) найдётся провайдер с рекуррентом поверх 3DS (индустриальный стандарт — MIT-исключение из аутентификации, так и должно быть в норме)
 
 ## Pending Tasks (as of 2026-07-03)
+0. СРОЧНО: применить миграцию `039_payment_orders.sql` в Supabase SQL Editor. До этого чекаут отдаёт «Не удалось создать заказ» и оплата картой не работает (fail-closed by design)
 1. FreedomPay (2026-07-24): боевые ключи получены, прописаны в `.env.local`, `CARD_PAYMENTS_ENABLED = true`. ОСТАЛОСЬ: (а) добавить `FREEDOMPAY_MERCHANT_ID` / `FREEDOMPAY_SECRET_KEY` / `FREEDOMPAY_WIDGET_SECRET` / `NEXT_PUBLIC_FREEDOMPAY_WIDGET_TOKEN` в Vercel env; (б) прописать в кабинете FreedomPay result_url `https://tournable.app/api/webhooks/freedompay`; (в) провести реальный платёж на минимальную сумму и убедиться, что план активировался и запись легла в `subscriptions`; (г) уточнить у менеджера, каким из двух ключей приёма подписывается колбэк JS SDK
 2. TipTop Pay: спор о возврате 20 000 ₸ за отклонённую верификацию — письмо отправлено, ссылка на ст. 389 ГК РК (договор присоединения)
 3. Resend: зарегистрироваться → RESEND_API_KEY → верифицировать домен tournable.kz

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { CreditCard, Lock, Loader2, ShieldCheck } from 'lucide-react'
-import { getPaymentOrderParams, activateProAfterPayment, activateEnterpriseAfterPayment } from '@/app/actions/payments'
+import { getPaymentOrderParams } from '@/app/actions/payments'
 import type { PlanPeriod, PlanType } from '@/lib/freedompay'
 
 // Widget token is merchant/environment-specific (test vs production) — env-driven
@@ -56,7 +56,6 @@ const T = {
     processing: 'Обработка...', pay: (a: string) => `Оплатить ${a} ₸`,
     secured: 'Защищено · PCI DSS · 3D Secure', confirm3ds: 'Подтверждение банком (3D Secure)',
     scriptFailed: 'Не удалось загрузить платёжный модуль. Попробуйте обновить страницу.',
-    activatedNoPlan: (e: string) => `Оплата прошла, но план не активировался: ${e}`,
     paymentFailed: (s: string) => `Платёж не прошёл. Статус: ${s}`, payError: 'Ошибка при оплате',
     comingSoon: 'Скоро', cardSoon: 'Оплата картой скоро будет доступна — пока оформляем через менеджера.',
   },
@@ -66,7 +65,6 @@ const T = {
     processing: 'Өңделуде...', pay: (a: string) => `Төлеу ${a} ₸`,
     secured: 'Қорғалған · PCI DSS · 3D Secure', confirm3ds: 'Банк растауы (3D Secure)',
     scriptFailed: 'Төлем модулін жүктеу мүмкін болмады. Бетті жаңартып көріңіз.',
-    activatedNoPlan: (e: string) => `Төлем өтті, бірақ жоспар белсендірілмеді: ${e}`,
     paymentFailed: (s: string) => `Төлем өтпеді. Мәртебесі: ${s}`, payError: 'Төлем кезінде қате',
     comingSoon: 'Жақында', cardSoon: 'Картамен төлеу жақында қолжетімді болады — әзірге менеджер арқылы рәсімдейміз.',
   },
@@ -76,7 +74,6 @@ const T = {
     processing: 'Processing...', pay: (a: string) => `Pay ${a} ₸`,
     secured: 'Secured · PCI DSS · 3D Secure', confirm3ds: 'Bank confirmation (3D Secure)',
     scriptFailed: 'Could not load the payment module. Please refresh the page.',
-    activatedNoPlan: (e: string) => `Payment went through, but the plan wasn’t activated: ${e}`,
     paymentFailed: (s: string) => `Payment failed. Status: ${s}`, payError: 'Payment error',
     comingSoon: 'Coming soon', cardSoon: 'Card payment is coming soon — for now we set it up via a manager.',
   },
@@ -182,15 +179,9 @@ export function CardPaymentForm({ period, amount, userEmail, planType = 'pro', l
       }
 
       if (result.payment_status === 'success') {
-        const activation = planType === 'enterprise'
-          ? await activateEnterpriseAfterPayment(period, result.payment_id ?? '')
-          : await activateProAfterPayment(period, result.payment_id ?? '')
-        if ('error' in activation) {
-          setError(tx.activatedNoPlan(activation.error))
-          setStep('form')
-          return
-        }
-        window.location.href = '/checkout/success'
+        // План выдаёт webhook, а не клиент. Страница успеха дождётся заказа
+        // по orderId и покажет прогресс, пока подтверждение не дошло.
+        window.location.href = `/checkout/success?order=${encodeURIComponent(order.orderId)}`
       } else {
         setError(tx.paymentFailed(result.payment_status))
         setStep('form')

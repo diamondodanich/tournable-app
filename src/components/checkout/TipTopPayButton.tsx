@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2, ShieldCheck } from 'lucide-react'
-import { getPaymentOrderParams, activateProAfterPayment, activateEnterpriseAfterPayment } from '@/app/actions/payments'
+import { getPaymentOrderParams } from '@/app/actions/payments'
 import { PUBLIC_ID, WIDGET_SCRIPT_URL, type PlanPeriod, type PlanType } from '@/lib/tiptoppay'
 
 interface WidgetCompleteResult {
@@ -42,7 +42,6 @@ const GRADIENTS: Record<PlanType, string> = {
 const T = {
   ru: {
     notConfigured: 'Платёжный модуль не настроен: отсутствует идентификатор терминала. Напишите нам — мы быстро поможем.',
-    activatedNoPlan: (e: string) => `Оплата прошла, но план не активировался: ${e}`,
     paymentFailed: 'Платёж не прошёл',
     openFailed: 'Не удалось открыть платёжную форму. Попробуйте ещё раз.',
     payError: 'Ошибка при оплате',
@@ -58,7 +57,6 @@ const T = {
   },
   kz: {
     notConfigured: 'Төлем модулі бапталмаған: терминал идентификаторы жоқ. Бізге жазыңыз — тез көмектесеміз.',
-    activatedNoPlan: (e: string) => `Төлем өтті, бірақ жоспар белсендірілмеді: ${e}`,
     paymentFailed: 'Төлем өтпеді',
     openFailed: 'Төлем формасын ашу мүмкін болмады. Қайта көріңіз.',
     payError: 'Төлем кезінде қате',
@@ -74,7 +72,6 @@ const T = {
   },
   en: {
     notConfigured: 'Payment module is not configured: terminal ID is missing. Message us — we’ll help quickly.',
-    activatedNoPlan: (e: string) => `Payment went through, but the plan wasn’t activated: ${e}`,
     paymentFailed: 'Payment failed',
     openFailed: 'Could not open the payment form. Please try again.',
     payError: 'Payment error',
@@ -126,25 +123,18 @@ export function TipTopPayButton({ period, amount, userEmail, planType = 'pro', l
     setIsPending(true)
 
     try {
-      const order = await getPaymentOrderParams(period, planType)
+      const order = await getPaymentOrderParams(period, planType, 'cloudpayments')
       if ('error' in order) { setError(order.error); setIsPending(false); return }
 
       const widget = new window.tiptop.Widget()
 
       widget.oncomplete = async (result: WidgetCompleteResult) => {
         if (result.status === 'success') {
-          setIsPending(true)
-          const txId = result.data?.transactionId != null ? String(result.data.transactionId) : ''
-          const activation = planType === 'enterprise'
-            ? await activateEnterpriseAfterPayment(period, txId, 'cloudpayments')
-            : await activateProAfterPayment(period, txId, 'cloudpayments')
-
           setIsPending(false)
-          if ('error' in activation) {
-            setError(tx.activatedNoPlan(activation.error))
-            return
-          }
-          window.location.href = '/checkout/success'
+          // План выдаёт webhook провайдера, не клиент. Этот путь сейчас не в
+          // проде (TipTop отказал в подключении); если его вернут — активацию
+          // должен закрывать webhook TipTop по своему Data metadata.
+          window.location.href = `/checkout/success?order=${encodeURIComponent(order.orderId)}`
         } else if (result.status === 'fail' || result.status === 'reject') {
           setIsPending(false)
           setError(result.message ?? tx.paymentFailed)

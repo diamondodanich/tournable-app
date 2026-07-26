@@ -8,9 +8,10 @@
 //   node marketing/studio/build-review.mjs   →  marketing/out/review.html
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
+import { join, basename } from 'node:path'
 import sharp from 'sharp'
+import { clipNote } from './clip-notes.mjs'
 
 const ROOT = process.cwd()
 const POSTS_DIR = join(ROOT, 'marketing', 'studio', 'posts')
@@ -96,27 +97,36 @@ const SCENARIOS = [
   { id: '3.6', lang: 'ru', block: 'Короткие', sec: 20, hook: 'Отчёт по спартакиаде, который обычно собирают ночью.' },
 ]
 
-// ── Что заблокировано и почему ───────────────────────────────────────────────
+// ── Видеоклипы ───────────────────────────────────────────────────────────────
+const FOOTAGE = join(ROOT, 'marketing', 'footage')
+const clips = (existsSync(FOOTAGE) ? readdirSync(FOOTAGE).filter(f => f.endsWith('.webm')).sort() : [])
+  .map(file => {
+    const name = basename(file, '.webm')
+    const mb = statSync(join(FOOTAGE, file)).size / (1024 * 1024)
+    return { name, size: `${mb.toFixed(1).replace('.', ',')} МБ`, ...clipNote(name) }
+  })
+
+// ── Что осталось за вами ─────────────────────────────────────────────────────
 const BLOCKED = [
   {
-    what: 'Демо-данные не залиты',
-    why: 'Сиду нужен доступ к базе: SUPABASE_SERVICE_ROLE_KEY и SEED_OWNER_EMAIL в .env.local. Сервисного ключа в проекте нет, а пароль от вашего аккаунта я не запрашиваю и не храню.',
-    need: 'Добавить ключ и выполнить: node scripts/seed-demo.mjs',
+    what: 'Казахский нуждается в вашей правке',
+    why: 'Тексты переписаны в разговорный регистр и вычищены от кальки с русского, но живой почерк носителя они не заменяют.',
+    need: 'Пройтись по посту 02 и править прямо в marketing/studio/posts/kz-5-qate-spartakiada.json',
   },
   {
-    what: 'Пять скринов продукта не сняты',
-    why: 'Снимать нечего, пока база пустая. Карусель «Турнир за 3 минуты» собрана с заглушками на местах скринов — остальные слайды в ней готовы.',
-    need: 'После сида снять экраны мастера, расписания, таблицы и сетки в marketing/shots/',
+    what: 'Съёмка себя',
+    why: 'Кадры и видео продукта сняты автоматически. Единственное, что нельзя автоматизировать, — вы в кадре.',
+    need: '6–8 дублей подряд по хукам из таблицы выше, в одной футболке',
   },
   {
-    what: 'Автопостинг не подключён',
-    why: 'Нужны токены каналов. Скрипт написан и проверен сухим прогоном, но без ключей он молча пропускает канал.',
-    need: 'TELEGRAM_BOT_TOKEN и TELEGRAM_CHANNEL_ID; для Threads — THREADS_USER_ID и THREADS_ACCESS_TOKEN',
+    what: 'Оформление пустых аккаунтов',
+    why: 'Аватар, шапка, описание и закреплённый пост влияют на конверсию сильнее, чем первые три поста.',
+    need: 'Сделать до первой публикации',
   },
   {
-    what: 'Instagram, TikTok и YouTube остаются ручными',
-    why: 'Instagram Graph API требует бизнес-аккаунт со связанной страницей Facebook и одобренное разрешение на публикацию. TikTok открывает Content Posting API только после ревью приложения, до него посты падают в черновики. Загрузка на YouTube быстро съедает квоту Data API.',
-    need: 'Решение отложено осознанно: проходить ревью при пустых аккаунтах не за чем',
+    what: 'Перевыпустить service_role ключ',
+    why: 'Ключ полного доступа к базе засветился в переписке. Всё, для чего он был нужен, уже сделано.',
+    need: 'Supabase → Settings → API → Rotate',
   },
 ]
 
@@ -333,9 +343,9 @@ dialog img { display: block; max-width: 96vw; max-height: 94vh; width: auto; bor
     <div class="runbar">
       <div><span class="n">${posts.length}</span><span class="label">карусели</span></div>
       <div><span class="n">${totalSlides}</span><span class="label">слайдов</span></div>
+      <div><span class="n">${clips.length}</span><span class="label">видеоклипов</span></div>
       <div><span class="n">${SCENARIOS.length}</span><span class="label">сценариев</span></div>
       <div><span class="n ${totalMissing ? 'flagged' : ''}">${totalMissing}</span><span class="label">скринов нужно</span></div>
-      <div><span class="n">2</span><span class="label">языка</span></div>
     </div>
   </header>
 
@@ -375,6 +385,24 @@ ${p.missing.length ? `      <div class="gap-note">
   </section>
 
   <section>
+    <div class="sechead"><h2>Видеоклипы продукта</h2><span class="label">записаны автоматически</span></div>
+    <p>Запись экрана уже сделана — снимать в приложении ничего не нужно. Смотреть и скачивать: раздел <strong>Контент</strong> в платформе, вкладка «Видео». Единственное, что снимаете вы, — себя.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Файл</th><th>Что на кадре</th><th>Как использовать</th><th>Вес</th></tr></thead>
+        <tbody>
+${clips.map(c => `          <tr>
+            <td class="num">${esc(c.name)}</td>
+            <td class="hook"><strong>${esc(c.title)}</strong></td>
+            <td class="hook">${esc(c.use)}</td>
+            <td class="num">${esc(c.size)}</td>
+          </tr>`).join('\n')}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
     <div class="sechead"><h2>Сценарии роликов</h2><span class="label">reels · shorts · tiktok</span></div>
     <p>Покадровые раскадровки с титрами и текстом озвучки лежат в <code style="font-family:ui-monospace,monospace;font-size:13px">marketing/video/scenarios.md</code>. Здесь — хуки: именно они решают, досмотрят ролик или пролистают.</p>
     <div class="tablewrap">
@@ -394,8 +422,8 @@ ${SCENARIOS.map(s => `          <tr>
   </section>
 
   <section>
-    <div class="sechead"><h2>Где нужен ваш доступ</h2></div>
-    <p>Четыре места, которые я не могу закрыть сам — нужен ключ или ваше решение. Всё остальное уже сделано.</p>
+    <div class="sechead"><h2>Что осталось за вами</h2></div>
+    <p>Демо-данные залиты, кадры сняты, клипы записаны, материалы лежат в платформе. Остались четыре вещи, которые может сделать только человек.</p>
     <div class="blocked">
 ${BLOCKED.map(b => `      <div class="block-item">
         <h3>${esc(b.what)}</h3>
@@ -411,10 +439,10 @@ ${BLOCKED.map(b => `      <div class="block-item">
       <ol>
         <li>Пройдите по каруселям. Если текст на слайде нужно поменять — назовите номер поста и номер слайда, правку внесу в исходник и пересоберу.</li>
         <li>Просмотрите хуки роликов. Хук — единственное, что нельзя отдать на автомат: он должен звучать вашим голосом, а не моим. Отметьте те, что звучат не по-вашему.</li>
-        <li>Скажите, какие материалы можно публиковать. Публикация — необратимое действие, поэтому <code>publish.mjs</code> без явного подтверждения ничего не отправляет, и я не публикую ничего без вашего слова.</li>
-        <li>Дайте доступ из раздела выше, если хотите, чтобы демо-данные и скрины появились в ближайшей итерации.</li>
+        <li>Скажите, какие материалы можно публиковать. Автопостинг остановлен по вашему решению — всё выкладывается вручную из раздела <strong>Контент</strong> в платформе.</li>
+        <li>Правьте казахский прямо в JSON, если формулировки звучат не по-вашему: пересборка занимает секунды.</li>
       </ol>
-      <p style="color:var(--muted);font-size:14.5px">Порядок выкладки предлагаю такой: сначала две карусели про спартакиаду — русская и казахская, они не требуют скринов и готовы прямо сейчас. Карусель с демонстрацией продукта — после того, как будут сняты экраны.</p>
+      <p style="color:var(--muted);font-size:14.5px">Порядок выкладки предлагаю по номерам: спартакиада на русском, затем на казахском, затем демонстрация продукта. Посты про HR и чемпионат с сезонами — на вторую неделю, когда станет видно, какая тема заходит.</p>
     </div>
   </section>
 

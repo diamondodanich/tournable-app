@@ -14,7 +14,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, Shield, Check, Star,
   Mail, Calendar, Trophy, Zap, Infinity, RefreshCw, Clock, Crown, ChartColumn, ChevronRight,
-  Presentation, BookOpen,
+  Presentation, BookOpen, Images,
 } from 'lucide-react'
 
 export const metadata = { title: 'Личный кабинет — Tournable' }
@@ -596,6 +596,20 @@ export default async function AccountPage() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-bold text-gray-900">Метрики продукта</div>
                 <div className="text-xs text-gray-500">Регистрации, активация, возврат, MRR</div>
+              </div>
+              <ChevronRight size={16} className="text-violet-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+
+            <Link
+              href="/admin/content"
+              className="mt-3 flex items-center gap-3 p-3 bg-white rounded-xl border border-violet-200 hover:border-violet-300 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                <Images size={17} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-gray-900">Контент</div>
+                <div className="text-xs text-gray-500">Карусели, видеоклипы и кадры для соцсетей</div>
               </div>
               <ChevronRight size={16} className="text-violet-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
             </Link>

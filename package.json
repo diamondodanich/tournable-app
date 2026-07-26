@@ -9,7 +9,9 @@
     "lint": "eslint",
     "migrate": "node scripts/migrate.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
+    "capture": "node marketing/studio/capture.mjs",
     "studio": "node marketing/studio/render.mjs",
+    "content:push": "node marketing/studio/publish-to-app.mjs",
     "publish": "node scripts/publish.mjs"
   },
   "dependencies": {

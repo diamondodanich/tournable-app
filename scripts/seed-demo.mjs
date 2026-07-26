@@ -274,15 +274,52 @@ function buildEvents(fixtureKey, homeTeam, awayTeam, hs, as) {
 // ── подключение ──────────────────────────────────────────────────────────────
 async function connect() {
   if (SERVICE_KEY) {
-    const ownerEmail = process.env.SEED_OWNER_EMAIL
-    if (!ownerEmail) fail('SUPABASE_SERVICE_ROLE_KEY задан, но нет SEED_OWNER_EMAIL — не знаю, чьи это турниры.')
     const supabase = createClient(URL, SERVICE_KEY, { auth: { persistSession: false } })
     const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 })
     if (error) fail(`не удалось получить список пользователей: ${error.message}`)
-    const user = data.users.find(u => u.email?.toLowerCase() === ownerEmail.toLowerCase())
-    if (!user) fail(`пользователь ${ownerEmail} не найден в проекте Supabase`)
-    console.log(`[seed] режим: service_role, владелец ${ownerEmail}`)
-    return { supabase, userId: user.id }
+
+    const ownerEmail = process.env.SEED_OWNER_EMAIL
+    let user
+    if (ownerEmail) {
+      user = data.users.find(u => u.email?.toLowerCase() === ownerEmail.toLowerCase())
+      if (!user) fail(`пользователь ${ownerEmail} не найден в проекте Supabase`)
+    } else {
+      // SEED_OWNER_EMAIL не задан — выбираем владельца сами. Демо-турниры должны
+      // лежать на админском аккаунте: он видит их в дашборде и не упирается
+      // в лимит бесплатного плана.
+      const { data: profiles } = await supabase.from('profiles').select('id, is_admin')
+      const adminIds = new Set((profiles ?? []).filter(p => p.is_admin).map(p => p.id))
+      const admins = data.users.filter(u => adminIds.has(u.id))
+      const pool = admins.length ? admins : data.users
+      if (!pool.length) fail('в проекте нет ни одного пользователя — сначала зарегистрируйтесь в приложении')
+      // Из нескольких кандидатов берём самый старый аккаунт: это почти всегда
+      // аккаунт основателя, а не тестовая регистрация.
+      user = pool.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0]
+      console.log(`[seed] SEED_OWNER_EMAIL не задан — выбран ${admins.length ? 'админ' : 'самый старый аккаунт'}: ${user.email}`)
+    }
+
+    // Писать данные под service_role нельзя: миграция 041 выдала ему гранты
+    // только на profiles/subscriptions/payment_orders/tournaments/tournament_members,
+    // а teams, fixtures, match_events и остальное отвечают 42501. Вместо правки
+    // схемы входим под самим владельцем: service_role выпускает ему magic link,
+    // мы его тут же гасим и получаем обычную сессию с ролью authenticated —
+    // у неё гранты и RLS-политики на всё, что нужно сиду.
+    const { data: link, error: linkErr } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: user.email,
+    })
+    if (linkErr) fail(`не удалось выпустить ссылку для входа: ${linkErr.message}`)
+
+    if (!ANON_KEY) fail('NEXT_PUBLIC_SUPABASE_ANON_KEY не задан в .env.local')
+    const asUser = createClient(URL, ANON_KEY, { auth: { persistSession: false } })
+    const { error: otpErr } = await asUser.auth.verifyOtp({
+      token_hash: link.properties.hashed_token,
+      type: 'magiclink',
+    })
+    if (otpErr) fail(`не удалось войти под владельцем: ${otpErr.message}`)
+
+    console.log(`[seed] режим: service_role + сессия владельца ${user.email}`)
+    return { supabase: asUser, admin: supabase, userId: user.id }
   }
 
   const email = process.env.SEED_EMAIL
@@ -300,7 +337,91 @@ async function connect() {
   if (error) fail(`вход не удался: ${error.message}`)
   console.log(`[seed] режим: обычный пользователь ${email}`)
   console.log('[seed] напоминание: на плане Free разрешён 1 турнир — скрипт создаёт 2.')
-  return { supabase, userId: data.user.id }
+  return { supabase, admin: null, userId: data.user.id }
+}
+
+// ── гербы команд ─────────────────────────────────────────────────────────────
+// Пустой кружок вместо логотипа сразу выдаёт демо-данные, поэтому каждой команде
+// рисуется свой герб: круг с градиентом, инициалы и тонкое кольцо. Рисуем в
+// Chromium через Playwright — librsvg на Windows не гарантирует кириллицу
+// в SVG-тексте, а браузер рендерит её всегда.
+const CREST_PALETTE = [
+  ['#065F46', '#10B981'], ['#1E3A8A', '#3B82F6'], ['#7C2D12', '#F97316'],
+  ['#4C1D95', '#8B5CF6'], ['#831843', '#EC4899'], ['#134E4A', '#14B8A6'],
+  ['#713F12', '#EAB308'], ['#1E293B', '#64748B'], ['#7F1D1D', '#EF4444'],
+  ['#164E63', '#06B6D4'], ['#3F1D38', '#C026D3'], ['#14532D', '#22C55E'],
+  ['#312E81', '#6366F1'], ['#78350F', '#D97706'], ['#0C4A6E', '#0EA5E9'],
+  ['#4A044E', '#A21CAF'],
+]
+
+// Инициалы: из названия выбрасываем кавычки и родовые слова, берём первые буквы
+// значимых слов — «Гимназия «Арман»» даёт АР, а не ГА.
+const STOPWORDS = new Set(['гимназия', 'лицей', 'школа', 'ои', 'the'])
+function initials(name) {
+  const words = name
+    .replace(/[«»"']/g, ' ')
+    .split(/[\s-]+/)
+    .map(w => w.trim())
+    .filter(w => w && !STOPWORDS.has(w.toLowerCase()))
+  if (!words.length) return name.slice(0, 2).toUpperCase()
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
+}
+
+function crestHtml(name, index) {
+  const [deep, bright] = CREST_PALETTE[index % CREST_PALETTE.length]
+  return `<!doctype html><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;width:256px;height:256px;background:transparent}
+  .c{width:256px;height:256px;border-radius:50%;
+     background:linear-gradient(145deg,${deep} 0%,${bright} 100%);
+     display:flex;align-items:center;justify-content:center;position:relative}
+  .c::after{content:'';position:absolute;inset:14px;border-radius:50%;
+     border:3px solid rgba(255,255,255,.34)}
+  span{font-family:Inter,'Segoe UI',system-ui,sans-serif;font-weight:800;
+     font-size:96px;color:#fff;letter-spacing:-.03em;line-height:1;
+     text-shadow:0 3px 10px rgba(0,0,0,.28);z-index:1}
+</style>
+<div class="c"><span>${initials(name).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span></div>`
+}
+
+// Рисует и заливает гербы, возвращает Map<имя команды, публичный URL>.
+// При любой проблеме возвращает пустую Map — сид продолжается без логотипов.
+async function makeCrests(supabase, names) {
+  let chromium
+  try {
+    ({ chromium } = await import('playwright'))
+  } catch {
+    console.log('[seed] playwright не установлен — команды останутся без гербов')
+    console.log('[seed]   поставить:  npm i -D playwright && npx playwright install chromium')
+    return new Map()
+  }
+
+  const browser = await chromium.launch()
+  const page = await browser.newPage({ viewport: { width: 256, height: 256 } })
+  const urls = new Map()
+
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i]
+    await page.setContent(crestHtml(name, i), { waitUntil: 'load' })
+    await page.evaluate(() => document.fonts.ready)
+    const png = await page.screenshot({ type: 'png', omitBackground: true })
+
+    const path = `demo/${slugify(name) || `team-${i}`}.png`
+    const { error } = await supabase.storage.from('logos')
+      .upload(path, png, { contentType: 'image/png', upsert: true })
+    if (error) {
+      console.log(`[seed] герб «${name}» не залился: ${error.message}`)
+      continue
+    }
+    urls.set(name, supabase.storage.from('logos').getPublicUrl(path).data.publicUrl)
+  }
+
+  await browser.close()
+  console.log(`[seed] гербов нарисовано и залито: ${urls.size} из ${names.length}`)
+  return urls
 }
 
 // ── вставка пачками (PostgREST не любит гигантские тела запроса) ─────────────
@@ -325,7 +446,7 @@ async function resetDemo(supabase) {
 }
 
 // ── турнир 1: спартакиада (группы + плей-офф) ────────────────────────────────
-async function seedSpartakiada(supabase, userId) {
+async function seedSpartakiada(supabase, userId, crests) {
   const { data: existing } = await supabase.from('tournaments').select('id').eq('slug', SLUG_SPARTAKIADA).maybeSingle()
   if (existing) {
     console.log('[seed] спартакиада уже есть — пропускаю (перезалить: --reset)')
@@ -358,7 +479,12 @@ async function seedSpartakiada(supabase, userId) {
     const pot = Math.floor(i / GROUPS_COUNT)
     const posInPot = i % GROUPS_COUNT
     const groupIdx = pot % 2 === 0 ? posInPot : (GROUPS_COUNT - 1 - posInPot)
-    return { tournament_id: tournamentId, name, group_name: String.fromCharCode(65 + groupIdx) }
+    return {
+      tournament_id: tournamentId,
+      name,
+      group_name: String.fromCharCode(65 + groupIdx),
+      logo_url: crests.get(name) ?? null,
+    }
   })
   const { data: teams, error: teamsErr } = await supabase.from('teams').insert(teamRows).select('id, name, group_name')
   if (teamsErr) fail(`не удалось создать команды: ${teamsErr.message}`)
@@ -476,7 +602,7 @@ async function seedSpartakiada(supabase, userId) {
 }
 
 // ── турнир 2: корпоративная лига (круговой, в разгаре) ───────────────────────
-async function seedCorporate(supabase, userId) {
+async function seedCorporate(supabase, userId, crests) {
   const { data: existing } = await supabase.from('tournaments').select('id').eq('slug', SLUG_CORPORATE).maybeSingle()
   if (existing) {
     console.log('[seed] корпоративная лига уже есть — пропускаю (перезалить: --reset)')
@@ -502,7 +628,9 @@ async function seedCorporate(supabase, userId) {
 
   const { data: teams, error: teamsErr } = await supabase
     .from('teams')
-    .insert(COMPANIES.map(name => ({ tournament_id: tournamentId, name, group_name: null })))
+    .insert(COMPANIES.map(name => ({
+      tournament_id: tournamentId, name, group_name: null, logo_url: crests.get(name) ?? null,
+    })))
     .select('id, name')
   if (teamsErr) fail(`не удалось создать команды: ${teamsErr.message}`)
 
@@ -548,7 +676,7 @@ async function seedCorporate(supabase, userId) {
 // ── чемпионат (лига) поверх спартакиады ──────────────────────────────────────
 // Даёт публичные страницы лиги/команд/игроков — это то, что индексируется
 // поисковиками и что показываем как «ваш турнир живёт по своей ссылке».
-async function seedLeague(supabase, userId, spartakiadaId) {
+async function seedLeague(supabase, userId, spartakiadaId, crests) {
   const { data: existing } = await supabase.from('leagues').select('id').eq('slug', SLUG_LEAGUE).maybeSingle()
   if (existing) {
     console.log('[seed] чемпионат уже есть — пропускаю (перезалить: --reset)')
@@ -573,12 +701,28 @@ async function seedLeague(supabase, userId, spartakiadaId) {
 
   const { data: leagueTeams, error: ltErr } = await supabase
     .from('league_teams')
-    .insert(SCHOOLS.map(name => ({ league_id: leagueId, name, slug: slugify(name), city: 'Астана' })))
+    .insert(SCHOOLS.map(name => ({
+      league_id: leagueId, name, slug: slugify(name), city: 'Астана', logo_url: crests.get(name) ?? null,
+    })))
     .select('id, name')
   if (ltErr) {
-    console.log(`[seed] команды чемпионата пропущены: ${ltErr.message}`)
-    return leagueId
+    // Колонки logo_url у league_teams может не быть — повторяем без неё,
+    // чтобы отсутствие логотипа не срывало создание чемпионата.
+    const { data: retry, error: retryErr } = await supabase
+      .from('league_teams')
+      .insert(SCHOOLS.map(name => ({ league_id: leagueId, name, slug: slugify(name), city: 'Астана' })))
+      .select('id, name')
+    if (retryErr) {
+      console.log(`[seed] команды чемпионата пропущены: ${retryErr.message}`)
+      return leagueId
+    }
+    return finishLeague(supabase, leagueId, retry, spartakiadaId)
   }
+  return finishLeague(supabase, leagueId, leagueTeams, spartakiadaId)
+}
+
+// Ростеры, сезон и связка турнирных команд с командами чемпионата.
+async function finishLeague(supabase, leagueId, leagueTeams, spartakiadaId) {
 
   // Ростеры чемпионата (таблица players) — отдельно от турнирных team_players.
   const players = []
@@ -615,12 +759,16 @@ async function seedLeague(supabase, userId, spartakiadaId) {
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
-const { supabase, userId } = await connect()
+const { supabase, admin, userId } = await connect()
 if (RESET) await resetDemo(supabase)
 
-const spartakiadaId = await seedSpartakiada(supabase, userId)
-const corporateId = await seedCorporate(supabase, userId)
-const leagueId = await seedLeague(supabase, userId, spartakiadaId)
+// Гербы рисуются один раз на все команды обоих соревнований.
+// Заливаем под service_role, если он есть: у него нет ограничений бакета.
+const crests = await makeCrests(admin ?? supabase, [...SCHOOLS, ...COMPANIES])
+
+const spartakiadaId = await seedSpartakiada(supabase, userId, crests)
+const corporateId = await seedCorporate(supabase, userId, crests)
+const leagueId = await seedLeague(supabase, userId, spartakiadaId, crests)
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 console.log('\n[seed] готово. Что снимать:')

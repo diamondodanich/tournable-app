@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "studio": "node marketing/studio/render.mjs",
+    "publish": "node scripts/publish.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -42,6 +45,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.62.0",
     "postgres": "^3.4.9",
     "tailwindcss": "^4",
     "typescript": "^5"

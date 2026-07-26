@@ -36,6 +36,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# контент-машина: собранные карусели и исходное видео.
+# marketing/out — генерится из marketing/studio/posts, хранить незачем.
+# marketing/footage — видеодубли, слишком тяжёлые для git.
+# marketing/shots — скрины продукта: нужны для рендера, но это бинарь на
+# несколько мегабайт, который меняется при каждом редизайне.
+/marketing/out/
+/marketing/footage/
+/marketing/shots/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

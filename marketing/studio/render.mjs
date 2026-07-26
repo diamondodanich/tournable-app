@@ -158,22 +158,53 @@ function css(a, size) {
   .item .t { font-size:40px; line-height:1.3; font-weight:500; color:#fff; padding-top:6px; }
   .item .t small { display:block; font-size:32px; font-weight:400; color:#ffffff9e; margin-top:10px; line-height:1.35; }
 
-  /* Мокап смартфона. Лента смотрится с телефона, поэтому продукт показываем
-     в телефоне: зритель узнаёт свой экран, а не чужой рабочий стол. */
-  .phone { width:390px; margin:0 auto; position:relative;
-           border-radius:52px; padding:11px; background:linear-gradient(160deg,#2b3440,#0b0f17 60%);
-           box-shadow:0 60px 130px -34px #000000e6, 0 0 0 2px #ffffff1a inset; }
-  .phone .screen { position:relative; width:100%; height:610px; overflow:hidden;
-                   border-radius:42px; background:#0b0f17; }
-  /* Кадр телефона высокий; берём верхнюю часть, где живёт суть экрана. */
-  .phone .screen img { display:block; width:100%; height:100%;
+  /* ── Мокап смартфона ──
+     Геометрия пересчитана из реального устройства 430×932 CSS-пикселей
+     (соотношение 2.167) с коэффициентом 340/430. Раньше экран был 368×610 —
+     соотношение 1.66, из-за чего кадр обрезался по высоте и выглядел как
+     неправильный телефон.
+
+     Строка статуса и полоса жеста вынесены В ПОТОК над и под кадром, а не
+     положены поверх него. Playwright снимает страницу без вырезов, поэтому
+     любой островок, наложенный сверху, закрыл бы реальное содержимое шапки. */
+  .phone { width:364px; margin:0 auto; position:relative;
+           border-radius:56px; padding:12px; background:linear-gradient(160deg,#39424f,#0b0f17 62%);
+           box-shadow:0 60px 130px -34px #000000e6, 0 0 0 2px #ffffff1f inset; }
+  .phone .screen { position:relative; width:340px; height:737px; overflow:hidden;
+                   border-radius:44px; background:#047857;
+                   display:flex; flex-direction:column; }
+  /* Цвет строки статуса совпадает с шапкой приложения (#047857) — переход
+     от рамки к содержимому получается бесшовным, как на живом телефоне. */
+  .phone .statusbar { position:relative; height:47px; flex:0 0 47px; background:#047857; }
+  .phone .island { position:absolute; top:9px; left:50%; transform:translateX(-50%);
+                   width:99px; height:29px; border-radius:15px; background:#05070b; }
+  .phone .sigs { position:absolute; right:22px; top:19px; display:flex; align-items:flex-end; gap:3px; }
+  .phone .sigs i { display:block; width:4px; background:#ffffffd8; border-radius:1px; }
+  .phone .sigs i:nth-child(1) { height:5px } .phone .sigs i:nth-child(2) { height:8px }
+  .phone .sigs i:nth-child(3) { height:11px } .phone .sigs i:nth-child(4) { height:14px }
+  .phone .shotwrap { flex:1; min-height:0; overflow:hidden; }
+  .phone .shotwrap img { display:block; width:100%; height:100%;
+                         object-fit:cover; object-position:top center; }
+  .phone .homebar { flex:0 0 27px; background:#ffffff; position:relative; }
+  .phone .homebar::after { content:''; position:absolute; left:50%; bottom:8px;
+                           transform:translateX(-50%); width:112px; height:5px;
+                           border-radius:3px; background:#00000038; }
+  .phone .btn-r { position:absolute; right:-3px; top:210px; width:3px; height:96px;
+                  border-radius:2px; background:#ffffff33; }
+  .phone .btn-l { position:absolute; left:-3px; top:186px; width:3px; height:60px;
+                  border-radius:2px; background:#ffffff33; }
+
+  /* ── Мокап десктопа ──
+     Второй вариант того же поста: часть аудитории работает с компьютера,
+     и таблица на широком экране им понятнее. */
+  .win { border-radius:20px; overflow:hidden; background:#0b0f17;
+         border:1px solid #ffffff24; box-shadow:0 50px 120px -32px #000000e0; }
+  .win .bar { height:42px; display:flex; align-items:center; gap:9px; padding:0 18px; background:#141b26; }
+  .win .dot { width:11px; height:11px; border-radius:50%; background:#ffffff2b; }
+  .win .shotwrap { height:560px; overflow:hidden; }
+  .win .shotwrap img { display:block; width:100%; height:100%;
                        object-fit:cover; object-position:top center; }
-  .phone .island { position:absolute; top:14px; left:50%; transform:translateX(-50%);
-                   width:112px; height:30px; border-radius:16px; background:#05070b; z-index:2; }
-  .phone .btn-r { position:absolute; right:-3px; top:170px; width:3px; height:92px;
-                  border-radius:2px; background:#ffffff2e; }
-  .phone .btn-l { position:absolute; left:-3px; top:150px; width:3px; height:58px;
-                  border-radius:2px; background:#ffffff2e; }
+
   .shotcap { font-size:30px; color:#ffffffa8; margin-top:26px; line-height:1.35; text-align:center; }
   /* Заглушка вместо неснятого кадра: слайд остаётся собранным, а в консоли
      печатается список того, что осталось доснять. */
@@ -304,22 +335,38 @@ function renderSlide(slide, ctx) {
       break
 
     case 'screenshot': {
-      const src = slide.src ? pathToFileURL(resolve(ROOT, slide.src)).href : ''
-      const missing = !src || !existsSync(resolve(ROOT, slide.src ?? ''))
+      // Пост рендерится дважды: телефонный кадр и десктопный. Поле выбирается
+      // по варианту, а не по типу слайда, поэтому текст остаётся общим.
+      const rel = ctx.device === 'desktop' ? (slide.srcDesktop ?? slide.src) : slide.src
+      const src = rel ? pathToFileURL(resolve(ROOT, rel)).href : ''
+      const missing = !src || !existsSync(resolve(ROOT, rel ?? ''))
+      const shotBody = missing
+        ? `<div class="shot-missing">нет кадра: ${esc(rel ?? 'поле "src" не задано')}</div>`
+        : `<img src="${src}" alt="">`
+
+      const mockup = ctx.device === 'desktop'
+        ? `<div class="win">
+             <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+             <div class="shotwrap">${shotBody}</div>
+           </div>`
+        : `<div class="phone">
+             <div class="btn-l"></div><div class="btn-r"></div>
+             <div class="screen">
+               <div class="statusbar">
+                 <div class="island"></div>
+                 <div class="sigs"><i></i><i></i><i></i><i></i></div>
+               </div>
+               <div class="shotwrap">${shotBody}</div>
+               <div class="homebar"></div>
+             </div>
+           </div>`
+
       inner = `
         ${kicker}
         <div class="mid">
           <h2${fitH2(slide.title)}>${esc(slide.title)}</h2>
           <div style="margin-top:44px">
-            <div class="phone">
-              <div class="btn-l"></div><div class="btn-r"></div>
-              <div class="screen">
-                <div class="island"></div>
-                ${missing
-                  ? `<div class="shot-missing">нет кадра: ${esc(slide.src ?? 'поле "src" не задано')}</div>`
-                  : `<img src="${src}" alt="">`}
-              </div>
-            </div>
+            ${mockup}
             ${slide.caption ? `<div class="shotcap">${esc(slide.caption)}</div>` : ''}
           </div>
         </div>
@@ -421,33 +468,43 @@ for (const file of files) {
     brandUrl: post.brandUrl ?? 'tournable.app',
   }
 
-  const dir = join(OUT_DIR, slug)
-  mkdirSync(dir, { recursive: true })
+  // Если хоть у одного кадра задан десктопный дубль, пост собирается дважды.
+  // Один и тот же текст, разные мокапы: телефон для ленты, десктоп для тех,
+  // кто ведёт соревнование с компьютера.
+  const hasDesktop = post.slides.some(s => s.type === 'screenshot' && s.srcDesktop)
+  const variants = hasDesktop ? ['phone', 'desktop'] : ['phone']
 
   const page = browser
     ? await browser.newPage({ viewport: { width: size.w, height: size.h }, deviceScaleFactor: 1 })
     : null
 
-  for (let i = 0; i < post.slides.length; i++) {
-    const html = renderHtml(post.slides[i], { ...ctx, index: i })
-    const n = String(i + 1).padStart(2, '0')
-    writeFileSync(join(dir, `${n}.html`), html, 'utf8')
+  for (const device of variants) {
+    const outSlug = device === 'desktop' ? `${slug}-desktop` : slug
+    const dir = join(OUT_DIR, outSlug)
+    mkdirSync(dir, { recursive: true })
 
-    if (page) {
-      // Именно goto по file://, а не setContent: страница, собранная через
-      // setContent, живёт на origin about:blank, и Chromium блокирует ей
-      // подгрузку локальных картинок — логотип и скрины продукта пропадали.
-      await page.goto(pathToFileURL(join(dir, `${n}.html`)).href, { waitUntil: 'load' })
-      // Даём подгрузиться шрифту — иначе первый слайд снимается системным.
-      await page.evaluate(() => document.fonts.ready)
-      await page.screenshot({ path: join(dir, `${n}.png`), type: 'png' })
-      totalPng++
+    for (let i = 0; i < post.slides.length; i++) {
+      const html = renderHtml(post.slides[i], { ...ctx, index: i, device })
+      const n = String(i + 1).padStart(2, '0')
+      writeFileSync(join(dir, `${n}.html`), html, 'utf8')
+
+      if (page) {
+        // Именно goto по file://, а не setContent: страница, собранная через
+        // setContent, живёт на origin about:blank, и Chromium блокирует ей
+        // подгрузку локальных картинок — логотип и скрины продукта пропадали.
+        await page.goto(pathToFileURL(join(dir, `${n}.html`)).href, { waitUntil: 'load' })
+        // Даём подгрузиться шрифту — иначе первый слайд снимается системным.
+        await page.evaluate(() => document.fonts.ready)
+        await page.screenshot({ path: join(dir, `${n}.png`), type: 'png' })
+        totalPng++
+      }
     }
+
+    writeFileSync(join(dir, 'caption.txt'), renderCaption(post), 'utf8')
+    const label = device === 'desktop' ? `${slug} (десктоп)` : slug
+    console.log(`[studio] ${label}: ${post.slides.length} слайдов${page ? ' → PNG' : ' → HTML'} + caption.txt`)
   }
   if (page) await page.close()
-
-  writeFileSync(join(dir, 'caption.txt'), renderCaption(post), 'utf8')
-  console.log(`[studio] ${slug}: ${post.slides.length} слайдов${page ? ' → PNG' : ' → HTML'} + caption.txt`)
 }
 
 if (browser) await browser.close()

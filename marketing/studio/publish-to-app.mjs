@@ -70,18 +70,31 @@ await ensureBucket()
 const posts = []
 const postFiles = existsSync(POSTS) ? readdirSync(POSTS).filter(f => f.endsWith('.json')) : []
 
+// Слайды одного варианта поста: заливает PNG и возвращает список ссылок.
+async function uploadVariant(slug, dir, prefix) {
+  const pngs = readdirSync(dir).filter(f => /^\d+\.png$/.test(f)).sort()
+  const slides = []
+  for (const png of pngs) {
+    const url = await upload(`posts/${prefix}/${png}`, readFileSync(join(dir, png)), 'image/png')
+    if (url) slides.push({ n: parseInt(png, 10), name: png, url })
+  }
+  return slides
+}
+
 for (const file of postFiles) {
   const meta = JSON.parse(readFileSync(join(POSTS, file), 'utf8'))
   const slug = meta.slug ?? basename(file, '.json')
   const dir = join(OUT, slug)
   if (!existsSync(dir)) { log(`пропуск ${slug}: не отрисован`); continue }
 
-  const pngs = readdirSync(dir).filter(f => /^\d+\.png$/.test(f)).sort()
-  const slides = []
-  for (const png of pngs) {
-    const url = await upload(`posts/${slug}/${png}`, readFileSync(join(dir, png)), 'image/png')
-    if (url) slides.push({ n: parseInt(png, 10), name: png, url })
-  }
+  // Телефонный и десктопный варианты — это один пост с одним текстом, а не два
+  // разных. В разделе они переключаются тумблером, поэтому и в манифесте живут
+  // вместе, а не двумя карточками.
+  const slides = await uploadVariant(slug, dir, slug)
+  const deskDir = join(OUT, `${slug}-desktop`)
+  const slidesDesktop = existsSync(deskDir)
+    ? await uploadVariant(slug, deskDir, `${slug}-desktop`)
+    : []
 
   // В caption.txt хештеги уже вшиты в конец — для выгрузки в платформу текст и
   // хештеги разводятся, иначе в разделе они показываются дважды.
@@ -99,10 +112,11 @@ for (const file of postFiles) {
     goal: meta.goal ?? '',
     title: meta.slides?.[0]?.title ?? slug,
     slides,
+    slidesDesktop,
     caption,
     hashtags: meta.hashtags ?? [],
   })
-  log(`карусель ${slug}: ${slides.length} слайдов`)
+  log(`карусель ${slug}: ${slides.length} слайдов${slidesDesktop.length ? ` + ${slidesDesktop.length} десктоп` : ''}`)
 }
 posts.sort((a, b) => a.order - b.order)
 

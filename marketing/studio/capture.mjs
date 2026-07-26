@@ -320,18 +320,35 @@ async function captureShots() {
 // ── Видеоклипы ───────────────────────────────────────────────────────────────
 // Каждый клип — отдельный контекст с записью. Playwright кладёт webm со
 // случайным именем, поэтому после закрытия файл переименовывается в осмысленный.
-async function clip(name, size, fn) {
+// Playwright пишет видео ровно в размер вьюпорта: deviceScaleFactor на запись
+// не влияет. Отсюда единственный способ поднять качество — снимать в большем
+// вьюпорте. Для телефонных клипов это конфликтует с вёрсткой: при ширине 1080
+// включается десктопная раскладка.
+//
+// Решение — CSS-зум. Вьюпорт 1080×2340 пишет 1080p, а `zoom: 2.5` сжимает
+// расчётную ширину макета до 432 CSS-пикселей, и медиазапросы отрабатывают как
+// на телефоне. Картинка при этом рисуется в реальные 1080 пикселей, а не
+// растягивается из 430 при монтаже.
+async function clip(name, size, fn, { zoom = 1 } = {}) {
   const tmp = join(FOOTAGE, `.tmp-${name}`)
   rmSync(tmp, { recursive: true, force: true })
   mkdirSync(tmp, { recursive: true })
 
+  const mobileLayout = size.width / zoom < 640
   const ctx = await newContext({
     viewport: size,
-    deviceScaleFactor: 1,           // запись всё равно идёт в размер вьюпорта
+    deviceScaleFactor: 1,
     recordVideo: { dir: tmp, size },
-    ...(size.width < 600 ? { isMobile: true, hasTouch: true } : {}),
+    ...(mobileLayout ? { isMobile: true, hasTouch: true } : {}),
   })
   const page = await ctx.newPage()
+  if (zoom !== 1) {
+    await page.addInitScript((z) => {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.documentElement.style.zoom = String(z)
+      })
+    }, zoom)
+  }
   try {
     await fn(page)
   } catch (e) {
@@ -357,8 +374,13 @@ async function smoothScroll(page, distance, steps = 60) {
 }
 
 async function captureClips() {
-  const PHONE = { width: 430, height: 932 }
-  const DESK = { width: 1280, height: 800 }
+  // Телефон: пишем 1080×2340 (вертикаль под Reels один в один) с зумом 2.5 —
+  // макет считается по 432 CSS-пикселям, то есть остаётся мобильным.
+  const PHONE = { width: 1080, height: 2340 }
+  const PHONE_ZOOM = 2.5
+  // Десктоп: 1600×1000 вместо прежних 1280×800 — при монтаже в 1080p кадр
+  // уменьшается, а не растягивается, и текст таблиц остаётся читаемым.
+  const DESK = { width: 1600, height: 1000 }
 
   // 01 — публичная страница на телефоне: главный кадр «одна ссылка на всё».
   await clip('01-public-phone', PHONE, async (page) => {
@@ -366,7 +388,7 @@ async function captureClips() {
     await settle(page, 1500)
     await smoothScroll(page, 2200, 90)
     await page.waitForTimeout(900)
-  })
+  }, { zoom: PHONE_ZOOM })
 
   // 02 — обход вкладок соревнования: расписание, таблица, сетка, статистика.
   await clip('02-tabs-walkthrough', DESK, async (page) => {
@@ -441,8 +463,27 @@ async function capturePage(rawPath) {
   const cleaned = rawPath.replace(/^.*?(?=\/(?:admin|dashboard|account|t|leagues)\/)/, '')
   const path = cleaned.startsWith('/') ? cleaned : `/${cleaned}`
 
-  const ctx = await newContext()
+  // --viewport=1080x2340 --zoom=2.5 повторяет условия записи клипа: так видно,
+  // осталась ли вёрстка мобильной при увеличенном вьюпорте.
+  const vpArg = args.find(a => a.startsWith('--viewport='))
+  const zoomArg = args.find(a => a.startsWith('--zoom='))
+  const zoom = zoomArg ? parseFloat(zoomArg.slice('--zoom='.length)) : 1
+  const opts = {}
+  if (vpArg) {
+    const [w, h] = vpArg.slice('--viewport='.length).split('x').map(Number)
+    opts.viewport = { width: w, height: h }
+    if (w / zoom < 640) { opts.isMobile = true; opts.hasTouch = true }
+  }
+
+  const ctx = await newContext(opts)
   const page = await ctx.newPage()
+  if (zoom !== 1) {
+    await page.addInitScript((z) => {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.documentElement.style.zoom = String(z)
+      })
+    }, zoom)
+  }
   await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded' })
   await settle(page, 1500)
 

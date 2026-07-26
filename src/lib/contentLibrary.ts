@@ -17,7 +17,10 @@ export interface ContentPost {
   audience: string
   goal: string
   title: string
+  /** Телефонный вариант — основной. */
   slides: ContentSlide[]
+  /** Десктопный дубль того же поста. Пустой, если у поста нет кадров. */
+  slidesDesktop?: ContentSlide[]
   caption: string
   hashtags: string[]
 }

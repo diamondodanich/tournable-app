@@ -372,23 +372,44 @@ function initials(name) {
   return (words[0][0] + words[1][0]).toUpperCase()
 }
 
+// Герб рисуется как настоящая клубная эмблема, а не как кружок с буквами:
+// внешнее кольцо, косые полосы в верхней половине, звезда над инициалами и
+// подложка снизу. В таблице аватар обрезается в круг, поэтому форма круглая —
+// щит был бы срезан по краям.
 function crestHtml(name, index) {
   const [deep, bright] = CREST_PALETTE[index % CREST_PALETTE.length]
+  const letters = initials(name).replace(/&/g, '&amp;').replace(/</g, '&lt;')
   return `<!doctype html><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   html,body{margin:0;width:256px;height:256px;background:transparent}
-  .c{width:256px;height:256px;border-radius:50%;
-     background:linear-gradient(145deg,${deep} 0%,${bright} 100%);
-     display:flex;align-items:center;justify-content:center;position:relative}
-  .c::after{content:'';position:absolute;inset:14px;border-radius:50%;
-     border:3px solid rgba(255,255,255,.34)}
-  span{font-family:Inter,'Segoe UI',system-ui,sans-serif;font-weight:800;
-     font-size:96px;color:#fff;letter-spacing:-.03em;line-height:1;
-     text-shadow:0 3px 10px rgba(0,0,0,.28);z-index:1}
+  .c{position:relative;width:256px;height:256px;border-radius:50%;overflow:hidden;
+     background:linear-gradient(150deg,${bright} 0%,${deep} 68%);
+     box-shadow:inset 0 0 0 7px rgba(255,255,255,.9), inset 0 0 0 11px ${deep};}
+  /* Косые полосы — верхняя половина эмблемы. */
+  .stripes{position:absolute;inset:0;
+     background:repeating-linear-gradient(115deg,
+       rgba(255,255,255,.16) 0 14px, rgba(255,255,255,0) 14px 30px);
+     -webkit-mask-image:linear-gradient(180deg,#000 0 46%,transparent 46%);
+             mask-image:linear-gradient(180deg,#000 0 46%,transparent 46%);}
+  /* Тёмная подложка снизу — на ней читаются инициалы. */
+  .base{position:absolute;left:0;right:0;bottom:0;height:52%;
+     background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.30) 55%);}
+  .star{position:absolute;top:46px;left:50%;transform:translateX(-50%);
+     width:26px;height:26px;color:rgba(255,255,255,.92)}
+  span{position:absolute;left:0;right:0;top:52%;transform:translateY(-42%);
+     text-align:center;
+     font-family:Inter,'Segoe UI',system-ui,sans-serif;font-weight:900;
+     font-size:88px;color:#fff;letter-spacing:-.04em;line-height:1;
+     text-shadow:0 4px 12px rgba(0,0,0,.35)}
 </style>
-<div class="c"><span>${initials(name).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span></div>`
+<div class="c">
+  <div class="stripes"></div>
+  <div class="base"></div>
+  <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+  <span>${letters}</span>
+</div>`
 }
 
 // Рисует и заливает гербы, возвращает Map<имя команды, публичный URL>.

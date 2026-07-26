@@ -1,0 +1,47 @@
+[
+  {
+    "file": "01-floodlights.jpg",
+    "slot": "floodlights",
+    "title": "Mecz piłkarski Wisła Kraków - Zagłębie Sosnwoiec, 28 października 2022, Pożegnanie Stadionu Ludowego, KP.jpg",
+    "license": "CC BY 4.0",
+    "author": "Krzysztof Popławski",
+    "attributionRequired": true,
+    "source": "https://commons.wikimedia.org/wiki/File%3AMecz%20pi%C5%82karski%20Wis%C5%82a%20Krak%C3%B3w%20-%20Zag%C5%82%C4%99bie%20Sosnwoiec%2C%2028%20pa%C5%BAdziernika%202022%2C%20Po%C5%BCegnanie%20Stadionu%20Ludowego%2C%20KP.jpg"
+  },
+  {
+    "file": "02-goal.jpg",
+    "slot": "goal",
+    "title": "USS Benfold soccer match 160312-N-GW139-019.jpg",
+    "license": "Public domain",
+    "author": "Petty Officer 3rd Class Eric Coffer",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AUSS%20Benfold%20soccer%20match%20160312-N-GW139-019.jpg"
+  },
+  {
+    "file": "03-ball.jpg",
+    "slot": "ball",
+    "title": "Healthy competition; Happy Feet kick their way to championship victory DVIDS435342.jpg",
+    "license": "Public domain",
+    "author": "Pfc. Brianna Christensen",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AHealthy%20competition%3B%20Happy%20Feet%20kick%20their%20way%20to%20championship%20victory%20DVIDS435342.jpg"
+  },
+  {
+    "file": "04-trophy.jpg",
+    "slot": "trophy",
+    "title": "Julie Johnston receiving trophy at 2012 FIFA U-20 Women's World Cup.jpg",
+    "license": "CC0",
+    "author": "Dɐ",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AJulie%20Johnston%20receiving%20trophy%20at%202012%20FIFA%20U-20%20Women's%20World%20Cup.jpg"
+  },
+  {
+    "file": "05-seats.jpg",
+    "slot": "seats",
+    "title": "Olympic stadium munich - Flickr - markus spiske.jpg",
+    "license": "CC0",
+    "author": "Markus Spiske from Forchheim, Bavaria Upper Franconia",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AOlympic%20stadium%20munich%20-%20Flickr%20-%20markus%20spiske.jpg"
+  }
+]

@@ -44,6 +44,10 @@ yarn-error.log*
 /marketing/out/
 /marketing/footage/
 /marketing/shots/
+# Сами фотографии не храним, а вот реестр лицензий — обязательно: он
+# доказывает, на каком основании каждый снимок попал в публикацию.
+/marketing/photos/*
+!/marketing/photos/credits.json
 
 # typescript
 *.tsbuildinfo

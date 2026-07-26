@@ -32,6 +32,28 @@ const args = process.argv.slice(2)
 const HTML_ONLY = args.includes('--html')
 const only = args.filter(a => !a.startsWith('--'))
 
+// ── Фотографии ───────────────────────────────────────────────────────────────
+// Реестр собирает fetch-photos.mjs. Он же помечает файлы, у которых лицензия
+// требует указать автора: подпись выводится прямо на слайде, иначе публикация
+// нарушает условия CC BY.
+const PHOTOS_DIR = join(ROOT, 'marketing', 'photos')
+const CREDITS_FILE = join(PHOTOS_DIR, 'credits.json')
+const PHOTO_CREDITS = existsSync(CREDITS_FILE)
+  ? JSON.parse(readFileSync(CREDITS_FILE, 'utf8'))
+  : []
+
+function photoFor(name) {
+  if (!name) return null
+  const entry = PHOTO_CREDITS.find(c => c.file === name || c.slot === name)
+  if (!entry) return null
+  const file = join(PHOTOS_DIR, entry.file)
+  if (!existsSync(file)) return null
+  return {
+    url: pathToFileURL(file).href,
+    credit: entry.attributionRequired ? `${entry.author} · ${entry.license}` : null,
+  }
+}
+
 // ── Палитра ──────────────────────────────────────────────────────────────────
 // Взята из src/lib/sports.ts, чтобы карточки в ленте и продукт на скринах
 // читались как одна система, а не как два разных бренда.
@@ -59,6 +81,7 @@ const ICONS = {
   users:  '<path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 20v-2a4 4 0 0 0-3-3.9"/>',
   chart:  '<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="m7 15 4-5 3 3 5-7"/>',
   arrow:  '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  chevrons:'<path d="m7 6 6 6-6 6M14 6l6 6-6 6"/>',
 }
 
 const icon = (name, size = 44, stroke = 'currentColor') =>
@@ -116,8 +139,11 @@ function css(a, size) {
   .brand { display:flex; align-items:center; gap:20px; }
   .brand img { height:52px; width:auto; opacity:.95; }
   .brand .url { font-size:30px; color:#ffffff9a; letter-spacing:.02em; }
-  .pageno { position:absolute; right:88px; bottom:96px; font-size:28px; color:#ffffff70;
-            font-variant-numeric: tabular-nums; }
+  /* Угловые элементы описываются с префиксом .slide, а не просто по классу:
+     правило .slide > * имеет ту же специфичность и, стоя ниже, сбрасывало бы
+     им position:absolute — подпись и нумерация уезжали в поток. */
+  .slide .pageno { position:absolute; right:88px; bottom:54px; font-size:26px; color:#ffffff70;
+            font-variant-numeric: tabular-nums; z-index:2; }
 
   /* Крупная цифра */
   .stat { font-size:260px; font-weight:850; letter-spacing:-.05em; line-height:.92;
@@ -132,17 +158,56 @@ function css(a, size) {
   .item .t { font-size:40px; line-height:1.3; font-weight:500; color:#fff; padding-top:6px; }
   .item .t small { display:block; font-size:32px; font-weight:400; color:#ffffff9e; margin-top:10px; line-height:1.35; }
 
-  /* Скрин продукта в рамке */
-  .frame { border-radius:34px; overflow:hidden; background:#0b0f17;
-           border:2px solid #ffffff1f; box-shadow:0 50px 120px -30px #000000cc; }
-  .frame .bar { height:60px; display:flex; align-items:center; gap:12px; padding:0 26px; background:#111827; }
-  .frame .dot { width:14px; height:14px; border-radius:50%; background:#ffffff26; }
-  .frame img { display:block; width:100%; height:auto; }
-  .shotcap { font-size:32px; color:#ffffffa8; margin-top:28px; line-height:1.35; }
-  /* Заглушка вместо неснятого скрина: слайд остаётся собранным, а в консоли
+  /* Мокап смартфона. Лента смотрится с телефона, поэтому продукт показываем
+     в телефоне: зритель узнаёт свой экран, а не чужой рабочий стол. */
+  .phone { width:390px; margin:0 auto; position:relative;
+           border-radius:52px; padding:11px; background:linear-gradient(160deg,#2b3440,#0b0f17 60%);
+           box-shadow:0 60px 130px -34px #000000e6, 0 0 0 2px #ffffff1a inset; }
+  .phone .screen { position:relative; width:100%; height:610px; overflow:hidden;
+                   border-radius:42px; background:#0b0f17; }
+  /* Кадр телефона высокий; берём верхнюю часть, где живёт суть экрана. */
+  .phone .screen img { display:block; width:100%; height:100%;
+                       object-fit:cover; object-position:top center; }
+  .phone .island { position:absolute; top:14px; left:50%; transform:translateX(-50%);
+                   width:112px; height:30px; border-radius:16px; background:#05070b; z-index:2; }
+  .phone .btn-r { position:absolute; right:-3px; top:170px; width:3px; height:92px;
+                  border-radius:2px; background:#ffffff2e; }
+  .phone .btn-l { position:absolute; left:-3px; top:150px; width:3px; height:58px;
+                  border-radius:2px; background:#ffffff2e; }
+  .shotcap { font-size:30px; color:#ffffffa8; margin-top:26px; line-height:1.35; text-align:center; }
+  /* Заглушка вместо неснятого кадра: слайд остаётся собранным, а в консоли
      печатается список того, что осталось доснять. */
-  .shot-missing { height:520px; display:flex; align-items:center; justify-content:center;
-                  text-align:center; padding:0 60px; color:#ffffff5c; font-size:32px; line-height:1.4; }
+  .shot-missing { height:100%; display:flex; align-items:center; justify-content:center;
+                  text-align:center; padding:0 40px; color:#ffffff5c; font-size:28px; line-height:1.4; }
+
+  /* ── Фотофон ── */
+  .photo-bg { position:absolute; inset:0; z-index:0; }
+  .photo-bg img { width:100%; height:100%; object-fit:cover; }
+  /* Три слоя поверх фото: затемнение снизу под текст, общий брендовый тон
+     и лёгкое обесцвечивание — иначе чужая палитра спорит с нашей. */
+  .photo-bg::after { content:''; position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, #04120ddd 0%, #04120d99 30%, #04120dee 78%, #04120dfa 100%),
+      linear-gradient(160deg, ${a.c}4d 0%, transparent 55%); }
+  /* Содержимое поднимается над фото. Фотослой и угловые элементы перечислены
+     в :not явно: у правил одинаковая специфичность, и без этого они получали бы
+     position:relative и уезжали в поток вместо своих углов. */
+  .slide > *:not(.photo-bg):not(.pageno):not(.nextcue):not(.credit) {
+    position:relative; z-index:1;
+  }
+  .slide .credit { position:absolute; left:88px; bottom:18px; z-index:2;
+            font-size:17px; color:#ffffff5e; letter-spacing:.01em; }
+
+  /* ── Указатель свайпа ── */
+  .swipe { display:inline-flex; align-items:center; gap:14px; align-self:flex-start;
+           padding:16px 26px; border-radius:100px; background:#ffffff14;
+           border:1px solid #ffffff2b; font-size:26px; font-weight:600;
+           letter-spacing:.02em; color:#ffffffdd; }
+  .swipe svg { color:${a.soft}; }
+  /* Тонкая стрелка внизу слева, напротив нумерации: подсказывает листать дальше. */
+  .slide .nextcue { position:absolute; left:88px; bottom:54px; z-index:2;
+             display:flex; align-items:center; gap:10px;
+             font-size:22px; color:#ffffff6b; letter-spacing:.06em; text-transform:uppercase; }
 
   /* Цитата */
   .quote { font-size:58px; line-height:1.24; font-weight:600; letter-spacing:-.02em; }
@@ -167,6 +232,18 @@ function renderSlide(slide, ctx) {
     ? `<div class="pageno">${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</div>` : ''
   const brand = `<div class="brand"><img src="${pathToFileURL(LOGO).href}" alt=""><span class="url">${esc(brandUrl)}</span></div>`
 
+  // Фотофон и обязательная подпись автора, если её требует лицензия.
+  const photo = photoFor(slide.photo)
+  const photoLayer = photo ? `<div class="photo-bg"><img src="${photo.url}" alt=""></div>` : ''
+  const creditLine = photo?.credit ? `<div class="credit">Фото: ${esc(photo.credit)}</div>` : ''
+
+  // Подсказка «листайте дальше»: на обложке — крупная, на остальных — тонкая
+  // стрелка в углу. Последний слайд её не получает, листать дальше нечего.
+  const isLast = index === total - 1
+  const swipe = `<div class="swipe">${esc(slide.swipe ?? 'Листайте')} ${icon('chevrons', 30)}</div>`
+  const nextcue = (total > 1 && !isLast && slide.type !== 'cover')
+    ? `<div class="nextcue">Дальше ${icon('arrow', 22)}</div>` : ''
+
   let inner = ''
 
   switch (slide.type) {
@@ -177,6 +254,7 @@ function renderSlide(slide, ctx) {
           <div class="stack">
             <h1${fitH1(slide.title)}>${esc(slide.title)}</h1>
             ${slide.subtitle ? `<div class="sub">${esc(slide.subtitle)}</div>` : ''}
+            ${total > 1 ? swipe : ''}
           </div>
         </div>
         ${brand}`
@@ -232,12 +310,15 @@ function renderSlide(slide, ctx) {
         ${kicker}
         <div class="mid">
           <h2${fitH2(slide.title)}>${esc(slide.title)}</h2>
-          <div style="margin-top:56px">
-            <div class="frame">
-              <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-              ${missing
-                ? `<div class="shot-missing">нет скрина: ${esc(slide.src ?? 'поле "src" не задано')}</div>`
-                : `<img src="${src}" alt="">`}
+          <div style="margin-top:44px">
+            <div class="phone">
+              <div class="btn-l"></div><div class="btn-r"></div>
+              <div class="screen">
+                <div class="island"></div>
+                ${missing
+                  ? `<div class="shot-missing">нет кадра: ${esc(slide.src ?? 'поле "src" не задано')}</div>`
+                  : `<img src="${src}" alt="">`}
+              </div>
             </div>
             ${slide.caption ? `<div class="shotcap">${esc(slide.caption)}</div>` : ''}
           </div>
@@ -276,7 +357,7 @@ function renderSlide(slide, ctx) {
       inner = `<div class="body">неизвестный тип слайда: ${esc(slide.type)}</div>`
   }
 
-  return `<div class="slide">${inner}</div>`
+  return `<div class="slide">${photoLayer}${inner}${nextcue}${creditLine}</div>`
 }
 
 function renderHtml(slide, ctx) {

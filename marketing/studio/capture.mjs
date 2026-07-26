@@ -56,7 +56,7 @@ const log = (...a) => console.log('[capture]', ...a)
 if (!URL_SB || !ANON) fail('нет NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY в .env.local')
 if (!SERVICE) fail('нет SUPABASE_SERVICE_ROLE_KEY в .env.local — без него не выпустить ссылку входа')
 
-const SLUG_SPARTAKIADA = 'demo-spartakiada-astana-2026'
+const SLUG_SCHOOL = 'demo-chempionat-shkol-astana-2026'
 const SLUG_CORPORATE = 'demo-corporate-league-astana-2026'
 const SLUG_LEAGUE = 'demo-school-football-league-astana'
 
@@ -110,12 +110,12 @@ function sessionCookies(session, domain) {
 }
 
 // ── Что снимаем ──────────────────────────────────────────────────────────────
-const { data: tSpart } = await asUser.from('tournaments').select('id').eq('slug', SLUG_SPARTAKIADA).maybeSingle()
+const { data: tSchool } = await asUser.from('tournaments').select('id').eq('slug', SLUG_SCHOOL).maybeSingle()
 const { data: tCorp } = await asUser.from('tournaments').select('id').eq('slug', SLUG_CORPORATE).maybeSingle()
 const { data: lg } = await asUser.from('leagues').select('id').eq('slug', SLUG_LEAGUE).maybeSingle()
 
-if (!tSpart) fail(`демо-данных нет в базе. Сначала: node scripts/seed-demo.mjs`)
-log(`спартакиада ${tSpart.id}, корпоративное ${tCorp?.id ?? '—'}, чемпионат ${lg?.id ?? '—'}`)
+if (!tSchool) fail(`демо-данных нет в базе. Сначала: node scripts/seed-demo.mjs`)
+log(`чемпионат школ ${tSchool.id}, корпоративное ${tCorp?.id ?? '—'}, чемпионат ${lg?.id ?? '—'}`)
 
 // ── Playwright ───────────────────────────────────────────────────────────────
 let chromium
@@ -226,7 +226,7 @@ async function captureShots() {
 
   // Соревнование: проходим по всем вкладкам, снимая каждую.
   await safely('вкладки соревнования', async () => {
-    await page.goto(`${BASE}/dashboard/tournament/${tSpart.id}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE}/dashboard/tournament/${tSchool.id}`, { waitUntil: 'domcontentloaded' })
     await settle(page, 1400)
     await shot(page, '02-tournament-top')
 
@@ -263,7 +263,7 @@ async function captureShots() {
 
   // Публичные страницы — то, что видит зритель по ссылке.
   await safely('публичная страница', async () => {
-    await page.goto(`${BASE}/t/${SLUG_SPARTAKIADA}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE}/t/${SLUG_SCHOOL}`, { waitUntil: 'domcontentloaded' })
     await settle(page, 1200)
     await shot(page, '06-public-desktop')
   })
@@ -283,9 +283,12 @@ async function captureShots() {
     hasTouch: true,
   })
   const mpage = await mob.newPage()
+
   for (const [name, url] of [
-    ['08-phone-public', `${BASE}/t/${SLUG_SPARTAKIADA}`],
-    ['09-phone-league', `${BASE}/leagues/${SLUG_LEAGUE}`],
+    ['10-phone-public', `${BASE}/t/${SLUG_SCHOOL}`],
+    ['11-phone-league', `${BASE}/leagues/${SLUG_LEAGUE}`],
+    ['12-phone-dashboard', `${BASE}/dashboard`],
+    ['13-phone-wizard', `${BASE}/dashboard/new`],
   ]) {
     try {
       await mpage.goto(url, { waitUntil: 'domcontentloaded' })
@@ -293,6 +296,24 @@ async function captureShots() {
       await shot(mpage, name)
     } catch (e) { log(`  пропуск ${name}: ${e.message.split('\n')[0]}`) }
   }
+
+  // Телефонные версии всех вкладок соревнования — именно они идут в мокап
+  // смартфона на слайдах, поэтому нужны все, а не только публичная страница.
+  try {
+    await mpage.goto(`${BASE}/dashboard/tournament/${tSchool.id}`, { waitUntil: 'domcontentloaded' })
+    await settle(mpage, 1500)
+    const tabs = mpage.getByRole('tab')
+    const count = await tabs.count()
+    for (let i = 0; i < count; i++) {
+      const tab = tabs.nth(i)
+      const label = (await tab.innerText().catch(() => `tab-${i}`)).split('\n')[0].trim()
+      await tab.click()
+      await settle(mpage, 900)
+      await focusTabs(mpage)
+      await shot(mpage, `14-${String(i + 1).padStart(2, '0')}-phone-${slugify(label) || `tab-${i}`}`)
+    }
+  } catch (e) { log(`  пропуск телефонных вкладок: ${e.message.split('\n')[0]}`) }
+
   await mob.close()
 }
 
@@ -341,7 +362,7 @@ async function captureClips() {
 
   // 01 — публичная страница на телефоне: главный кадр «одна ссылка на всё».
   await clip('01-public-phone', PHONE, async (page) => {
-    await page.goto(`${BASE}/t/${SLUG_SPARTAKIADA}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE}/t/${SLUG_SCHOOL}`, { waitUntil: 'domcontentloaded' })
     await settle(page, 1500)
     await smoothScroll(page, 2200, 90)
     await page.waitForTimeout(900)
@@ -349,7 +370,7 @@ async function captureClips() {
 
   // 02 — обход вкладок соревнования: расписание, таблица, сетка, статистика.
   await clip('02-tabs-walkthrough', DESK, async (page) => {
-    await page.goto(`${BASE}/dashboard/tournament/${tSpart.id}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE}/dashboard/tournament/${tSchool.id}`, { waitUntil: 'domcontentloaded' })
     await settle(page, 1800)
     const tabs = page.getByRole('tab')
     const count = await tabs.count()
@@ -365,7 +386,7 @@ async function captureClips() {
 
   // 03 — сетка плей-офф: медленная прокрутка от четвертьфиналов к финалу.
   await clip('03-bracket', DESK, async (page) => {
-    await page.goto(`${BASE}/dashboard/tournament/${tSpart.id}`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE}/dashboard/tournament/${tSchool.id}`, { waitUntil: 'domcontentloaded' })
     await settle(page, 1600)
     const tabs = page.getByRole('tab')
     const count = await tabs.count()

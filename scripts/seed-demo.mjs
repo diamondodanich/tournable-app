@@ -4,7 +4,7 @@
 // Наливает два эталонных, полностью заполненных турнира, с которых снимаются
 // скрины и видео для соцсетей:
 //
-//   1. «Спартакиада школ Астаны 2026» — groups_playoff, футбол, 16 команд,
+//   1. «Чемпионат школ Астаны 2026» — groups_playoff, футбол, 16 команд,
 //      4 группы, сыгранная групповая стадия + плей-офф до финала, составы,
 //      голы/ассисты/карточки, чемпионат (лига) с сезоном.
 //   2. «Корпоративная лига Астаны 2026» — round_robin, футзал, 10 команд,
@@ -213,9 +213,13 @@ const slugify = (name) => name.toLowerCase().split('').map(c => CYRILLIC[c] ?? c
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50)
 
 // Фиксированные слаги — по ним --reset находит и сносит прошлое демо.
-const SLUG_SPARTAKIADA = 'demo-spartakiada-astana-2026'
+const SLUG_SCHOOL = 'demo-chempionat-shkol-astana-2026'
 const SLUG_CORPORATE = 'demo-corporate-league-astana-2026'
 const SLUG_LEAGUE = 'demo-school-football-league-astana'
+
+// Слаги прошлых поколений демо: их тоже надо снести при --reset, иначе в
+// дашборде копятся соревнования от прежних прогонов.
+const LEGACY_SLUGS = ['demo-spartakiada-astana-2026']
 
 // ── генерация результата матча ───────────────────────────────────────────────
 // Сила команды (1..5) смещает счёт: таблица получается осмысленной, а не шумом.
@@ -435,7 +439,8 @@ async function insertChunked(supabase, table, rows, chunk = 400) {
 // ── удаление прошлого демо ───────────────────────────────────────────────────
 async function resetDemo(supabase) {
   console.log('[seed] --reset: удаляю прошлое демо…')
-  const { data: ts } = await supabase.from('tournaments').select('id').in('slug', [SLUG_SPARTAKIADA, SLUG_CORPORATE])
+  const { data: ts } = await supabase.from('tournaments').select('id')
+    .in('slug', [SLUG_SCHOOL, SLUG_CORPORATE, ...LEGACY_SLUGS])
   for (const t of ts ?? []) {
     // Каскады в схеме сносят fixtures/teams/match_events/playoff_matches сами.
     await supabase.from('tournaments').delete().eq('id', t.id)
@@ -445,11 +450,11 @@ async function resetDemo(supabase) {
   console.log(`[seed] удалено турниров: ${(ts ?? []).length}, чемпионатов: ${(ls ?? []).length}`)
 }
 
-// ── турнир 1: спартакиада (группы + плей-офф) ────────────────────────────────
+// ── соревнование 1: чемпионат школ (группы + плей-офф) ────────────────────────────────
 async function seedSpartakiada(supabase, userId, crests) {
-  const { data: existing } = await supabase.from('tournaments').select('id').eq('slug', SLUG_SPARTAKIADA).maybeSingle()
+  const { data: existing } = await supabase.from('tournaments').select('id').eq('slug', SLUG_SCHOOL).maybeSingle()
   if (existing) {
-    console.log('[seed] спартакиада уже есть — пропускаю (перезалить: --reset)')
+    console.log('[seed] чемпионат школ уже есть — пропускаю (перезалить: --reset)')
     return existing.id
   }
 
@@ -459,8 +464,8 @@ async function seedSpartakiada(supabase, userId, crests) {
   const { error: tErr } = await supabase.from('tournaments').insert({
     id: tournamentId,
     user_id: userId,
-    name: 'Спартакиада школ Астаны 2026',
-    slug: SLUG_SPARTAKIADA,
+    name: 'Чемпионат школ Астаны 2026',
+    slug: SLUG_SCHOOL,
     num_rounds: 1,
     format: 'groups_playoff',
     sport: 'football',
@@ -472,7 +477,7 @@ async function seedSpartakiada(supabase, userId, crests) {
     teams_advance: 2,
     generated: true,
   })
-  if (tErr) fail(`не удалось создать спартакиаду: ${tErr.message}`)
+  if (tErr) fail(`не удалось создать чемпионат школ: ${tErr.message}`)
 
   // Serpentine seeding — та же раскладка, что в мастере создания турнира.
   const teamRows = SCHOOLS.map((name, i) => {
@@ -596,7 +601,7 @@ async function seedSpartakiada(supabase, userId, crests) {
   else if (poEvents.length > 400) await insertChunked(supabase, 'match_events', poEvents.slice(400))
 
   const champion = rosters.get(poRows.find(r => r.round_order === 1)?.winner_id)
-  console.log(`[seed] спартакиада готова: 16 команд, ${fixtures.length} матчей группы, ${poRows.length} матчей плей-офф`)
+  console.log(`[seed] чемпионат школ готов: 16 команд, ${fixtures.length} матчей группы, ${poRows.length} матчей плей-офф`)
   console.log(`[seed]   чемпион: ${champion?.name ?? '—'}`)
   return tournamentId
 }
@@ -673,7 +678,7 @@ async function seedCorporate(supabase, userId, crests) {
   return tournamentId
 }
 
-// ── чемпионат (лига) поверх спартакиады ──────────────────────────────────────
+// ── чемпионат (лига) поверх школьного соревнования ──────────────────────────────────────
 // Даёт публичные страницы лиги/команд/игроков — это то, что индексируется
 // поисковиками и что показываем как «ваш турнир живёт по своей ссылке».
 async function seedLeague(supabase, userId, spartakiadaId, crests) {
@@ -772,9 +777,9 @@ const leagueId = await seedLeague(supabase, userId, spartakiadaId, crests)
 
 const APP = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 console.log('\n[seed] готово. Что снимать:')
-console.log(`  Спартакиада (группы + сетка):  ${APP}/dashboard/tournament/${spartakiadaId}`)
+console.log(`  Чемпионат школ (группы + сетка): ${APP}/dashboard/tournament/${spartakiadaId}`)
 console.log(`  Корпоративная лига (в разгаре): ${APP}/dashboard/tournament/${corporateId}`)
 if (leagueId) console.log(`  Чемпионат (дашборд):           ${APP}/dashboard/leagues/${leagueId}`)
-console.log(`  Публичная страница турнира:     ${APP}/t/${SLUG_SPARTAKIADA}`)
+console.log(`  Публичная страница турнира:     ${APP}/t/${SLUG_SCHOOL}`)
 console.log(`  Публичная страница чемпионата:  ${APP}/leagues/${SLUG_LEAGUE}`)
 console.log('\n  Названия школ, компаний и игроков вымышленные.\n')

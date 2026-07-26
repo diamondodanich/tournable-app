@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createTournamentWithSetup } from './tournaments'
 import { seasonName as computeSeasonName, type SeasonPeriod } from '@/lib/seasons'
+import { submitToIndexNow } from '@/lib/indexnow'
 
 // ─── Slug generation (same transliteration as tournaments) ────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -80,6 +81,7 @@ export async function createLeague(formData: FormData): Promise<{ error?: string
   })
 
   if (error) return { error: error.message }
+  await submitToIndexNow([`/leagues/${slug}`])
   revalidatePath('/dashboard/leagues')
   redirect(`/dashboard/leagues/${id}`)
 }
@@ -99,6 +101,13 @@ export async function updateLeague(
     .eq('owner_id', user.id)
 
   if (error) return { error: error.message }
+
+  // Going public, or changing the copy Google shows, is worth re-submitting.
+  if (data.is_public !== false) {
+    const { data: league } = await supabase.from('leagues').select('slug').eq('id', leagueId).maybeSingle()
+    if (league?.slug) await submitToIndexNow([`/leagues/${league.slug}`])
+  }
+
   revalidatePath(`/dashboard/leagues/${leagueId}`)
   return {}
 }
@@ -407,6 +416,10 @@ export async function createChampionshipWithSetup(
     name: seasonName.trim() || 'Сезон 1',
     status: 'active',
   })
+
+  // createTournamentWithSetup already submitted the tournament URL; here only
+  // the championship page is new.
+  await submitToIndexNow([`/leagues/${leagueSlug}`])
 
   revalidatePath('/dashboard')
   return { leagueId, tournamentId: t.id, teamIds: tournamentTeamIds }

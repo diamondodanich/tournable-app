@@ -23,6 +23,27 @@ export function canonicalFor(path: string) {
   return { canonical: path }
 }
 
+/** URL prefix carrying the page language: '' for Russian, '/kz', '/en'. */
+export function langPrefix(lang: Lang): '' | '/en' | '/kz' {
+  return lang === 'en' ? '/en' : lang === 'kz' ? '/kz' : ''
+}
+
+/**
+ * Canonical + hreflang cluster for a page that exists at `/x`, `/kz/x` and
+ * `/en/x`. `path` is always the Russian (prefix-less) path.
+ */
+export function trilingualAlternates(path: string, lang: Lang) {
+  return {
+    canonical: `${langPrefix(lang)}${path}`,
+    languages: {
+      ru: absUrl(path),
+      kk: absUrl(`/kz${path}`),
+      en: absUrl(`/en${path}`),
+      'x-default': absUrl(path),
+    },
+  }
+}
+
 /**
  * `alternates` for the landing pages, which exist at three URLs (/, /en, /kz).
  * `kk` is the ISO-639-1 code for Kazakh — `kz` is a country code and is ignored

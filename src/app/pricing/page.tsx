@@ -285,7 +285,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: canonicalFor('/pricing'),
     openGraph: {
       title: tx.metaTitle, description: tx.metaDescription, type: 'website',
-      url: absUrl('/pricing'), siteName: 'Tournable', images: [{ url: '/logo-green.png' }],
+      url: absUrl('/pricing'), siteName: 'Tournable',
     },
   }
 }

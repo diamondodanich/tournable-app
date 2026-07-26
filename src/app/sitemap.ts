@@ -3,10 +3,11 @@ import type { MetadataRoute } from 'next'
 import { APP_URL } from '@/lib/appUrl'
 import { SPORT_SEO } from '@/lib/sportSeo'
 
-// A sitemap file may hold at most 50 000 URLs. These caps keep us inside that
-// budget with room to spare; when any of them starts binding, split the sitemap
-// per entity type behind a sitemap index.
-const LIMITS = { tournaments: 2000, leagues: 500, teams: 2000, players: 5000, matches: 5000 }
+// A sitemap file may hold at most 50 000 URLs, and every entity is listed three
+// times (ru / kz / en), so the effective budget per entity is a third of that.
+// These caps keep the total near 30 000; when any of them starts binding, split
+// the sitemap per entity type behind a sitemap index.
+const LIMITS = { tournaments: 1500, leagues: 500, teams: 1500, players: 3000, matches: 3000 }
 
 /** The three localized variants of a marketing path, cross-linked via hreflang. */
 function trilingual(path: string, priority: number, changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'], lastModified: Date): MetadataRoute.Sitemap {
@@ -51,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // scoped to public leagues — private championships must not leak through here.
   let teams: { id: string; slug: string; league_id: string }[] = []
   let players: { id: string; league_team_id: string }[] = []
-  let matches: { id: string; tournament_id: string }[] = []
+  let matches: { id: string; tournament_id: string; played_at: string | null }[] = []
   let leagueIdByTournament = new Map<string, string>()
 
   if (leagueIds.length > 0) {
@@ -70,16 +71,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const teamIds = teams.map(t => t.id)
     const tournamentIds = [...leagueIdByTournament.keys()]
 
-    const [{ data: playerRows }, { data: matchRows }] = await Promise.all([
+    // `played_at` arrives with migration 046. Selecting a column that does not
+    // exist fails the whole query, which would silently drop every match URL
+    // from the sitemap — so fall back to the columns that are always there.
+    const playedFixtures = async () => {
+      if (!tournamentIds.length) return [] as typeof matches
+      const query = (columns: string) => supabase
+        .from('fixtures').select(columns)
+        .in('tournament_id', tournamentIds)
+        .eq('played', true).eq('is_bye', false).limit(LIMITS.matches)
+      const { data, error } = await query('id, tournament_id, played_at')
+      if (!error) return (data ?? []) as unknown as typeof matches
+      const { data: legacy } = await query('id, tournament_id')
+      return ((legacy ?? []) as unknown as { id: string; tournament_id: string }[])
+        .map(m => ({ ...m, played_at: null }))
+    }
+
+    const [{ data: playerRows }, matchRows] = await Promise.all([
       teamIds.length
         ? supabase.from('players').select('id, league_team_id').in('league_team_id', teamIds).limit(LIMITS.players)
         : Promise.resolve({ data: [] as typeof players }),
-      tournamentIds.length
-        ? supabase.from('fixtures').select('id, tournament_id').in('tournament_id', tournamentIds).eq('played', true).eq('is_bye', false).limit(LIMITS.matches)
-        : Promise.resolve({ data: [] as typeof matches }),
+      playedFixtures(),
     ])
     players = (playerRows ?? []) as typeof players
-    matches = (matchRows ?? []) as typeof matches
+    matches = matchRows
   }
 
   const teamById = new Map(teams.map(t => [t.id, t]))
@@ -95,46 +110,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/privacy`, lastModified: now, changeFrequency: 'yearly',  priority: 0.2 },
   ]
 
-  const tournamentUrls: MetadataRoute.Sitemap = (tournaments ?? []).map(t => ({
-    url: `${APP_URL}/t/${t.slug ?? t.id}`,
-    lastModified: new Date(t.updated_at),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }))
+  const tournamentUrls: MetadataRoute.Sitemap = (tournaments ?? []).flatMap(t =>
+    trilingual(`/t/${t.slug ?? t.id}`, 0.7, 'weekly', new Date(t.updated_at))
+  )
 
   const leagueUrls: MetadataRoute.Sitemap = publicLeagues.flatMap(l => [
-    { url: `${APP_URL}/leagues/${l.slug}`, lastModified: new Date(l.created_at), changeFrequency: 'daily' as const, priority: 0.8 },
-    { url: `${APP_URL}/leagues/${l.slug}/players`, lastModified: new Date(l.created_at), changeFrequency: 'weekly' as const, priority: 0.5 },
+    ...trilingual(`/leagues/${l.slug}`, 0.8, 'daily', new Date(l.created_at)),
+    ...trilingual(`/leagues/${l.slug}/players`, 0.5, 'weekly', new Date(l.created_at)),
   ])
 
-  const teamUrls: MetadataRoute.Sitemap = teams
-    .map(t => {
-      const leagueSlug = leagueSlugById.get(t.league_id)
-      return leagueSlug
-        ? { url: `${APP_URL}/leagues/${leagueSlug}/teams/${t.slug}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 }
-        : null
-    })
-    .filter((u): u is NonNullable<typeof u> => !!u)
+  const teamUrls: MetadataRoute.Sitemap = teams.flatMap(t => {
+    const leagueSlug = leagueSlugById.get(t.league_id)
+    return leagueSlug ? trilingual(`/leagues/${leagueSlug}/teams/${t.slug}`, 0.6, 'weekly', now) : []
+  })
 
-  const playerUrls: MetadataRoute.Sitemap = players
-    .map(p => {
-      const team = teamById.get(p.league_team_id)
-      const leagueSlug = team ? leagueSlugById.get(team.league_id) : undefined
-      return leagueSlug
-        ? { url: `${APP_URL}/leagues/${leagueSlug}/players/${p.id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.5 }
-        : null
-    })
-    .filter((u): u is NonNullable<typeof u> => !!u)
+  const playerUrls: MetadataRoute.Sitemap = players.flatMap(p => {
+    const team = teamById.get(p.league_team_id)
+    const leagueSlug = team ? leagueSlugById.get(team.league_id) : undefined
+    return leagueSlug ? trilingual(`/leagues/${leagueSlug}/players/${p.id}`, 0.5, 'weekly', now) : []
+  })
 
-  const matchUrls: MetadataRoute.Sitemap = matches
-    .map(m => {
-      const leagueId = leagueIdByTournament.get(m.tournament_id)
-      const leagueSlug = leagueId ? leagueSlugById.get(leagueId) : undefined
-      return leagueSlug
-        ? { url: `${APP_URL}/leagues/${leagueSlug}/matches/${m.id}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.4 }
-        : null
-    })
-    .filter((u): u is NonNullable<typeof u> => !!u)
+  const matchUrls: MetadataRoute.Sitemap = matches.flatMap(m => {
+    const leagueId = leagueIdByTournament.get(m.tournament_id)
+    const leagueSlug = leagueId ? leagueSlugById.get(leagueId) : undefined
+    if (!leagueSlug) return []
+    // A finished match does not change again — its play date is a truthful
+    // lastmod and keeps crawlers from re-fetching settled pages.
+    return trilingual(
+      `/leagues/${leagueSlug}/matches/${m.id}`,
+      0.4, 'monthly',
+      m.played_at ? new Date(m.played_at) : now,
+    )
+  })
 
   return [...marketing, ...leagueUrls, ...tournamentUrls, ...teamUrls, ...playerUrls, ...matchUrls]
 }

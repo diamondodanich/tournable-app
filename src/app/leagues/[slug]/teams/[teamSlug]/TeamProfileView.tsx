@@ -48,10 +48,12 @@ function Avatar({ name, photo, brand }: { name: string; photo: string | null; br
 }
 
 export default function TeamProfileView({
-  slug, leagueId, leagueName, teamId, teamName, city, sport, brand,
+  slug, pathPrefix = '', leagueId, leagueName, teamId, teamName, city, sport, brand,
   players, history, matches, lang = 'ru', isOwner = false,
 }: {
   slug: string
+  /** '' | '/kz' | '/en' — keeps in-page links on the language the visitor is reading. */
+  pathPrefix?: string
   leagueId: string
   leagueName: string
   teamId: string
@@ -87,7 +89,7 @@ export default function TeamProfileView({
       <div className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ background: `radial-gradient(1000px 260px at 15% -40%, ${brand}, transparent)` }} />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-8">
-          <Link href={`/leagues/${slug}`}
+          <Link href={`${pathPrefix}/leagues/${slug}`}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-3 py-1.5 mb-4 transition-colors">
             <ChevronLeft size={15} /> {leagueName}
           </Link>
@@ -132,7 +134,7 @@ export default function TeamProfileView({
             ) : (
               <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                 {players.slice().sort((a, b) => (a.number ?? 99) - (b.number ?? 99)).map((p, i) => (
-                  <Link key={p.id} href={`/leagues/${slug}/players/${p.id}`}>
+                  <Link key={p.id} href={`${pathPrefix}/leagues/${slug}/players/${p.id}`}>
                     <div className={`flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors ${i > 0 ? 'border-t border-white/5' : ''}`}>
                       <Avatar name={p.name} photo={p.photo_url} brand={brand} />
                       {p.number != null && <span className="w-5 text-right text-xs font-black text-white/30 shrink-0">{p.number}</span>}

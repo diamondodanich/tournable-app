@@ -34,9 +34,8 @@ export async function generateMetadata({ params }: { params: Promise<{ sport: st
     openGraph: {
       title: copy.h1, description: copy.description, type: 'website',
       url: absUrl(path), siteName: 'Tournable', locale: 'ru_RU',
-      images: [{ url: '/logo-green.png' }],
     },
-    twitter: { card: 'summary', title: copy.h1, description: copy.description },
+    twitter: { card: 'summary_large_image', title: copy.h1, description: copy.description },
   }
 }
 

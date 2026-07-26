@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { maybeSeedPlayoff } from './tournaments'
+import { updateFixtureResult } from '@/lib/fixtures'
 
 async function getOwnerOrEditorCheck(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -88,14 +89,14 @@ export async function finishLiveMatch(
   if (fetchError || !liveGame) return { error: 'Матч не найден' }
 
   if (liveGame.fixture_id) {
-    const { error } = await supabase.from('fixtures').update({
+    const { error } = await updateFixtureResult(supabase, liveGame.fixture_id, {
       home_score: liveGame.home_score,
       away_score: liveGame.away_score,
       played: true,
       status: 'finished',
-    }).eq('id', liveGame.fixture_id)
+    })
 
-    if (error) return { error: error.message }
+    if (error) return { error }
   }
 
   if (liveGame.playoff_match_id) {

@@ -37,15 +37,23 @@ export const metadata: Metadata = {
     title: 'Tournable — создать турнир онлайн за минуту',
     description: DESCRIPTION,
     locale: 'ru_RU',
-    images: [{ url: '/logo-green.png' }],
+    // No `images` here on purpose. An explicit value overrides the
+    // `opengraph-image` file convention and, being inherited by every segment,
+    // would replace each page's generated 1200×630 card with the site logo.
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Tournable — создать турнир онлайн',
     description: DESCRIPTION,
-    images: ['/logo-green.png'],
   },
   robots: { index: true, follow: true },
+  // Ownership tokens for Search Console / Яндекс.Вебмастер. Paste the value the
+  // panel gives you into the matching Vercel env var and redeploy — the tag only
+  // appears once the variable is set, so nothing is emitted locally.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.YANDEX_VERIFICATION || undefined,
+  },
   icons: {
     icon: '/logo-green.png',
     shortcut: '/logo-green.png',

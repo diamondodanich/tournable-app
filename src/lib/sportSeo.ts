@@ -13,6 +13,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { SPORT_CATEGORIES, getSubtype, getCategoryForSport, type Lang } from '@/lib/sports'
+import { langPrefix } from '@/lib/seo'
 
 export interface SportSeoEntry {
   /** URL segment: /sports/<slug> */
@@ -93,9 +94,10 @@ export function sportDisplayName(sport: string | null | undefined, lang: Lang): 
   return BY_SPORT.get(sport)?.name[lang] ?? null
 }
 
-export function langPrefix(lang: Lang): '' | '/en' | '/kz' {
-  return lang === 'en' ? '/en' : lang === 'kz' ? '/kz' : ''
-}
+// Re-exported so sport pages keep a single import; both live in `seo.ts` because
+// every public page needs them, not just the sport landings.
+export { trilingualAlternates } from '@/lib/seo'
+export { langPrefix }
 
 /** "по футболу" / "Футбол бойынша" / "football" — the phrase that follows «турнир». */
 export function sportPhrase(entry: SportSeoEntry, lang: Lang): string {
@@ -380,23 +382,6 @@ function enFaq(phrase: string, art: 'a' | 'an', unit: string, formats: string) {
     { q: 'Do spectators need an account?', a: 'No. The tournament page is a public link — table, fixtures, results and statistics are visible to anyone you send it to.' },
     { q: 'Can I run a multi-season championship?', a: 'Yes. A championship groups seasons together, keeps permanent team and player pages and shows all-time statistics rather than just the current season.' },
   ]
-}
-
-/**
- * Canonical + hreflang cluster for a page that exists at `/x`, `/kz/x` and `/en/x`.
- * `path` is the Russian (prefix-less) path, e.g. `/sports/football`.
- */
-export function trilingualAlternates(path: string, lang: Lang) {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://tournable.app').replace(/\/+$/, '')
-  return {
-    canonical: `${langPrefix(lang)}${path}`,
-    languages: {
-      ru: `${base}${path}`,
-      kk: `${base}/kz${path}`,
-      en: `${base}/en${path}`,
-      'x-default': `${base}${path}`,
-    },
-  }
 }
 
 /** Every sport page except the current one, for the cross-link block. */

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { generatePlayoffBracket, seededBracketPositions, buildDoubleElimRows } from '@/lib/tournament/playoff'
+import { updateFixtureResult } from '@/lib/fixtures'
+import { submitToIndexNow } from '@/lib/indexnow'
 
 // ─── Slug generation ──────────────────────────────────────────────────────────
 const CYRILLIC: Record<string, string> = {
@@ -277,6 +279,10 @@ export async function createTournamentWithSetup(
   if (settings?.playoffTwoLegged) {
     await supabase.from('playoff_matches').update({ two_legged: true }).eq('tournament_id', t.id)
   }
+
+  // Tell Bing/Yandex the page exists instead of waiting for the next crawl of
+  // the sitemap. No-op unless INDEXNOW_KEY is configured.
+  await submitToIndexNow([`/t/${t.slug ?? t.id}`])
 
   revalidatePath('/dashboard')
   return { id: t.id, teamIds }
@@ -749,14 +755,14 @@ export async function saveFixtureResult(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  const { error: fixtureError } = await supabase.from('fixtures').update({
+  const { error: fixtureErrorMessage } = await updateFixtureResult(supabase, fixtureId, {
     home_score: homeScore,
     away_score: awayScore,
     played: true,
     status: 'finished',
-  }).eq('id', fixtureId)
+  })
 
-  if (fixtureError) return { error: fixtureError.message }
+  if (fixtureErrorMessage) return { error: fixtureErrorMessage }
 
   const { error: deleteError } = await supabase
     .from('match_events').delete().eq('fixture_id', fixtureId)

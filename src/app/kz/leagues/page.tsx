@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE, description: DESCRIPTION, type: 'website',
     url: absUrl('/kz/leagues'), siteName: 'Tournable', locale: 'kk_KZ',
-    images: [{ url: '/logo-green.png' }],
   },
 }
 

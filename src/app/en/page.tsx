@@ -17,7 +17,6 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website', siteName: 'Tournable', url: absUrl('/en'),
       title: t.title, description: t.description, locale: OG_LOCALE.en,
-      images: [{ url: '/logo-green.png' }],
     },
   }
 }

@@ -18,7 +18,16 @@
     "source": "https://commons.wikimedia.org/wiki/File%3AUSS%20Benfold%20soccer%20match%20160312-N-GW139-019.jpg"
   },
   {
-    "file": "03-ball.jpg",
+    "file": "03-goal-2.jpg",
+    "slot": "goal-2",
+    "title": "USS Benfold soccer match 160312-N-GW139-010.jpg",
+    "license": "Public domain",
+    "author": "Petty Officer 3rd Class Eric Coffer",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AUSS%20Benfold%20soccer%20match%20160312-N-GW139-010.jpg"
+  },
+  {
+    "file": "04-ball.jpg",
     "slot": "ball",
     "title": "Healthy competition; Happy Feet kick their way to championship victory DVIDS435342.jpg",
     "license": "Public domain",
@@ -27,21 +36,75 @@
     "source": "https://commons.wikimedia.org/wiki/File%3AHealthy%20competition%3B%20Happy%20Feet%20kick%20their%20way%20to%20championship%20victory%20DVIDS435342.jpg"
   },
   {
-    "file": "04-trophy.jpg",
-    "slot": "trophy",
-    "title": "Julie Johnston receiving trophy at 2012 FIFA U-20 Women's World Cup.jpg",
-    "license": "CC0",
-    "author": "Dɐ",
+    "file": "05-ball-2.jpg",
+    "slot": "ball-2",
+    "title": "ANSF, ISAF partner to open new soccer field in Kandahar City 110608-A-DE255-143.jpg",
+    "license": "Public domain",
+    "author": "Sgt. Breanne Pye",
     "attributionRequired": false,
-    "source": "https://commons.wikimedia.org/wiki/File%3AJulie%20Johnston%20receiving%20trophy%20at%202012%20FIFA%20U-20%20Women's%20World%20Cup.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File%3AANSF%2C%20ISAF%20partner%20to%20open%20new%20soccer%20field%20in%20Kandahar%20City%20110608-A-DE255-143.jpg"
   },
   {
-    "file": "05-seats.jpg",
-    "slot": "seats",
-    "title": "Olympic stadium munich - Flickr - markus spiske.jpg",
-    "license": "CC0",
-    "author": "Markus Spiske from Forchheim, Bavaria Upper Franconia",
+    "file": "06-school.jpg",
+    "slot": "school",
+    "title": "Fairfax County School sports - 05.JPG",
+    "license": "CC BY 4.0",
+    "author": "Jarek Tuszyński",
+    "attributionRequired": true,
+    "source": "https://commons.wikimedia.org/wiki/File%3AFairfax%20County%20School%20sports%20-%2005.JPG"
+  },
+  {
+    "file": "07-school-2.jpg",
+    "slot": "school-2",
+    "title": "Service and sportsmanship Camp Zama community runs, kicks and pulls toward the end of Army Birthday Week (27793472675).jpg",
+    "license": "CC BY 2.0",
+    "author": "USARJ NCO CORPS",
+    "attributionRequired": true,
+    "source": "https://commons.wikimedia.org/wiki/File%3AService%20and%20sportsmanship%20Camp%20Zama%20community%20runs%2C%20kicks%20and%20pulls%20toward%20the%20end%20of%20Army%20Birthday%20Week%20(27793472675).jpg"
+  },
+  {
+    "file": "08-team.jpg",
+    "slot": "team",
+    "title": "Sanfrecce Hiroshima - team huddle.jpg",
+    "license": "CC BY 2.0",
+    "author": "yoppy",
+    "attributionRequired": true,
+    "source": "https://commons.wikimedia.org/wiki/File%3ASanfrecce%20Hiroshima%20-%20team%20huddle.jpg"
+  },
+  {
+    "file": "09-volleyball.jpg",
+    "slot": "volleyball",
+    "title": "2016 Invictus Games, US Team play New Zealand in wheelchair tennis 160511-D-BB251-010.jpg",
+    "license": "Public domain",
+    "author": "Roger Wollenberg",
     "attributionRequired": false,
-    "source": "https://commons.wikimedia.org/wiki/File%3AOlympic%20stadium%20munich%20-%20Flickr%20-%20markus%20spiske.jpg"
+    "source": "https://commons.wikimedia.org/wiki/File%3A2016%20Invictus%20Games%2C%20US%20Team%20play%20New%20Zealand%20in%20wheelchair%20tennis%20160511-D-BB251-010.jpg"
+  },
+  {
+    "file": "10-gym.jpg",
+    "slot": "gym",
+    "title": "Gyrec011.JPG",
+    "license": "Public domain",
+    "author": "I.Sáček, senior",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AGyrec011.JPG"
+  },
+  {
+    "file": "11-gym-2.jpg",
+    "slot": "gym-2",
+    "title": "Gyrec018.JPG",
+    "license": "Public domain",
+    "author": "I.Sáček, senior",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AGyrec018.JPG"
+  },
+  {
+    "file": "16-office.jpg",
+    "slot": "office",
+    "title": "Alan Schaaf, Imgur Founder, in Wellington for TEDxWellington & more (14935425508).jpg",
+    "license": "Public domain",
+    "author": "US Embassy from New Zealand",
+    "attributionRequired": false,
+    "source": "https://commons.wikimedia.org/wiki/File%3AAlan%20Schaaf%2C%20Imgur%20Founder%2C%20in%20Wellington%20for%20TEDxWellington%20%26%20more%20(14935425508).jpg"
   }
 ]

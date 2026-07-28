@@ -1,20 +1,23 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Copy, Check, Download, Images, Film, Monitor, Smartphone, X, ChevronLeft, ChevronRight,
+  Archive, Undo2,
 } from 'lucide-react'
+import { setPostUsed } from '@/app/actions/contentLibrary'
 import {
   type ContentManifest, type ContentPost, type ContentSlide,
   downloadUrl, formatBytes, LANG_LABEL,
 } from '@/lib/contentLibrary'
 
-type Tab = 'posts' | 'clips' | 'shots'
+type Tab = 'posts' | 'used' | 'clips' | 'shots'
 type Device = 'phone' | 'desktop'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'posts', label: 'Карусели', icon: Images },
+  { id: 'posts', label: 'В работе', icon: Images },
+  { id: 'used', label: 'Использованные', icon: Archive },
   { id: 'clips', label: 'Видео', icon: Film },
   { id: 'shots', label: 'Кадры продукта', icon: Monitor },
 ]
@@ -90,14 +93,22 @@ function DownloadAllButton({ slug, slides, suffix }: { slug: string; slides: Con
   )
 }
 
-function PostCard({ post, onOpen }: { post: ContentPost; onOpen: (v: Viewer) => void }) {
+function PostCard({ post, onOpen, used, onToggleUsed }: {
+  post: ContentPost
+  onOpen: (v: Viewer) => void
+  used: boolean
+  onToggleUsed: (slug: string, used: boolean) => void
+}) {
   const hasDesktop = (post.slidesDesktop?.length ?? 0) > 0
   const [device, setDevice] = useState<Device>('phone')
+  const [pending, startTransition] = useTransition()
   const slides = device === 'desktop' ? (post.slidesDesktop ?? []) : post.slides
   const hashtags = post.hashtags.map(h => (h.startsWith('#') ? h : `#${h}`)).join(' ')
 
   return (
-    <article className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <article className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${
+      used ? 'opacity-70' : ''
+    }`}>
       <div className="p-4 sm:p-5 flex flex-col gap-2.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-black tabular-nums px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">
@@ -171,6 +182,20 @@ function PostCard({ post, onOpen }: { post: ContentPost; onOpen: (v: Viewer) => 
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <CopyButton text={`${post.caption}\n\n${hashtags}`} label="Скопировать текст" />
           <DownloadAllButton slug={post.slug} slides={slides} suffix={device} />
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => startTransition(() => onToggleUsed(post.slug, !used))}
+            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold
+              transition-colors disabled:opacity-60 ${
+                used
+                  ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+          >
+            {used ? <Undo2 size={13} /> : <Archive size={13} />}
+            {pending ? 'Сохраняю…' : used ? 'Вернуть в работу' : 'Использовано'}
+          </button>
         </div>
       </div>
     </article>
@@ -280,9 +305,29 @@ function NavButton({ side, onClick }: { side: 'left' | 'right'; onClick: () => v
   )
 }
 
-export default function ContentLibrary({ manifest }: { manifest: ContentManifest }) {
+export default function ContentLibrary({ manifest, initialUsed }: {
+  manifest: ContentManifest
+  initialUsed: string[]
+}) {
   const [tab, setTab] = useState<Tab>('posts')
   const [viewer, setViewer] = useState<Viewer | null>(null)
+  // Локальная копия отметок: список перестраивается сразу по клику, не дожидаясь
+  // ответа сервера, иначе карточка «зависает» на месте до перезагрузки.
+  const [used, setUsed] = useState<string[]>(initialUsed)
+
+  const toggleUsed = useCallback(async (slug: string, next: boolean) => {
+    setUsed(prev => (next ? [...new Set([...prev, slug])] : prev.filter(s => s !== slug)))
+    const res = await setPostUsed(slug, next)
+    if (res.error) {
+      // Откатываем: раз на сервере не сохранилось, показывать как сохранённое нельзя.
+      setUsed(prev => (next ? prev.filter(s => s !== slug) : [...new Set([...prev, slug])]))
+      alert(`Не удалось сохранить отметку: ${res.error}`)
+    }
+  }, [])
+
+  const usedSet = new Set(used)
+  const active = manifest.posts.filter(p => !usedSet.has(p.slug))
+  const archived = manifest.posts.filter(p => usedSet.has(p.slug))
 
   const move = useCallback((delta: number) => {
     setViewer(v => {
@@ -295,29 +340,55 @@ export default function ContentLibrary({ manifest }: { manifest: ContentManifest
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-1.5 p-1 bg-white rounded-xl border border-gray-100 shadow-sm w-fit max-w-full overflow-x-auto">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTab(id)}
-            className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm
-              font-bold whitespace-nowrap transition-colors ${
-                tab === id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-          >
-            <Icon size={14} className="shrink-0" />
-            {label}
-          </button>
-        ))}
+        {TABS.map(({ id, label, icon: Icon }) => {
+          const count = id === 'posts' ? active.length
+            : id === 'used' ? archived.length
+            : id === 'clips' ? manifest.clips.length
+            : manifest.shots.length
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm
+                font-bold whitespace-nowrap transition-colors ${
+                  tab === id
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+            >
+              <Icon size={14} className="shrink-0" />
+              {label}
+              <span className={`tabular-nums text-[11px] ${tab === id ? 'text-white/70' : 'text-gray-400'}`}>
+                {count}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {tab === 'posts' && (
         <div className="flex flex-col gap-4">
-          {manifest.posts.length === 0 && <Empty>Каруселей пока нет.</Empty>}
-          {manifest.posts.map(post => (
-            <PostCard key={post.slug} post={post} onOpen={setViewer} />
+          {active.length === 0 && <Empty>Все карусели отмечены как использованные.</Empty>}
+          {active.map(post => (
+            <PostCard
+              key={post.slug} post={post} onOpen={setViewer}
+              used={false} onToggleUsed={toggleUsed}
+            />
+          ))}
+        </div>
+      )}
+
+      {tab === 'used' && (
+        <div className="flex flex-col gap-4">
+          {archived.length === 0 && (
+            <Empty>Пока ничего не отмечено. Кнопка «Использовано» есть под каждой каруселью.</Empty>
+          )}
+          {archived.map(post => (
+            <PostCard
+              key={post.slug} post={post} onOpen={setViewer}
+              used onToggleUsed={toggleUsed}
+            />
           ))}
         </div>
       )}

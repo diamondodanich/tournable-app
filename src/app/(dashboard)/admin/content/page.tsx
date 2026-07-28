@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, Images, Film, Monitor, RefreshCw } from 'lucide-react'
 import type { ContentManifest } from '@/lib/contentLibrary'
 import ContentLibrary from '@/components/admin/ContentLibrary'
+import { getUsedPosts } from '@/app/actions/contentLibrary'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Контент', robots: { index: false, follow: false } }
@@ -56,7 +57,7 @@ export default async function AdminContentPage() {
   // Не 403, а 404 — страница не должна выдавать факт своего существования.
   if (!profile?.is_admin) notFound()
 
-  const manifest = await loadManifest()
+  const [manifest, used] = await Promise.all([loadManifest(), getUsedPosts()])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -112,7 +113,7 @@ node marketing/studio/publish-to-app.mjs`}
               </span>
             </div>
 
-            <ContentLibrary manifest={manifest} />
+            <ContentLibrary manifest={manifest} initialUsed={used} />
           </>
         )}
       </div>

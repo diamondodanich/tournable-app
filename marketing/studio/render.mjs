@@ -82,6 +82,8 @@ const ICONS = {
   chart:  '<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="m7 15 4-5 3 3 5-7"/>',
   arrow:  '<path d="M5 12h14M13 6l6 6-6 6"/>',
   chevrons:'<path d="m7 6 6 6-6 6M14 6l6 6-6 6"/>',
+  warn:   '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
+  star:   '<path d="m12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/>',
 }
 
 const icon = (name, size = 44, stroke = 'currentColor') =>
@@ -223,11 +225,80 @@ function css(a, size) {
   /* Содержимое поднимается над фото. Фотослой и угловые элементы перечислены
      в :not явно: у правил одинаковая специфичность, и без этого они получали бы
      position:relative и уезжали в поток вместо своих углов. */
-  .slide > *:not(.photo-bg):not(.pageno):not(.nextcue):not(.credit) {
+  .slide > *:not(.photo-bg):not(.pat):not(.pageno):not(.nextcue):not(.credit) {
     position:relative; z-index:1;
   }
   .slide .credit { position:absolute; left:88px; bottom:18px; z-index:2;
             font-size:17px; color:#ffffff5e; letter-spacing:.01em; }
+
+  /* ── Рисованные фоны ──
+     Фотобанк ограничен, и одна и та же картинка на нескольких постах бросается
+     в глаза. Эти фоны рисуются кодом: их бесконечно много, они всегда в палитре
+     бренда и не требуют лицензий. */
+  .pat { position:absolute; inset:0; z-index:0; opacity:.5; }
+  /* Разметка поля: центральный круг и линии. */
+  .pat.pitch {
+    background-image:
+      radial-gradient(circle at 50% 42%, transparent 0 178px, ${a.soft}2e 178px 182px, transparent 183px),
+      linear-gradient(90deg, transparent 0 calc(50% - 2px), ${a.soft}26 calc(50% - 2px) calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(180deg, transparent 0 calc(42% - 2px), ${a.soft}26 calc(42% - 2px) calc(42% + 2px), transparent calc(42% + 2px));
+  }
+  /* Турнирная сетка: вертикали и горизонтали, сходящиеся вправо. */
+  .pat.bracket {
+    background-image:
+      repeating-linear-gradient(90deg, ${a.soft}1f 0 2px, transparent 2px 176px),
+      repeating-linear-gradient(180deg, ${a.soft}17 0 2px, transparent 2px 132px);
+    -webkit-mask-image:radial-gradient(120% 90% at 12% 50%, #000 10%, transparent 78%);
+            mask-image:radial-gradient(120% 90% at 12% 50%, #000 10%, transparent 78%);
+  }
+  /* Мелкая сетка — под таблицы и цифры. */
+  .pat.grid {
+    background-image:
+      repeating-linear-gradient(90deg, ${a.soft}14 0 1px, transparent 1px 54px),
+      repeating-linear-gradient(180deg, ${a.soft}14 0 1px, transparent 1px 54px);
+  }
+  /* Лучи от угла — динамика, под «скорость» и «за 3 минуты». */
+  .pat.rays {
+    background-image:repeating-conic-gradient(from 200deg at 108% -8%,
+      ${a.soft}1c 0deg 3deg, transparent 3deg 9deg);
+  }
+  /* Точечный растр — спокойный фон под длинный текст. */
+  .pat.dots {
+    background-image:radial-gradient(${a.soft}26 1.6px, transparent 1.7px);
+    background-size:34px 34px;
+  }
+  /* Диагональные полосы — под списки ошибок и «до/после». */
+  .pat.stripes {
+    background-image:repeating-linear-gradient(118deg,
+      ${a.soft}14 0 18px, transparent 18px 44px);
+  }
+
+  /* ── Сравнение «было / стало» ── */
+  .cmp { display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:52px; }
+  .cmp .col { border-radius:24px; padding:30px 28px; border:2px solid #ffffff1c; background:#ffffff0a; }
+  .cmp .col.good { border-color:${a.c}80; background:${a.c}1f; }
+  .cmp .col h4 { margin:0 0 18px; font-size:26px; letter-spacing:.1em; text-transform:uppercase;
+                 font-weight:700; color:#ffffff96; }
+  .cmp .col.good h4 { color:${a.soft}; }
+  .cmp .col ul { list-style:none; display:flex; flex-direction:column; gap:16px; }
+  .cmp .col li { font-size:31px; line-height:1.3; color:#ffffffe0; display:flex; gap:12px; }
+  .cmp .col li b { color:${a.soft}; font-weight:700; flex:none; }
+
+  /* ── Плитки с числами ── */
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:52px; }
+  .tile { border-radius:24px; padding:30px 28px; background:#ffffff0d; border:1px solid #ffffff1f; }
+  .tile .n { font-family:'Geist',Inter,sans-serif; font-size:78px; font-weight:800; line-height:1;
+             letter-spacing:-.04em; color:${a.soft}; font-variant-numeric:tabular-nums; }
+  .tile .l { font-size:27px; line-height:1.3; color:#ffffffb5; margin-top:14px; }
+
+  /* ── Шаги ── */
+  .steps { display:flex; flex-direction:column; gap:28px; margin-top:52px; }
+  .step { display:flex; gap:26px; align-items:flex-start; }
+  .step .no { flex:0 0 62px; height:62px; border-radius:50%; display:flex; align-items:center;
+              justify-content:center; background:${a.c}; color:#fff; font-weight:800; font-size:28px;
+              font-variant-numeric:tabular-nums; }
+  .step .tx { font-size:34px; line-height:1.3; color:#fff; padding-top:10px; }
+  .step .tx small { display:block; font-size:28px; color:#ffffff9e; margin-top:8px; line-height:1.35; }
 
   /* ── Указатель свайпа ── */
   .swipe { display:inline-flex; align-items:center; gap:14px; align-self:flex-start;
@@ -263,10 +334,14 @@ function renderSlide(slide, ctx) {
     ? `<div class="pageno">${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</div>` : ''
   const brand = `<div class="brand"><img src="${pathToFileURL(LOGO).href}" alt=""><span class="url">${esc(brandUrl)}</span></div>`
 
-  // Фотофон и обязательная подпись автора, если её требует лицензия.
+  // Фон слайда: либо фотография из банка, либо рисованный паттерн. Фото имеет
+  // приоритет, если задано и то и другое.
   const photo = photoFor(slide.photo)
   const photoLayer = photo ? `<div class="photo-bg"><img src="${photo.url}" alt=""></div>` : ''
   const creditLine = photo?.credit ? `<div class="credit">Фото: ${esc(photo.credit)}</div>` : ''
+  const PATTERNS = ['pitch', 'bracket', 'grid', 'rays', 'dots', 'stripes']
+  const patLayer = (!photo && PATTERNS.includes(slide.pattern))
+    ? `<div class="pat ${slide.pattern}"></div>` : ''
 
   // Подсказка «листайте дальше»: на обложке — крупная, на остальных — тонкая
   // стрелка в углу. Последний слайд её не получает, листать дальше нечего.
@@ -374,6 +449,57 @@ function renderSlide(slide, ctx) {
       break
     }
 
+    case 'compare':
+      inner = `
+        ${kicker}
+        <div class="mid">
+          <h2${fitH2(slide.title)}>${esc(slide.title)}</h2>
+          <div class="cmp">
+            <div class="col">
+              <h4>${esc(slide.leftTitle ?? 'Было')}</h4>
+              <ul>${(slide.left ?? []).map(t => `<li><b>—</b><span>${esc(t)}</span></li>`).join('')}</ul>
+            </div>
+            <div class="col good">
+              <h4>${esc(slide.rightTitle ?? 'Стало')}</h4>
+              <ul>${(slide.right ?? []).map(t => `<li><b>+</b><span>${esc(t)}</span></li>`).join('')}</ul>
+            </div>
+          </div>
+        </div>
+        ${pageno}`
+      break
+
+    case 'numbers':
+      inner = `
+        ${kicker}
+        <div class="mid">
+          <h2${fitH2(slide.title)}>${esc(slide.title)}</h2>
+          <div class="tiles">
+            ${(slide.tiles ?? []).map(([n, l]) =>
+              `<div class="tile"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}
+          </div>
+          ${slide.body ? `<div class="sub" style="margin-top:36px">${esc(slide.body)}</div>` : ''}
+        </div>
+        ${pageno}`
+      break
+
+    case 'steps':
+      inner = `
+        ${kicker}
+        <div class="mid">
+          <h2${fitH2(slide.title)}>${esc(slide.title)}</h2>
+          <div class="steps">
+            ${(slide.steps ?? []).map((s, i) => {
+              const [t, sub] = Array.isArray(s) ? s : [s, null]
+              return `<div class="step">
+                <div class="no">${i + 1}</div>
+                <div class="tx">${esc(t)}${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+              </div>`
+            }).join('')}
+          </div>
+        </div>
+        ${pageno}`
+      break
+
     case 'quote':
       inner = `
         ${kicker}
@@ -404,7 +530,7 @@ function renderSlide(slide, ctx) {
       inner = `<div class="body">неизвестный тип слайда: ${esc(slide.type)}</div>`
   }
 
-  return `<div class="slide">${photoLayer}${inner}${nextcue}${creditLine}</div>`
+  return `<div class="slide">${photoLayer}${patLayer}${inner}${nextcue}${creditLine}</div>`
 }
 
 function renderHtml(slide, ctx) {

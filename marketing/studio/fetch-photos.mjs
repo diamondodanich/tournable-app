@@ -49,21 +49,50 @@ const isAllowed = (name = '') => ALLOWED.some(re => re.test(name.trim()))
 // Что ищем: атмосфера соревнования, а не конкретные люди.
 // В англоязычных источниках «football» — это и американский футбол, поэтому
 // для нашего вида спорта запросы идут через «soccer» и «association football».
+//
+// `take` — сколько подходящих файлов брать из выдачи. Один снимок на тему
+// приводит к тому, что одна и та же картинка кочует по всем постам; банк должен
+// быть достаточно широким, чтобы у каждого поста был свой фон.
 const QUERIES = [
-  { q: 'soccer stadium floodlights night match', slot: 'floodlights' },
-  { q: 'association football pitch grass lines', slot: 'pitch' },
-  { q: 'soccer goal net penalty area', slot: 'goal' },
-  { q: 'football supporters stand terraces', slot: 'stands' },
-  { q: 'soccer ball on grass', slot: 'ball' },
-  { q: 'youth soccer training session', slot: 'youth' },
-  { q: 'sports hall indoor futsal court', slot: 'indoor' },
-  { q: 'basketball court outdoor city', slot: 'basketball' },
-  { q: 'sports trophy cup award', slot: 'trophy' },
-  { q: 'soccer stadium empty seats', slot: 'seats' },
+  // Поле и стадион
+  { q: 'soccer stadium floodlights night match', slot: 'floodlights', take: 2 },
+  { q: 'association football pitch grass lines', slot: 'pitch', take: 2 },
+  { q: 'soccer goal net penalty area', slot: 'goal', take: 2 },
+  { q: 'soccer stadium empty seats', slot: 'seats', take: 2 },
+  { q: 'football supporters stand terraces', slot: 'stands', take: 2 },
+  { q: 'soccer corner flag pitch', slot: 'corner', take: 1 },
+  { q: 'soccer ball on grass', slot: 'ball', take: 2 },
+  // Люди и игра — общими планами
+  { q: 'youth soccer training session', slot: 'youth', take: 2 },
+  { q: 'school sports day children running', slot: 'school', take: 2 },
+  { q: 'football team huddle players', slot: 'team', take: 1 },
+  { q: 'football referee whistle match', slot: 'referee', take: 1 },
+  // Залы и другие дисциплины
+  { q: 'sports hall indoor futsal court', slot: 'indoor', take: 2 },
+  { q: 'basketball court outdoor city', slot: 'basketball', take: 2 },
+  { q: 'volleyball court net indoor', slot: 'volleyball', take: 1 },
+  { q: 'school gymnasium sports hall', slot: 'gym', take: 2 },
+  // Награждение и итоги
+  { q: 'trophy cup silver award object', slot: 'trophy', take: 2 },
+  { q: 'gold medal ribbon award object', slot: 'medals', take: 2 },
+  { q: 'soccer scoreboard football ground', slot: 'scoreboard', take: 1 },
+  { q: 'winners podium sport ceremony', slot: 'podium', take: 1 },
+  // Работа организатора — под посты про бумагу, таблицы и планирование
+  { q: 'spreadsheet paper documents desk', slot: 'paper', take: 2 },
+  { q: 'notebook pen planning desk', slot: 'notebook', take: 1 },
+  { q: 'stopwatch timer sport', slot: 'stopwatch', take: 1 },
+  { q: 'office meeting room colleagues', slot: 'office', take: 1 },
 ]
 
 // Названия, по которым сразу видно чужой вид спорта или неподходящий сюжет.
-const REJECT_TITLE = /american football|gridiron|NFL|rugby|cricket|baseball|helmet|touchdown|superbowl|super bowl/i
+const REJECT_SPORT = /american football|gridiron|NFL|rugby|cricket|baseball|helmet|touchdown|superbowl|super bowl/i
+
+// Кадры с турниров и сборных: даже под свободной лицензией на них видны
+// эмблемы FIFA, УЕФА, федераций и олимпийского движения. Свободная лицензия
+// на фотографию не даёт права использовать чужой товарный знак в рекламе.
+const REJECT_BRAND = /FIFA|UEFA|world cup|champions league|olympi|euro 20|copa |premier league|bundesliga|la liga|serie a|national team|Nations League/i
+
+const REJECT_TITLE = new RegExp(`${REJECT_SPORT.source}|${REJECT_BRAND.source}`, 'i')
 
 const strip = (html = '') => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
 
@@ -81,51 +110,61 @@ async function search(query, limit = 25) {
 }
 
 const credits = []
+const seenTitles = new Set()
 let index = 0
 
-for (const { q, slot } of QUERIES) {
-  const pages = await search(q)
-  let picked = null
+for (const { q, slot, take = 1 } of QUERIES) {
+  const pages = await search(q, 40)
+  const picked = []
 
   for (const page of pages) {
+    if (picked.length >= take) break
     const info = page.imageinfo?.[0]
     if (!info) continue
     const meta = info.extmetadata ?? {}
     const license = strip(meta.LicenseShortName?.value ?? '')
     if (!isAllowed(license)) continue
     if (REJECT_TITLE.test(page.title)) continue
+    // Один и тот же файл вылезает в нескольких запросах — берём его один раз.
+    if (seenTitles.has(page.title)) continue
     // Узкие и мелкие кадры на фон 1080×1350 не растянуть без каши.
     if ((info.width ?? 0) < 1200) continue
     if ((info.width ?? 0) / (info.height ?? 1) < 1.2) continue
-    picked = { page, info, meta, license }
-    break
+    seenTitles.add(page.title)
+    picked.push({ page, info, meta, license })
   }
 
-  if (!picked) { console.log(`[photos] ${slot}: подходящего файла не нашлось`); continue }
+  if (!picked.length) { console.log(`[photos] ${slot}: подходящего файла не нашлось`); continue }
 
-  const { page, info, meta, license } = picked
-  const src = info.thumburl ?? info.url
-  const res = await fetch(src, { headers: { 'User-Agent': UA } })
-  if (!res.ok) { console.log(`[photos] ${slot}: не скачалось (${res.status})`); continue }
+  let n = 0
+  for (const { page, info, meta, license } of picked) {
+    const src = info.thumburl ?? info.url
+    const res = await fetch(src, { headers: { 'User-Agent': UA } })
+    if (!res.ok) { console.log(`[photos] ${slot}: не скачалось (${res.status})`); continue }
 
-  const buf = Buffer.from(await res.arrayBuffer())
-  const file = `${String(++index).padStart(2, '0')}-${slot}.jpg`
-  // Приводим к одному размеру и весу: фон всё равно уходит под затемнение.
-  await sharp(buf).resize({ width: 1400, height: 1000, fit: 'cover' })
-    .jpeg({ quality: 82 }).toFile(join(PHOTOS, file))
+    // Слоты с несколькими картинками нумеруются: pitch, pitch-2, pitch-3.
+    const key = n === 0 ? slot : `${slot}-${n + 1}`
+    n++
 
-  const author = strip(meta.Artist?.value ?? '')
-  credits.push({
-    file,
-    slot,
-    title: page.title.replace(/^File:/, ''),
-    license,
-    author,
-    // CC BY требует указания автора рядом с изображением; public domain — нет.
-    attributionRequired: /^cc by/i.test(license),
-    source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title)}`,
-  })
-  console.log(`[photos] ${file}  ${license}${author ? ` · ${author}` : ''}`)
+    const buf = Buffer.from(await res.arrayBuffer())
+    const file = `${String(++index).padStart(2, '0')}-${key}.jpg`
+    // Приводим к одному размеру и весу: фон всё равно уходит под затемнение.
+    await sharp(buf).resize({ width: 1400, height: 1000, fit: 'cover' })
+      .jpeg({ quality: 82 }).toFile(join(PHOTOS, file))
+
+    const author = strip(meta.Artist?.value ?? '')
+    credits.push({
+      file,
+      slot: key,
+      title: page.title.replace(/^File:/, ''),
+      license,
+      author,
+      // CC BY требует указания автора рядом с изображением; public domain — нет.
+      attributionRequired: /^cc by/i.test(license),
+      source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title)}`,
+    })
+    console.log(`[photos] ${file}  ${license}${author ? ` · ${author}` : ''}`)
+  }
 }
 
 writeFileSync(CREDITS, JSON.stringify(credits, null, 2), 'utf8')

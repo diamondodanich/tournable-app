@@ -19,7 +19,12 @@ const OUT_DIR = join(ROOT, 'marketing', 'out')
 
 // Ширина превью: вдвое меньше исходных 1080, текст на слайде остаётся читаемым,
 // а страница целиком укладывается в разумный вес.
-const PREVIEW_W = 500
+const PREVIEW_W = 430
+
+// Постов стало 26; вшить все слайды целиком — это восемь мегабайт на страницу.
+// Здесь показываем начало каждой карусели, полный набор живёт в разделе
+// «Контент» внутри платформы.
+const MAX_PREVIEW_SLIDES = 3
 
 const esc = (s = '') => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -51,7 +56,8 @@ for (const file of postFiles) {
     continue
   }
 
-  const pngs = readdirSync(dir).filter(f => /^\d+\.png$/.test(f)).sort()
+  const allPngs = readdirSync(dir).filter(f => /^\d+\.png$/.test(f)).sort()
+  const pngs = allPngs.slice(0, MAX_PREVIEW_SLIDES)
   const previews = []
   for (const png of pngs) {
     const buf = await sharp(join(dir, png)).resize({ width: PREVIEW_W }).webp({ quality: 70 }).toBuffer()
@@ -65,6 +71,7 @@ for (const file of postFiles) {
   const captionPath = join(dir, 'caption.txt')
   posts.push({
     slug,
+    totalSlides: allPngs.length,
     order: post.order ?? 99,
     lang: post.lang ?? 'ru',
     audience: post.audience ?? '',
@@ -83,18 +90,18 @@ posts.sort((a, b) => a.order - b.order)
 // ── Сценарии роликов ─────────────────────────────────────────────────────────
 // Держим здесь короткую сводку; полные раскадровки — в marketing/video/scenarios.md.
 const SCENARIOS = [
-  { id: '1.1', lang: 'ru', block: 'Школы', sec: 35, hook: 'Спартакиада на 16 команд. Я соберу её прямо сейчас, при вас, и засеку время.' },
-  { id: '1.2', lang: 'kz', block: 'Мектептер', sec: 35, hook: '16 командаға арналған спартакиада. Дәл қазір, сіздің көз алдыңызда жинаймын.' },
-  { id: '1.3', lang: 'ru', block: 'Школы', sec: 30, hook: 'Спартакиаду в Excel можно вести. Вопрос — сколько это стоит вам лично.' },
-  { id: '1.4', lang: 'ru', block: 'Школы', sec: 25, hook: 'Главная мотивация ребёнка на школьном турнире — не первое место команды.' },
-  { id: '2.1', lang: 'ru', block: 'HR', sec: 35, hook: 'Корпоративный турнир умирает не от скуки. Он умирает, когда организатор уходит в отпуск.' },
-  { id: '2.2', lang: 'ru', block: 'HR', sec: 30, hook: 'Три вопроса в общем чате, после которых корпоративный турнир заканчивается.' },
+  { id: '1.1', lang: 'ru', block: 'Школы', sec: 35, hook: 'Чемпионат на 16 команд. Соберу его прямо сейчас, при вас, и засеку время.' },
+  { id: '1.2', lang: 'kz', block: 'Мектептер', sec: 35, hook: '16 командаға арналған чемпионат. Дәл қазір, көз алдыңызда жинаймын.' },
+  { id: '1.3', lang: 'ru', block: 'Школы', sec: 30, hook: 'Чемпионат в Excel вести можно. Вопрос — сколько это стоит вам лично.' },
+  { id: '1.4', lang: 'ru', block: 'Школы', sec: 25, hook: 'Главная мотивация ребёнка на школьном соревновании — не первое место команды.' },
+  { id: '2.1', lang: 'ru', block: 'HR', sec: 35, hook: 'Корпоративное соревнование умирает не от скуки. Оно умирает, когда организатор уходит в отпуск.' },
+  { id: '2.2', lang: 'ru', block: 'HR', sec: 30, hook: 'Три вопроса в общем чате, после которых корпоративное соревнование заканчивается.' },
   { id: '3.1', lang: 'ru', block: 'Короткие', sec: 18, hook: 'Почему в вашей группе оказались две сильнейшие команды.' },
-  { id: '3.2', lang: 'ru', block: 'Короткие', sec: 15, hook: 'Спор, который каждый год ломает школьный турнир.' },
+  { id: '3.2', lang: 'ru', block: 'Короткие', sec: 15, hook: 'Спор, который каждый год ломает школьное соревнование.' },
   { id: '3.3', lang: 'ru', block: 'Короткие', sec: 20, hook: 'Матч идёт — счёт видят все, кто открыл ссылку.' },
-  { id: '3.4', lang: 'kz', block: 'Қысқа', sec: 15, hook: 'Мектеп турнирін жыл сайын бұзатын дау.' },
+  { id: '3.4', lang: 'kz', block: 'Қысқа', sec: 15, hook: 'Мектеп жарысын жыл сайын бұзатын дау.' },
   { id: '3.5', lang: 'ru', block: 'Короткие', sec: 18, hook: 'Сколько раз вы пересылали расписание в чат?' },
-  { id: '3.6', lang: 'ru', block: 'Короткие', sec: 20, hook: 'Отчёт по спартакиаде, который обычно собирают ночью.' },
+  { id: '3.6', lang: 'ru', block: 'Короткие', sec: 20, hook: 'Отчёт о соревновании, который обычно собирают ночью.' },
 ]
 
 // ── Видеоклипы ───────────────────────────────────────────────────────────────
@@ -111,7 +118,7 @@ const BLOCKED = [
   {
     what: 'Казахский нуждается в вашей правке',
     why: 'Тексты переписаны в разговорный регистр и вычищены от кальки с русского, но живой почерк носителя они не заменяют.',
-    need: 'Пройтись по посту 02 и править прямо в marketing/studio/posts/kz-5-qate-spartakiada.json',
+    need: 'Пройтись по трём казахским постам в marketing/studio/posts/kz-*.json',
   },
   {
     what: 'Съёмка себя',
@@ -350,8 +357,8 @@ dialog img { display: block; max-width: 96vw; max-height: 94vh; width: auto; bor
   </header>
 
   <section>
-    <div class="sechead"><h2>Карусели</h2><span class="label">нажмите на слайд, чтобы увеличить</span></div>
-    <p>Собираются из JSON командой <code style="font-family:ui-monospace,monospace;font-size:13px">npm run studio</code>. Любую правку текста вношу в исходник — пересборка занимает секунды.</p>
+    <div class="sechead"><h2>Карусели</h2><span class="label">первые ${MAX_PREVIEW_SLIDES} слайда каждой</span></div>
+    <p>Здесь начало каждой карусели, чтобы страница оставалась лёгкой. Полностью, с переключателем «Телефон / Десктоп» и отметкой «использовано», — в разделе <strong>Контент</strong> внутри платформы. Нажмите на слайд, чтобы увеличить.</p>
 ${posts.map((p, i) => `
     <article class="post">
       <div class="post-head">
@@ -359,7 +366,7 @@ ${posts.map((p, i) => `
           <span class="seq">${String(i + 1).padStart(2, '0')}</span>
           <span class="chip">${esc(AUDIENCE_LABEL[p.lang] ?? p.lang)}</span>
           ${p.audience ? `<span class="chip">${esc(p.audience)}</span>` : ''}
-          <span class="chip">${p.previews.length} слайдов</span>
+          <span class="chip">${p.totalSlides} слайдов</span>
           ${p.missing.length
             ? `<span class="chip flag">нужно ${p.missing.length} скрин${p.missing.length === 1 ? '' : 'ов'}</span>`
             : `<span class="chip ok">готово к публикации</span>`}

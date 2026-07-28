@@ -1,0 +1,467 @@
+/* Инвесторский питч. Визуально отличается от клиентской презентации намеренно:
+   там спокойная подача продукта, здесь — плотная динамика и крупные цифры.
+   Лента слайдов — тот же проверенный нативный scroll-snap. */
+
+.deck {
+  --p-bg: #06070A;
+  --p-bg-2: #0B0E14;
+  --p-surface: #10141C;
+  --p-line: rgba(150, 170, 200, .14);
+  --p-line-2: rgba(150, 170, 200, .28);
+  --p-ink: #EEF2F8;
+  --p-ink-2: #9AA7BC;
+  --p-brand: #19E38A;
+  --p-brand-2: #0FA968;
+  --p-glow: rgba(25, 227, 138, .20);
+  --p-accent: #6C8CFF;
+  --p-warm: #FFB340;
+  --p-shadow: 0 30px 70px -30px rgba(0, 0, 0, .9);
+
+  position: fixed; inset: 0; overflow: hidden;
+  background: var(--p-bg); color: var(--p-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.deck[data-pitch-theme='light'] {
+  --p-bg: #FBFCFD;
+  --p-bg-2: #F1F4F8;
+  --p-surface: #FFFFFF;
+  --p-line: rgba(20, 40, 70, .13);
+  --p-line-2: rgba(20, 40, 70, .24);
+  --p-ink: #080C13;
+  --p-ink-2: #566578;
+  --p-brand: #05935C;
+  --p-brand-2: #047A4C;
+  --p-glow: rgba(5, 147, 92, .13);
+  --p-accent: #3B5BDB;
+  --p-warm: #A96500;
+  --p-shadow: 0 30px 70px -34px rgba(12, 30, 55, .30);
+}
+
+/* ── лента ────────────────────────────────────────────────── */
+.track {
+  display: flex; height: 100vh; height: 100dvh;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.track::-webkit-scrollbar { display: none }
+
+.slide {
+  flex: 0 0 100%; width: 100%; height: 100%;
+  scroll-snap-align: start; scroll-snap-stop: always;
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(48px, 5.5vh, 76px) clamp(22px, 5vw, 80px) clamp(92px, 10vh, 118px);
+  position: relative;
+}
+.inner { width: 100%; max-width: 1260px; margin: 0 auto; position: relative; z-index: 1 }
+
+/* ── типографика ──────────────────────────────────────────── */
+.display, .eyebrow, .kicker, .stat, .tag, .qLabel, .planPrice, .mapName, .counter, .tierTag {
+  font-family: var(--font-oswald), Impact, 'Arial Narrow', sans-serif;
+}
+
+.display {
+  font-weight: 600; text-transform: uppercase; letter-spacing: .012em;
+  line-height: 1.02; text-wrap: balance; margin: 0 0 1rem;
+  font-size: clamp(1.85rem, 3.9vw, 3.35rem);
+}
+.cover .display { font-size: clamp(2.5rem, 6.6vw, 5.2rem); margin-bottom: 1.3rem }
+.lede {
+  font-size: clamp(.98rem, 1.3vw, 1.18rem); line-height: 1.62;
+  color: var(--p-ink-2); margin: 0; max-width: 60ch;
+}
+.eyebrow {
+  font-weight: 600; text-transform: uppercase; letter-spacing: .24em;
+  font-size: .72rem; color: var(--p-brand);
+  display: flex; align-items: center; gap: .7rem; margin: 0 0 1rem;
+}
+.eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--p-line); max-width: 150px }
+.deck h3 { font-size: 1.02rem; font-weight: 700; margin: 0 0 .3rem; line-height: 1.32 }
+.deck p { margin: 0 }
+.deck strong { color: var(--p-ink); font-weight: 700 }
+.brand { color: var(--p-brand) }
+.num { font-variant-numeric: tabular-nums }
+
+/* ── появление ────────────────────────────────────────────── */
+.rise {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .6s cubic-bezier(.22, .61, .36, 1),
+              transform .6s cubic-bezier(.22, .61, .36, 1);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+.slideActive .rise { opacity: 1; transform: none }
+
+/* ── фоновая графика ──────────────────────────────────────── */
+/* Клипающий слой обязателен: блики ниже имеют отрицательные отступы, а слайд —
+   это скролл-контейнер, поэтому без обрезки они раздувают его высоту прокрутки */
+.bg {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+}
+
+/* Сетка данных: подложка под все слайды, кроме обложки */
+.mesh {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+  background-image:
+    linear-gradient(var(--p-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--p-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 45%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 45%, #000 20%, transparent 78%);
+}
+.aura {
+  position: absolute; z-index: 0; pointer-events: none; border-radius: 50%;
+  filter: blur(90px); opacity: .5;
+}
+.auraA {
+  width: 46vw; height: 46vw; top: -14vw; right: -10vw;
+  background: radial-gradient(circle, var(--p-glow), transparent 68%);
+  animation: drift 24s ease-in-out infinite alternate;
+}
+.auraB {
+  width: 38vw; height: 38vw; bottom: -14vw; left: -8vw;
+  background: radial-gradient(circle, color-mix(in srgb, var(--p-accent) 22%, transparent), transparent 68%);
+  animation: drift 31s ease-in-out infinite alternate-reverse;
+}
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1) }
+  to   { transform: translate3d(-7%, 9%, 0) scale(1.18) }
+}
+
+/* ── обложка ──────────────────────────────────────────────── */
+.cover { justify-content: center }
+.coverGrid {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(25, 227, 138, .09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(25, 227, 138, .09) 1px, transparent 1px);
+  background-size: 52px 52px;
+  transform: perspective(560px) rotateX(62deg) translateY(24%) scale(2.1);
+  transform-origin: 50% 100%;
+  mask-image: linear-gradient(to top, #000 4%, transparent 62%);
+  -webkit-mask-image: linear-gradient(to top, #000 4%, transparent 62%);
+  animation: pull 15s linear infinite;
+}
+@keyframes pull {
+  from { background-position: 0 0 }
+  to   { background-position: 0 52px }
+}
+.brandline {
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  text-transform: uppercase; letter-spacing: .2em; font-size: .76rem;
+  color: var(--p-ink-2); margin: 0 0 1.5rem;
+  font-family: var(--font-oswald), sans-serif;
+}
+.brandline b { color: var(--p-ink); letter-spacing: .26em; font-weight: 600 }
+.dotmark { width: 7px; height: 7px; border-radius: 50%; background: var(--p-brand); flex: none;
+  box-shadow: 0 0 0 0 var(--p-glow); animation: pulse 2.6s ease-out infinite }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 var(--p-glow) }
+  70%  { box-shadow: 0 0 0 14px transparent }
+  100% { box-shadow: 0 0 0 0 transparent }
+}
+.coverFoot {
+  display: flex; gap: 2.4rem; flex-wrap: wrap; margin-top: 2.4rem;
+  padding-top: 1.5rem; border-top: 1px solid var(--p-line);
+}
+.coverFoot div { font-size: .86rem; color: var(--p-ink-2) }
+.coverFoot b {
+  display: block; color: var(--p-ink); font-weight: 600; font-size: .74rem;
+  text-transform: uppercase; letter-spacing: .18em; margin-bottom: .3rem;
+  font-family: var(--font-oswald), sans-serif;
+}
+
+/* ── крупные цифры ────────────────────────────────────────── */
+.stats { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 2rem }
+@media (min-width: 760px) { .stats3 { grid-template-columns: repeat(3, 1fr) } }
+@media (min-width: 760px) { .stats4 { grid-template-columns: repeat(4, 1fr) } }
+.statCell { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.stat {
+  font-size: clamp(2.1rem, 4.4vw, 3.4rem); line-height: 1;
+  color: var(--p-brand); font-variant-numeric: tabular-nums; display: block;
+}
+.statLabel { font-size: .88rem; color: var(--p-ink-2); margin-top: .6rem; line-height: 1.45; display: block }
+
+/* ── карточки ─────────────────────────────────────────────── */
+.cards { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.8rem }
+@media (min-width: 760px) { .c2 { grid-template-columns: repeat(2, 1fr) } .c3 { grid-template-columns: repeat(3, 1fr) } }
+.card { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.tag {
+  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--p-brand); display: block; margin-bottom: .85rem;
+}
+.card p { color: var(--p-ink-2); font-size: .92rem; line-height: 1.55 }
+
+/* ── схема фрагментации (слайд 03) ────────────────────────── */
+.fragWrap { display: grid; gap: clamp(20px, 3vw, 40px); align-items: center; margin-top: 1.6rem }
+@media (min-width: 940px) { .fragWrap { grid-template-columns: auto 1fr } }
+.fragBoard { display: flex; flex-direction: column; gap: .55rem; min-width: 260px }
+.fragItem {
+  display: flex; align-items: center; gap: .7rem;
+  border: 1px dashed var(--p-line-2); border-radius: 10px;
+  padding: .7rem .9rem; background: var(--p-surface);
+  font-size: .88rem; color: var(--p-ink-2);
+}
+.fragItem b { color: var(--p-ink); font-weight: 600; font-size: .9rem }
+.fragItem span { margin-left: auto; font-size: .76rem; opacity: .75 }
+.slideActive .fragItem { animation: shiver 5s ease-in-out infinite }
+.slideActive .fragItem:nth-child(2) { animation-delay: .5s }
+.slideActive .fragItem:nth-child(3) { animation-delay: 1s }
+.slideActive .fragItem:nth-child(4) { animation-delay: 1.5s }
+@keyframes shiver {
+  0%, 88%, 100% { transform: translateX(0) }
+  92% { transform: translateX(-3px) }
+  96% { transform: translateX(3px) }
+}
+
+/* ── карта рынка (слайд 06) ───────────────────────────────── */
+.mapRows { margin-top: 1.6rem; border-top: 1px solid var(--p-line) }
+.mapRow {
+  display: grid; gap: .5rem 1.4rem; padding: 1.05rem 0;
+  border-bottom: 1px solid var(--p-line); align-items: baseline;
+}
+@media (min-width: 860px) { .mapRow { grid-template-columns: 1.1fr 1.4fr 1.4fr } }
+.mapName { text-transform: uppercase; letter-spacing: .13em; font-size: .84rem; color: var(--p-ink) }
+.mapFocus { font-size: .9rem; color: var(--p-ink-2) }
+.mapUs { font-size: .9rem; color: var(--p-brand) }
+.mapNote {
+  margin-top: 1.5rem; padding: 1.1rem 1.3rem; border-radius: 12px;
+  border: 1px solid var(--p-line-2); background: var(--p-surface);
+  font-size: .96rem; color: var(--p-ink);
+}
+
+/* ── рынок TAM/SAM/SOM (слайд 07) ─────────────────────────── */
+.tiers { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.8rem }
+@media (min-width: 860px) { .tiers { grid-template-columns: repeat(3, 1fr) } }
+.tier { background: var(--p-bg); padding: 1.6rem 1.4rem; position: relative; overflow: hidden }
+.tierLead { background: var(--p-surface) }
+.tierTag {
+  font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--p-ink-2); display: block; margin-bottom: .7rem;
+}
+.tierLead .tierTag { color: var(--p-brand) }
+.tierValue {
+  font-family: var(--font-oswald), sans-serif; font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1; color: var(--p-ink); font-variant-numeric: tabular-nums;
+}
+.tierLead .tierValue { color: var(--p-brand) }
+.tierLabel { font-size: .9rem; color: var(--p-ink-2); margin-top: .7rem; line-height: 1.5 }
+.tierNote { font-size: .82rem; color: var(--p-ink-2); opacity: .8; margin-top: .5rem }
+.tierBar { height: 3px; background: var(--p-line-2); margin-top: 1.1rem; border-radius: 2px; overflow: hidden }
+.tierFill { height: 100%; background: var(--p-brand); width: 0; border-radius: 2px;
+  transition: width 1.3s cubic-bezier(.22, .61, .36, 1) .35s }
+.slideActive .tierFill { width: var(--w, 100%) }
+
+/* ── фазы сегментов (слайд 08) ────────────────────────────── */
+.phases { margin-top: 1.7rem; display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line) }
+@media (min-width: 900px) { .phases { grid-template-columns: repeat(3, 1fr) } }
+.phase { background: var(--p-bg); padding: 1.5rem 1.4rem; display: flex; flex-direction: column; gap: .6rem }
+.phaseTop { display: flex; align-items: center; gap: .6rem }
+.phaseDot { width: 9px; height: 9px; border-radius: 50%; background: var(--p-brand); flex: none }
+.phase:nth-child(2) .phaseDot { background: var(--p-accent) }
+.phase:nth-child(3) .phaseDot { background: var(--p-warm) }
+.phaseTag {
+  font-family: var(--font-oswald), sans-serif; text-transform: uppercase;
+  letter-spacing: .18em; font-size: .72rem; color: var(--p-ink-2);
+}
+.phase h3 { font-size: 1rem; margin: 0 }
+.phaseWhy { font-size: .89rem; color: var(--p-ink-2); line-height: 1.5 }
+.phaseSpeed {
+  margin-top: auto; padding-top: .8rem; font-size: .76rem;
+  text-transform: uppercase; letter-spacing: .14em; color: var(--p-brand);
+  font-family: var(--font-oswald), sans-serif;
+}
+
+/* ── бизнес-модель (слайд 09) ─────────────────────────────── */
+.planRow { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.6rem }
+@media (min-width: 800px) { .planRow { grid-template-columns: repeat(3, 1fr) } }
+.plan { background: var(--p-bg); padding: 1.4rem }
+.planLead { background: var(--p-surface) }
+.planName {
+  font-family: var(--font-oswald), sans-serif; text-transform: uppercase;
+  letter-spacing: .2em; font-size: .76rem; color: var(--p-ink-2);
+}
+.planLead .planName { color: var(--p-brand) }
+.planPrice { font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1; margin: .5rem 0 .3rem;
+  font-variant-numeric: tabular-nums; display: block }
+.planLead .planPrice { color: var(--p-brand) }
+.planSub { font-size: .84rem; color: var(--p-ink-2) }
+
+/* ── развитие (слайд 10) ──────────────────────────────────── */
+.tracks { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.7rem }
+@media (min-width: 900px) { .tracks { grid-template-columns: repeat(3, 1fr) } }
+.trackCell { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.trackCell p { color: var(--p-ink-2); font-size: .9rem; line-height: 1.55; margin-top: .35rem }
+
+/* ── дорожная карта (слайд 11) ────────────────────────────── */
+.road { margin-top: 1.8rem; position: relative }
+.roadLine { position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: var(--p-line-2) }
+.roadFill {
+  position: absolute; left: 0; top: 13px; height: 2px; width: 0;
+  background: linear-gradient(90deg, var(--p-brand), var(--p-accent));
+  transition: width 1.7s cubic-bezier(.22, .61, .36, 1) .3s;
+}
+.slideActive .roadFill { width: 100% }
+.roadGrid { display: grid; gap: 1.5rem; position: relative }
+@media (min-width: 900px) { .roadGrid { grid-template-columns: repeat(4, 1fr) } }
+.roadStep { padding-top: 34px; position: relative }
+.roadStep::before {
+  content: ''; position: absolute; top: 7px; left: 0;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--p-bg); border: 2px solid var(--p-brand);
+  transition: background .4s ease, box-shadow .4s ease;
+  transition-delay: calc(.6s + var(--n, 0) * .3s);
+}
+.slideActive .roadStep::before { background: var(--p-brand); box-shadow: 0 0 0 6px var(--p-glow) }
+.qLabel {
+  font-size: .78rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--p-brand); display: block; margin-bottom: .4rem;
+}
+.roadStep h3 { font-size: 1.02rem; margin-bottom: .3rem }
+.roadGoal {
+  display: inline-block; font-size: .76rem; padding: .25rem .6rem; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-brand) 14%, transparent);
+  color: var(--p-brand); margin-bottom: .6rem; font-weight: 600;
+}
+.roadStep ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem }
+.roadStep li { font-size: .85rem; color: var(--p-ink-2); padding-left: .9rem; position: relative; line-height: 1.45 }
+.roadStep li::before {
+  content: ''; position: absolute; left: 0; top: .58em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--p-line-2);
+}
+
+/* ── запрос (слайд 13) ────────────────────────────────────── */
+.askClose {
+  margin-top: 1.8rem; padding: 1.3rem 1.5rem; border-radius: 14px;
+  border: 1px solid var(--p-brand); background: color-mix(in srgb, var(--p-brand) 9%, transparent);
+  font-family: var(--font-oswald), sans-serif; text-transform: uppercase;
+  letter-spacing: .06em; font-size: clamp(1rem, 1.9vw, 1.4rem); color: var(--p-ink);
+}
+.contacts {
+  margin-top: 1.6rem; display: grid; gap: 1.1rem; font-size: .86rem; color: var(--p-ink-2);
+}
+@media (min-width: 720px) { .contacts { grid-template-columns: repeat(3, 1fr) } }
+.contacts b {
+  display: block; font-family: var(--font-oswald), sans-serif; text-transform: uppercase;
+  letter-spacing: .18em; font-size: .7rem; color: var(--p-ink); margin-bottom: .3rem; font-weight: 600;
+}
+.deck a { color: var(--p-brand) }
+
+/* ── продукт (слайд 05) ───────────────────────────────────── */
+.shots { display: grid; gap: 1rem; margin-top: 1.6rem }
+@media (min-width: 860px) { .shots { grid-template-columns: repeat(3, 1fr) } }
+.shot {
+  border: 1px solid var(--p-line-2); border-radius: 12px; overflow: hidden;
+  background: var(--p-surface); box-shadow: var(--p-shadow);
+  transition: transform .4s cubic-bezier(.22, .61, .36, 1);
+}
+.shot:hover { transform: translateY(-5px) }
+.shot img { display: block; width: 100%; height: auto; max-height: 30vh; object-fit: cover; object-position: top }
+.shotCap {
+  padding: .6rem .85rem; font-size: .76rem; text-transform: uppercase;
+  letter-spacing: .16em; color: var(--p-ink-2); border-top: 1px solid var(--p-line);
+  font-family: var(--font-oswald), sans-serif;
+}
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.4rem }
+.chip {
+  font-size: .82rem; padding: .45rem .85rem; border-radius: 999px;
+  border: 1px solid var(--p-line-2); color: var(--p-ink-2); background: var(--p-surface);
+}
+.chip b { color: var(--p-brand); font-weight: 700; margin-right: .35rem }
+
+/* ── панель и навигация ───────────────────────────────────── */
+.toolbar { position: fixed; top: 15px; right: 15px; z-index: 30; display: flex; gap: 8px }
+.toolBtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  height: 36px; min-width: 36px; padding: 0 .8rem; border-radius: 9px;
+  background: color-mix(in srgb, var(--p-surface) 88%, transparent);
+  border: 1px solid var(--p-line-2); color: var(--p-ink); cursor: pointer;
+  font-size: .78rem; font-weight: 600; text-decoration: none;
+  backdrop-filter: blur(10px); transition: border-color .18s ease, transform .18s ease;
+}
+.toolBtn:hover { border-color: var(--p-brand); transform: translateY(-1px) }
+
+.hud {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; align-items: center; gap: clamp(10px, 2vw, 20px);
+  padding: 13px clamp(15px, 4vw, 38px) calc(13px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, color-mix(in srgb, var(--p-bg) 94%, transparent), transparent);
+}
+.counter { font-size: .78rem; letter-spacing: .16em; color: var(--p-ink-2);
+  font-variant-numeric: tabular-nums; flex: none }
+.counter b { color: var(--p-ink); font-weight: 600 }
+.rail { display: flex; gap: 4px; flex: 1; min-width: 0 }
+.railItem {
+  flex: 1; height: 3px; min-width: 5px; padding: 0; border: 0;
+  border-radius: 2px; cursor: pointer; background: var(--p-line-2);
+  transition: background .25s ease;
+}
+.railItem:hover { background: var(--p-ink-2) }
+.railOn { background: var(--p-brand) }
+.navBtns { display: flex; gap: 7px; flex: none }
+.navBtn {
+  width: 36px; height: 36px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-surface) 88%, transparent);
+  border: 1px solid var(--p-line-2); color: var(--p-ink); cursor: pointer;
+  backdrop-filter: blur(10px); transition: border-color .18s ease, opacity .18s ease;
+}
+.navBtn:hover:not(:disabled) { border-color: var(--p-brand) }
+.navBtn:disabled { opacity: .32; cursor: default }
+.deck :focus-visible { outline: 2px solid var(--p-brand); outline-offset: 3px; border-radius: 4px }
+
+.hint {
+  position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); z-index: 29;
+  font-size: .74rem; letter-spacing: .04em; color: var(--p-ink-2); pointer-events: none;
+  display: flex; align-items: center; gap: .45rem; transition: opacity .5s ease;
+}
+.hintHidden { opacity: 0 }
+
+/* ── компактные экраны ────────────────────────────────────── */
+@media (max-height: 840px) {
+  .slide { padding: clamp(34px, 4vh, 52px) clamp(22px, 5vw, 80px) clamp(80px, 9vh, 96px) }
+  .display { font-size: clamp(1.6rem, 3.1vw, 2.4rem); margin-bottom: .8rem }
+  .lede { font-size: clamp(.92rem, 1.1vw, 1.02rem) }
+  .card, .statCell, .tier, .phase, .trackCell, .plan { padding: 1.15rem 1.15rem }
+  .stat { font-size: clamp(1.8rem, 3.4vw, 2.6rem) }
+  .stats, .cards, .tiers, .phases, .tracks, .planRow, .road, .shots { margin-top: 1.2rem }
+  .shot img { max-height: 24vh }
+  .mapRow { padding: .8rem 0 }
+}
+
+@media (max-width: 640px) {
+  .slide { padding: 48px 18px 84px }
+  .display { font-size: clamp(1.5rem, 7vw, 2rem) }
+  .cover .display { font-size: clamp(1.9rem, 9vw, 2.6rem) }
+  .shot img { max-height: 22vh }
+  .toolBtn { font-size: 0; padding: 0; width: 36px; gap: 0 }
+  .hud { gap: 9px; padding: 11px 13px calc(11px + env(safe-area-inset-bottom)) }
+  .coverFoot { gap: 1.2rem }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track { scroll-behavior: auto }
+  .rise { opacity: 1; transform: none; transition: none }
+  .auraA, .auraB, .coverGrid, .dotmark { animation: none }
+  .slideActive .fragItem { animation: none }
+  .tierFill, .roadFill, .roadStep::before, .shot, .toolBtn, .navBtn, .hint { transition: none }
+}
+
+/* ── печать ───────────────────────────────────────────────── */
+@media print {
+  @page { size: A4 landscape; margin: 0 }
+  .deck { position: static !important; overflow: visible !important; height: auto !important }
+  .track { display: block !important; height: auto !important; overflow: visible !important }
+  .slide {
+    width: 100% !important; height: auto !important; min-height: 100vh;
+    overflow: visible !important; break-after: page; page-break-after: always;
+  }
+  .slide:last-child { break-after: auto; page-break-after: auto }
+  .rise { opacity: 1 !important; transform: none !important; transition: none !important }
+  .hud, .toolbar, .hint, .aura, .coverGrid { display: none !important }
+  .tierFill { width: var(--w, 100%) !important }
+  .roadFill { width: 100% !important }
+}

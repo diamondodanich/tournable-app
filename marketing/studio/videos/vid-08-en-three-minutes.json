@@ -1,0 +1,68 @@
+{
+  "slug": "vid-08-en-three-minutes",
+  "order": 8,
+  "lang": "en",
+  "audience": "grassroots organisers",
+  "title": "A 16-team championship in three minutes",
+  "idea": "speed demo with a visible stopwatch — the timer keeps people watching",
+  "hook": "A 16-team championship. I am building it right now, on camera, timed.",
+  "shots": [
+    {
+      "from": 0,
+      "to": 4,
+      "source": "Face, close. Phone in hand, starting a stopwatch",
+      "title": "16 TEAMS · TIMED",
+      "voice": "A sixteen team championship. I am going to build it right now, on camera. Starting the clock."
+    },
+    {
+      "from": 4,
+      "to": 10,
+      "source": "Clip 06-wizard, opening seconds",
+      "title": "STEP 1 — FORMAT",
+      "voice": "Football, and the format: groups plus knockout. That is how inter school competitions actually run."
+    },
+    {
+      "from": 10,
+      "to": 17,
+      "source": "Clip 06-wizard, team list screen",
+      "title": "ALL 16 IN ONE PASTE",
+      "voice": "I paste the school list in as one block. Nothing typed in by hand."
+    },
+    {
+      "from": 17,
+      "to": 24,
+      "source": "Clip 02-tabs-walkthrough, fixtures section",
+      "title": "FIXTURES BUILT THEMSELVES",
+      "voice": "Fixtures are done. Twenty four group matches across the rounds, with the strongest teams kept apart at the start."
+    },
+    {
+      "from": 24,
+      "to": 31,
+      "source": "Clip 02-tabs-walkthrough, table section",
+      "title": "TABLE UPDATES ITSELF",
+      "voice": "I enter a score and the table recalculates. Points, goal difference, recent form. I am not doing any of the maths."
+    },
+    {
+      "from": 31,
+      "to": 37,
+      "source": "Clip 03-bracket",
+      "title": "BRACKET FILLED ITSELF",
+      "voice": "Who advanced was decided by the rules, not by memory. The bracket filled itself with the winners."
+    },
+    {
+      "from": 37,
+      "to": 42,
+      "source": "Face. Showing the stopwatch",
+      "title": "3 MINUTES · FREE",
+      "voice": "Three minutes. From here I only enter scores. Everything else is calculated for me. Link in bio."
+    }
+  ],
+  "caption": "From an empty screen to a full 16-team bracket in three minutes, timed on camera.\n\nEvery step shown: format, teams, fixtures, table, knockout. No manual arithmetic anywhere.\n\nHow long does this take you?",
+  "hashtags": [
+    "grassrootsfootball",
+    "tournament",
+    "schoolsport",
+    "sportsadmin",
+    "tournable"
+  ]
+}

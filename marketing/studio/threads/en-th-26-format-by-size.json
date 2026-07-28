@@ -1,0 +1,23 @@
+{
+  "slug": "en-th-26-format-by-size",
+  "order": 26,
+  "lang": "en",
+  "topic": "formats",
+  "audience": "organisers",
+  "why": "cheat sheet people bookmark and reuse every season",
+  "posts": [
+    "The most common mistake in amateur sport is picking a format that does not match your entry count.\n\nStraight knockout with 20 teams means 10 of them drive home after 20 minutes of football.\n\nWhat to run at each size:",
+    "Up to 6 teams → single round robin.\n\n5 rounds, 15 matches, one day. Everyone plays everyone, nobody is eliminated.\n\nAt youth level that matters more than drama. The kid came to play, not to watch.",
+    "8–16 teams → groups plus knockout.\n\n4 groups, 24 group matches, 7 knockout matches, two days.\n\nEvery team is guaranteed at least three games and you still get a real bracket with a final. The best balance for inter-school championships.",
+    "More than 16 teams → Swiss system.\n\n32 teams, 5 rounds, nobody eliminated. Opponents are matched on current points, so weak teams avoid hammerings and strong teams avoid free wins.",
+    "Special case: 4–8 teams but you want a proper showpiece final.\n\nDouble elimination. One defeat does not end you — you drop to the lower bracket and can still reach the final from there.\n\nBorrowed from esports, almost unheard of in grassroots sport.",
+    "Always avoid:\n\n— Round robin with 16 teams in one day. That is 120 matches.\n— Groups of six across two days. You will not finish the group stage.\n— Straight knockout when teams have travelled far.",
+    "How many teams do you usually get?\n\nDrop the number and I will tell you which format I would run and why."
+  ],
+  "hashtags": [
+    "tournament",
+    "formats",
+    "grassrootsfootball",
+    "sportsadmin"
+  ]
+}

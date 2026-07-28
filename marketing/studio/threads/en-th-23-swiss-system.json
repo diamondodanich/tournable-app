@@ -1,0 +1,24 @@
+{
+  "slug": "en-th-23-swiss-system",
+  "order": 23,
+  "lang": "en",
+  "topic": "formats",
+  "audience": "organisers, esports, university sport",
+  "why": "format most people have never considered",
+  "posts": [
+    "32 teams. 5 rounds. Nobody goes home after one match.\n\nThat is not a typo. That is the Swiss system — a format almost nobody uses in amateur sport.\n\nHow it works:",
+    "Round 1 pairings are random.\n\nAfter that, one rule: winners play winners, losers play losers.\n\nYour opponent is chosen by your current points total, not by a draw. You play whoever is having the same tournament as you.",
+    "What that produces.\n\nBy round three, the top of the table is only teams who won everything, the bottom only teams who lost everything. Everyone plays someone at their level.\n\nWeak teams stop getting hammered. Strong teams stop getting free wins.",
+    "How many rounds you need:\n\n8 teams → 3 rounds\n16 teams → 4 rounds\n32 teams → 5 rounds\n64 teams → 6 rounds\n\nRule of thumb: however many times you double 2 to reach your team count.",
+    "Compare with a straight knockout for 32 teams:\n\nKnockout: 31 matches, but 16 teams travel home after one game.\nSwiss: 80 matches, everyone plays all five rounds.\n\nMore matches, but they are short and run in parallel. One playing day instead of three.",
+    "Where Swiss always wins:\n\n— Teams travelled a long way. Eliminating half of them after 20 minutes disrespects that journey.\n— Many entrants, few days.\n— Esports and chess. The format came from there and has been stress-tested for decades.",
+    "Where it does not fit: when you need knockout drama and a showpiece final. Swiss decides the winner by mathematics, not by one match.\n\nSo it is often used as the qualifying stage, with the top four going into a normal bracket.",
+    "If you run 16+ teams on a single day every year, try it once.\n\nIt is the only format where more entrants stops being a problem.\n\nAnyone here run a Swiss system live? How did it land?"
+  ],
+  "hashtags": [
+    "swisssystem",
+    "tournament",
+    "esports",
+    "sportsadmin"
+  ]
+}

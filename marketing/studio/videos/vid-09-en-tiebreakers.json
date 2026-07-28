@@ -1,0 +1,61 @@
+{
+  "slug": "vid-09-en-tiebreakers",
+  "order": 9,
+  "lang": "en",
+  "audience": "organisers, coaches",
+  "title": "Level on points. Who goes through?",
+  "idea": "pure utility clip — works even for people who never buy anything",
+  "hook": "Two teams finish level on points. Who goes through?",
+  "shots": [
+    {
+      "from": 0,
+      "to": 5,
+      "source": "Face, close",
+      "title": "LEVEL ON POINTS",
+      "voice": "Two teams finish the group level on points. Who goes through? Here is the order that settles it."
+    },
+    {
+      "from": 5,
+      "to": 12,
+      "source": "Clip 02-tabs-walkthrough, table close-up",
+      "title": "01 — GOAL DIFFERENCE",
+      "voice": "First, goal difference. Scored minus conceded across every group match. Not head to head — all of them."
+    },
+    {
+      "from": 12,
+      "to": 18,
+      "source": "Same clip, goals column",
+      "title": "02 — GOALS SCORED",
+      "voice": "Second, if the difference is level too, the team that scored more goes through. Attacking sides get the benefit."
+    },
+    {
+      "from": 18,
+      "to": 27,
+      "source": "Face",
+      "title": "03 — HEAD TO HEAD",
+      "voice": "Third, head to head. A lot of people put this first, and that is a mistake. With three teams level it forms a loop and stops working."
+    },
+    {
+      "from": 27,
+      "to": 34,
+      "source": "Clip 02-tabs-walkthrough, results matrix",
+      "title": "WRITE IT BEFORE KICKOFF",
+      "voice": "And the part that matters most: this order goes in writing before the first match. Decided afterwards, it always looks like it favours someone."
+    },
+    {
+      "from": 34,
+      "to": 39,
+      "source": "Face",
+      "title": "LINK IN BIO",
+      "voice": "One page of rules in the group chat removes almost every argument. Tell me in the comments what comes first in yours."
+    }
+  ],
+  "caption": "Level on points — who goes through?\n\nThe tiebreaker order that settles the most common argument in amateur sport, and why head-to-head should not be first.\n\nWhat comes first in your rules?",
+  "hashtags": [
+    "grassrootsfootball",
+    "tournament",
+    "coaching",
+    "sportsadmin",
+    "tournable"
+  ]
+}

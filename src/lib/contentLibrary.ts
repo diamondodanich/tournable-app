@@ -39,9 +39,47 @@ export interface ContentShot {
   url: string
 }
 
+/** Ветка для Threads: цепочка постов до 500 знаков каждый. */
+export interface ContentThread {
+  slug: string
+  order: number
+  lang: string
+  topic: string
+  audience: string
+  /** Почему ветка может разойтись — заметка для себя, не для публикации. */
+  why: string
+  posts: string[]
+  hashtags: string[]
+}
+
+/** Один кадр ролика: что показывать и что при этом произносится. */
+export interface ContentShotPlan {
+  from: number
+  to: number
+  source: string
+  voice: string
+  title: string
+}
+
+export interface ContentVideo {
+  slug: string
+  order: number
+  lang: string
+  title: string
+  idea: string
+  hook: string
+  audience: string
+  duration: number
+  shots: ContentShotPlan[]
+  caption: string
+  hashtags: string[]
+}
+
 export interface ContentManifest {
   builtAt: string
   posts: ContentPost[]
+  threads?: ContentThread[]
+  videos?: ContentVideo[]
   clips: ContentClip[]
   shots: ContentShot[]
 }

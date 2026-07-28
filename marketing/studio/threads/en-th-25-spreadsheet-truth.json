@@ -1,0 +1,23 @@
+{
+  "slug": "en-th-25-spreadsheet-truth",
+  "order": 25,
+  "lang": "en",
+  "topic": "tools",
+  "audience": "organisers",
+  "why": "defends the tool everyone expects to be attacked — invites replies",
+  "posts": [
+    "Unpopular opinion: a spreadsheet is a great tool for running tournaments.\n\nJust not for the part people usually use it for.\n\nWhere it wins and where it quietly fails:",
+    "Where a spreadsheet beats any system:\n\n— Budget and costs\n— Entry lists and registrations\n— One-off calculations like how many balls to buy\n— Anything you need once, done your own way\n\nNothing replaces it here.",
+    "Where it starts to break: tiebreakers.\n\nPoints, a formula handles. Goal difference, usually yes.\n\nBut \"goal difference, then goals scored, then head-to-head, and if three teams are level start again\" does not survive as a formula. People do that part by hand. That is where the error enters.",
+    "Second failure point: you cannot show it to anyone.\n\nYou send the file to the group chat. A day later there are five versions and nobody knows which is current.\n\nA parent opens it on a phone and sees a wall of columns. They will not decode it — they will message you asking when their kid plays.",
+    "Third: the file lives with you.\n\nYou go on holiday, the tournament stalls. You change jobs, the season history leaves with your laptop.\n\nThat is not a spreadsheet problem. That is a one-person-holds-the-data problem.",
+    "So the honest answer is:\n\nSpreadsheet for what you calculate.\nA system for what other people need to see.\n\nDifferent jobs. Arguing about which is better misses the point — the question is which job currently hurts.",
+    "Quick self-check:\n\nHow many times during your last tournament did someone ask \"when do we play?\" or \"who is top of the group?\"\n\nIf it was more than five, the spreadsheet is not the issue. The issue is that only you could see the table."
+  ],
+  "hashtags": [
+    "spreadsheets",
+    "sportsadmin",
+    "tournament",
+    "grassroots"
+  ]
+}

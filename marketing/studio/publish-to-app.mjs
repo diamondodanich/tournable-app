@@ -21,6 +21,8 @@ import { clipNote } from './clip-notes.mjs'
 const ROOT = process.cwd()
 const OUT = join(ROOT, 'marketing', 'out')
 const POSTS = join(ROOT, 'marketing', 'studio', 'posts')
+const THREADS = join(ROOT, 'marketing', 'studio', 'threads')
+const VIDEOS = join(ROOT, 'marketing', 'studio', 'videos')
 const FOOTAGE = join(ROOT, 'marketing', 'footage')
 const SHOTS = join(ROOT, 'marketing', 'shots')
 const BUCKET = 'marketing'
@@ -140,10 +142,60 @@ for (const file of shotFiles) {
 }
 log(`кадров продукта: ${shots.length}`)
 
+// ── Треды ────────────────────────────────────────────────────────────────────
+// Картинок у веток нет, поэтому в бакет ничего не заливается — только текст
+// уезжает в манифест. Threads режет пост на 500 знаков: если исходник длиннее,
+// об этом надо знать здесь, а не в момент публикации.
+const threads = []
+if (existsSync(THREADS)) {
+  for (const file of readdirSync(THREADS).filter(f => f.endsWith('.json'))) {
+    const t = JSON.parse(readFileSync(join(THREADS, file), 'utf8'))
+    const over = (t.posts ?? []).filter(p => p.length > 500).length
+    if (over) log(`тред ${t.slug}: ${over} пост(ов) длиннее 500 знаков — Threads обрежет`)
+    threads.push({
+      slug: t.slug ?? basename(file, '.json'),
+      order: t.order ?? 99,
+      lang: t.lang ?? 'ru',
+      topic: t.topic ?? '',
+      audience: t.audience ?? '',
+      why: t.why ?? '',
+      posts: t.posts ?? [],
+      hashtags: t.hashtags ?? [],
+    })
+  }
+  threads.sort((a, b) => a.order - b.order)
+  log(`тредов: ${threads.length}`)
+}
+
+// ── Ролики со сценарием ──────────────────────────────────────────────────────
+const videos = []
+if (existsSync(VIDEOS)) {
+  for (const file of readdirSync(VIDEOS).filter(f => f.endsWith('.json'))) {
+    const v = JSON.parse(readFileSync(join(VIDEOS, file), 'utf8'))
+    videos.push({
+      slug: v.slug ?? basename(file, '.json'),
+      order: v.order ?? 99,
+      lang: v.lang ?? 'ru',
+      title: v.title ?? '',
+      idea: v.idea ?? '',
+      hook: v.hook ?? '',
+      audience: v.audience ?? '',
+      duration: v.shots?.at(-1)?.to ?? 0,
+      shots: v.shots ?? [],
+      caption: v.caption ?? '',
+      hashtags: v.hashtags ?? [],
+    })
+  }
+  videos.sort((a, b) => a.order - b.order)
+  log(`роликов со сценарием: ${videos.length}`)
+}
+
 // ── Манифест ─────────────────────────────────────────────────────────────────
 const manifest = {
   builtAt: new Date().toISOString(),
   posts,
+  threads,
+  videos,
   clips,
   shots,
 }
@@ -153,6 +205,6 @@ const manifestUrl = await upload(
   'application/json; charset=utf-8',
 )
 
-console.log(`\n[app] выгружено: ${posts.length} каруселей, ${clips.length} клипов, ${shots.length} кадров`)
+console.log(`\n[app] выгружено: ${posts.length} каруселей, ${threads.length} тредов, ${videos.length} роликов, ${clips.length} клипов, ${shots.length} кадров`)
 console.log(`[app] манифест: ${manifestUrl}`)
 console.log('[app] смотреть в платформе: /admin/content\n')

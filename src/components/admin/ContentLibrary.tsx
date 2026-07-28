@@ -4,23 +4,51 @@ import { useCallback, useEffect, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Copy, Check, Download, Images, Film, Monitor, Smartphone, X, ChevronLeft, ChevronRight,
-  Archive, Undo2,
+  Archive, Undo2, MessageSquare, Mic, Clapperboard,
 } from 'lucide-react'
 import { setPostUsed } from '@/app/actions/contentLibrary'
+import type { ContentThread, ContentVideo } from '@/lib/contentLibrary'
 import {
   type ContentManifest, type ContentPost, type ContentSlide,
   downloadUrl, formatBytes, LANG_LABEL,
 } from '@/lib/contentLibrary'
 
-type Tab = 'posts' | 'used' | 'clips' | 'shots'
+type Tab = 'posts' | 'threads' | 'videos' | 'used' | 'clips' | 'shots'
 type Device = 'phone' | 'desktop'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'posts', label: 'В работе', icon: Images },
+  { id: 'posts', label: 'Карусели', icon: Images },
+  { id: 'threads', label: 'Threads', icon: MessageSquare },
+  { id: 'videos', label: 'Ролики', icon: Clapperboard },
+  { id: 'clips', label: 'Клипы', icon: Film },
+  { id: 'shots', label: 'Кадры', icon: Monitor },
   { id: 'used', label: 'Использованные', icon: Archive },
-  { id: 'clips', label: 'Видео', icon: Film },
-  { id: 'shots', label: 'Кадры продукта', icon: Monitor },
 ]
+
+const LANG_CHIP: Record<string, string> = { ru: 'русский', kz: 'қазақша', en: 'english' }
+
+/** Кнопка «Использовано» одинаково работает для каруселей, тредов и роликов. */
+function UsedButton({ slug, used, onToggle }: {
+  slug: string; used: boolean; onToggle: (slug: string, used: boolean) => void
+}) {
+  const [pending, startTransition] = useTransition()
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => startTransition(() => onToggle(slug, !used))}
+      className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold
+        transition-colors disabled:opacity-60 ${
+          used
+            ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }`}
+    >
+      {used ? <Undo2 size={13} /> : <Archive size={13} />}
+      {pending ? 'Сохраняю…' : used ? 'Вернуть в работу' : 'Использовано'}
+    </button>
+  )
+}
 
 /** Что сейчас открыто во весь экран: набор картинок и позиция в нём. */
 interface Viewer {
@@ -101,7 +129,6 @@ function PostCard({ post, onOpen, used, onToggleUsed }: {
 }) {
   const hasDesktop = (post.slidesDesktop?.length ?? 0) > 0
   const [device, setDevice] = useState<Device>('phone')
-  const [pending, startTransition] = useTransition()
   const slides = device === 'desktop' ? (post.slidesDesktop ?? []) : post.slides
   const hashtags = post.hashtags.map(h => (h.startsWith('#') ? h : `#${h}`)).join(' ')
 
@@ -182,20 +209,145 @@ function PostCard({ post, onOpen, used, onToggleUsed }: {
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <CopyButton text={`${post.caption}\n\n${hashtags}`} label="Скопировать текст" />
           <DownloadAllButton slug={post.slug} slides={slides} suffix={device} />
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => startTransition(() => onToggleUsed(post.slug, !used))}
-            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold
-              transition-colors disabled:opacity-60 ${
-                used
-                  ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-          >
-            {used ? <Undo2 size={13} /> : <Archive size={13} />}
-            {pending ? 'Сохраняю…' : used ? 'Вернуть в работу' : 'Использовано'}
-          </button>
+          <UsedButton slug={post.slug} used={used} onToggle={onToggleUsed} />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** Ветка Threads: каждый пост копируется отдельно — их и постят по одному. */
+function ThreadCard({ thread, used, onToggleUsed }: {
+  thread: ContentThread
+  used: boolean
+  onToggleUsed: (slug: string, used: boolean) => void
+}) {
+  const hashtags = thread.hashtags.map(h => (h.startsWith('#') ? h : `#${h}`)).join(' ')
+  const whole = thread.posts
+    .map((p, i) => `— ${i + 1} —\n${p}`)
+    .join('\n\n') + (hashtags ? `\n\n${hashtags}` : '')
+
+  return (
+    <article className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${used ? 'opacity-70' : ''}`}>
+      <div className="p-4 sm:p-5 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-black tabular-nums px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">
+            {String(thread.order).padStart(2, '0')}
+          </span>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+            {LANG_CHIP[thread.lang] ?? thread.lang}
+          </span>
+          {thread.topic && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">{thread.topic}</span>
+          )}
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+            {thread.posts.length} постов
+          </span>
+        </div>
+
+        {/* Первый пост — он же заголовок ветки: именно его видят в ленте. */}
+        <h3 className="font-black text-gray-900 leading-snug whitespace-pre-line">
+          {thread.posts[0]?.split('\n')[0]}
+        </h3>
+        {thread.why && <p className="text-xs text-gray-500 leading-snug">Расчёт: {thread.why}</p>}
+      </div>
+
+      <div className="border-t border-gray-100 flex flex-col">
+        {thread.posts.map((post, i) => (
+          <div key={i} className="border-b border-gray-100 last:border-b-0 p-4 sm:p-5 flex gap-3 items-start">
+            <span className="shrink-0 w-6 h-6 rounded-md bg-gray-100 text-gray-500 text-[11px] font-black
+              flex items-center justify-center tabular-nums mt-0.5">{i + 1}</span>
+            <pre className="flex-1 whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans m-0">{post}</pre>
+            <div className="shrink-0 flex flex-col items-end gap-1">
+              <CopyButton text={post} label="" />
+              <span className={`text-[10px] tabular-nums ${post.length > 500 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                {post.length}/500
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-gray-50/70 p-4 sm:p-5 flex flex-col gap-3">
+        {hashtags && <div className="text-sm text-emerald-700 break-words">{hashtags}</div>}
+        <div className="flex items-center gap-2 flex-wrap">
+          <CopyButton text={whole} label="Скопировать всю ветку" />
+          <UsedButton slug={thread.slug} used={used} onToggle={onToggleUsed} />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** Ролик: покадровый план с дословной озвучкой. */
+function VideoCard({ video, used, onToggleUsed }: {
+  video: ContentVideo
+  used: boolean
+  onToggleUsed: (slug: string, used: boolean) => void
+}) {
+  const hashtags = video.hashtags.map(h => (h.startsWith('#') ? h : `#${h}`)).join(' ')
+  const script = video.shots
+    .map(s => `${s.from}–${s.to} с · ${s.source}\nТИТР: ${s.title}\nГОЛОС: ${s.voice}`)
+    .join('\n\n')
+
+  return (
+    <article className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${used ? 'opacity-70' : ''}`}>
+      <div className="p-4 sm:p-5 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-black tabular-nums px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">
+            {String(video.order).padStart(2, '0')}
+          </span>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+            {LANG_CHIP[video.lang] ?? video.lang}
+          </span>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 tabular-nums">
+            {video.duration} с
+          </span>
+          {video.audience && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">{video.audience}</span>
+          )}
+        </div>
+        <h3 className="font-black text-gray-900 leading-snug">{video.title}</h3>
+        {video.idea && <p className="text-xs text-gray-500 leading-snug">Расчёт: {video.idea}</p>}
+        {video.hook && (
+          <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Хук — первые секунды</div>
+            <div className="text-sm text-gray-900 font-semibold leading-snug">{video.hook}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-100">
+        {video.shots.map((s, i) => (
+          <div key={i} className="border-b border-gray-100 last:border-b-0 p-4 sm:p-5 flex gap-3 items-start">
+            <span className="shrink-0 text-[11px] font-black text-gray-400 tabular-nums w-14 mt-0.5">
+              {s.from}–{s.to} с
+            </span>
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <div className="text-xs text-gray-500">{s.source}</div>
+              {s.title && (
+                <div className="text-[11px] font-black tracking-wider text-gray-900 bg-gray-100 rounded-md px-2 py-1 w-fit">
+                  {s.title}
+                </div>
+              )}
+              <div className="flex gap-2 items-start">
+                <Mic size={13} className="shrink-0 text-emerald-600 mt-1" />
+                <p className="text-sm text-gray-800 leading-relaxed m-0">{s.voice}</p>
+              </div>
+            </div>
+            <div className="shrink-0"><CopyButton text={s.voice} label="" /></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-gray-50/70 p-4 sm:p-5 flex flex-col gap-3">
+        <div className="text-[11px] font-black uppercase tracking-widest text-gray-400">Подпись к публикации</div>
+        <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans m-0">{video.caption}</pre>
+        {hashtags && <div className="text-sm text-emerald-700 break-words">{hashtags}</div>}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <CopyButton text={script} label="Скопировать сценарий" />
+          <CopyButton text={`${video.caption}\n\n${hashtags}`} label="Скопировать подпись" />
+          <UsedButton slug={video.slug} used={used} onToggle={onToggleUsed} />
         </div>
       </div>
     </article>
@@ -326,8 +478,19 @@ export default function ContentLibrary({ manifest, initialUsed }: {
   }, [])
 
   const usedSet = new Set(used)
+  const allThreads = manifest.threads ?? []
+  const allVideos = manifest.videos ?? []
+
   const active = manifest.posts.filter(p => !usedSet.has(p.slug))
-  const archived = manifest.posts.filter(p => usedSet.has(p.slug))
+  const activeThreads = allThreads.filter(t => !usedSet.has(t.slug))
+  const activeVideos = allVideos.filter(v => !usedSet.has(v.slug))
+
+  // Архив общий: отметка «использовано» работает одинаково для всех типов,
+  // и держать три отдельные вкладки использованного было бы лишним.
+  const archivedPosts = manifest.posts.filter(p => usedSet.has(p.slug))
+  const archivedThreads = allThreads.filter(t => usedSet.has(t.slug))
+  const archivedVideos = allVideos.filter(v => usedSet.has(v.slug))
+  const archivedCount = archivedPosts.length + archivedThreads.length + archivedVideos.length
 
   const move = useCallback((delta: number) => {
     setViewer(v => {
@@ -342,7 +505,9 @@ export default function ContentLibrary({ manifest, initialUsed }: {
       <div className="flex gap-1.5 p-1 bg-white rounded-xl border border-gray-100 shadow-sm w-fit max-w-full overflow-x-auto">
         {TABS.map(({ id, label, icon: Icon }) => {
           const count = id === 'posts' ? active.length
-            : id === 'used' ? archived.length
+            : id === 'threads' ? activeThreads.length
+            : id === 'videos' ? activeVideos.length
+            : id === 'used' ? archivedCount
             : id === 'clips' ? manifest.clips.length
             : manifest.shots.length
           return (
@@ -379,16 +544,37 @@ export default function ContentLibrary({ manifest, initialUsed }: {
         </div>
       )}
 
+      {tab === 'threads' && (
+        <div className="flex flex-col gap-4">
+          {activeThreads.length === 0 && <Empty>Все ветки отмечены как использованные.</Empty>}
+          {activeThreads.map(t => (
+            <ThreadCard key={t.slug} thread={t} used={false} onToggleUsed={toggleUsed} />
+          ))}
+        </div>
+      )}
+
+      {tab === 'videos' && (
+        <div className="flex flex-col gap-4">
+          {activeVideos.length === 0 && <Empty>Все ролики отмечены как использованные.</Empty>}
+          {activeVideos.map(v => (
+            <VideoCard key={v.slug} video={v} used={false} onToggleUsed={toggleUsed} />
+          ))}
+        </div>
+      )}
+
       {tab === 'used' && (
         <div className="flex flex-col gap-4">
-          {archived.length === 0 && (
-            <Empty>Пока ничего не отмечено. Кнопка «Использовано» есть под каждой каруселью.</Empty>
+          {archivedCount === 0 && (
+            <Empty>Пока ничего не отмечено. Кнопка «Использовано» есть под каждой каруселью, веткой и роликом.</Empty>
           )}
-          {archived.map(post => (
-            <PostCard
-              key={post.slug} post={post} onOpen={setViewer}
-              used onToggleUsed={toggleUsed}
-            />
+          {archivedPosts.map(post => (
+            <PostCard key={post.slug} post={post} onOpen={setViewer} used onToggleUsed={toggleUsed} />
+          ))}
+          {archivedThreads.map(t => (
+            <ThreadCard key={t.slug} thread={t} used onToggleUsed={toggleUsed} />
+          ))}
+          {archivedVideos.map(v => (
+            <VideoCard key={v.slug} video={v} used onToggleUsed={toggleUsed} />
           ))}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Images, Film, Monitor, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Images, Film, Monitor, RefreshCw, MessageSquare, Clapperboard } from 'lucide-react'
 import type { ContentManifest } from '@/lib/contentLibrary'
 import ContentLibrary from '@/components/admin/ContentLibrary'
 import { getUsedPosts } from '@/app/actions/contentLibrary'
@@ -94,9 +94,11 @@ node marketing/studio/publish-to-app.mjs`}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
               <Stat icon={Images} value={manifest.posts.length} label="каруселей" />
-              <Stat icon={Film} value={manifest.clips.length} label="видеоклипов" />
+              <Stat icon={MessageSquare} value={manifest.threads?.length ?? 0} label="веток Threads" />
+              <Stat icon={Clapperboard} value={manifest.videos?.length ?? 0} label="роликов" />
+              <Stat icon={Film} value={manifest.clips.length} label="клипов" />
               <Stat icon={Monitor} value={manifest.shots.length} label="кадров" />
             </div>
 

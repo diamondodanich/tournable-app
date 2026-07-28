@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, FileText, Moon, Sun, MoveHorizontal } from 'lucide-react'
+import { setThemeCookie } from '@/lib/cookies'
 import {
   SLIDES, CATEGORY_STATS, CATEGORY_PROOF, FRAGMENTS, PROBLEM_POINTS, SOLUTION_STEPS,
   PRODUCT_FACTS, PRODUCT_SHOTS, PRODUCT_READY, MARKET_MAP, MAP_CONCLUSION,
@@ -148,7 +149,7 @@ export default function PitchDeck({ initialTheme }: { initialTheme: 'light' | 'd
   function toggleTheme() {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`
+    setThemeCookie(next)
   }
 
   const at = (id: string) => SLIDES.findIndex((x) => x.id === id)

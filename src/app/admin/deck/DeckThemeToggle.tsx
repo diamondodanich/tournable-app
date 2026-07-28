@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
+import { setThemeCookie } from '@/lib/cookies'
 
 /**
  * Переключатель темы презентации. Тему меняем прямо на DOM-узле (без router.refresh),
@@ -28,7 +29,7 @@ export default function DeckThemeToggle({
   function toggle() {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`
+    setThemeCookie(next)
   }
 
   const label = theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'

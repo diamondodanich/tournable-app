@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Moon, Sun } from 'lucide-react'
+import { setThemeCookie } from '@/lib/cookies'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -20,7 +21,7 @@ export default function ThemeToggle({ initialDark, lang = 'ru' }: { initialDark:
   function set(next: boolean) {
     if (next === dark) return
     setDark(next)
-    document.cookie = `theme=${next ? 'dark' : 'light'}; path=/; max-age=31536000; samesite=lax`
+    setThemeCookie(next ? 'dark' : 'light')
     router.refresh()
   }
 

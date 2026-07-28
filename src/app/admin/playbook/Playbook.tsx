@@ -4,6 +4,7 @@ import { useState, Fragment } from 'react'
 import Link from 'next/link'
 import { Moon, Sun, ArrowLeft, Trophy } from 'lucide-react'
 import { TABS, type Block } from './content'
+import { setThemeCookie } from '@/lib/cookies'
 import s from './playbook.module.css'
 
 /** **жирный** внутри строки — иначе пришлось бы держать контент в JSX */
@@ -128,7 +129,7 @@ export default function Playbook({ initialTheme }: { initialTheme: 'light' | 'da
   function toggleTheme() {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`
+    setThemeCookie(next)
   }
 
   const themeLabel = theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'

@@ -492,17 +492,31 @@
 }
 
 /* ── печать ───────────────────────────────────────────────── */
+/* Страница — слайд 16:9, а не A4: это презентация, а не документ.
+   Всё, что на экране появляется по .slideActive, здесь форсируется:
+   в печати активного слайда нет, и без этого полосы и точки остались бы пустыми. */
 @media print {
-  @page { size: A4 landscape; margin: 0 }
+  @page { size: 338mm 190mm; margin: 0 }
   .deck { position: static !important; overflow: visible !important; height: auto !important }
   .track { display: block !important; height: auto !important; overflow: visible !important }
   .slide {
-    width: 100% !important; height: auto !important; min-height: 100vh;
-    overflow: visible !important; break-after: page; page-break-after: always;
+    width: 100% !important; height: 100vh !important; min-height: 0 !important;
+    overflow: hidden !important; break-after: page; page-break-after: always;
+    break-inside: avoid; page-break-inside: avoid;
+    /* нижнее поле держало место под панель навигации — в печати её нет */
+    padding: clamp(36px, 5vh, 58px) clamp(28px, 5vw, 72px) clamp(36px, 5vh, 58px) !important;
   }
   .slide:last-child { break-after: auto; page-break-after: auto }
   .rise { opacity: 1 !important; transform: none !important; transition: none !important }
-  .hud, .toolbar, .hint, .aura, .coverGrid { display: none !important }
-  .tierFill { width: var(--w, 100%) !important }
-  .roadFill { width: 100% !important }
+  /* fixed-элементы Chrome может повторить на каждой странице и наложить на текст */
+  .hud, .toolbar, .hint, .logoMark, .aura, .mesh, .coverGrid { display: none !important }
+  .tierFill { width: var(--w, 100%) !important; transition: none !important }
+  .roadFill { width: 100% !important; transition: none !important }
+  .roadStep::before {
+    background: var(--p-brand) !important; box-shadow: none !important; transition: none !important;
+  }
+  .fragItem { animation: none !important }
+  .shot { transform: none !important }
+  /* фон и цвета обязаны печататься, иначе тёмная тема уйдёт в белое */
+  .deck, .slide { -webkit-print-color-adjust: exact; print-color-adjust: exact }
 }

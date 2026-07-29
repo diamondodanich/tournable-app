@@ -2,6 +2,8 @@
 // Общий источник для обеих подач: /admin/deck (лендинг) и /admin/deck/slides (слайды).
 // Правки текста делаются здесь — иначе версии разъезжаются.
 
+import type { FormatKey } from './FormatDiagram'
+
 export type Screen = {
   src: string
   chrome: string
@@ -113,9 +115,11 @@ export const PILLARS: { k: string; h: string; p: string }[] = [
   },
 ]
 
-/** Схемы форматов. viewBox 120×72 у всех — рисуются одним компонентом. */
-export type FormatKey = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss'
-
+/**
+ * Схемы форматов для клиентской презентации. Показываем пять самых ходовых
+ * из семи, что умеет продукт: двойное выбывание и рейтинг нужны реже
+ * и на этом слайде только отвлекали бы. Полный набор — в питче.
+ */
 export const FORMATS: { key: FormatKey; name: string; note: string }[] = [
   { key: 'round_robin',    name: 'Круговой',          note: 'Каждый играет с каждым. Победитель — по очкам в таблице.' },
   { key: 'playoff',        name: 'Плей-офф',          note: 'Сетка на выбывание от первого раунда до финала.' },

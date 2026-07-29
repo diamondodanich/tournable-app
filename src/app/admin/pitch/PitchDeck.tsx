@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, FileText, Moon, Sun, MoveHorizontal } from 'lucide-react'
 import { setThemeCookie } from '@/lib/cookies'
+import FormatDiagram from '../deck/FormatDiagram'
+import Logo from './Logo'
 import {
   SLIDES, CATEGORY_STATS, CATEGORY_PROOF, FRAGMENTS, PROBLEM_POINTS, SOLUTION_STEPS,
+  FORMATS, FORMATS_POINT,
   PRODUCT_FACTS, PRODUCT_SHOTS, PRODUCT_READY, MARKET_MAP, MAP_CONCLUSION,
   MARKET_TIERS, MARKET_POINT, SEGMENT_PHASES, MODEL_HEAD, MODEL_SUB, PLANS,
   MODEL_ECONOMICS, NEXT_HEAD, NEXT_SUB, NEXT_TRACKS, ROADMAP,
@@ -164,6 +167,8 @@ export default function PitchDeck({ initialTheme }: { initialTheme: 'light' | 'd
   return (
     <div className={s.deck} data-pitch-root data-pitch-theme={theme}>
 
+      <Logo className={`${s.logo} ${s.logoMark}`} />
+
       <div className={s.toolbar}>
         <Link href="/admin/deck" className={s.toolBtn}>
           <FileText size={15} /> Клиентская
@@ -184,17 +189,20 @@ export default function PitchDeck({ initialTheme }: { initialTheme: 'light' | 'd
             <div className={`${s.aura} ${s.auraA}`} />
           </div>
           <div className={s.inner}>
-            <p className={`${s.rise} ${s.brandline}`} style={rise(0)}>
+            <div className={`${s.rise}`} style={rise(0)}>
+              <Logo className={`${s.logo} ${s.logoCover}`} />
+            </div>
+            <p className={`${s.rise} ${s.brandline}`} style={rise(1)}>
               <span className={s.dotmark} /> <b>Tournable</b> <span>Казахстан · 2026</span>
             </p>
-            <h1 className={`${s.rise} ${s.display}`} style={rise(1)}>
+            <h1 className={`${s.rise} ${s.display}`} style={rise(2)}>
               Операционная система<br /><span className={s.brand}>соревнований</span>
             </h1>
-            <p className={`${s.rise} ${s.lede}`} style={rise(2)}>
+            <p className={`${s.rise} ${s.lede}`} style={rise(3)}>
               Платформа, которая ведёт соревнование любого масштаба от первого матча
               до итоговой таблицы — и сохраняет его историю на годы вперёд.
             </p>
-            <div className={`${s.rise} ${s.coverFoot}`} style={rise(3)}>
+            <div className={`${s.rise} ${s.coverFoot}`} style={rise(4)}>
               <div><b>Стадия</b>Продукт запущен, платежи приняты</div>
               <div><b>Рынок</b>$1,44 млрд, рост 10,3% в год</div>
               <div><b>Запрос</b>Менторы, партнёры, выходы</div>
@@ -289,7 +297,28 @@ export default function PitchDeck({ initialTheme }: { initialTheme: 'light' | 'd
           </div>
         </section>
 
-        {/* 05 ── Продукт ─────────────────────────────────────── */}
+        {/* 05 ── Форматы ─────────────────────────────────────── */}
+        <section {...slide('formats')}>
+          <Bg />
+          <div className={s.inner}>
+            <p className={`${s.rise} ${s.eyebrow}`} style={rise(0)}>Форматы</p>
+            <h2 className={`${s.rise} ${s.display}`} style={rise(1)}>
+              Любой регламент<br />из коробки
+            </h2>
+            <div className={`${s.rise} ${s.formatGrid}`} style={rise(2)}>
+              {FORMATS.map((f) => (
+                <div className={s.formatCell} key={f.key}>
+                  <FormatDiagram format={f.key} className={s.formatSvg} />
+                  <span className={s.formatName}>{f.name}</span>
+                  <p className={s.formatNote}>{f.note}</p>
+                </div>
+              ))}
+            </div>
+            <div className={`${s.rise} ${s.mapNote}`} style={rise(3)}>{FORMATS_POINT}</div>
+          </div>
+        </section>
+
+        {/* 06 ── Продукт ─────────────────────────────────────── */}
         <section {...slide('product')}>
           <Bg />
           <div className={s.inner}>

@@ -174,11 +174,52 @@
   font-family: var(--font-oswald), sans-serif;
 }
 
+/* ── знак ─────────────────────────────────────────────────── */
+.logo { display: inline-flex; flex: none; line-height: 0 }
+.logo img { width: 100%; height: auto; display: block }
+/* показываем вариант под текущую тему, второй прячем */
+.logo img[data-logo='light'] { display: none }
+.deck[data-pitch-theme='light'] .logo img[data-logo='dark'] { display: none }
+.deck[data-pitch-theme='light'] .logo img[data-logo='light'] { display: block }
+
+.logoCover { width: clamp(52px, 5vw, 74px); margin-bottom: 1.4rem }
+
+/* Знак в углу каждого слайда — тихая подпись, не акцент */
+.logoMark {
+  position: fixed; top: 15px; left: clamp(15px, 4vw, 38px); z-index: 28;
+  width: 30px; opacity: .5; transition: opacity .3s ease;
+}
+.logoMark:hover { opacity: .85 }
+@media (max-width: 640px) { .logoMark { width: 24px; top: 17px } }
+
+/* ── схемы форматов ───────────────────────────────────────── */
+.formatGrid {
+  display: grid; gap: 1px; background: var(--p-line);
+  border: 1px solid var(--p-line); margin-top: 1.9rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 780px) { .formatGrid { grid-template-columns: repeat(4, 1fr) } }
+@media (min-width: 1120px) { .formatGrid { grid-template-columns: repeat(7, 1fr) } }
+.formatCell {
+  background: var(--p-bg); padding: 1.5rem 1.15rem;
+  display: flex; flex-direction: column; gap: .1rem;
+}
+.formatSvg { width: 100%; height: auto; color: var(--p-ink); display: block }
+.formatName {
+  display: block; margin-top: 1.15rem; text-transform: uppercase;
+  letter-spacing: .14em; font-size: .72rem; color: var(--p-ink);
+  font-family: var(--font-oswald), sans-serif; line-height: 1.35;
+  /* место под две строки: иначе «Двойное выбывание» опускает своё описание
+     ниже соседних и весь ряд читается рваным */
+  min-height: 2.7em;
+}
+.formatNote { margin-top: .5rem; color: var(--p-ink-2); font-size: .8rem; line-height: 1.5 }
+
 /* ── крупные цифры ────────────────────────────────────────── */
 .stats { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 2rem }
 @media (min-width: 760px) { .stats3 { grid-template-columns: repeat(3, 1fr) } }
 @media (min-width: 760px) { .stats4 { grid-template-columns: repeat(4, 1fr) } }
-.statCell { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.statCell { background: var(--p-bg); padding: 1.8rem 1.6rem }
 .stat {
   font-size: clamp(2.1rem, 4.4vw, 3.4rem); line-height: 1;
   color: var(--p-brand); font-variant-numeric: tabular-nums; display: block;
@@ -188,7 +229,7 @@
 /* ── карточки ─────────────────────────────────────────────── */
 .cards { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.8rem }
 @media (min-width: 760px) { .c2 { grid-template-columns: repeat(2, 1fr) } .c3 { grid-template-columns: repeat(3, 1fr) } }
-.card { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.card { background: var(--p-bg); padding: 1.8rem 1.6rem }
 .tag {
   font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--p-brand); display: block; margin-bottom: .85rem;
@@ -220,7 +261,7 @@
 /* ── карта рынка (слайд 06) ───────────────────────────────── */
 .mapRows { margin-top: 1.6rem; border-top: 1px solid var(--p-line) }
 .mapRow {
-  display: grid; gap: .5rem 1.4rem; padding: 1.05rem 0;
+  display: grid; gap: .6rem 1.6rem; padding: 1.35rem 0;
   border-bottom: 1px solid var(--p-line); align-items: baseline;
 }
 @media (min-width: 860px) { .mapRow { grid-template-columns: 1.1fr 1.4fr 1.4fr } }
@@ -236,7 +277,7 @@
 /* ── рынок TAM/SAM/SOM (слайд 07) ─────────────────────────── */
 .tiers { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.8rem }
 @media (min-width: 860px) { .tiers { grid-template-columns: repeat(3, 1fr) } }
-.tier { background: var(--p-bg); padding: 1.6rem 1.4rem; position: relative; overflow: hidden }
+.tier { background: var(--p-bg); padding: 1.9rem 1.6rem; position: relative; overflow: hidden }
 .tierLead { background: var(--p-surface) }
 .tierTag {
   font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
@@ -258,7 +299,7 @@
 /* ── фазы сегментов (слайд 08) ────────────────────────────── */
 .phases { margin-top: 1.7rem; display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line) }
 @media (min-width: 900px) { .phases { grid-template-columns: repeat(3, 1fr) } }
-.phase { background: var(--p-bg); padding: 1.5rem 1.4rem; display: flex; flex-direction: column; gap: .6rem }
+.phase { background: var(--p-bg); padding: 1.8rem 1.6rem; display: flex; flex-direction: column; gap: .7rem }
 .phaseTop { display: flex; align-items: center; gap: .6rem }
 .phaseDot { width: 9px; height: 9px; border-radius: 50%; background: var(--p-brand); flex: none }
 .phase:nth-child(2) .phaseDot { background: var(--p-accent) }
@@ -278,7 +319,7 @@
 /* ── бизнес-модель (слайд 09) ─────────────────────────────── */
 .planRow { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.6rem }
 @media (min-width: 800px) { .planRow { grid-template-columns: repeat(3, 1fr) } }
-.plan { background: var(--p-bg); padding: 1.4rem }
+.plan { background: var(--p-bg); padding: 1.7rem 1.6rem }
 .planLead { background: var(--p-surface) }
 .planName {
   font-family: var(--font-oswald), sans-serif; text-transform: uppercase;
@@ -293,7 +334,7 @@
 /* ── развитие (слайд 10) ──────────────────────────────────── */
 .tracks { display: grid; gap: 1px; background: var(--p-line); border: 1px solid var(--p-line); margin-top: 1.7rem }
 @media (min-width: 900px) { .tracks { grid-template-columns: repeat(3, 1fr) } }
-.trackCell { background: var(--p-bg); padding: 1.5rem 1.4rem }
+.trackCell { background: var(--p-bg); padding: 1.8rem 1.6rem }
 .trackCell p { color: var(--p-ink-2); font-size: .9rem; line-height: 1.55; margin-top: .35rem }
 
 /* ── дорожная карта (слайд 11) ────────────────────────────── */
@@ -425,7 +466,7 @@
   .slide { padding: clamp(34px, 4vh, 52px) clamp(22px, 5vw, 80px) clamp(80px, 9vh, 96px) }
   .display { font-size: clamp(1.6rem, 3.1vw, 2.4rem); margin-bottom: .8rem }
   .lede { font-size: clamp(.92rem, 1.1vw, 1.02rem) }
-  .card, .statCell, .tier, .phase, .trackCell, .plan { padding: 1.15rem 1.15rem }
+  .card, .statCell, .tier, .phase, .trackCell, .plan, .formatCell { padding: 1.35rem 1.3rem }
   .stat { font-size: clamp(1.8rem, 3.4vw, 2.6rem) }
   .stats, .cards, .tiers, .phases, .tracks, .planRow, .road, .shots { margin-top: 1.2rem }
   .shot img { max-height: 24vh }

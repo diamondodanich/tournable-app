@@ -1,4 +1,11 @@
-import type { FormatKey } from './content'
+/**
+ * Ключи схем совпадают со значениями `Format` из src/lib/sports.ts —
+ * тип живёт здесь, потому что владелец рисунков именно этот компонент,
+ * а списки форматов в презентациях могут показывать лишь часть набора.
+ */
+export type FormatKey =
+  | 'round_robin' | 'playoff' | 'double_elim'
+  | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard'
 
 /**
  * Схемы турнирных форматов. Общий viewBox 120×72 у всех пяти, чтобы в ряду
@@ -107,6 +114,49 @@ function LeaguePlayoff() {
   )
 }
 
+/** Две сетки: проигравший в верхней падает в нижнюю и получает второй шанс. */
+function DoubleElim() {
+  return (
+    <>
+      {/* верхняя сетка */}
+      <Bar x={4} y={4} w={20} h={7} /><Bar x={4} y={15} w={20} h={7} />
+      <Bar x={40} y={9} w={20} h={7} />
+      <Bar x={92} y={30} w={24} h={9} lead />
+      <path d="M24 7.5 H32 V18.5 H24" {...LINE} />
+      <path d="M32 13 H40" {...LINE} />
+      <path d="M60 13 H76 V32 H92" {...LINE} />
+      {/* падение в нижнюю сетку */}
+      <path d="M14 22 V38" stroke="currentColor" strokeWidth="1.2" fill="none"
+        opacity=".42" strokeDasharray="2.5 2.5" />
+      <path d="M14 40 l-2.4 -4 h4.8 z" fill="currentColor" opacity=".42" transform="rotate(180 14 38)" />
+      {/* нижняя сетка */}
+      <Bar x={4} y={44} w={20} h={7} /><Bar x={4} y={55} w={20} h={7} />
+      <Bar x={40} y={49} w={20} h={7} />
+      <path d="M24 47.5 H32 V58.5 H24" {...LINE} />
+      <path d="M32 53 H40" {...LINE} />
+      <path d="M60 53 H76 V37 H92" {...LINE} />
+    </>
+  )
+}
+
+/** Ранжирование по сумме очков, без пар: гонки, battle royale, лёгкая атлетика. */
+function Leaderboard() {
+  const rows = [10, 22, 34, 46, 58]
+  return (
+    <>
+      {rows.map((y, i) => (
+        <g key={y}>
+          <circle cx={9} cy={y + 3.5} r="3.5" fill={i === 0 ? NODE : 'currentColor'} opacity={i === 0 ? 1 : .26} />
+          <rect x={18} y={y} width={62 - i * 9} height={7} rx="2"
+            fill={i === 0 ? NODE : 'currentColor'} opacity={i === 0 ? 1 : .26} />
+          <rect x={102} y={y} width={12} height={7} rx="2"
+            fill="currentColor" opacity={i === 0 ? .5 : .2} />
+        </g>
+      ))}
+    </>
+  )
+}
+
 function Swiss() {
   return (
     <>
@@ -125,9 +175,11 @@ function Swiss() {
 const SHAPES: Record<FormatKey, () => React.ReactElement> = {
   round_robin: RoundRobin,
   playoff: Playoff,
+  double_elim: DoubleElim,
   groups_playoff: GroupsPlayoff,
   league_playoff: LeaguePlayoff,
   swiss: Swiss,
+  leaderboard: Leaderboard,
 }
 
 export default function FormatDiagram({ format, className }: { format: FormatKey; className?: string }) {

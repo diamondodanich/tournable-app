@@ -13,6 +13,24 @@ type Player = { name: string; number: string; photoUrl?: string | null; photoDat
 type Slot = Player | null
 type Line = string[]   // one horizontal pitch line; each entry is a slot's position value
 
+// Player names are normalised to "Daniyar" / "Жан-Али" / "O'Brien" no matter how
+// they were typed (all-caps, all-lowercase, stray double spaces). Squad names are
+// the key match-events are recorded against and what public pages print, so a
+// single canonical spelling per player matters more than free-form input.
+export function normalizePlayerName(raw: string): string {
+  return raw
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(word =>
+      // Split on the separators that carry an internal capital: Жан-Али, O'Brien.
+      word.split(/([-'’])/).map(part =>
+        /[-'’]/.test(part) ? part : part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase()
+      ).join('')
+    )
+    .join(' ')
+}
+
 // Center-crop an image file to a square webp data URL for a player avatar.
 function fileToAvatar(file: File, size = 256): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -224,7 +242,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
 
   function commitEditor() {
     if (editing === null) return
-    const name = draftName.trim()
+    const name = normalizePlayerName(draftName)
     setAssigned(prev => prev.map((s, i) => i === editing
       ? (name ? { name, number: draftNum.trim(), photoUrl: draftPhotoUrl, photoData: draftPhotoData } : null)
       : s))
@@ -262,7 +280,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
     const full: Full[] = []
     assigned.forEach((s, i) => {
       if (s?.name.trim()) full.push({
-        name: s.name.trim(),
+        name: normalizePlayerName(s.name),
         number: s.number.trim() ? parseInt(s.number) : null,
         position: slotPos[i] ?? 'other',
         photo_url: s.photoUrl ?? null,
@@ -271,7 +289,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
     })
     bench.forEach(b => {
       if (b.name.trim()) full.push({
-        name: b.name.trim(),
+        name: normalizePlayerName(b.name),
         number: b.number.trim() ? parseInt(b.number) : null,
         position: 'other',
         photo_url: b.photoUrl ?? null,
@@ -298,13 +316,16 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
 
   if (!mounted) return null
 
-  // Build render rows with their slot indices + per-slot position
+  // Build render rows with their slot indices + per-slot position.
+  // Formations are declared goalkeeper-first; the pitch is drawn the way it is
+  // watched — own goal at the bottom, attack at the top — so the rows are
+  // reversed for rendering while slot indices keep the declared order.
   let running = 0
   const renderRows = rows.map(line => {
     const items = line.map((pos, i) => ({ slotIdx: running + i, pos }))
     running += line.length
     return { items }
-  })
+  }).reverse()
 
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
@@ -360,7 +381,8 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                       const p = assigned[slotIdx]
                       return (
                         <button key={slotIdx} onClick={() => openEditor(slotIdx)}
-                          className="flex flex-col items-center gap-1 group">
+                          title={p?.name || undefined}
+                          className="w-16 shrink-0 flex flex-col items-center gap-1 group">
                           <span className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black text-white border-2 border-white/70 shadow-md overflow-hidden transition-transform group-hover:scale-105"
                             style={{ background: p ? (posColors[pos] ?? '#a78bfa') : 'rgba(255,255,255,0.15)' }}>
                             {p?.photoData || p?.photoUrl
@@ -368,8 +390,8 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                               ? <img src={p.photoData || p.photoUrl || ''} alt="" className="w-full h-full object-cover" />
                               : p ? (p.number || p.name.slice(0, 2).toUpperCase()) : <Plus size={16} className="text-white/80" />}
                           </span>
-                          <span className="text-[9px] font-bold text-white/70 leading-none">{getPositionLabel(sport, pos, lang, true)}</span>
-                          <span className="text-[10px] font-bold text-white/90 max-w-[64px] truncate">
+                          <span className="w-full text-[9px] font-bold text-white/70 leading-none truncate text-center">{getPositionLabel(sport, pos, lang, true)}</span>
+                          <span className="w-full text-[10px] font-bold text-white/90 truncate text-center">
                             {p?.name || ''}
                           </span>
                         </button>
@@ -406,8 +428,9 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                       placeholder={tx.number} type="number"
                       className="w-14 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
                     <input value={b.name} onChange={e => updateBench(i, { name: e.target.value })}
+                      onBlur={e => updateBench(i, { name: normalizePlayerName(e.target.value) })}
                       placeholder={tx.name}
-                      className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />
+                      className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />
                     <button onClick={() => removeBench(i)} className="text-gray-300 hover:text-red-400 p-1"><Trash2 size={15} /></button>
                   </div>
                 ))}
@@ -449,6 +472,7 @@ export default function SquadEditor({ leagueId, leagueTeamId, teamName, sport, b
                   placeholder={tx.number} type="number"
                   className="w-14 px-2 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm text-center" />
                 <input ref={draftNameRef} value={draftName} onChange={e => setDraftName(e.target.value)}
+                  onBlur={e => setDraftName(normalizePlayerName(e.target.value))}
                   onKeyDown={e => e.key === 'Enter' && commitEditor()}
                   placeholder={tx.name}
                   className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-400 outline-none text-sm" />

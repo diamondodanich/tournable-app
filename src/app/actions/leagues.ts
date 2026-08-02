@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createTournamentWithSetup } from './tournaments'
-import { seasonName as computeSeasonName, type SeasonPeriod } from '@/lib/seasons'
+import { nextSeasonName, type SeasonPeriod } from '@/lib/seasons'
 import { submitToIndexNow } from '@/lib/indexnow'
 
 // ─── Slug generation (same transliteration as tournaments) ────────────────────
@@ -656,33 +656,44 @@ export async function getChampionshipTeamStats(leagueId: string): Promise<ChampT
     .sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF)
 }
 
-// Quick "add season" — no wizard. Clones the latest season's format/settings and
-// the championship's persistent teams into a brand-new season, then returns the new
-// tournament id so the client can open it. This is the championship model: the user
-// configured everything once; a new season just re-runs it.
-export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' = 'ru'): Promise<{ tournamentId?: string; error?: string }> {
-  const { error: authErr, supabase, userId } = await requireEnterprise()
-  if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
+export type ChampFormat = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
 
-  const { data: league } = await supabase.from('leagues').select('name, owner_id, sport, season_period, created_at').eq('id', leagueId).single()
-  if (!league || league.owner_id !== userId) return { error: 'Нет доступа' }
+// Everything the "new season" dialog needs to render itself without pushing the
+// owner back through the creation wizard: the format the championship currently
+// runs, the name that logically follows the last season, and the persistent roster.
+export type SeasonDraft = {
+  suggestedName: string
+  currentFormat: ChampFormat
+  numRounds: number
+  teams: string[]
+  seasonCount: number
+  error?: string
+}
 
-  // Newest season's tournament = the template for format + rules.
+// Reads the newest season's tournament — the template for format and match rules.
+async function seasonTemplate(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  leagueId: string,
+  leagueSport: string | null,
+): Promise<{ format: ChampFormat; numRounds: number; settings: ChampSettings; latestName: string | null; seasonCount: number }> {
   const { data: seasons } = await supabase
     .from('seasons')
     .select('name, tournament_id, created_at')
     .eq('league_id', leagueId)
     .order('created_at', { ascending: false })
 
-  const latest = (seasons ?? []).find(s => s.tournament_id) ?? null
-  let format: 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim' = 'round_robin'
+  const rows = (seasons ?? []) as { name: string; tournament_id: string | null }[]
+  const latest = rows.find(s => s.tournament_id) ?? rows[0] ?? null
+
+  let format: ChampFormat = 'round_robin'
   let numRounds = 1
-  let settings: ChampSettings = { sport: league.sport ?? undefined }
+  let settings: ChampSettings = { sport: leagueSport ?? undefined }
 
   if (latest?.tournament_id) {
     const { data: tmpl } = await supabase.from('tournaments').select('*').eq('id', latest.tournament_id).single()
     if (tmpl) {
-      format = (tmpl.format ?? 'round_robin') as typeof format
+      format = (tmpl.format ?? 'round_robin') as ChampFormat
       numRounds = tmpl.num_rounds ?? 1
       settings = {
         matchPeriods: tmpl.match_periods ?? undefined,
@@ -693,27 +704,287 @@ export async function addSeasonQuick(leagueId: string, lang: 'ru' | 'kz' | 'en' 
         pointsLoss: tmpl.points_loss ?? undefined,
         groupsCount: tmpl.groups_count ?? undefined,
         teamsAdvance: tmpl.teams_advance ?? undefined,
-        sport: tmpl.sport ?? league.sport ?? undefined,
-        playoffBestOf: (tmpl as { playoff_best_of?: number }).playoff_best_of ?? undefined,
-        playoffTwoLegged: (tmpl as { playoff_two_legged?: boolean }).playoff_two_legged ?? undefined,
+        sport: tmpl.sport ?? leagueSport ?? undefined,
+        playoffBestOf: tmpl.playoff_best_of ?? undefined,
+        playoffTwoLegged: tmpl.playoff_two_legged ?? undefined,
       }
     }
   }
+
+  return { format, numRounds, settings, latestName: latest?.name ?? null, seasonCount: rows.length }
+}
+
+export async function getSeasonDraft(leagueId: string, lang: 'ru' | 'kz' | 'en' = 'ru'): Promise<SeasonDraft> {
+  const empty: SeasonDraft = { suggestedName: '', currentFormat: 'round_robin', numRounds: 1, teams: [], seasonCount: 0 }
+
+  const { error: authErr, supabase, userId } = await requireEnterprise()
+  if (authErr || !supabase || !userId) return { ...empty, error: authErr ?? 'Требуется Enterprise' }
+
+  const { data: league } = await supabase
+    .from('leagues').select('owner_id, sport, season_period, created_at').eq('id', leagueId).single()
+  if (!league || league.owner_id !== userId) return { ...empty, error: 'Нет доступа' }
+
+  const tmpl = await seasonTemplate(supabase, leagueId, league.sport ?? null)
+  const period = ((league as { season_period?: string }).season_period as SeasonPeriod) ?? 'seasonal'
+  const anchor = (league as { created_at?: string }).created_at ?? new Date().toISOString()
+  const teams = await getChampionshipTeams(leagueId)
+
+  return {
+    suggestedName: nextSeasonName(tmpl.latestName, period, anchor, tmpl.seasonCount, lang),
+    currentFormat: tmpl.format,
+    numRounds: tmpl.numRounds,
+    teams: teams.map(t => t.name),
+    seasonCount: tmpl.seasonCount,
+  }
+}
+
+// ── Championship overview (all-seasons dashboard) ─────────────────────────────
+// One round-trip behind the "Обзор" tab: totals that actually say how the
+// championship is going (progress of the running season, output per match, who
+// keeps winning) instead of three counters the owner already knows.
+
+export type ChampSeasonRow = {
+  id: string
+  name: string
+  status: string
+  tournamentId: string | null
+  format: string | null
+  played: number
+  total: number
+  championName: string | null
+  championSlug: string | null
+  championLogo: string | null
+}
+
+export type ChampOverview = {
+  seasonsCount: number
+  teamsCount: number
+  playersCount: number
+  matchesPlayed: number
+  matchesTotal: number
+  eventCounts: Record<string, number>
+  seasons: ChampSeasonRow[]
+  titles: { teamName: string; teamSlug: string | null; logo: string | null; titles: number }[]
+}
+
+const EMPTY_OVERVIEW: ChampOverview = {
+  seasonsCount: 0, teamsCount: 0, playersCount: 0, matchesPlayed: 0, matchesTotal: 0,
+  eventCounts: {}, seasons: [], titles: [],
+}
+
+export async function getChampionshipOverview(leagueId: string): Promise<ChampOverview> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return EMPTY_OVERVIEW
+
+  const [{ data: seasonsRaw }, { data: leagueTeams }] = await Promise.all([
+    supabase.from('seasons').select('id, name, status, tournament_id, created_at')
+      .eq('league_id', leagueId).order('created_at', { ascending: false }),
+    supabase.from('league_teams').select('id, name, slug, logo_url').eq('league_id', leagueId),
+  ])
+
+  const seasons = (seasonsRaw ?? []) as { id: string; name: string; status: string; tournament_id: string | null }[]
+  const tournamentIds = seasons.map(s => s.tournament_id).filter((x): x is string => !!x)
+  const ltIds = (leagueTeams ?? []).map(t => t.id)
+
+  const { count: playersCount } = ltIds.length
+    ? await supabase.from('players').select('id', { count: 'exact', head: true }).in('league_team_id', ltIds)
+    : { count: 0 }
+
+  if (tournamentIds.length === 0) {
+    return {
+      ...EMPTY_OVERVIEW,
+      seasonsCount: seasons.length,
+      teamsCount: (leagueTeams ?? []).length,
+      playersCount: playersCount ?? 0,
+      seasons: seasons.map(s => ({
+        id: s.id, name: s.name, status: s.status, tournamentId: s.tournament_id, format: null,
+        played: 0, total: 0, championName: null, championSlug: null, championLogo: null,
+      })),
+    }
+  }
+
+  const [{ data: tourns }, { data: seasonTeams }, { data: fixtures }, { data: playoffs }] = await Promise.all([
+    supabase.from('tournaments').select('id, format, points_win, points_draw, points_loss').in('id', tournamentIds),
+    supabase.from('teams').select('id, name, tournament_id, league_team_id').in('tournament_id', tournamentIds),
+    supabase.from('fixtures').select('id, tournament_id, home_team_id, away_team_id, home_score, away_score, played, is_bye').in('tournament_id', tournamentIds),
+    supabase.from('playoff_matches').select('id, tournament_id, round_order, match_order, winner_id').in('tournament_id', tournamentIds),
+  ])
+
+  // Event totals across every season, counted per type so non-football
+  // disciplines get their own headline number instead of a hard-coded "goals".
+  const eventCounts: Record<string, number> = {}
+  const fxIds = (fixtures ?? []).map(f => f.id)
+  const poIds = (playoffs ?? []).map(m => m.id)
+  const [{ data: fxEvents }, { data: poEvents }] = await Promise.all([
+    fxIds.length ? supabase.from('match_events').select('type').in('fixture_id', fxIds) : Promise.resolve({ data: [] as { type: string }[] }),
+    poIds.length ? supabase.from('match_events').select('type').in('playoff_match_id', poIds) : Promise.resolve({ data: [] as { type: string }[] }),
+  ])
+  for (const e of [...(fxEvents ?? []), ...(poEvents ?? [])]) eventCounts[e.type] = (eventCounts[e.type] ?? 0) + 1
+
+  const teamById = new Map((seasonTeams ?? []).map(t => [t.id, t]))
+  const ltById = new Map((leagueTeams ?? []).map(t => [t.id, t]))
+  const cfg = new Map((tourns ?? []).map(t => [t.id, t]))
+
+  // Final = the first match of the last playoff round (a 3rd-place game shares the
+  // round but always sits after the final in match_order); its winner takes the title.
+  const finalMatch = new Map<string, { round: number; order: number; winner: string | null }>()
+  for (const m of (playoffs ?? []) as { tournament_id: string; round_order: number; match_order: number; winner_id: string | null }[]) {
+    const cur = finalMatch.get(m.tournament_id)
+    if (!cur || m.round_order > cur.round || (m.round_order === cur.round && m.match_order < cur.order)) {
+      finalMatch.set(m.tournament_id, { round: m.round_order, order: m.match_order, winner: m.winner_id })
+    }
+  }
+  const finalWinner = new Map<string, string>()
+  for (const [tid, m] of finalMatch) if (m.winner) finalWinner.set(tid, m.winner)
+
+  // League-table leader per season, for formats that crown by points.
+  const pointsByTournament = new Map<string, Map<string, { pts: number; gd: number; gf: number }>>()
+  let matchesPlayed = 0, matchesTotal = 0
+  const playedByTournament = new Map<string, { played: number; total: number }>()
+
+  for (const f of fixtures ?? []) {
+    if (f.is_bye) continue
+    const prog = playedByTournament.get(f.tournament_id) ?? { played: 0, total: 0 }
+    prog.total++
+    if (f.played) prog.played++
+    playedByTournament.set(f.tournament_id, prog)
+    matchesTotal++
+    if (f.played) matchesPlayed++
+
+    if (!f.played || f.home_score == null || f.away_score == null || !f.home_team_id || !f.away_team_id) continue
+    const t = cfg.get(f.tournament_id)
+    const pw = t?.points_win ?? 3, pd = t?.points_draw ?? 1, pl = t?.points_loss ?? 0
+    let table = pointsByTournament.get(f.tournament_id)
+    if (!table) { table = new Map(); pointsByTournament.set(f.tournament_id, table) }
+    const bump = (id: string, own: number, opp: number) => {
+      const row = table!.get(id) ?? { pts: 0, gd: 0, gf: 0 }
+      row.gf += own; row.gd += own - opp
+      row.pts += own > opp ? pw : own === opp ? pd : pl
+      table!.set(id, row)
+    }
+    bump(f.home_team_id, f.home_score, f.away_score)
+    bump(f.away_team_id, f.away_score, f.home_score)
+  }
+
+  // Knockout rounds live in playoff_matches, not fixtures — a pure playoff season
+  // would otherwise report "0 matches" on the dashboard.
+  for (const m of (playoffs ?? []) as { tournament_id: string; winner_id: string | null }[]) {
+    const prog = playedByTournament.get(m.tournament_id) ?? { played: 0, total: 0 }
+    prog.total++
+    if (m.winner_id) prog.played++
+    playedByTournament.set(m.tournament_id, prog)
+    matchesTotal++
+    if (m.winner_id) matchesPlayed++
+  }
+
+  const rows: ChampSeasonRow[] = seasons.map(s => {
+    const tid = s.tournament_id
+    const t = tid ? cfg.get(tid) : null
+    const prog = tid ? playedByTournament.get(tid) : undefined
+    const total = prog?.total ?? 0
+    const played = prog?.played ?? 0
+
+    // A decided final always crowns the season. Formats without a bracket crown
+    // the table leader, but only once every match has been played — a leader
+    // mid-table is not a champion.
+    let championTeamId: string | null = tid ? (finalWinner.get(tid) ?? null) : null
+    if (!championTeamId && tid && total > 0 && played === total) {
+      const table = pointsByTournament.get(tid)
+      const best = [...(table ?? new Map<string, { pts: number; gd: number; gf: number }>()).entries()]
+        .sort((a, b) => b[1].pts - a[1].pts || b[1].gd - a[1].gd || b[1].gf - a[1].gf)[0]
+      championTeamId = best?.[0] ?? null
+    }
+
+    const seasonTeam = championTeamId ? teamById.get(championTeamId) : undefined
+    const lt = seasonTeam?.league_team_id ? ltById.get(seasonTeam.league_team_id) : undefined
+
+    return {
+      id: s.id, name: s.name, status: s.status, tournamentId: tid, format: t?.format ?? null,
+      played, total,
+      championName: lt?.name ?? seasonTeam?.name ?? null,
+      championSlug: lt?.slug ?? null,
+      championLogo: lt?.logo_url ?? null,
+    }
+  })
+
+  const titleCount = new Map<string, { teamName: string; teamSlug: string | null; logo: string | null; titles: number }>()
+  for (const r of rows) {
+    if (!r.championName) continue
+    const key = r.championSlug ?? `name:${r.championName.toLowerCase()}`
+    const cur = titleCount.get(key) ?? { teamName: r.championName, teamSlug: r.championSlug, logo: r.championLogo, titles: 0 }
+    cur.titles++
+    titleCount.set(key, cur)
+  }
+
+  return {
+    seasonsCount: seasons.length,
+    teamsCount: (leagueTeams ?? []).length,
+    playersCount: playersCount ?? 0,
+    matchesPlayed,
+    matchesTotal,
+    eventCounts,
+    seasons: rows,
+    titles: [...titleCount.values()].sort((a, b) => b.titles - a.titles),
+  }
+}
+
+// Quick "add season" — no wizard. Clones the latest season's format/settings and
+// the championship's persistent teams into a brand-new season, then returns the new
+// tournament id so the client can open it. This is the championship model: the user
+// configured everything once; a new season just re-runs it. `format`/`numRounds`
+// override the template when the owner picked a different one in the dialog.
+export async function addSeasonQuick(
+  leagueId: string,
+  lang: 'ru' | 'kz' | 'en' = 'ru',
+  override?: { name?: string; format?: ChampFormat; numRounds?: number },
+): Promise<{ tournamentId?: string; error?: string }> {
+  const { error: authErr, supabase, userId } = await requireEnterprise()
+  if (authErr || !supabase || !userId) return { error: authErr ?? 'Требуется Enterprise' }
+
+  const { data: league } = await supabase.from('leagues').select('name, owner_id, sport, season_period, created_at').eq('id', leagueId).single()
+  if (!league || league.owner_id !== userId) return { error: 'Нет доступа' }
+
+  const tmpl = await seasonTemplate(supabase, leagueId, league.sport ?? null)
+  const format = override?.format ?? tmpl.format
+  // Round counts are format-specific — a count cloned from a round-robin season is
+  // meaningless for a playoff bracket, so switching format resets it to the default.
+  const numRounds = override?.numRounds
+    ?? (format === tmpl.format ? tmpl.numRounds : defaultRounds(format))
 
   const teams = await getChampionshipTeams(leagueId)
   const teamNames = teams.map(t => t.name)
   if (teamNames.length < 2) return { error: 'Сначала добавьте минимум 2 команды в настройках чемпионата' }
 
-  // Logical next name from the championship's periodicity (migration 027).
+  // Logical next name from the previous season, falling back to the championship's
+  // periodicity (migration 027).
   const period = ((league as { season_period?: string }).season_period as SeasonPeriod) ?? 'seasonal'
   const anchor = (league as { created_at?: string }).created_at ?? new Date().toISOString()
-  const newName = computeSeasonName(period, anchor, (seasons ?? []).length, lang)
+  const newName = override?.name?.trim()
+    || nextSeasonName(tmpl.latestName, period, anchor, tmpl.seasonCount, lang)
+
+  // Match rules (duration, points, sport) carry over; bracket shape does not —
+  // groups/advancement cloned from another format would silently misbuild the season.
+  const settings: ChampSettings = format === tmpl.format
+    ? { ...tmpl.settings, sport: league.sport ?? tmpl.settings.sport }
+    : { ...tmpl.settings, sport: league.sport ?? tmpl.settings.sport, groupsCount: undefined, teamsAdvance: undefined }
 
   // Previous seasons are NOT auto-finished — the owner ends a season manually
   // (button) or it ends when all its matches are played.
   const res = await addSeasonWithSetup(leagueId, format, numRounds, teamNames, newName, settings)
   if (res.error) return { error: res.error }
   return { tournamentId: res.tournamentId }
+}
+
+// Wizard defaults, kept in sync with changeFormat() in the creation wizard.
+function defaultRounds(format: ChampFormat): number {
+  switch (format) {
+    case 'round_robin':    return 2
+    case 'league_playoff': return 5
+    case 'swiss':          return 5
+    case 'leaderboard':    return 3
+    default:               return 1
+  }
 }
 
 // Add a new season to an existing championship, reusing its persistent teams.

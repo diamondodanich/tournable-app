@@ -78,6 +78,58 @@ export function seasonName(period: SeasonPeriod, anchorISO: string, index: numbe
   }
 }
 
+const ALL_LANGS: Lang[] = ['ru', 'kz', 'en']
+
+/**
+ * Name for the season that follows `prevName`.
+ *
+ * The engine-generated sequence is authoritative when the previous season still
+ * carries an engine name: we locate its index and return index + 1, so
+ * "Январь 2026" continues as "Февраль 2026" and never as "Январь 2027".
+ *
+ * A hand-typed name ("Сезон 3", "Кубок 2024/2025") is continued literally
+ * instead — the owner's numbering wins over ours. Only when nothing can be
+ * continued do we fall back to the periodicity engine.
+ */
+export function nextSeasonName(
+  prevName: string | null | undefined,
+  period: SeasonPeriod,
+  anchorISO: string,
+  index: number,
+  lang: Lang,
+): string {
+  const fallback = seasonName(period, anchorISO, index, lang)
+  const prev = (prevName ?? '').trim()
+  if (!prev) return fallback
+
+  // 1. Engine sequence — search a bounded window in every language, because the
+  //    previous season may have been created while the UI was in another one.
+  for (let i = 0; i < 240; i++) {
+    for (const l of ALL_LANGS) {
+      if (seasonName(period, anchorISO, i, l).toLowerCase() === prev.toLowerCase()) {
+        return seasonName(period, anchorISO, i + 1, lang)
+      }
+    }
+  }
+
+  // 2. Year pair — "2023/2024", "Кубок 2023/24" → next pair, same shape.
+  const pair = prev.match(/^(.*?)(\d{4})(\s*[/\-–]\s*)(\d{2}|\d{4})(.*)$/)
+  if (pair) {
+    const from = parseInt(pair[2], 10) + 1
+    const to = pair[4].length === 2 ? String((from + 1) % 100).padStart(2, '0') : String(from + 1)
+    return `${pair[1]}${from}${pair[3]}${to}${pair[5]}`
+  }
+
+  // 3. Trailing number — "Сезон 3" → "Сезон 4", "2027" → "2028".
+  const trailing = prev.match(/^(.*?)(\d+)(\D*)$/)
+  if (trailing) {
+    const n = String(parseInt(trailing[2], 10) + 1).padStart(trailing[2].length, '0')
+    return `${trailing[1]}${n}${trailing[3]}`
+  }
+
+  return fallback
+}
+
 /** Options for the championship-creation periodicity picker.
  * Examples are derived from the CURRENT date via the same naming engine, so they
  * never go stale (e.g. "Сезонная" always shows the live current/next-year pair). */

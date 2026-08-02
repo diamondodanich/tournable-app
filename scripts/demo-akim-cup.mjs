@@ -120,8 +120,10 @@ for (let ri = 0; ri < maxRounds; ri++) {
     const base = groupRounds[g]
     if (ri >= base.length) continue
     for (const [home, away] of base[ri]) {
-      if (away === null) {
-        fixtures.push({ tournament_id: tid, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: home, away_team_id: null, is_bye: true, played: false })
+      // Пусто может оказаться с любой стороны: круговой алгоритм меняет местами
+      // хозяев и гостей в чётных турах, и null уезжает в позицию home
+      if (home === null || away === null) {
+        fixtures.push({ tournament_id: tid, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: home ?? away, away_team_id: null, is_bye: true, played: false, status: 'scheduled' })
       } else {
         const [hs, as] = SCORES[si++ % SCORES.length]
         fixtures.push({ tournament_id: tid, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: home, away_team_id: away, is_bye: false, played: true, home_score: hs, away_score: as, status: 'finished' })

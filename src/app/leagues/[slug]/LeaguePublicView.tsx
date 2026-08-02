@@ -120,10 +120,16 @@ export default function LeaguePublicView({
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header — championship cover if set, otherwise brand-tinted */}
-      <div className="relative overflow-hidden text-white" style={headerStyle}>
+      {/* Header — championship cover if set, otherwise brand-tinted.
+          No `overflow-hidden` here: it would clip the season dropdown that opens
+          below the header. The decorative blob gets its own clipping layer. */}
+      <div className="relative text-white" style={headerStyle}>
         {coverImage && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/25 pointer-events-none" />}
-        {!coverImage && <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />}
+        {!coverImage && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl" />
+          </div>
+        )}
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden ring-2 ring-white/40 bg-white/10 shrink-0">
@@ -147,8 +153,9 @@ export default function LeaguePublicView({
                   </button>
                   {seasonMenu && seasons.length > 1 && (
                     <>
-                      <div className="fixed inset-0 z-10" onClick={() => setSeasonMenu(false)} />
-                      <div className="absolute z-20 mt-1.5 left-0 min-w-[220px] bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 text-gray-900 max-h-72 overflow-auto">
+                      {/* Above the sticky tab bar (z-10) — the menu opens across it. */}
+                      <div className="fixed inset-0 z-40" onClick={() => setSeasonMenu(false)} />
+                      <div className="absolute z-50 mt-1.5 left-0 min-w-[220px] bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 text-gray-900 max-h-72 overflow-auto">
                         {seasons.map(s => (
                           <Link key={s.id} href={`${pathPrefix}/leagues/${league.slug}?season=${s.id}`} onClick={() => setSeasonMenu(false)}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 transition-colors text-left">

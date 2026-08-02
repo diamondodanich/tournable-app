@@ -83,9 +83,11 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
       : { background: `linear-gradient(135deg, ${theme.primaryDark} 0%, ${theme.primary} 100%)` })
 
   return (
-    <div className="relative rounded-2xl text-white shadow-sm px-5 py-4 overflow-hidden" style={barStyle}>
+    // No `overflow-hidden` on the bar: it would clip the season dropdown. Rounded
+    // corners already clip the background; the scrim rounds itself.
+    <div className="relative rounded-2xl text-white shadow-sm px-5 py-4" style={barStyle}>
 
-      {coverImage && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/25 pointer-events-none" />}
+      {coverImage && <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-black/75 via-black/55 to-black/25 pointer-events-none" />}
 
       <Link href="/dashboard"
         className="relative inline-flex items-center gap-1.5 text-xs font-semibold text-white/70 hover:text-white transition-colors mb-3">

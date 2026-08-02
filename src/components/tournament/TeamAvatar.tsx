@@ -6,11 +6,20 @@ interface Props {
   size?: number
 }
 
+// A letter or a digit — anything else (quotes, brackets, dashes) must not become
+// an initial. `Школа «Ұлытау»` has to read as "ШҰ", never as "Ш«".
+// Unicode property escapes need ES2018, so letters are detected by case folding.
+function isLetterOrDigit(c: string): boolean {
+  return /[0-9]/.test(c) || c.toLowerCase() !== c.toUpperCase()
+}
+
 export default function TeamAvatar({ name, logoUrl, size = 24 }: Props) {
   const initials = name
     .split(/\s+/)
+    .map(word => [...word].find(isLetterOrDigit) ?? '')
+    .filter(Boolean)
     .slice(0, 2)
-    .map(w => w[0]?.toUpperCase() ?? '')
+    .map(c => c.toUpperCase())
     .join('')
 
   if (logoUrl) {

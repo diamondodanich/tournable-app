@@ -4,7 +4,10 @@ import { useRef, useState } from 'react'
 import { X, ImageIcon, Trash2, Upload, LayoutTemplate } from 'lucide-react'
 import { toast } from 'sonner'
 import { COVER_THEMES, getThemesForSport, getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
-import { uploadTournamentCover, removeTournamentCover, setTournamentCoverTheme } from '@/app/actions/logos'
+import {
+  uploadTournamentCover, removeTournamentCover, setTournamentCoverTheme,
+  uploadLeagueCover, removeLeagueCover, setLeagueCoverTheme,
+} from '@/app/actions/logos'
 import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
@@ -12,23 +15,31 @@ interface Props {
   currentCoverUrl: string | null | undefined
   // Immediate save mode (SetupTab) — provide tournamentId
   tournamentId?: string
+  // Immediate save mode for a championship (ChampionshipSettings) — provide leagueId
+  leagueId?: string
   // Draft mode (wizard) — provide onChange callback
   onChange?: (value: string | null) => void
+  /** Overrides the sheet heading — a championship calls it "Обложка чемпионата". */
+  title?: string
   lang?: Lang
 }
 
-export default function TournamentCoverPicker({ sport, currentCoverUrl, tournamentId, onChange, lang = 'ru' }: Props) {
+export default function TournamentCoverPicker({ sport, currentCoverUrl, tournamentId, leagueId, onChange, title, lang = 'ru' }: Props) {
   const T = tx[lang]
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const themes = getThemesForSport(sport)
+  // Draft mode is "no id at all" — the wizard keeps the value in local state.
+  const savesImmediately = !!(tournamentId || leagueId)
 
   async function applyTheme(themeId: string) {
-    if (tournamentId) {
+    if (savesImmediately) {
       setSaving(true)
-      const res = await setTournamentCoverTheme(tournamentId, themeId)
+      const res = leagueId
+        ? await setLeagueCoverTheme(leagueId, themeId)
+        : await setTournamentCoverTheme(tournamentId!, themeId)
       setSaving(false)
       if (res?.error) { toast.error(res.error); return }
       toast.success(T.coverThemeSaved)
@@ -41,9 +52,11 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) { toast.error(T.needImage); return }
     const base64 = await resizeToCoverWebP(file)
-    if (tournamentId) {
+    if (savesImmediately) {
       setSaving(true)
-      const res = await uploadTournamentCover(tournamentId, base64)
+      const res = leagueId
+        ? await uploadLeagueCover(leagueId, base64)
+        : await uploadTournamentCover(tournamentId!, base64)
       setSaving(false)
       if (res?.error) { toast.error(res.error); return }
       toast.success(T.coverUploaded)
@@ -54,10 +67,13 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
   }
 
   async function handleRemove() {
-    if (tournamentId) {
+    if (savesImmediately) {
       setSaving(true)
-      await removeTournamentCover(tournamentId)
+      const res = leagueId
+        ? await removeLeagueCover(leagueId)
+        : await removeTournamentCover(tournamentId!)
       setSaving(false)
+      if (res?.error) { toast.error(res.error); return }
       toast.success(T.coverRemoved)
     } else {
       onChange?.(null)
@@ -114,7 +130,7 @@ export default function TournamentCoverPicker({ sport, currentCoverUrl, tourname
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-black text-gray-900 text-base">{T.tournamentCoverLbl}</p>
+                <p className="font-black text-gray-900 text-base">{title ?? T.tournamentCoverLbl}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{T.coverHint}</p>
               </div>
               <button

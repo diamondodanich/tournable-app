@@ -67,7 +67,7 @@ export default async function LeagueManagePage({
 
   return (
     <ChampionshipAllSeasons
-      league={{ id: league.id, name: league.name, slug: league.slug, sport: league.sport, logo_url: league.logo_url }}
+      league={{ id: league.id, name: league.name, slug: league.slug, sport: league.sport, logo_url: league.logo_url, cover_url: league.cover_url ?? null }}
       seasons={seasons}
       teams={teams}
       teamsCount={teamsCount}

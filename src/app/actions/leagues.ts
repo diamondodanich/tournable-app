@@ -90,7 +90,7 @@ export async function createLeague(formData: FormData): Promise<{ error?: string
 
 export async function updateLeague(
   leagueId: string,
-  data: { name?: string; sport?: string | null; city?: string | null; description?: string | null; is_public?: boolean; meta_title?: string | null; meta_description?: string | null }
+  data: { name?: string; sport?: string | null; city?: string | null; description?: string | null; is_public?: boolean; meta_title?: string | null; meta_description?: string | null; season_period?: string }
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -111,6 +111,7 @@ export async function updateLeague(
   }
 
   revalidatePath(`/dashboard/leagues/${leagueId}`)
+  revalidatePath(`/dashboard/leagues/${leagueId}/settings`)
   return {}
 }
 

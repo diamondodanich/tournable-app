@@ -154,7 +154,7 @@ export default async function LeaguePage({
     <PublicShell lang={lang}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <LeaguePublicView
-        league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug }}
+        league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug, cover_url: league.cover_url ?? null }}
         brand={brand}
         seasons={allSeasons.map(s => ({ id: s.id, name: s.name, status: s.status }))}
         selectedSeasonId={selectedSeason?.id ?? null}

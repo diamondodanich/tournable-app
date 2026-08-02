@@ -141,6 +141,11 @@ export type League = {
   meta_description: string | null
   is_public: boolean
   created_at: string
+  // Optional columns — present only once their migration is applied, so they stay
+  // optional and every read goes through `?? default`.
+  cover_url?: string | null      // migration 049
+  calendar_enabled?: boolean     // migration 030
+  season_period?: string         // migration 027
 }
 
 export type Season = {

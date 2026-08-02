@@ -70,7 +70,7 @@ function tableTab(format: string | null): string {
 }
 
 export default function ChampionshipAllSeasons({ league, seasons, teams, teamsCount, playersCount, lang = 'ru', isOwner = false }: {
-  league: { id: string; name: string; slug: string; sport: string | null; logo_url: string | null }
+  league: { id: string; name: string; slug: string; sport: string | null; logo_url: string | null; cover_url?: string | null }
   seasons: SeasonLite[]
   teams: TeamWithPlayers[]
   teamsCount: number

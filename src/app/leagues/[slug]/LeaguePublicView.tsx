@@ -11,6 +11,7 @@ import {
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import type { ChampPlayerStat, ChampTeamStat } from '@/app/actions/leagues'
 import { getEventDefs } from '@/lib/sports'
+import { getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
 
 type Lang = 'ru' | 'kz' | 'en'
 type StandingRow = { teamId: string; name: string; logoUrl: string | null; href: string | null; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }
@@ -59,7 +60,7 @@ export default function LeaguePublicView({
   league, brand, seasons, selectedSeasonId, tournamentId,
   standings, recent, upcoming, teamsCount, playerStats, teamStats, lang = 'ru', pathPrefix = '',
 }: {
-  league: { name: string; logo_url: string | null; sport: string | null; city: string | null; description: string | null; slug: string }
+  league: { name: string; logo_url: string | null; sport: string | null; city: string | null; description: string | null; slug: string; cover_url?: string | null }
   brand: string
   /** '' | '/kz' | '/en' — keeps every in-page link on the language being read. */
   pathPrefix?: string
@@ -102,6 +103,15 @@ export default function LeaguePublicView({
     ? new Date(iso).toLocaleString(lang === 'kz' ? 'kk-KZ' : lang === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     : tx.tbd
 
+  // Cover set in the championship settings: a theme gradient replaces the brand
+  // tint outright, a photo gets a dark scrim so the header text stays readable.
+  const coverTheme = getCoverStyle(league.cover_url)
+  const coverImage = league.cover_url && !isCoverThemeUrl(league.cover_url) ? league.cover_url : null
+  const headerStyle: React.CSSProperties = coverTheme
+    ?? (coverImage
+      ? { backgroundImage: `url(${coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      : { background: `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` })
+
   const TABS = [
     { id: 'table' as const, label: tx.tabs.table, icon: Table2 },
     { id: 'matches' as const, label: tx.tabs.matches, icon: CalendarDays },
@@ -110,9 +120,10 @@ export default function LeaguePublicView({
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header — brand-tinted, light */}
-      <div className="relative overflow-hidden text-white" style={{ background: `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` }}>
-        <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+      {/* Header — championship cover if set, otherwise brand-tinted */}
+      <div className="relative overflow-hidden text-white" style={headerStyle}>
+        {coverImage && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/25 pointer-events-none" />}
+        {!coverImage && <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />}
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden ring-2 ring-white/40 bg-white/10 shrink-0">

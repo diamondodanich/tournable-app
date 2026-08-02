@@ -1,35 +1,41 @@
 'use client'
 
 import { useRef } from 'react'
-import { uploadTournamentLogo, removeTournamentLogo } from '@/app/actions/logos'
+import { uploadTournamentLogo, removeTournamentLogo, uploadLeagueLogo, removeLeagueLogo } from '@/app/actions/logos'
 import { Camera, X } from 'lucide-react'
 import { toast } from 'sonner'
 import TeamAvatar from './TeamAvatar'
 import { tx, type Lang } from '@/lib/i18n'
 
 interface Props {
-  tournamentId: string
-  tournamentName: string
+  /** Tournament mode — pass the tournament id. */
+  tournamentId?: string
+  /** Championship mode — pass the league id instead; the same UI writes leagues.logo_url. */
+  leagueId?: string
+  name: string
   logoUrl: string | null
   size?: number
   lang?: Lang
 }
 
-export default function TournamentLogoUpload({ tournamentId, tournamentName, logoUrl, size = 64, lang = 'ru' }: Props) {
+export default function TournamentLogoUpload({ tournamentId, leagueId, name, logoUrl, size = 64, lang = 'ru' }: Props) {
   const T = tx[lang]
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) { toast.error(T.needImage); return }
     const dataUrl = await resizeToWebP(file, 200)
-    const res = await uploadTournamentLogo(tournamentId, dataUrl)
+    const res = leagueId
+      ? await uploadLeagueLogo(leagueId, dataUrl)
+      : await uploadTournamentLogo(tournamentId!, dataUrl)
     if (res?.error) toast.error(res.error)
     else toast.success(T.logoUpdated)
   }
 
   async function handleRemove(e: React.MouseEvent) {
     e.stopPropagation()
-    await removeTournamentLogo(tournamentId)
+    if (leagueId) await removeLeagueLogo(leagueId)
+    else await removeTournamentLogo(tournamentId!)
     toast.success(T.logoRemoved)
   }
 
@@ -41,7 +47,7 @@ export default function TournamentLogoUpload({ tournamentId, tournamentName, log
         className="block rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-emerald-400 transition-colors"
         title={T.uploadTournamentLogoTitle}
       >
-        <TeamAvatar name={tournamentName} logoUrl={logoUrl} size={size} />
+        <TeamAvatar name={name} logoUrl={logoUrl} size={size} />
       </button>
 
       {/* Camera badge */}

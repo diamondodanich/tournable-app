@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { getSportTheme } from '@/lib/sports'
+import { getCoverStyle, isCoverThemeUrl } from '@/lib/cover-themes'
 import { type SeasonDraft } from '@/app/actions/leagues'
 import NewSeasonDialog, { loadSeasonDraft } from './NewSeasonDialog'
 import ChampionshipShare from './ChampionshipShare'
@@ -38,7 +39,7 @@ function tableTab(format: string | null): string {
 }
 
 export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId, lang = 'ru', isOwner = false }: {
-  league: { id: string; name: string; slug: string; sport: string | null; logo_url: string | null }
+  league: { id: string; name: string; slug: string; sport: string | null; logo_url: string | null; cover_url?: string | null }
   seasons: SeasonLite[]
   currentSeasonId: string | null
   lang?: Lang
@@ -72,16 +73,26 @@ export default function ChampionshipSeasonBar({ league, seasons, currentSeasonId
     if (d) setDraft(d)
   }
 
+  // Cover picked in the championship settings replaces the sport gradient. A photo
+  // gets a dark scrim so the white header text stays readable on any image.
+  const coverTheme = getCoverStyle(league.cover_url)
+  const coverImage = league.cover_url && !isCoverThemeUrl(league.cover_url) ? league.cover_url : null
+  const barStyle: React.CSSProperties = coverTheme
+    ?? (coverImage
+      ? { backgroundImage: `url(${coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      : { background: `linear-gradient(135deg, ${theme.primaryDark} 0%, ${theme.primary} 100%)` })
+
   return (
-    <div className="relative rounded-2xl text-white shadow-sm px-5 py-4"
-      style={{ background: `linear-gradient(135deg, ${theme.primaryDark} 0%, ${theme.primary} 100%)` }}>
+    <div className="relative rounded-2xl text-white shadow-sm px-5 py-4 overflow-hidden" style={barStyle}>
+
+      {coverImage && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/25 pointer-events-none" />}
 
       <Link href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/70 hover:text-white transition-colors mb-3">
+        className="relative inline-flex items-center gap-1.5 text-xs font-semibold text-white/70 hover:text-white transition-colors mb-3">
         <ChevronLeft size={14} /> {tx.back}
       </Link>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="shrink-0 rounded-xl ring-2 ring-white/30 overflow-hidden bg-white/10">
             <TeamAvatar name={league.name} logoUrl={league.logo_url} size={48} />

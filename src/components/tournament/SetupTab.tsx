@@ -196,7 +196,7 @@ export default function SetupTab({
           <div className="flex items-start gap-4">
             <TournamentLogoUpload
               tournamentId={tournament.id}
-              tournamentName={tournament.name}
+              name={tournament.name}
               logoUrl={tournament.logo_url}
               size={64}
               lang={lang}

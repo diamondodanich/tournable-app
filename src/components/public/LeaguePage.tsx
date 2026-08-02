@@ -27,7 +27,10 @@ function computeStandings(teams: (Team & { league_team_id?: string | null })[], 
   const map = new Map<string, StandingRow>()
   for (const t of teams) map.set(t.id, { teamId: t.id, name: t.name, logoUrl: t.logo_url ?? null, href: hrefByTeam.get(t.id) ?? null, GP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0 })
   for (const f of fixtures) {
-    if (!f.played || f.is_bye || f.home_score == null || f.away_score == null) continue
+    // A fixture missing either side is a bye, however is_bye is flagged in the row:
+    // legacy rows written before the bye-detection fix can carry is_bye = false.
+    if (!f.played || f.is_bye || !f.home_team_id || !f.away_team_id) continue
+    if (f.home_score == null || f.away_score == null) continue
     const home = map.get(f.home_team_id ?? ''), away = map.get(f.away_team_id ?? '')
     const hs = f.home_score, as = f.away_score
     if (home) { home.GP++; home.GF += hs; home.GA += as; home.GD += hs - as; if (hs > as) { home.W++; home.Pts += pw } else if (hs === as) { home.D++; home.Pts += pd } else { home.L++; home.Pts += pl } }

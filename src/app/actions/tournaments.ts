@@ -444,8 +444,11 @@ function buildRoundRobinFixtures(
     for (let ri = 0; ri < baseRounds.length; ri++) {
       matchday++
       for (const [homeId, awayId] of baseRounds[ri]) {
-        if (awayId === null) {
-          fixtures.push({ tournament_id: tournamentId, matchday, round: cycle + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
+        // The empty slot can land on either side: generateRoundRobin swaps home and
+        // away on odd rounds, which moves the padding null into the home position.
+        // Checking only awayId produced real-looking fixtures with a null home team.
+        if (homeId === null || awayId === null) {
+          fixtures.push({ tournament_id: tournamentId, matchday, round: cycle + 1, cycle_round: ri + 1, home_team_id: homeId ?? awayId, away_team_id: null, is_bye: true, played: false })
         } else {
           const [h, a] = cycle % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
           fixtures.push({ tournament_id: tournamentId, matchday, round: cycle + 1, cycle_round: ri + 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
@@ -487,8 +490,11 @@ function buildGroupsFixtures(
         const baseRounds = groupRounds[g]
         if (ri >= baseRounds.length) continue
         for (const [homeId, awayId] of baseRounds[ri]) {
-          if (awayId === null) {
-            fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId, away_team_id: null, is_bye: true, played: false })
+          // Same as in buildRoundRobinFixtures: the padding null can sit on either
+          // side, so a group with an odd number of teams (e.g. 12 teams / 4 groups)
+          // used to produce fixtures with a null home team and is_bye = false.
+          if (homeId === null || awayId === null) {
+            fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: homeId ?? awayId, away_team_id: null, is_bye: true, played: false })
           } else {
             const [h, a] = leg % 2 === 0 ? [homeId, awayId] : [awayId, homeId]
             fixtures.push({ tournament_id: tournamentId, matchday, round: g + 1, cycle_round: ri + 1, home_team_id: h, away_team_id: a, is_bye: false, played: false })
@@ -645,6 +651,9 @@ export async function generateSchedule(tournamentId: string) {
         let home = a, away = b
         if (cycle % 2 === 1) { home = b; away = a }
         const isBye = home === null || away === null
+        // A bye always stores the real team in home_team_id — the standings and the
+        // fixtures list read the bye winner from there.
+        if (isBye) { home = home ?? away; away = null }
         fixtures.push({
           tournament_id: tournamentId,
           matchday: matchdayCounter,

@@ -16,6 +16,7 @@ import {
 } from '@/lib/seo'
 import { sportDisplayName } from '@/lib/sportSeo'
 import { leagueMeta, NOT_FOUND_TITLE } from '@/lib/entitySeo'
+import PublicShell from './PublicShell'
 
 type StandingRow = { teamId: string; name: string; logoUrl: string | null; href: string | null; GP: number; W: number; D: number; L: number; GF: number; GA: number; GD: number; Pts: number }
 type FixtureLite = { id: string; homeName: string; awayName: string; homeLogo: string | null; awayLogo: string | null; homeScore: number | null; awayScore: number | null; played: boolean; scheduledAt: string | null }
@@ -147,7 +148,7 @@ export default async function LeaguePage({
   )
 
   return (
-    <>
+    <PublicShell lang={lang}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <LeaguePublicView
         league={{ name: league.name, logo_url: league.logo_url, sport: league.sport, city: league.city, description: league.description, slug }}
@@ -162,7 +163,8 @@ export default async function LeaguePage({
         playerStats={playerStats as ChampPlayerStat[]}
         teamStats={teamStats as ChampTeamStat[]}
         lang={lang}
+        pathPrefix={prefix}
       />
-    </>
+    </PublicShell>
   )
 }

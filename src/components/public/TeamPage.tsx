@@ -6,6 +6,7 @@ import TeamProfileView from '@/app/leagues/[slug]/teams/[teamSlug]/TeamProfileVi
 import { absUrl, trilingualAlternates, langPrefix, jsonLdGraph, breadcrumbsLd, sportsTeamLd } from '@/lib/seo'
 import { sportDisplayName } from '@/lib/sportSeo'
 import { teamMeta, NOT_FOUND_TITLE } from '@/lib/entitySeo'
+import PublicShell from './PublicShell'
 
 const CRUMB: Record<Lang, string> = { ru: 'Чемпионаты', kz: 'Чемпионаттар', en: 'Championships' }
 
@@ -139,7 +140,7 @@ export default async function TeamProfilePage({ slug, teamSlug, lang }: { slug: 
   )
 
   return (
-    <>
+    <PublicShell lang={lang}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     <TeamProfileView
       slug={slug}
@@ -157,6 +158,6 @@ export default async function TeamProfilePage({ slug, teamSlug, lang }: { slug: 
       lang={lang}
       isOwner={isOwner}
     />
-    </>
+    </PublicShell>
   )
 }

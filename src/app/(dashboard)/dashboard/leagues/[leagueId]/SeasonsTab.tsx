@@ -1,11 +1,12 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { removeSeason, updateSeason } from '@/app/actions/leagues'
-import { Plus, Trash2, ExternalLink } from 'lucide-react'
+import { removeSeason, updateSeason, type SeasonDraft } from '@/app/actions/leagues'
+import { Plus, Trash2, ExternalLink, Loader2 } from 'lucide-react'
 import type { Season } from '@/types'
 import { confirmDialog } from '@/components/ui/confirm'
+import NewSeasonDialog, { loadSeasonDraft } from '@/components/championship/NewSeasonDialog'
 
 type Lang = 'ru' | 'kz' | 'en'
 
@@ -17,7 +18,7 @@ const T = {
     active: 'Активный',
     finished: 'Завершён',
     addSeason: 'Добавить сезон',
-    hint: 'Новый сезон создаётся как турнир с командами чемпионата — формат и расписание выбираются в мастере.',
+    hint: 'Новый сезон создаётся с командами и правилами чемпионата — нужно только подтвердить название и формат.',
   },
   kz: {
     confirmRemove: 'Маусымды жою керек пе? Осы маусымның турнирі де жойылады.',
@@ -26,7 +27,7 @@ const T = {
     active: 'Белсенді',
     finished: 'Аяқталды',
     addSeason: 'Маусым қосу',
-    hint: 'Жаңа маусым чемпионат командаларымен турнир ретінде жасалады — формат пен кесте шеберде таңдалады.',
+    hint: 'Жаңа маусым чемпионаттың командалары мен ережелерімен жасалады — атауы мен форматын растау жеткілікті.',
   },
   en: {
     confirmRemove: 'Delete season? The tournament for this season will also be deleted.',
@@ -35,7 +36,7 @@ const T = {
     active: 'Active',
     finished: 'Finished',
     addSeason: 'Add season',
-    hint: 'A new season is created as a tournament with the championship\'s teams — format and schedule are chosen in the wizard.',
+    hint: 'A new season reuses the championship\'s teams and rules — you only confirm the name and the format.',
   },
 } as const
 
@@ -50,6 +51,16 @@ export default function SeasonsTab({
 }) {
   const T_ = T[lang]
   const [isPending, startTransition] = useTransition()
+  // Same dialog the season bar opens — one way to add a season, not two.
+  const [draft, setDraft] = useState<SeasonDraft | null>(null)
+  const [adding, setAdding] = useState(false)
+
+  async function openAdd() {
+    setAdding(true)
+    const d = await loadSeasonDraft(leagueId, lang)
+    setAdding(false)
+    if (d) setDraft(d)
+  }
 
   async function handleRemove(seasonId: string) {
     if (!(await confirmDialog({ title: T_.confirmRemove, tone: 'danger', lang }))) return
@@ -101,15 +112,27 @@ export default function SeasonsTab({
         </div>
       ))}
 
-      <Link
-        href={`/dashboard/new?type=championship&league=${leagueId}`}
-        className="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-colors py-2.5 rounded-xl mt-2"
+      <button
+        onClick={openAdd}
+        disabled={adding}
+        className="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-60 transition-colors py-2.5 rounded-xl mt-2"
       >
-        <Plus size={15} /> {T_.addSeason}
-      </Link>
+        {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />} {T_.addSeason}
+      </button>
       <p className="text-xs text-gray-400 text-center">
         {T_.hint}
       </p>
+
+      {draft && (
+        <NewSeasonDialog
+          leagueId={leagueId}
+          draft={draft}
+          brand="#7c3aed"
+          lang={lang}
+          onClose={() => setDraft(null)}
+          onCreating={setAdding}
+        />
+      )}
     </div>
   )
 }

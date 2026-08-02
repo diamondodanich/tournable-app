@@ -155,12 +155,18 @@
 }
 
 /* ── App dark theme ───────────────────────────────────────────────────────────
-   Scoped: the `.dark` class is applied only on the dashboard shell wrapper, so
-   public pages stay light. We remap the common light utility classes to a
-   cohesive dark palette (no per-component changes needed). Palette is tuned to
+   Scoped: the `.dark` class is applied by the dashboard shell and by PublicShell
+   on public pages, both driven by the same `theme` cookie. Every page is authored
+   in the light palette and the rules below remap the common light utility classes
+   to a cohesive dark one (no per-component changes needed). Palette is tuned to
    match premium products: near-black canvas, slightly-lifted surfaces, calm
    accents. */
 .dark { color-scheme: dark; }
+
+/* Public tournament page canvas — a brand gradient in light, the app surface in
+   dark (an inline gradient could not be overridden by the rules below). */
+.public-page-bg { background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #ffffff 100%); }
+.dark .public-page-bg { background: #0b0b0f !important; }
 
 /* Canvas + surfaces (layered elevation) */
 .dark, .dark .bg-gray-50, .dark .bg-gray-50\/80, .dark .bg-gray-50\/50 { background-color: #0b0b0f !important; }

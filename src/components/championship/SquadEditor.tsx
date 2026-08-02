@@ -7,29 +7,12 @@ import { toast } from 'sonner'
 import { getSquad, saveSquad } from '@/app/actions/leagues'
 import { uploadPlayerPhoto } from '@/app/actions/logos'
 import { getPositions, getPositionLabel } from '@/lib/sports'
+import { normalizePlayerName } from '@/lib/playerName'
 
 type Lang = 'ru' | 'kz' | 'en'
 type Player = { name: string; number: string; photoUrl?: string | null; photoData?: string | null }
 type Slot = Player | null
 type Line = string[]   // one horizontal pitch line; each entry is a slot's position value
-
-// Player names are normalised to "Daniyar" / "Жан-Али" / "O'Brien" no matter how
-// they were typed (all-caps, all-lowercase, stray double spaces). Squad names are
-// the key match-events are recorded against and what public pages print, so a
-// single canonical spelling per player matters more than free-form input.
-export function normalizePlayerName(raw: string): string {
-  return raw
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .map(word =>
-      // Split on the separators that carry an internal capital: Жан-Али, O'Brien.
-      word.split(/([-'’])/).map(part =>
-        /[-'’]/.test(part) ? part : part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase()
-      ).join('')
-    )
-    .join(' ')
-}
 
 // Center-crop an image file to a square webp data URL for a player avatar.
 function fileToAvatar(file: File, size = 256): Promise<string> {

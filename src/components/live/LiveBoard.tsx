@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { LiveGame, MatchEvent, Team, Tournament } from '@/types'
 import { finishLiveMatch, initLiveGame, patchLiveGame } from '@/app/actions/live'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Maximize2, Minimize2, Play, Pause, RotateCcw, CheckCircle2, X, AlertTriangle, Plus, Minus, Zap, Shield, Lock, Flame, Star } from 'lucide-react'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { AssistIcon } from '@/components/ui/SportIcon'
@@ -15,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { APP_URL } from '@/lib/appUrl'
 import { useFeedback } from '@/hooks/useFeedback'
 import { getSportTheme, getCategoryForSport, getEventDefs, getScoreMode, type EventDef } from '@/lib/sports'
+import { getTournamentRosters, type RosterEntry } from '@/app/actions/lineups'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -128,7 +128,16 @@ export default function LiveBoard({
   const [minute, setMinute]         = useState('')   // empty = use timer value
   const [isOwnGoal, setIsOwnGoal]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [playerSuggestions, setPlayerSuggestions] = useState<string[]>([])
+
+  // Squads of both teams. Events are stored by player name and everything
+  // downstream (player pages, all-time stats, clickable links) matches on that
+  // exact string, so the scorer is picked from the squad rather than typed.
+  const [rosters, setRosters] = useState<Record<string, RosterEntry[]>>({})
+  useEffect(() => {
+    let cancelled = false
+    void getTournamentRosters(tournament.id).then(r => { if (!cancelled) setRosters(r) })
+    return () => { cancelled = true }
+  }, [tournament.id])
 
   // ── Finish confirm ──
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
@@ -362,7 +371,7 @@ export default function LiveBoard({
     const fixtureId = game.fixture_id ?? defaultFixtureId
     const playoffId = game.playoff_match_id ?? defaultPlayoffMatchId
     if (!fixtureId && !playoffId) { toast.error('Матч не привязан'); return }
-    if (!player.trim()) { toast.error('Введите имя игрока'); return }
+    if (!player.trim()) { toast.error('Выберите игрока из состава'); return }
 
     const teamId = side === 'home' ? game.home_team_id : game.away_team_id
     if (!teamId) return
@@ -545,27 +554,8 @@ export default function LiveBoard({
     setIsFinished(true)
   }
 
-  // ── Player autocomplete: fetch from league_teams by team name ─────────────
   const homeTeam = teams.find(t => t.id === (game?.home_team_id ?? homeId))
   const awayTeam = teams.find(t => t.id === (game?.away_team_id ?? awayId))
-
-  useEffect(() => {
-    const currentTeam = side === 'home' ? homeTeam : awayTeam
-    if (!currentTeam?.name) { setPlayerSuggestions([]); return }
-    let cancelled = false
-    supabase
-      .from('league_teams')
-      .select('players(name)')
-      .ilike('name', currentTeam.name)
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled) return
-        const players = (data as any)?.players ?? []
-        setPlayerSuggestions(players.map((p: { name: string }) => p.name))
-      })
-    return () => { cancelled = true }
-  }, [side, homeTeam?.name, awayTeam?.name]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const homeEvents  = events.filter(e => e.team_id === game?.home_team_id)
@@ -1045,40 +1035,46 @@ export default function LiveBoard({
               })}
             </div>
 
-            {/* Player inputs */}
-            {playerSuggestions.length > 0 && (
-              <datalist id="player-suggestions">
-                {playerSuggestions.map(name => <option key={name} value={name} />)}
-              </datalist>
-            )}
-            {formDef?.hasAssist && !isOwnGoal ? (
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={player}
-                  onChange={e => setPlayer(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="Автор гола"
-                  list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
-                />
-                <Input
-                  value={assister}
-                  onChange={e => setAssister(e.target.value)}
-                  placeholder="Ассистент"
-                  list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
-                />
-              </div>
-            ) : (
-              <Input
-                value={player}
-                onChange={e => setPlayer(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="Игрок"
-                list={playerSuggestions.length > 0 ? 'player-suggestions' : undefined}
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 h-10 text-sm"
-              />
-            )}
+            {/* Player pickers — bound to the squad of the side the event is for. */}
+            {(() => {
+              const teamId = side === 'home' ? (game?.home_team_id ?? homeId) : (game?.away_team_id ?? awayId)
+              const roster = rosters[teamId] ?? []
+              const selectCls = 'bg-gray-800 border border-gray-700 text-white rounded-xl h-10 text-sm px-3 w-full outline-none focus:border-gray-500'
+
+              if (roster.length === 0) {
+                return (
+                  <div className="rounded-xl border border-dashed border-amber-500/50 bg-amber-500/10 px-3 py-2.5">
+                    <p className="text-xs text-amber-300 leading-snug">
+                      Состав команды не заполнен. События записываются на игроков из состава — откройте матч в турнире и заполните состав.
+                    </p>
+                  </div>
+                )
+              }
+
+              const options = roster.map(p => (
+                <option key={p.name} value={p.name}>{p.number != null ? `${p.number}. ` : ''}{p.name}</option>
+              ))
+
+              return formDef?.hasAssist && !isOwnGoal ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={player} onChange={e => setPlayer(e.target.value)} className={selectCls}>
+                    <option value="">Автор гола</option>
+                    {options}
+                  </select>
+                  <select value={assister} onChange={e => setAssister(e.target.value)} className={selectCls}>
+                    <option value="">Ассистент</option>
+                    {roster.filter(p => p.name !== player).map(p => (
+                      <option key={p.name} value={p.name}>{p.number != null ? `${p.number}. ` : ''}{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <select value={player} onChange={e => setPlayer(e.target.value)} className={selectCls}>
+                  <option value="">Игрок</option>
+                  {options}
+                </select>
+              )
+            })()}
 
             {/* Auto-minute display + own goal + submit */}
             <div className="flex items-center gap-2">

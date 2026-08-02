@@ -66,14 +66,14 @@ const STAT_COLORS: Record<EventIcon, { color: string; iconColor: string; brand?:
 }
 
 function buildLeaderboard(teams: Team[], events: MatchEvent[], type: string) {
-  const map = new Map<string, { player: string; teamName: string; logoUrl: string | null; count: number }>()
+  const map = new Map<string, { player: string; teamId: string; teamName: string; logoUrl: string | null; count: number; key: string }>()
 
   events.filter(e => e.type === type).forEach(e => {
     const name = e.player_name.trim()
     if (!name) return
     const key = `${e.team_id}|${name.toLowerCase()}`
     const team = teams.find(t => t.id === e.team_id)
-    if (!map.has(key)) map.set(key, { player: name, teamName: team?.name ?? '—', logoUrl: team?.logo_url ?? null, count: 0 })
+    if (!map.has(key)) map.set(key, { player: name, teamId: e.team_id, teamName: team?.name ?? '—', logoUrl: team?.logo_url ?? null, count: 0, key })
     map.get(key)!.count++
   })
 
@@ -88,13 +88,17 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 export default function StatsTab({
-  teams, events, lang = 'ru', sport, hideUpsell = false,
+  teams, events, lang = 'ru', sport, hideUpsell = false, playerHrefs = {}, teamHrefs = {},
 }: {
   teams: Team[]
   events: MatchEvent[]
   lang?: Lang
   sport?: string
   hideUpsell?: boolean
+  /** Championship season: `${teamId}|${lowercased player name}` → public player page. */
+  playerHrefs?: Record<string, string>
+  /** Championship season: season-team id → public team page. */
+  teamHrefs?: Record<string, string>
 }) {
   const T = tx[lang]
   // Leaderboards are built from the discipline's stat-eligible events.
@@ -167,19 +171,31 @@ export default function StatsTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {list.map((p, i) => (
+              {list.map((p, i) => {
+                // Inside a championship every name is a real squad player, so both
+                // cells open the profile pages instead of being dead text.
+                const playerHref = playerHrefs[p.key]
+                const teamHref = teamHrefs[p.teamId]
+                return (
                 <TableRow key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                   <TableCell className="text-center"><RankBadge rank={i} /></TableCell>
-                  <TableCell className="font-bold text-gray-900">{p.player}</TableCell>
+                  <TableCell className="font-bold text-gray-900">
+                    {playerHref
+                      ? <Link href={playerHref} className="hover:underline" style={{ color: 'var(--sp)' }}>{p.player}</Link>
+                      : p.player}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <TeamAvatar name={p.teamName} logoUrl={p.logoUrl} size={20} />
-                      <span className="text-gray-500 text-sm">{p.teamName}</span>
+                      {teamHref
+                        ? <Link href={teamHref} className="text-gray-500 text-sm hover:underline">{p.teamName}</Link>
+                        : <span className="text-gray-500 text-sm">{p.teamName}</span>}
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-black text-lg" style={{ color: 'var(--sp)' }}>{p.count}</TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </div>

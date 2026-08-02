@@ -6,21 +6,23 @@ import { getEventDefs, getPositionLabel, getSubtype, type EventIcon, type Lang }
 import { absUrl, trilingualAlternates, langPrefix, jsonLdGraph, breadcrumbsLd, athleteLd } from '@/lib/seo'
 import { sportDisplayName } from '@/lib/sportSeo'
 import { playerMeta, NOT_FOUND_TITLE } from '@/lib/entitySeo'
+import PublicShell from './PublicShell'
 
 const CRUMB: Record<Lang, string> = { ru: 'Чемпионаты', kz: 'Чемпионаттар', en: 'Championships' }
 
-// Dark-theme accent per event kind (career cards + per-season table).
+// Accent per event kind (career cards + per-season table). Authored light; the
+// `.dark` overrides in globals.css flip these for the dark theme.
 const STAT_TEXT: Record<EventIcon, string> = {
-  ball: 'text-emerald-400', assist: 'text-blue-400', yellow: 'text-yellow-400', red: 'text-red-400',
-  warn: 'text-amber-400', foul: 'text-amber-400', ko: 'text-red-400', submission: 'text-gray-200',
-  ace: 'text-sky-400', block: 'text-indigo-400', three: 'text-orange-400', strike: 'text-red-400',
-  touchdown: 'text-emerald-400', run: 'text-emerald-400', star: 'text-amber-400',
+  ball: 'text-emerald-600', assist: 'text-blue-600', yellow: 'text-yellow-600', red: 'text-red-600',
+  warn: 'text-amber-600', foul: 'text-amber-600', ko: 'text-red-600', submission: 'text-gray-700',
+  ace: 'text-sky-600', block: 'text-indigo-600', three: 'text-orange-600', strike: 'text-red-600',
+  touchdown: 'text-emerald-600', run: 'text-emerald-600', star: 'text-amber-600',
 }
 const STAT_BADGE: Record<EventIcon, string> = {
-  ball: 'bg-emerald-900/60 text-emerald-400', assist: 'bg-blue-900/60 text-blue-400', yellow: 'bg-yellow-900/60 text-yellow-400', red: 'bg-red-900/60 text-red-400',
-  warn: 'bg-amber-900/60 text-amber-400', foul: 'bg-amber-900/60 text-amber-400', ko: 'bg-red-900/60 text-red-400', submission: 'bg-gray-800 text-gray-200',
-  ace: 'bg-sky-900/60 text-sky-400', block: 'bg-indigo-900/60 text-indigo-400', three: 'bg-orange-900/60 text-orange-400', strike: 'bg-red-900/60 text-red-400',
-  touchdown: 'bg-emerald-900/60 text-emerald-400', run: 'bg-emerald-900/60 text-emerald-400', star: 'bg-amber-900/60 text-amber-400',
+  ball: 'bg-emerald-50 text-emerald-700', assist: 'bg-blue-50 text-blue-700', yellow: 'bg-yellow-50 text-yellow-700', red: 'bg-red-50 text-red-600',
+  warn: 'bg-amber-50 text-amber-700', foul: 'bg-amber-50 text-amber-700', ko: 'bg-red-50 text-red-600', submission: 'bg-gray-100 text-gray-700',
+  ace: 'bg-sky-50 text-sky-700', block: 'bg-indigo-50 text-indigo-700', three: 'bg-orange-50 text-orange-700', strike: 'bg-red-50 text-red-600',
+  touchdown: 'bg-emerald-50 text-emerald-700', run: 'bg-emerald-50 text-emerald-700', star: 'bg-amber-50 text-amber-700',
 }
 const PT = {
   ru: {
@@ -220,30 +222,34 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
   )
 
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-white">
+    <PublicShell lang={lang}>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
-      <div className="border-b border-white/10">
+      <div className="border-b border-gray-200 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-          <Link href={`${prefix}/leagues/${slug}/players`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">
+          <Link href={`${prefix}/leagues/${slug}/players`} className="text-xs text-gray-400 hover:text-gray-700 font-medium mb-4 inline-block">
             ← {tx.players} · {league.name}
           </Link>
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center shrink-0">
-              <span className="text-2xl font-black text-purple-300">
-                {player.number != null ? `#${player.number}` : player.name.slice(0, 2).toUpperCase()}
-              </span>
+            <div className="w-16 h-16 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
+              {player.photo_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={player.photo_url} alt="" className="w-full h-full object-cover" />
+                : <span className="text-2xl font-black text-purple-600">
+                    {player.number != null ? `#${player.number}` : player.name.slice(0, 2).toUpperCase()}
+                  </span>}
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-black">{player.name}</h1>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <Link href={`${prefix}/leagues/${slug}/teams/${leagueTeam.slug}`} className="text-sm text-purple-400 hover:text-purple-300 font-medium">
+                <Link href={`${prefix}/leagues/${slug}/teams/${leagueTeam.slug}`} className="text-sm text-purple-600 hover:text-purple-700 font-medium">
                   {leagueTeam.name}
                 </Link>
                 {(() => { const posLabel = getPositionLabel(league.sport, player.position, lang); return posLabel ? (
-                  <span className="text-xs text-white/30">· {posLabel}</span>
+                  <span className="text-xs text-gray-400">· {posLabel}</span>
                 ) : null })()}
                 {seasonsPlayed > 0 && (
-                  <span className="text-xs text-white/30">· {tx.seasonsWord(seasonsPlayed)}</span>
+                  <span className="text-xs text-gray-400">· {tx.seasonsWord(seasonsPlayed)}</span>
                 )}
               </div>
             </div>
@@ -253,15 +259,15 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Career totals */}
-        <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.allTime}</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.allTime}</p>
         <div className={`grid grid-cols-2 gap-3 mb-8 ${statDefs.length >= 4 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
           {[
-            { label: tx.matches, value: matchesPlayed, color: 'text-white' },
-            ...statDefs.map(d => ({ label: d.label[lang], value: totalCounts[d.type] ?? 0, color: STAT_TEXT[d.icon] ?? 'text-white' })),
+            { label: tx.matches, value: matchesPlayed, color: 'text-gray-900' },
+            ...statDefs.map(d => ({ label: d.label[lang], value: totalCounts[d.type] ?? 0, color: STAT_TEXT[d.icon] ?? 'text-gray-900' })),
           ].map(stat => (
-            <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+            <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-              <p className="text-xs text-white/40 mt-1">{stat.label}</p>
+              <p className="text-xs text-gray-400 mt-1">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -269,11 +275,11 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
         {/* Per-season breakdown */}
         {seasonStats.length > 0 && (
           <div className="mb-8">
-            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.bySeason}</p>
-            <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden overflow-x-auto">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.bySeason}</p>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm min-w-[360px]">
                 <thead>
-                  <tr className="text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/10">
+                  <tr className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">
                     <th className="text-left px-4 py-2.5">{tx.season}</th>
                     <th className="text-center px-2 py-2.5 w-12">{tx.mp}</th>
                     {statDefs.map(d => <th key={d.type} className="text-center px-2 py-2.5 w-14">{d.label[lang]}</th>)}
@@ -281,11 +287,11 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
                 </thead>
                 <tbody>
                   {seasonStats.map((s, i) => (
-                    <tr key={s.tournamentId} className={i > 0 ? 'border-t border-white/5' : ''}>
-                      <td className="px-4 py-2.5 font-bold text-white/90 truncate max-w-[160px]">{s.name}</td>
-                      <td className="px-2 py-2.5 text-center text-white/70 tabular-nums">{s.mp || '—'}</td>
+                    <tr key={s.tournamentId} className={i > 0 ? 'border-t border-gray-50' : ''}>
+                      <td className="px-4 py-2.5 font-bold text-gray-900 truncate max-w-[160px]">{s.name}</td>
+                      <td className="px-2 py-2.5 text-center text-gray-600 tabular-nums">{s.mp || '—'}</td>
                       {statDefs.map((d, di) => (
-                        <td key={d.type} className={`px-2 py-2.5 text-center tabular-nums ${di === 0 ? `font-black ${STAT_TEXT[d.icon] ?? 'text-white'}` : 'text-white/60'}`}>
+                        <td key={d.type} className={`px-2 py-2.5 text-center tabular-nums ${di === 0 ? `font-black ${STAT_TEXT[d.icon] ?? 'text-gray-900'}` : 'text-gray-500'}`}>
                           {s.counts[d.type] || '—'}
                         </td>
                       ))}
@@ -300,19 +306,19 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
         {/* Recent events */}
         {events.length > 0 && (
           <div>
-            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.recent}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.recent}</p>
             <div className="space-y-1">
               {events.slice(0, 20).map((e, i) => {
                 const def = e.type === 'own_goal' ? undefined : defByType.get(e.type)
-                const badgeCls = e.type === 'own_goal' ? 'bg-red-900/60 text-red-400' : (def ? STAT_BADGE[def.icon] : 'bg-white/10 text-white/60')
+                const badgeCls = e.type === 'own_goal' ? 'bg-red-50 text-red-600' : (def ? STAT_BADGE[def.icon] : 'bg-gray-100 text-gray-600')
                 const badgeLabel = e.type === 'own_goal' ? tx.evGoal : (def?.label[lang] ?? e.type)
                 return (
-                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 text-sm">
+                <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${badgeCls}`}>
                     {badgeLabel}
                   </span>
-                  {e.minute != null && <span className="text-xs text-white/30 shrink-0">{e.minute}&apos;</span>}
-                  <span className="flex-1 text-white/50 text-xs truncate">
+                  {e.minute != null && <span className="text-xs text-gray-400 shrink-0">{e.minute}&apos;</span>}
+                  <span className="flex-1 text-gray-500 text-xs truncate">
                     {e.fixtures?.tournaments?.name ?? ''}
                     {e.fixtures?.matchday != null ? ` — ${tx.round} ${e.fixtures.matchday}` : ''}
                   </span>
@@ -324,9 +330,10 @@ export default async function PlayerProfilePage({ slug, playerId, lang }: { slug
         )}
 
         {events.length === 0 && (
-          <p className="text-center py-12 text-white/30 text-sm">{tx.noStats}</p>
+          <p className="text-center py-12 text-gray-400 text-sm">{tx.noStats}</p>
         )}
       </div>
     </div>
+    </PublicShell>
   )
 }

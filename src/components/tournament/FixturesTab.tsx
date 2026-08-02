@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tournament, Team, Fixture } from '@/types'
 import { saveFixtureResult, startFixture, generateNextSwissRound } from '@/app/actions/tournaments'
+import { getTournamentRosters, type RosterEntry } from '@/app/actions/lineups'
+import { EmptyRosterNotice, RosterSelect } from './PlayerPicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -99,9 +101,11 @@ interface InlineFormProps {
   pills: EventDef[]           // selectable event kinds (assist + own_goal excluded)
   ownGoalDef?: EventDef       // present → offer an own-goal toggle on assist events
   sport?: string
+  roster: RosterEntry[]       // the squad this event's team can pick from
+  onFillSquad?: () => void    // open the squad editor when the roster is empty
 }
 
-function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport }: InlineFormProps) {
+function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport, roster, onFillSquad }: InlineFormProps) {
   const selected = pills.find(p => p.type === form.actionType)
   const isGoalLike = !!selected?.hasAssist
   const pillColor = (type: string, activeSel: boolean) => {
@@ -143,27 +147,22 @@ function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef, spor
         )}
       </div>
 
-      {/* Player name — autoFocus only fires on mount (stable component type) */}
-      <Input
-        autoFocus
-        list="tournament-players"
-        value={form.player}
-        onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
-        onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)}
-        className="h-7 text-xs bg-white w-full"
-      />
+      {/* Player — picked from the squad, never typed. A free-text name silently
+          detaches the event from the player's profile and from all-time stats. */}
+      {roster.length === 0 ? (
+        <EmptyRosterNotice lang={lang} onFillSquad={onFillSquad} />
+      ) : (
+        <>
+          <RosterSelect roster={roster} value={form.player}
+            onChange={name => setForm(f => f ? { ...f, player: name } : f)}
+            placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)} />
 
-      {/* Assister — no autoFocus; typing here no longer steals focus back */}
-      {isGoalLike && !form.isOwnGoal && (
-        <Input
-          list="tournament-players"
-          value={form.assister}
-          onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
-          onKeyDown={e => e.key === 'Enter' && onConfirm()}
-          placeholder={T.assisterPlaceholder}
-          className="h-7 text-xs bg-white w-full"
-        />
+          {isGoalLike && !form.isOwnGoal && (
+            <RosterSelect roster={roster} value={form.assister} exclude={form.player}
+              onChange={name => setForm(f => f ? { ...f, assister: name } : f)}
+              placeholder={T.assisterPlaceholder} />
+          )}
+        </>
       )}
 
       {/* Minute + confirm + cancel */}
@@ -190,7 +189,7 @@ function InlineForm({ form, setForm, onConfirm, T, lang, pills, ownGoalDef, spor
 
 // ── FixtureCard ───────────────────────────────────────────────────────────────
 
-function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang, onSaved, champSquad }: {
+function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise, T, lang, onSaved, champSquad, rosters, onRosterChange }: {
   fixture: Fixture
   teams: Team[]
   tournamentId: string
@@ -201,6 +200,8 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   lang: Lang
   onSaved?: () => void
   champSquad?: { leagueId: string; sport: string | null; brand: string; teamLeagueMap: Record<string, string | null> }
+  rosters: Record<string, RosterEntry[]>
+  onRosterChange?: () => void
 }) {
   const [showLineup, setShowLineup] = useState(false)
   const [squadPick, setSquadPick] = useState(false)
@@ -264,6 +265,17 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
   const isChampSquad = !!champSquad && !fixture.is_bye && (!!homeLT || !!awayLT)
 
   const canLineup = isEnterprise && !fixture.is_bye && !!fixture.home_team_id && !!fixture.away_team_id
+
+  // Jump straight into the right squad editor for one side — used by the event
+  // form when that team has no roster to pick from yet.
+  function openSquadForTeam(teamId: string) {
+    const lt = champSquad ? (champSquad.teamLeagueMap[teamId] ?? null) : null
+    if (champSquad && lt) {
+      setSquadTeam({ leagueTeamId: lt, name: teamById(teams, teamId)?.name ?? '' })
+    } else if (canLineup) {
+      setShowLineup(true)
+    }
+  }
   const lineupBtn = (canLineup || isChampSquad) ? (
     <button onClick={() => isChampSquad ? setSquadPick(true) : setShowLineup(true)}
       className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-full transition-colors">
@@ -278,7 +290,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           tournamentId={tournamentId}
           homeTeam={homeTeam}
           awayTeam={awayTeam}
-          onClose={() => setShowLineup(false)}
+          onClose={() => { setShowLineup(false); onRosterChange?.() }}
           lang={lang}
           sport={sport}
         />
@@ -311,7 +323,7 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
           sport={champSquad.sport}
           brand={champSquad.brand}
           lang={lang}
-          onClose={() => setSquadTeam(null)}
+          onClose={() => { setSquadTeam(null); onRosterChange?.() }}
         />
       )}
     </>
@@ -594,7 +606,9 @@ function FixtureCard({ fixture, teams, tournamentId, sport, isPro, isEnterprise,
                 {form.teamId === fixture.home_team_id ? homeTeam?.name : awayTeam?.name}
               </span>
             </div>
-            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport} />
+            <InlineForm form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport}
+              roster={rosters[form.teamId] ?? []}
+              onFillSquad={() => { const t = form.teamId; setForm(null); openSquadForTeam(t) }} />
           </div>
         )}
       </div>
@@ -636,6 +650,17 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const router = useRouter()
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures)
   const [swissGen, setSwissGen] = useState(false)
+
+  // Squads for every team of this tournament, loaded once and refreshed whenever a
+  // squad editor closes. Event forms pick names from here instead of accepting free
+  // text, so an event always resolves to a real player.
+  const [rosters, setRosters] = useState<Record<string, RosterEntry[]>>({})
+  const [rosterTick, setRosterTick] = useState(0)
+  useEffect(() => {
+    let cancelled = false
+    void getTournamentRosters(tournament.id).then(r => { if (!cancelled) setRosters(r) })
+    return () => { cancelled = true }
+  }, [tournament.id, rosterTick])
 
   const hasUpcoming = initialFixtures.some(f => !f.is_bye && f.home_team_id && f.away_team_id && !f.played)
   const [subTab, setSubTab] = useState<'upcoming' | 'results'>(hasUpcoming ? 'upcoming' : 'results')
@@ -686,11 +711,6 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
   const played = fixtures.filter(f => !isByeFixture(f) && f.played).length
   const total  = fixtures.filter(f => !isByeFixture(f)).length
 
-  // Autocomplete suggestions: every player name already recorded in this tournament.
-  const knownNames = [...new Set(
-    fixtures.flatMap(f => (f.match_events ?? []).map(e => e.player_name.trim())).filter(Boolean),
-  )].sort()
-
   const visibleFixtures = fixtures.filter(f => {
     if (isByeFixture(f)) return false
     return subTab === 'upcoming' ? !f.played : f.played
@@ -729,11 +749,6 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
 
   return (
     <div className="space-y-4">
-      {/* Shared autocomplete source for player-name inputs across all match cards */}
-      <datalist id="tournament-players">
-        {knownNames.map(n => <option key={n} value={n} />)}
-      </datalist>
-
       {isSwiss && isOwner && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -808,7 +823,7 @@ export default function FixturesTab({ tournament, teams, fixtures: initialFixtur
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} onSaved={() => router.refresh()} champSquad={champSquad} />)}
+            {mxs.map(f => <FixtureCard key={f.id} fixture={f} teams={teams} tournamentId={tournament.id} sport={tournament.sport ?? undefined} isPro={isPro} isEnterprise={isEnterprise} T={T} lang={lang} onSaved={() => router.refresh()} champSquad={champSquad} rosters={rosters} onRosterChange={() => setRosterTick(t => t + 1)} />)}
           </div>
         </div>
       ))}

@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createTournamentWithSetup } from './tournaments'
 import { nextSeasonName, type SeasonPeriod } from '@/lib/seasons'
+import type { Format } from '@/lib/sports'
+import { normalizePlayerName } from '@/lib/playerName'
 import { submitToIndexNow } from '@/lib/indexnow'
 
 // ─── Slug generation (same transliteration as tournaments) ────────────────────
@@ -271,7 +273,7 @@ export async function saveSquad(
     .filter(p => p.name.trim())
     .map(p => ({
       league_team_id: leagueTeamId,
-      name: p.name.trim(),
+      name: normalizePlayerName(p.name),
       number: p.number ?? null,
       position: p.position || 'other',
       photo_url: p.photo_url ?? null,
@@ -309,7 +311,7 @@ export async function addPlayer(
 
   const { error } = await supabase.from('players').insert({
     league_team_id: leagueTeamId,
-    name: data.name.trim(),
+    name: normalizePlayerName(data.name),
     number: data.number ?? null,
     position: data.position ?? 'other',
   })
@@ -501,7 +503,9 @@ export async function getChampionshipPlayerStats(leagueId: string): Promise<Cham
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const p of (rosterPlayers ?? []) as any[]) {
     if (p.league_team_id && p.name) {
-      const k = `${p.league_team_id}|${String(p.name).toLowerCase()}`
+      // Trim before keying: event names are trimmed below, and an untrimmed roster
+      // name here silently breaks the link from a stat row to the player's page.
+      const k = `${p.league_team_id}|${String(p.name).trim().toLowerCase()}`
       photoByKey.set(k, p.photo_url ?? null)
       if (p.id) idByKey.set(k, p.id as string)
     }
@@ -656,7 +660,9 @@ export async function getChampionshipTeamStats(leagueId: string): Promise<ChampT
     .sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF)
 }
 
-export type ChampFormat = 'round_robin' | 'playoff' | 'groups_playoff' | 'league_playoff' | 'swiss' | 'leaderboard' | 'double_elim'
+/** Same union the wizard and the format labels use — kept as one alias so the
+ *  season dialog can render `FORMAT_LABELS[format]` without a cast. */
+export type ChampFormat = Format
 
 // Everything the "new season" dialog needs to render itself without pushing the
 // owner back through the creation wizard: the format the championship currently

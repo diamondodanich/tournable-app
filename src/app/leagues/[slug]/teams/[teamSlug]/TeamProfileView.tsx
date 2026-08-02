@@ -38,7 +38,7 @@ const T = {
 function Avatar({ name, photo, brand }: { name: string; photo: string | null; brand: string }) {
   return (
     <span className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-[11px] font-black shrink-0"
-      style={{ background: `${brand}33`, color: '#fff' }}>
+      style={{ background: `${brand}22`, color: brand }}>
       {photo
         // eslint-disable-next-line @next/next/no-img-element
         ? <img src={photo} alt="" className="w-full h-full object-cover" />
@@ -83,36 +83,40 @@ export default function TeamProfileView({
     { id: 'calendar' as const, label: tx.tabs.calendar, icon: CalendarDays },
   ]
 
+  // Match rows are links: from a team page the next click is almost always the
+  // match report, and it used to be a dead end.
+  const matchHref = (id: string) => `${pathPrefix}/leagues/${slug}/matches/${id}`
+
   return (
-    <div className="min-h-screen bg-[#0b0b0d] text-white">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
-      <div className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ background: `radial-gradient(1000px 260px at 15% -40%, ${brand}, transparent)` }} />
+      <div className="relative overflow-hidden border-b border-gray-200 bg-white">
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `radial-gradient(1000px 260px at 15% -40%, ${brand}, transparent)` }} />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-8">
           <Link href={`${pathPrefix}/leagues/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-3 py-1.5 mb-4 transition-colors">
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg px-3 py-1.5 mb-4 transition-colors">
             <ChevronLeft size={15} /> {leagueName}
           </Link>
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-2xl font-black shrink-0 ring-2"
-              style={{ background: `${brand}22`, color: brand, boxShadow: `0 0 40px ${brand}33`, ['--tw-ring-color' as string]: `${brand}66` }}>
+              style={{ background: `${brand}18`, color: brand, ['--tw-ring-color' as string]: `${brand}44` }}>
               {teamName.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-black">{teamName}</h1>
-              {city && <p className="text-sm text-white/40 mt-1">{city}</p>}
+              {city && <p className="text-sm text-gray-400 mt-1">{city}</p>}
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-white/10 sticky top-0 z-10 bg-[#0b0b0d]/90 backdrop-blur">
+      <div className="border-b border-gray-200 sticky top-0 z-10 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)}
               style={tab === id ? { borderColor: brand, color: brand } : undefined}
-              className={`shrink-0 inline-flex items-center gap-1.5 py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? '' : 'border-transparent text-white/40 hover:text-white/70'}`}>
+              className={`shrink-0 inline-flex items-center gap-1.5 py-3 px-4 text-sm font-bold border-b-2 transition-colors ${tab === id ? '' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
               <Icon size={14} /> {label}
             </button>
           ))}
@@ -130,19 +134,18 @@ export default function TeamProfileView({
               </button>
             )}
             {players.length === 0 ? (
-              <p className="text-sm text-white/30">{tx.noSquad}</p>
+              <p className="text-sm text-gray-400">{tx.noSquad}</p>
             ) : (
-              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden">
                 {players.slice().sort((a, b) => (a.number ?? 99) - (b.number ?? 99)).map((p, i) => (
-                  <Link key={p.id} href={`${pathPrefix}/leagues/${slug}/players/${p.id}`}>
-                    <div className={`flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors ${i > 0 ? 'border-t border-white/5' : ''}`}>
-                      <Avatar name={p.name} photo={p.photo_url} brand={brand} />
-                      {p.number != null && <span className="w-5 text-right text-xs font-black text-white/30 shrink-0">{p.number}</span>}
-                      {getPositionLabel(sport, p.position, lang, true) && (
-                        <span className="text-[10px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded shrink-0">{getPositionLabel(sport, p.position, lang, true)}</span>
-                      )}
-                      <span className="flex-1 text-sm font-bold text-white/90">{p.name}</span>
-                    </div>
+                  <Link key={p.id} href={`${pathPrefix}/leagues/${slug}/players/${p.id}`}
+                    className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors ${i > 0 ? 'border-t border-gray-50' : ''}`}>
+                    <Avatar name={p.name} photo={p.photo_url} brand={brand} />
+                    {p.number != null && <span className="w-5 text-right text-xs font-black text-gray-400 shrink-0">{p.number}</span>}
+                    {getPositionLabel(sport, p.position, lang, true) && (
+                      <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">{getPositionLabel(sport, p.position, lang, true)}</span>
+                    )}
+                    <span className="flex-1 text-sm font-bold text-gray-900">{p.name}</span>
                   </Link>
                 ))}
               </div>
@@ -155,55 +158,57 @@ export default function TeamProfileView({
             {played.length > 0 && (
               <div className="space-y-1.5">
                 {played.map(m => (
-                  <div key={m.id} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 text-sm">
-                    <span className="text-[11px] text-white/30 w-24 shrink-0 truncate">{m.seasonName}</span>
-                    <span className="flex-1 text-right font-bold text-white/80 truncate">{m.isHome ? teamName : m.opponent}</span>
-                    <span className="shrink-0 text-sm font-black text-white px-3 py-1 bg-white/10 rounded-lg min-w-[56px] text-center">
+                  <Link key={m.id} href={matchHref(m.id)}
+                    className="flex items-center gap-3 bg-white border border-gray-100 shadow-sm rounded-xl px-4 py-3 text-sm hover:border-gray-300 transition-colors">
+                    <span className="text-[11px] text-gray-400 w-24 shrink-0 truncate">{m.seasonName}</span>
+                    <span className="flex-1 text-right font-bold text-gray-700 truncate">{m.isHome ? teamName : m.opponent}</span>
+                    <span className="shrink-0 text-sm font-black text-gray-900 px-3 py-1 bg-gray-100 rounded-lg min-w-[56px] text-center">
                       {m.isHome ? m.homeScore : m.awayScore} : {m.isHome ? m.awayScore : m.homeScore}
                     </span>
-                    <span className="flex-1 text-left font-bold text-white/80 truncate">{m.isHome ? m.opponent : teamName}</span>
-                  </div>
+                    <span className="flex-1 text-left font-bold text-gray-700 truncate">{m.isHome ? m.opponent : teamName}</span>
+                  </Link>
                 ))}
               </div>
             )}
             <div>
-              <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.history}</p>
-              {history.length === 0 ? <p className="text-sm text-white/30">{tx.noData}</p> : (
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.history}</p>
+              {history.length === 0 ? <p className="text-sm text-gray-400">{tx.noData}</p> : (
                 <div className="space-y-2">
                   {history.map(r => (
-                    <div key={r.seasonName} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                    <div key={r.seasonName} className="bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-3">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="font-bold text-sm text-white">{r.seasonName}</p>
-                        {r.position && <span className={`text-xs font-black px-2 py-0.5 rounded-full ${r.position === 1 ? 'bg-yellow-900/60 text-yellow-400' : 'bg-white/10 text-white/50'}`}>#{r.position}</span>}
+                        <p className="font-bold text-sm text-gray-900">{r.seasonName}</p>
+                        {r.position && <span className={`text-xs font-black px-2 py-0.5 rounded-full ${r.position === 1 ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>#{r.position}</span>}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-white/40">
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span>{r.GP} {tx.games}</span>
-                        <span className="text-emerald-400">{r.W}{tx.w}</span>
+                        <span className="text-emerald-600">{r.W}{tx.w}</span>
                         <span>{r.D}{tx.d}</span>
-                        <span className="text-red-400">{r.L}{tx.l}</span>
-                        <span className="ml-auto font-black text-white">{r.Pts} {tx.pts}</span>
+                        <span className="text-red-500">{r.L}{tx.l}</span>
+                        <span className="ml-auto font-black text-gray-900">{r.Pts} {tx.pts}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            {played.length === 0 && history.length === 0 && <p className="text-center py-10 text-white/30 text-sm">{tx.noResults}</p>}
+            {played.length === 0 && history.length === 0 && <p className="text-center py-10 text-gray-400 text-sm">{tx.noResults}</p>}
           </div>
         )}
 
         {tab === 'calendar' && (
           upcoming.length === 0
-            ? <p className="text-center py-12 text-white/30 text-sm">{tx.noUpcoming}</p>
+            ? <p className="text-center py-12 text-gray-400 text-sm">{tx.noUpcoming}</p>
             : (
               <div className="space-y-1.5">
                 {upcoming.map(m => (
-                  <div key={m.id} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 text-sm">
-                    <span className="text-[11px] text-white/40 w-28 shrink-0 truncate">{fmtDate(m.scheduledAt)}</span>
-                    <span className="flex-1 text-right font-bold text-white/80 truncate">{m.isHome ? teamName : m.opponent}</span>
-                    <span className="shrink-0 text-xs font-bold text-white/30 px-2">vs</span>
-                    <span className="flex-1 text-left font-bold text-white/80 truncate">{m.isHome ? m.opponent : teamName}</span>
-                  </div>
+                  <Link key={m.id} href={matchHref(m.id)}
+                    className="flex items-center gap-3 bg-white border border-gray-100 shadow-sm rounded-xl px-4 py-3 text-sm hover:border-gray-300 transition-colors">
+                    <span className="text-[11px] text-gray-400 w-28 shrink-0 truncate">{fmtDate(m.scheduledAt)}</span>
+                    <span className="flex-1 text-right font-bold text-gray-700 truncate">{m.isHome ? teamName : m.opponent}</span>
+                    <span className="shrink-0 text-xs font-bold text-gray-300 px-2">vs</span>
+                    <span className="flex-1 text-left font-bold text-gray-700 truncate">{m.isHome ? m.opponent : teamName}</span>
+                  </Link>
                 ))}
               </div>
             )

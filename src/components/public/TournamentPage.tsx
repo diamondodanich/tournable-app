@@ -23,6 +23,7 @@ import { FORMAT_LABELS } from '@/lib/formats'
 import { sportDisplayName } from '@/lib/sportSeo'
 import { tournamentMeta, NOT_FOUND_TITLE } from '@/lib/entitySeo'
 import { absUrl, trilingualAlternates, langPrefix, jsonLdGraph, breadcrumbsLd, sportsEventSeriesLd } from '@/lib/seo'
+import PublicShell from './PublicShell'
 
 // Strings that only exist on this public page (the shared tournament dictionary
 // in lib/i18n covers the dashboard-facing labels).
@@ -330,7 +331,8 @@ export default async function PublicTournamentPage({
   )
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 50%,#ffffff 100%)' }}>
+    <PublicShell lang={lang}>
+    <div className="min-h-screen public-page-bg">
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-emerald-100 sticky top-0 z-20">
@@ -522,5 +524,6 @@ export default async function PublicTournamentPage({
         )}
       </main>
     </div>
+    </PublicShell>
   )
 }

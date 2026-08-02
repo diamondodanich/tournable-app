@@ -8,6 +8,7 @@ import { getEventDefs, type EventIcon, type Lang } from '@/lib/sports'
 import { absUrl, trilingualAlternates, langPrefix, jsonLdGraph, breadcrumbsLd, sportsEventLd } from '@/lib/seo'
 import { sportDisplayName } from '@/lib/sportSeo'
 import { matchMeta, NOT_FOUND_TITLE } from '@/lib/entitySeo'
+import PublicShell from './PublicShell'
 
 const T = {
   ru: { crumb: 'Чемпионаты', events: 'События матча', round: 'тур', ownGoal: 'Автогол' },
@@ -16,12 +17,12 @@ const T = {
 } as const
 
 // Colour per event kind, so a volleyball ace or an MMA knockdown is not painted
-// with football's palette.
+// with football's palette. Authored light; `.dark` in globals.css flips them.
 const EVENT_COLOR: Record<EventIcon, string> = {
-  ball: 'text-emerald-400', assist: 'text-blue-400', yellow: 'text-yellow-400', red: 'text-red-500',
-  warn: 'text-amber-400', foul: 'text-amber-400', ko: 'text-red-400', submission: 'text-gray-200',
-  ace: 'text-sky-400', block: 'text-indigo-400', three: 'text-orange-400', strike: 'text-red-400',
-  touchdown: 'text-emerald-400', run: 'text-emerald-400', star: 'text-amber-400',
+  ball: 'text-emerald-600', assist: 'text-blue-600', yellow: 'text-yellow-600', red: 'text-red-600',
+  warn: 'text-amber-600', foul: 'text-amber-600', ko: 'text-red-600', submission: 'text-gray-700',
+  ace: 'text-sky-600', block: 'text-indigo-600', three: 'text-orange-600', strike: 'text-red-600',
+  touchdown: 'text-emerald-600', run: 'text-emerald-600', star: 'text-amber-600',
 }
 
 /**
@@ -121,7 +122,35 @@ export default async function MatchPage({
   const eventLabel = (type: string) =>
     type === 'own_goal' ? tx.ownGoal : (defByType.get(type)?.label[lang] ?? type)
   const eventColor = (type: string) =>
-    type === 'own_goal' ? 'text-red-400' : (EVENT_COLOR[defByType.get(type)?.icon ?? 'star'] ?? 'text-white/50')
+    type === 'own_goal' ? 'text-red-600' : (EVENT_COLOR[defByType.get(type)?.icon ?? 'star'] ?? 'text-gray-500')
+
+  // Every scorer in the timeline links to their profile. Events store a name, so
+  // the squad of each side is resolved and matched on it — the same rule the
+  // event form now enforces when the name is recorded.
+  const playerHref = new Map<string, string>()   // `${teamId}|${lowercased name}` → path
+  const teamHref = new Map<string, string>()     // season team id → public team page
+  {
+    const teamIds = [home?.id, away?.id].filter((x): x is string => !!x)
+    if (teamIds.length) {
+      const { data: seasonTeams } = await supabase
+        .from('teams').select('id, league_team_id').in('id', teamIds)
+      const ltIds = (seasonTeams ?? []).map(t => t.league_team_id).filter((x): x is string => !!x)
+      if (ltIds.length) {
+        const [{ data: lts }, { data: squads }] = await Promise.all([
+          supabase.from('league_teams').select('id, slug').in('id', ltIds),
+          supabase.from('players').select('id, name, league_team_id').in('league_team_id', ltIds),
+        ])
+        const slugByLt = new Map((lts ?? []).map(l => [l.id, l.slug as string]))
+        for (const st of seasonTeams ?? []) {
+          const s = st.league_team_id ? slugByLt.get(st.league_team_id) : undefined
+          if (s) teamHref.set(st.id, `${prefix}/leagues/${slug}/teams/${s}`)
+          for (const p of (squads ?? []).filter(p => p.league_team_id === st.league_team_id)) {
+            playerHref.set(`${st.id}|${String(p.name).trim().toLowerCase()}`, `${prefix}/leagues/${slug}/players/${p.id}`)
+          }
+        }
+      }
+    }
+  }
 
   const matchPath = `${prefix}/leagues/${slug}/matches/${matchId}`
   const scoreLabel = fixture.played && fixture.home_score != null ? `${fixture.home_score}:${fixture.away_score}` : 'vs'
@@ -148,12 +177,29 @@ export default async function MatchPage({
     ]),
   )
 
+  // Scoreline side — a link when the team maps to a public team page.
+  function teamBlock(team: { id?: string; name?: string } | null) {
+    const href = team?.id ? teamHref.get(team.id) : undefined
+    const inner = (
+      <>
+        <div className="w-14 h-14 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-xl font-black text-purple-600 mx-auto mb-2">
+          {team?.name?.slice(0, 2).toUpperCase() ?? '?'}
+        </div>
+        <p className="font-black text-lg">{team?.name ?? '?'}</p>
+      </>
+    )
+    return href
+      ? <Link href={href} className="text-center flex-1 block hover:opacity-80 transition-opacity">{inner}</Link>
+      : <div className="text-center flex-1">{inner}</div>
+  }
+
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-white">
+    <PublicShell lang={lang}>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
-      <div className="border-b border-white/10">
+      <div className="border-b border-gray-200 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-          <Link href={`${prefix}/leagues/${slug}`} className="text-xs text-white/30 hover:text-white/60 font-medium mb-4 inline-block">
+          <Link href={`${prefix}/leagues/${slug}`} className="text-xs text-gray-400 hover:text-gray-700 font-medium mb-4 inline-block">
             ← {ctx.league.name}
           </Link>
           {/* The scoreline below is laid out visually; crawlers and screen readers
@@ -163,48 +209,45 @@ export default async function MatchPage({
           </h1>
 
           <div className="flex items-center justify-around py-6">
-            <div className="text-center flex-1">
-              <div className="w-14 h-14 rounded-xl bg-purple-900/50 flex items-center justify-center text-xl font-black text-purple-300 mx-auto mb-2">
-                {home?.name?.slice(0, 2).toUpperCase() ?? '?'}
-              </div>
-              <p className="font-black text-lg">{home?.name ?? '?'}</p>
-            </div>
+            {teamBlock(home)}
             <div className="text-center px-6">
               {fixture.played ? (
                 <p className="text-4xl font-black">{fixture.home_score} : {fixture.away_score}</p>
               ) : (
-                <p className="text-2xl font-black text-white/30">vs</p>
+                <p className="text-2xl font-black text-gray-300">vs</p>
               )}
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <p className="text-xs text-white/30 mt-1">{tx.round} {(fixture as any).matchday}</p>
+              <p className="text-xs text-gray-400 mt-1">{tx.round} {(fixture as any).matchday}</p>
             </div>
-            <div className="text-center flex-1">
-              <div className="w-14 h-14 rounded-xl bg-purple-900/50 flex items-center justify-center text-xl font-black text-purple-300 mx-auto mb-2">
-                {away?.name?.slice(0, 2).toUpperCase() ?? '?'}
-              </div>
-              <p className="font-black text-lg">{away?.name ?? '?'}</p>
-            </div>
+            {teamBlock(away)}
           </div>
         </div>
       </div>
 
       {sortedEvents.length > 0 && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3">{tx.events}</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.events}</p>
           <div className="space-y-1">
             {sortedEvents.map(e => {
               const isHome = e.team_id === home?.id
+              const href = playerHref.get(`${e.team_id}|${e.player_name.trim().toLowerCase()}`)
               return (
-                <div key={e.id} className={`flex items-center gap-3 px-4 py-2.5 bg-white/5 rounded-xl ${isHome ? '' : 'flex-row-reverse'}`}>
+                <div key={e.id} className={`flex items-center gap-3 px-4 py-2.5 bg-white border border-gray-100 rounded-xl ${isHome ? '' : 'flex-row-reverse'}`}>
                   {e.minute != null && (
-                    <span className="text-xs font-black text-white/30 shrink-0 w-8 text-center">{e.minute}&apos;</span>
+                    <span className="text-xs font-black text-gray-400 shrink-0 w-8 text-center">{e.minute}&apos;</span>
                   )}
                   <span className={`text-xs font-bold shrink-0 ${eventColor(e.type)}`}>
                     {eventLabel(e.type)}
                   </span>
-                  <span className={`flex-1 text-sm font-bold text-white/90 ${isHome ? '' : 'text-right'}`}>
-                    {e.player_name}
-                  </span>
+                  {href ? (
+                    <Link href={href} className={`flex-1 text-sm font-bold text-purple-600 hover:underline ${isHome ? '' : 'text-right'}`}>
+                      {e.player_name}
+                    </Link>
+                  ) : (
+                    <span className={`flex-1 text-sm font-bold text-gray-900 ${isHome ? '' : 'text-right'}`}>
+                      {e.player_name}
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -212,5 +255,6 @@ export default async function MatchPage({
         </div>
       )}
     </div>
+    </PublicShell>
   )
 }

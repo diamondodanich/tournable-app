@@ -336,6 +336,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
   let champSeasons: { id: string; name: string; status: string; tournament_id: string | null; format: string | null }[] = []
   // Persistent championship-team id → public slug, for linking standings rows to team pages.
   const champTeamSlugById = new Map<string, string>()
+  // Persistent championship-team id → its squad, for linking stat rows to player pages.
+  const champPlayersByTeam = new Map<string, { id: string; name: string }[]>()
   if (champLeague) {
     const [{ data: cs }, { data: lt }] = await Promise.all([
       supabase.from('seasons').select('id, name, status, tournament_id, tournaments(format)').eq('league_id', season.league_id).order('created_at', { ascending: false }),
@@ -347,6 +349,17 @@ export default async function TournamentPage({ params, searchParams }: { params:
       format: s.tournaments?.format ?? null,
     }))
     for (const row of (lt ?? []) as { id: string; slug: string }[]) champTeamSlugById.set(row.id, row.slug)
+
+    const ltIds = [...champTeamSlugById.keys()]
+    if (ltIds.length) {
+      const { data: champPlayers } = await supabase
+        .from('players').select('id, name, league_team_id').in('league_team_id', ltIds)
+      for (const p of (champPlayers ?? []) as { id: string; name: string; league_team_id: string }[]) {
+        const list = champPlayersByTeam.get(p.league_team_id) ?? []
+        list.push({ id: p.id, name: p.name })
+        champPlayersByTeam.set(p.league_team_id, list)
+      }
+    }
   }
 
   // Separately fetch playoff match events (requires migration 009 — falls back to [] if not yet applied)
@@ -488,6 +501,18 @@ export default async function TournamentPage({ params, searchParams }: { params:
         }),
       )
     : {}
+  // Stats rows link to player profiles: events are recorded by name, so the key is
+  // the same `${seasonTeamId}|${lowercased name}` the leaderboard groups by.
+  const playerHrefs: Record<string, string> = {}
+  if (champLeague) {
+    for (const tm of t as Team[]) {
+      const ltId = (tm as { league_team_id?: string | null }).league_team_id
+      if (!ltId) continue
+      for (const p of champPlayersByTeam.get(ltId) ?? []) {
+        playerHrefs[`${tm.id}|${p.name.trim().toLowerCase()}`] = `/leagues/${champLeague.slug}/players/${p.id}`
+      }
+    }
+  }
   const teamLinkBrand = sportTheme.primary
   // Championship season: match-card "Состав" edits the persistent team roster.
   const champSquad = champLeague
@@ -791,7 +816,8 @@ export default async function TournamentPage({ params, searchParams }: { params:
           </TabsContent>
         )}
         <TabsContent value="stats" className="mt-0 pt-5">
-          <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} hideUpsell={isEnterprise || !!champLeague} />
+          <StatsTab teams={t} events={allEvents} lang={lang} sport={tournament.sport} hideUpsell={isEnterprise || !!champLeague}
+            playerHrefs={playerHrefs} teamHrefs={teamHrefs} />
         </TabsContent>
       </Tabs>
       </>

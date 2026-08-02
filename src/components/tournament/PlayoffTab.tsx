@@ -6,6 +6,8 @@ import { savePlayoffResult, generatePlayoff, startPlayoffMatch } from '@/app/act
 import { seededBracketPositions } from '@/lib/tournament/playoff'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { getTournamentRosters, type RosterEntry } from '@/app/actions/lineups'
+import { EmptyRosterNotice, RosterSelect } from './PlayerPicker'
 import { Badge } from '@/components/ui/badge'
 import { Trophy, RefreshCw, Check, Plus, X, Radio, Play, Pencil, Loader2, Clock, ChevronRight, Zap, Shield, AlertTriangle, Lock, Star, Flame } from 'lucide-react'
 import { toast } from 'sonner'
@@ -103,9 +105,10 @@ interface PlayoffInlineFormProps {
   pills: EventDef[]
   ownGoalDef?: EventDef
   sport?: string
+  roster: RosterEntry[]       // the squad this event's team can pick from
 }
 
-function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport }: PlayoffInlineFormProps) {
+function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, ownGoalDef, sport, roster }: PlayoffInlineFormProps) {
   if (!form || form.teamId !== teamId) return null
   const selected    = pills.find(p => p.type === form.actionType)
   const isGoalLike  = !!selected?.hasAssist
@@ -154,25 +157,22 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, o
         )}
       </div>
 
-      {/* Player */}
-      <Input
-        autoFocus
-        value={form.player}
-        onChange={e => setForm(f => f ? { ...f, player: e.target.value } : f)}
-        onKeyDown={e => e.key === 'Enter' && onConfirm()}
-        placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)}
-        className="h-7 text-xs bg-white w-full"
-      />
+      {/* Player — picked from the squad, never typed: a free-text name detaches the
+          event from the player's profile and from all-time championship stats. */}
+      {roster.length === 0 ? (
+        <EmptyRosterNotice lang={lang} />
+      ) : (
+        <>
+          <RosterSelect roster={roster} value={form.player}
+            onChange={name => setForm(f => f ? { ...f, player: name } : f)}
+            placeholder={isGoalLike ? T.scorerPlaceholder : getActorNoun(sport, lang)} />
 
-      {/* Assister (only for regular goal-like events) */}
-      {isGoalLike && !form.isOwnGoal && (
-        <Input
-          value={form.assister}
-          onChange={e => setForm(f => f ? { ...f, assister: e.target.value } : f)}
-          onKeyDown={e => e.key === 'Enter' && onConfirm()}
-          placeholder={T.assisterPlaceholder}
-          className="h-7 text-xs bg-white w-full"
-        />
+          {isGoalLike && !form.isOwnGoal && (
+            <RosterSelect roster={roster} value={form.assister} exclude={form.player}
+              onChange={name => setForm(f => f ? { ...f, assister: name } : f)}
+              placeholder={T.assisterPlaceholder} />
+          )}
+        </>
       )}
 
       {/* Minute + confirm/cancel */}
@@ -204,11 +204,12 @@ function PlayoffInlineForm({ teamId, form, setForm, onConfirm, T, lang, pills, o
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function PlayoffMatchCard({
-  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro, T, lang,
+  match, teams, tournamentId, sport, isLive, homeLabel, awayLabel, isPro, T, lang, rosters,
 }: {
   match: PlayoffMatch
   teams: Team[]
   tournamentId: string
+  rosters: Record<string, RosterEntry[]>
   sport?: string
   isLive: boolean
   homeLabel?: string   // shown when home_team_id is null (e.g. "A1", "1-е м.")
@@ -564,7 +565,7 @@ function PlayoffMatchCard({
                   {form.teamId === match.home_team_id ? homeTeam?.name : awayTeam?.name}
                 </span>
               </div>
-              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport} />
+              <PlayoffInlineForm teamId={form.teamId} form={form} setForm={setForm} onConfirm={confirmForm} T={T} lang={lang} pills={pills} ownGoalDef={ownGoalDef} sport={sport} roster={rosters[form.teamId] ?? []} />
             </div>
           )}
         </div>
@@ -621,6 +622,16 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
 }) {
   const T = tx[lang]
   const [generating, setGenerating] = useState(false)
+
+  // Squads for every team of this tournament — event forms pick names from here
+  // instead of accepting free text, so an event always resolves to a real player.
+  const [rosters, setRosters] = useState<Record<string, RosterEntry[]>>({})
+  useEffect(() => {
+    let cancelled = false
+    void getTournamentRosters(tournament.id).then(r => { if (!cancelled) setRosters(r) })
+    return () => { cancelled = true }
+  }, [tournament.id])
+
   const fmt = tournament.format ?? 'playoff'
   const isDE = fmt === 'double_elim'
   const selfGenerating = fmt === 'playoff' || isDE   // formats that own a "generate bracket" button
@@ -698,6 +709,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
               isPro={isPro}
               T={T}
               lang={lang}
+              rosters={rosters}
             />
           ))}
         </div>
@@ -850,6 +862,7 @@ export default function PlayoffTab({ tournament, teams, matches, livePlayoffMatc
                         isPro={isPro}
                         T={T}
                         lang={lang}
+                        rosters={rosters}
                       />
                     )
                   })}

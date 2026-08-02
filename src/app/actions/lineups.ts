@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { TeamPlayer, MatchLineup } from '@/types'
+import { normalizePlayerName } from '@/lib/playerName'
 
 // ── Plan + ownership helpers ──────────────────────────────────────────────────
 async function getOwnerPlan(
@@ -69,6 +70,60 @@ export async function getRoster(teamId: string): Promise<TeamPlayer[]> {
   return (data ?? []) as TeamPlayer[]
 }
 
+export type RosterEntry = { name: string; number: number | null; position: string | null }
+
+/**
+ * Every team's roster for one tournament, keyed by season-team id.
+ *
+ * Match events are recorded against a player *name*, so the name typed while
+ * logging a goal has to be the same string the squad holds — otherwise the
+ * player's profile page, the all-time stats and the clickable links in the
+ * standings all silently miss that event. This feeds the event form's picker.
+ *
+ * Two roster sources are merged: a championship team's persistent squad
+ * (`players`, shared across seasons) and the per-season roster (`team_players`)
+ * used by standalone tournaments.
+ */
+export async function getTournamentRosters(tournamentId: string): Promise<Record<string, RosterEntry[]>> {
+  const supabase = await createClient()
+
+  const { data: teams } = await supabase
+    .from('teams').select('id, league_team_id').eq('tournament_id', tournamentId)
+  const teamIds = (teams ?? []).map(t => t.id)
+  if (teamIds.length === 0) return {}
+
+  const leagueTeamIds = (teams ?? []).map(t => t.league_team_id).filter((x): x is string => !!x)
+
+  const [{ data: seasonPlayers }, { data: champPlayers }] = await Promise.all([
+    supabase.from('team_players').select('team_id, name, number, position').in('team_id', teamIds),
+    leagueTeamIds.length
+      ? supabase.from('players').select('league_team_id, name, number, position').in('league_team_id', leagueTeamIds)
+      : Promise.resolve({ data: [] as { league_team_id: string; name: string; number: number | null; position: string | null }[] }),
+  ])
+
+  const byLeagueTeam = new Map<string, RosterEntry[]>()
+  for (const p of champPlayers ?? []) {
+    const list = byLeagueTeam.get(p.league_team_id) ?? []
+    list.push({ name: p.name, number: p.number ?? null, position: p.position ?? null })
+    byLeagueTeam.set(p.league_team_id, list)
+  }
+
+  const out: Record<string, RosterEntry[]> = {}
+  for (const t of teams ?? []) {
+    const merged = new Map<string, RosterEntry>()
+    for (const p of t.league_team_id ? (byLeagueTeam.get(t.league_team_id) ?? []) : []) {
+      merged.set(p.name.trim().toLowerCase(), p)
+    }
+    for (const p of (seasonPlayers ?? []).filter(p => p.team_id === t.id)) {
+      const key = p.name.trim().toLowerCase()
+      if (!merged.has(key)) merged.set(key, { name: p.name, number: p.number ?? null, position: p.position ?? null })
+    }
+    out[t.id] = [...merged.values()].sort((a, b) =>
+      (a.number ?? 999) - (b.number ?? 999) || a.name.localeCompare(b.name))
+  }
+  return out
+}
+
 export async function addTeamPlayer(
   teamId: string,
   tournamentId: string,
@@ -82,7 +137,7 @@ export async function addTeamPlayer(
     .from('team_players')
     .insert({
       team_id: teamId,
-      name: data.name.trim(),
+      name: normalizePlayerName(data.name),
       number: data.number ?? null,
       position: data.position ?? 'other',
     })
@@ -103,7 +158,8 @@ export async function updateTeamPlayer(
   const err = await guardEnterprise(supabase, tournamentId)
   if (err) return { error: err }
 
-  const { error } = await supabase.from('team_players').update(data).eq('id', playerId)
+  const patch = data.name != null ? { ...data, name: normalizePlayerName(data.name) } : data
+  const { error } = await supabase.from('team_players').update(patch).eq('id', playerId)
   if (error) return { error: error.message }
   revalidatePath(`/dashboard/tournament/${tournamentId}`)
   return {}

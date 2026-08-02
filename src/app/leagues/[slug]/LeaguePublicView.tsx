@@ -57,10 +57,12 @@ function useSort<Row>(rows: Row[], initial: keyof Row) {
 
 export default function LeaguePublicView({
   league, brand, seasons, selectedSeasonId, tournamentId,
-  standings, recent, upcoming, teamsCount, playerStats, teamStats, lang = 'ru',
+  standings, recent, upcoming, teamsCount, playerStats, teamStats, lang = 'ru', pathPrefix = '',
 }: {
   league: { name: string; logo_url: string | null; sport: string | null; city: string | null; description: string | null; slug: string }
   brand: string
+  /** '' | '/kz' | '/en' — keeps every in-page link on the language being read. */
+  pathPrefix?: string
   seasons: SeasonLite[]
   selectedSeasonId: string | null
   tournamentId: string | null
@@ -137,7 +139,7 @@ export default function LeaguePublicView({
                       <div className="fixed inset-0 z-10" onClick={() => setSeasonMenu(false)} />
                       <div className="absolute z-20 mt-1.5 left-0 min-w-[220px] bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 text-gray-900 max-h-72 overflow-auto">
                         {seasons.map(s => (
-                          <Link key={s.id} href={`/leagues/${league.slug}?season=${s.id}`} onClick={() => setSeasonMenu(false)}
+                          <Link key={s.id} href={`${pathPrefix}/leagues/${league.slug}?season=${s.id}`} onClick={() => setSeasonMenu(false)}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 transition-colors text-left">
                             <span className="flex-1 text-sm font-bold break-words">{s.name}</span>
                             {s.status === 'active' && <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{tx.active}</span>}
@@ -221,13 +223,13 @@ export default function LeaguePublicView({
             {upcoming.length > 0 && (
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.upcoming}</p>
-                <div className="space-y-1.5">{upcoming.map(f => <FixtureRow key={f.id} f={f} fmtDate={fmtDate} />)}</div>
+                <div className="space-y-1.5">{upcoming.map(f => <FixtureRow key={f.id} f={f} fmtDate={fmtDate} href={`${pathPrefix}/leagues/${league.slug}/matches/${f.id}`} />)}</div>
               </div>
             )}
             {recent.length > 0 && (
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{tx.results}</p>
-                <div className="space-y-1.5">{recent.map(f => <FixtureRow key={f.id} f={f} played fmtDate={fmtDate} />)}</div>
+                <div className="space-y-1.5">{recent.map(f => <FixtureRow key={f.id} f={f} played fmtDate={fmtDate} href={`${pathPrefix}/leagues/${league.slug}/matches/${f.id}`} />)}</div>
               </div>
             )}
             {upcoming.length === 0 && recent.length === 0 && <p className="text-center py-14 text-gray-400">{tx.noMatches}</p>}
@@ -272,11 +274,18 @@ export default function LeaguePublicView({
                                     ? <img src={s.photo} alt="" className="w-full h-full object-cover" />
                                     : s.player.slice(0, 2).toUpperCase()}
                                 </span>
-                                <span className="break-words">{s.player}</span>
+                                {s.playerId
+                                  ? <Link href={`${pathPrefix}/leagues/${league.slug}/players/${s.playerId}`} className="break-words hover:underline" style={{ color: brand }}>{s.player}</Link>
+                                  : <span className="break-words">{s.player}</span>}
                               </div>
                             </td>
                             <td className="py-2.5 text-gray-500">
-                              <div className="flex items-center gap-1.5 min-w-0"><TeamAvatar name={s.teamName} logoUrl={s.teamLogo} size={18} /><span className="break-words">{s.teamName}</span></div>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <TeamAvatar name={s.teamName} logoUrl={s.teamLogo} size={18} />
+                                {s.teamSlug
+                                  ? <Link href={`${pathPrefix}/leagues/${league.slug}/teams/${s.teamSlug}`} className="break-words hover:underline">{s.teamName}</Link>
+                                  : <span className="break-words">{s.teamName}</span>}
+                              </div>
                             </td>
                             <td className="py-2.5 px-2 text-center text-gray-500 tabular-nums">{s.matchesPlayed}</td>
                             {statCols.map((c, ci) => (
@@ -311,7 +320,12 @@ export default function LeaguePublicView({
                           <tr key={s.teamName} className="border-t border-gray-50">
                             <td className="py-2.5 pl-4 text-gray-400 font-bold">{i + 1}</td>
                             <td className="py-2.5 font-bold text-gray-900">
-                              <div className="flex items-center gap-2 min-w-0"><TeamAvatar name={s.teamName} logoUrl={s.logo} size={20} /><span className="break-words">{s.teamName}</span></div>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <TeamAvatar name={s.teamName} logoUrl={s.logo} size={20} />
+                                {s.teamSlug
+                                  ? <Link href={`${pathPrefix}/leagues/${league.slug}/teams/${s.teamSlug}`} className="break-words hover:underline" style={{ color: brand }}>{s.teamName}</Link>
+                                  : <span className="break-words">{s.teamName}</span>}
+                              </div>
                             </td>
                             <td className="py-2.5 px-2 text-center text-gray-500 tabular-nums">{s.seasons}</td>
                             <td className="py-2.5 px-2 text-center text-gray-600 tabular-nums">{s.GP}</td>
@@ -356,9 +370,9 @@ function Th({ label, k, s }: { label: string; k: any; s: any }) {
   )
 }
 
-function FixtureRow({ f, played = false, fmtDate }: { f: FixtureLite; played?: boolean; fmtDate: (iso: string | null) => string }) {
+function FixtureRow({ f, played = false, fmtDate, href }: { f: FixtureLite; played?: boolean; fmtDate: (iso: string | null) => string; href: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 text-sm">
+    <Link href={href} className="block bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 text-sm hover:border-gray-300 transition-colors">
       {!played && (
         <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-1.5"><Clock size={11} /> {fmtDate(f.scheduledAt)}</div>
       )}
@@ -375,6 +389,6 @@ function FixtureRow({ f, played = false, fmtDate }: { f: FixtureLite; played?: b
           <span className="font-bold text-gray-900 break-words">{f.awayName}</span>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

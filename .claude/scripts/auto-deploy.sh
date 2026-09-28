@@ -27,10 +27,32 @@ fi
 
 # ── 4. Push ───────────────────────────────────────────────────────────────────
 if [ "$BRANCH" = "main" ]; then
-  # Working directly on main — just push
-  git push origin main --quiet 2>/dev/null || true
-  printf '{"systemMessage":"[auto-ci] OK — закоммичено и запушено в main. Vercel деплоит..."}'
-  exit 0
+  # Другая сессия (или этот же хук в другой вкладке) могла запушить в main,
+  # пока мы работали, — origin ушёл вперёд нашей локальной ветки. Раньше
+  # здесь был голый push с "|| true": при отклонении (non-fast-forward)
+  # ошибка проглатывалась, а сообщение всё равно бодро рапортовало "OK",
+  # хотя коммит так и оставался только локально и никогда не уезжал на
+  # GitHub/Vercel. Теперь: сначала подтягиваем origin/main и перекладываем
+  # свой коммит поверх, если он успел устареть.
+  git fetch origin main --quiet 2>/dev/null || true
+
+  if ! git merge-base --is-ancestor origin/main HEAD 2>/dev/null; then
+    if ! git rebase origin/main --quiet 2>/dev/null; then
+      git rebase --abort 2>/dev/null || true
+      printf '{"systemMessage":"[auto-ci] main ушёл вперёд (другая сессия запушила раньше), автоматический rebase не удался — разреши конфликт вручную:\ngit fetch origin main && git rebase origin/main"}'
+      exit 2
+    fi
+  fi
+
+  if git push origin main --quiet 2>/dev/null; then
+    printf '{"systemMessage":"[auto-ci] OK — закоммичено и запушено в main. Vercel деплоит..."}'
+    exit 0
+  fi
+
+  # Кто-то запушил в узком окне между fetch и push выше — коммит остался
+  # только локально. Честно сообщаем об этом вместо ложного "OK".
+  printf '{"systemMessage":"[auto-ci] Коммит сделан локально, но push в main не прошёл (кто-то опередил). Разреши вручную:\ngit fetch origin main && git rebase origin/main && git push origin main"}'
+  exit 2
 fi
 
 # ── 5. Push feature branch ────────────────────────────────────────────────────

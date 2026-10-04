@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { LandingPage } from '@/components/landing/LandingPage'
 import type { Metadata } from 'next'
 import { LANDING_SEO, OG_LOCALE } from '@/lib/seoCopy'
@@ -27,14 +26,11 @@ const JSON_LD = jsonLdGraph(
   softwareApplicationLd(LANDING_SEO.en.description),
 )
 
-export default async function LandingEnPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const initials = user?.email?.slice(0, 2).toUpperCase()
+export default function LandingEnPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON_LD }} />
-      <LandingPage isLoggedIn={!!user} defaultLang="en" userInitials={initials} />
+      <LandingPage defaultLang="en" />
     </>
   )
 }

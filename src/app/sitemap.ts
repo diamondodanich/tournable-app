@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import type { MetadataRoute } from 'next'
 import { APP_URL } from '@/lib/appUrl'
 import { SPORT_SEO } from '@/lib/sportSeo'
@@ -24,8 +24,12 @@ function trilingual(path: string, priority: number, changeFrequency: MetadataRou
   }))
 }
 
+// Public rows only, read without cookies so the sitemap is cached for an hour
+// instead of rebuilt (with all its queries) on every crawler fetch.
+export const revalidate = 3600
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const now = new Date()
 
   const [{ data: tournaments }, { data: leagues }] = await Promise.all([

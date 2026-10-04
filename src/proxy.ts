@@ -93,7 +93,28 @@ export const config = {
   // Metadata routes (opengraph-image, sitemap, robots, icons) are excluded on
   // purpose: they carry no session, and running the Supabase auth round-trip on
   // every crawler request to them is pure latency.
+  //
+  // Beyond that, the proxy only has work for three kinds of request, so it is not
+  // invoked at all for the rest (crawlers and logged-out visitors, most traffic):
+  //   - /dashboard: a guest is redirected to /login;
+  //   - a `lang` cookie: a public page may need its /kz or /en twin;
+  //   - a Supabase auth cookie: the session is read and refreshed.
+  // Matcher values must be literals, hence the repeated pattern. The cookie name
+  // carries the Supabase project ref (sb-<ref>-auth-token, chunked as .0/.1 when
+  // large); update it if the project ever changes.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*opengraph-image|.*twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/dashboard/:path*',
+    {
+      source: '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*opengraph-image|.*twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+      has: [{ type: 'cookie', key: 'lang' }],
+    },
+    {
+      source: '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*opengraph-image|.*twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+      has: [{ type: 'cookie', key: 'sb-ehvdvpmzpeprkuqkgzbh-auth-token' }],
+    },
+    {
+      source: '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*opengraph-image|.*twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+      has: [{ type: 'cookie', key: 'sb-ehvdvpmzpeprkuqkgzbh-auth-token.0' }],
+    },
   ],
 }

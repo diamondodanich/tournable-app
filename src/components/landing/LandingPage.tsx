@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useState, useRef, useEffect, type ElementType } from 'react'
+import { useSessionUser } from '@/hooks/useSessionUser'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Check, ArrowRight, Phone, ChevronRight, Zap, BarChart3, Trophy, Share2, Globe, Download, Video, Star, Menu, X, Volleyball, Gamepad2 } from 'lucide-react'
@@ -451,7 +452,11 @@ const AUDIENCE: Record<Lang, { tag: string; h2: string; sub: string; cases: { ta
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function LandingPage({ isLoggedIn = false, defaultLang = 'ru', userInitials }: { isLoggedIn?: boolean; defaultLang?: Lang; userInitials?: string }) {
+export function LandingPage({ defaultLang = 'ru' }: { defaultLang?: Lang }) {
+  // The landing is cached for every visitor; who is signed in is read in the browser.
+  const sessionUser = useSessionUser()
+  const isLoggedIn = !!sessionUser
+  const userInitials = sessionUser?.email?.slice(0, 2).toUpperCase()
   const [lang, setLang] = useState<Lang>(defaultLang)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')

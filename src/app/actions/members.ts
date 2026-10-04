@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath } from '@/lib/revalidate'
 import { redirect } from 'next/navigation'
 import { sendInviteEmail } from '@/lib/email'
 

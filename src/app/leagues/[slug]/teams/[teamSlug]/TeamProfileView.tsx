@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useIsOwner } from '@/hooks/useIsOwner'
 import { Users, BarChart3, CalendarDays, Pencil, ChevronLeft } from 'lucide-react'
 import SquadEditor from '@/components/championship/SquadEditor'
 import { getPositionLabel } from '@/lib/sports'
@@ -49,7 +50,7 @@ function Avatar({ name, photo, brand }: { name: string; photo: string | null; br
 
 export default function TeamProfileView({
   slug, pathPrefix = '', leagueId, leagueName, teamId, teamName, city, sport, brand,
-  players, history, matches, lang = 'ru', isOwner = false,
+  players, history, matches, lang = 'ru', ownerId = null,
 }: {
   slug: string
   /** '' | '/kz' | '/en' — keeps in-page links on the language the visitor is reading. */
@@ -65,9 +66,11 @@ export default function TeamProfileView({
   history: SeasonRecord[]
   matches: MatchLite[]
   lang?: Lang
-  isOwner?: boolean
+  /** League owner; the squad editor button is shown only to them (see useIsOwner). */
+  ownerId?: string | null
 }) {
   const tx = T[lang]
+  const isOwner = useIsOwner(ownerId)
   const [tab, setTab] = useState<'squad' | 'results' | 'calendar'>('squad')
   const [editorOpen, setEditorOpen] = useState(false)
 

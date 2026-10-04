@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath } from '@/lib/revalidate'
 import type { TeamPlayer, MatchLineup } from '@/types'
 import { normalizePlayerName } from '@/lib/playerName'
 

@@ -2,16 +2,9 @@
 
 import { unstable_noStore as noStore } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { resolvePlan, type Plan as PlanName } from '@/lib/plan'
 
-export type Plan = 'free' | 'pro' | 'enterprise'
-
-function resolvePlan(plan: string | null, expiresAt: string | null): Plan {
-  if (plan === 'enterprise') return 'enterprise'
-  if (plan === 'pro') {
-    if (!expiresAt || new Date(expiresAt) > new Date()) return 'pro'
-  }
-  return 'free'
-}
+export type Plan = PlanName
 
 // ── Читает план текущего пользователя ────────────────────────────────────────
 export async function getUserPlan(): Promise<Plan> {

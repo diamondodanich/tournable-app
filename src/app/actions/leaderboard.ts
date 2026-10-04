@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath } from '@/lib/revalidate'
 
 export type LeaderboardEntry = { team_id: string; round: number; points: number }
 

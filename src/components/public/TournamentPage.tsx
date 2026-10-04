@@ -2,7 +2,7 @@
    Fixtures, playoff matches and teams come back from Supabase untyped (nested
    match_events, per-format columns); typing them here would duplicate the DB
    schema. The file-level exemption replaces a dozen per-line ones. */
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -15,8 +15,8 @@ import LeaderboardTab from '@/components/tournament/LeaderboardTab'
 import TeamAvatar from '@/components/tournament/TeamAvatar'
 import { Trophy, Plus } from 'lucide-react'
 import type { Metadata } from 'next'
-import { getOwnerPlan } from '@/app/actions/billing'
-import { getLeaderboardEntries } from '@/app/actions/leaderboard'
+import { resolvePlan, type Plan } from '@/lib/plan'
+import type { LeaderboardEntry } from '@/app/actions/leaderboard'
 import { tx, type Lang } from '@/lib/i18n'
 import { getSubtype, type Format } from '@/lib/sports'
 import { FORMAT_LABELS } from '@/lib/formats'
@@ -76,7 +76,26 @@ const PT: Record<Lang, {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-async function getTournamentByIdOrSlug(supabase: Awaited<ReturnType<typeof createClient>>, idOrSlug: string) {
+type PublicClient = ReturnType<typeof createPublicClient>
+
+// The page is cached for every visitor, so it reads with the cookie-free public
+// client. The billing/leaderboard server actions use the cookie client (and
+// noStore), which would make the whole route dynamic again.
+async function ownerPlanOf(supabase: PublicClient, userId: string | null): Promise<Plan> {
+  if (!userId) return 'free'
+  const { data } = await supabase.from('profiles').select('plan, plan_expires_at').eq('id', userId).maybeSingle()
+  return data ? resolvePlan(data.plan, data.plan_expires_at) : 'free'
+}
+
+async function leaderboardEntriesOf(supabase: PublicClient, tournamentId: string): Promise<LeaderboardEntry[]> {
+  const { data } = await supabase
+    .from('leaderboard_entries')
+    .select('team_id, round, points')
+    .eq('tournament_id', tournamentId)
+  return (data ?? []) as LeaderboardEntry[]
+}
+
+async function getTournamentByIdOrSlug(supabase: PublicClient, idOrSlug: string) {
   if (UUID_RE.test(idOrSlug)) {
     const { data } = await supabase.from('tournaments').select('*').eq('id', idOrSlug).single()
     return data
@@ -225,7 +244,7 @@ function PublicBracket({
 }
 
 export async function tournamentMetadata(idOrSlug: string, lang: Lang): Promise<Metadata> {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const data = await getTournamentByIdOrSlug(supabase, idOrSlug)
   if (!data) return { title: NOT_FOUND_TITLE[lang].tournament, robots: { index: false, follow: false } }
 
@@ -262,7 +281,7 @@ export async function tournamentMetadata(idOrSlug: string, lang: Lang): Promise<
 export default async function PublicTournamentPage({
   idOrSlug, lang,
 }: { idOrSlug: string; lang: Lang }) {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const prefix = langPrefix(lang)
   const T = PT[lang]
 
@@ -275,14 +294,14 @@ export default async function PublicTournamentPage({
     supabase.from('teams').select('*').eq('tournament_id', tournament.id).order('created_at'),
     supabase.from('fixtures').select('*, match_events(*)').eq('tournament_id', tournament.id).order('matchday'),
     supabase.from('playoff_matches').select('*, match_events(*)').eq('tournament_id', tournament.id).order('round_order').order('match_order'),
-    getOwnerPlan(tournament.id),
+    ownerPlanOf(supabase, tournament.user_id ?? null),
   ])
 
   const ownerIsPro = ownerPlan === 'pro'
 
   // Leaderboard tournaments have no fixtures at all; their content is the ranking.
   const leaderboardEntries = (tournament.format ?? 'round_robin') === 'leaderboard'
-    ? await getLeaderboardEntries(tournament.id)
+    ? await leaderboardEntriesOf(supabase, tournament.id)
     : []
 
   const fmt = tournament.format ?? 'round_robin'

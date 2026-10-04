@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getSportTheme, getSubtype, type Lang } from '@/lib/sports'
@@ -11,7 +11,7 @@ import PublicShell from './PublicShell'
 const CRUMB: Record<Lang, string> = { ru: 'Чемпионаты', kz: 'Чемпионаттар', en: 'Championships' }
 
 export async function teamMetadata(slug: string, teamSlug: string, lang: Lang): Promise<Metadata> {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data: t } = await supabase
     .from('league_teams')
     .select('name, city, logo_url, leagues!inner(name, slug, sport)')
@@ -44,25 +44,21 @@ type SeasonRecord = { seasonName: string; position: number | null; GP: number; W
 type MatchLite = { id: string; opponent: string; isHome: boolean; homeScore: number | null; awayScore: number | null; played: boolean; scheduledAt: string | null; seasonName: string }
 
 export default async function TeamProfilePage({ slug, teamSlug, lang }: { slug: string; teamSlug: string; lang: Lang }) {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const prefix = langPrefix(lang)
 
-  const [{ data: teamRaw }, { data: { user } }] = await Promise.all([
-    supabase
-      .from('league_teams')
-      .select('*, leagues!inner(id, name, slug, sport, owner_id), players(*)')
-      .eq('slug', teamSlug)
-      .eq('leagues.slug', slug)
-      .maybeSingle(),
-    supabase.auth.getUser(),
-  ])
+  const { data: teamRaw } = await supabase
+    .from('league_teams')
+    .select('*, leagues!inner(id, name, slug, sport, owner_id), players(*)')
+    .eq('slug', teamSlug)
+    .eq('leagues.slug', slug)
+    .maybeSingle()
 
   if (!teamRaw) notFound()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const team = teamRaw as any
   const league = team.leagues
-  const isOwner = !!user && user.id === league.owner_id
   const players = (team.players ?? []) as { id: string; name: string; number: number | null; position: string | null; photo_url: string | null }[]
 
   const { data: seasons } = await supabase
@@ -156,7 +152,7 @@ export default async function TeamProfilePage({ slug, teamSlug, lang }: { slug: 
       history={history}
       matches={matches}
       lang={lang}
-      isOwner={isOwner}
+      ownerId={league.owner_id ?? null}
     />
     </PublicShell>
   )

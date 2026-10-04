@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -49,7 +49,7 @@ const PT = {
 } as const
 
 export async function playerMetadata(slug: string, playerId: string, lang: Lang): Promise<Metadata> {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data: p } = await supabase
     .from('players')
     .select('name, number, position, photo_url, league_teams(name, leagues(name, sport, slug))')
@@ -93,7 +93,7 @@ type EventRow = {
 type SeasonStat = { tournamentId: string; name: string; mp: number; counts: Record<string, number> }
 
 export default async function PlayerProfilePage({ slug, playerId, lang }: { slug: string; playerId: string; lang: Lang }) {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const prefix = langPrefix(lang)
 
   const { data: player } = await supabase

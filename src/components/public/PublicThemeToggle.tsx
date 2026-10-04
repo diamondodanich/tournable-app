@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { setThemeCookie } from '@/lib/cookies'
 
@@ -13,27 +12,48 @@ const T = {
   en: { light: 'Light theme', dark: 'Dark theme' },
 } as const
 
+// The theme lives in the `theme` cookie; this tiny store lets the toggle re-render
+// after it rewrites the cookie. The server snapshot is always light because public
+// pages are cached and rendered without the visitor's cookies.
+const listeners = new Set<() => void>()
+function subscribe(cb: () => void) {
+  listeners.add(cb)
+  return () => {
+    listeners.delete(cb)
+  }
+}
+const readDark = () => /(?:^|;\s*)theme=dark(?:;|$)/.test(document.cookie)
+
 /**
  * Floating light/dark switch for public pages.
  *
  * It writes the same `theme` cookie the dashboard uses, so a visitor who is also
  * an owner sees one consistent choice everywhere instead of a public side that
  * is hard-coded light on some pages and hard-coded dark on others.
+ *
+ * It also owns the `.dark` class on PublicShell's wrapper (its parent): the
+ * shell's inline script covers the first paint of a full load, and this effect
+ * covers client-side navigation and toggling.
  */
-export default function PublicThemeToggle({ initialDark, lang = 'ru' }: { initialDark: boolean; lang?: Lang }) {
-  const [dark, setDark] = useState(initialDark)
-  const router = useRouter()
+export default function PublicThemeToggle({ lang = 'ru' }: { lang?: Lang }) {
+  const dark = useSyncExternalStore(subscribe, readDark, () => false)
+  const ref = useRef<HTMLButtonElement>(null)
   const tx = T[lang]
 
+  // Reads the cookie rather than `dark`: during hydration `dark` is still the
+  // server snapshot (light) and would strip the class the inline script just set.
+  useLayoutEffect(() => {
+    ref.current?.parentElement?.classList.toggle('dark', readDark())
+  }, [dark])
+
   function toggle() {
-    const next = !dark
-    setDark(next)
-    setThemeCookie(next ? 'dark' : 'light')
-    router.refresh()
+    setThemeCookie(dark ? 'light' : 'dark')
+    listeners.forEach(l => l())
   }
 
   return (
     <button
+      ref={ref}
       onClick={toggle}
       title={dark ? tx.light : tx.dark}
       aria-label={dark ? tx.light : tx.dark}

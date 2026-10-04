@@ -1,6 +1,6 @@
 // Public match report, shared by the three language URLs.
 
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -32,7 +32,7 @@ const EVENT_COLOR: Record<EventIcon, string> = {
  * through your slug.
  */
 async function getLeagueForFixture(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   tournamentId: string | null,
   slug: string,
 ) {
@@ -50,7 +50,7 @@ async function getLeagueForFixture(
 }
 
 export async function matchMetadata(slug: string, matchId: string, lang: Lang): Promise<Metadata> {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data: f } = await supabase
     .from('fixtures')
     .select('tournament_id, matchday, played, home_score, away_score, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)')
@@ -88,7 +88,7 @@ export async function matchMetadata(slug: string, matchId: string, lang: Lang): 
 export default async function MatchPage({
   slug, matchId, lang,
 }: { slug: string; matchId: string; lang: Lang }) {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const tx = T[lang]
   const prefix = langPrefix(lang)
 

@@ -19,6 +19,23 @@ const PRIVATE = [
   '/reset-password',
 ]
 
+// SEO-tool and marketing crawlers bring no visitors, yet they walked every player
+// and match page in all three languages and were a large share of function
+// invocations. Search engines (Google, Yandex, Bing) are unaffected.
+const NO_CRAWL = [
+  'AwarioBot',
+  'AwarioSmartBot',
+  'AwarioRssBot',
+  'SERankingBacklinksBot',
+  'ShapBot',
+  'PetalBot',
+  'AhrefsBot',
+  'SemrushBot',
+  'MJ12bot',
+  'DotBot',
+  'DataForSeoBot',
+]
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -26,6 +43,10 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         disallow: PRIVATE,
+      },
+      {
+        userAgent: NO_CRAWL,
+        disallow: '/',
       },
     ],
     sitemap: `${APP_URL}/sitemap.xml`,

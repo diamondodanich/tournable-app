@@ -2,6 +2,29 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
+  // ── Language prefix ────────────────────────────────────────────────────────
+  // Public pages live at three URLs (`/x`, `/kz/x`, `/en/x`) and each renders in
+  // the language of its own URL, so hreflang describes three real documents. A
+  // visitor who picked Kazakh or English still expects a shared link to open in
+  // their language, so send them to the prefixed twin. Crawlers carry no cookie
+  // and therefore always stay on the Russian canonical.
+  const langRedirect = languageRedirect(request)
+  if (langRedirect) return NextResponse.redirect(langRedirect)
+
+  // Without a Supabase auth cookie there is no session to read or refresh, so
+  // skip the auth round-trip entirely. Crawlers and logged-out visitors are most
+  // of the traffic, and getUser() on every one of their requests was the single
+  // largest Active CPU cost of the project.
+  const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
+  if (!hasSession) {
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -24,15 +47,6 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
-  // ── Language prefix ────────────────────────────────────────────────────────
-  // Public pages live at three URLs (`/x`, `/kz/x`, `/en/x`) and each renders in
-  // the language of its own URL, so hreflang describes three real documents. A
-  // visitor who picked Kazakh or English still expects a shared link to open in
-  // their language, so send them to the prefixed twin. Crawlers carry no cookie
-  // and therefore always stay on the Russian canonical.
-  const langRedirect = languageRedirect(request)
-  if (langRedirect) return NextResponse.redirect(langRedirect)
 
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/register')
